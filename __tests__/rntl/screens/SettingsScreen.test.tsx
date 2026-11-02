@@ -95,15 +95,10 @@ describe('SettingsScreen', () => {
     mockProState.proBannerDismissed = false;
   });
 
-  it('shows the Pro upsell banner when Pro is not active and not dismissed', () => {
-    const { getByText } = render(<SettingsScreen />);
-    expect(getByText(/democratized/i)).toBeTruthy();
-  });
-
-  it('hides the Pro upsell banner once Pro is active', () => {
-    mockProState.hasRegisteredPro = true;
+  it('shows no Pro upsell banner or PRO card', () => {
     const { queryByText } = render(<SettingsScreen />);
     expect(queryByText(/democratized/i)).toBeNull();
+    expect(queryByText(/Off Grid AI PRO/)).toBeNull();
   });
 
   it('renders "Settings" title', () => {

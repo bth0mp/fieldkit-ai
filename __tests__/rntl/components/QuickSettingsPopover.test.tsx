@@ -11,6 +11,8 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import { QuickSettingsPopover } from '../../../src/components/ChatInput/Popovers';
+import { registerScreen, _clearScreensForTesting } from '../../../src/navigation/screenRegistry';
+import { PRO_TOOLS_SCREEN } from '../../../src/hooks/useIsProActive';
 
 const COLORS = {
   text: '#000000', textMuted: '#999999', primary: '#00FF00',
@@ -59,7 +61,18 @@ const baseProps = {
 };
 
 describe('QuickSettingsPopover', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    _clearScreensForTesting();
+    registerScreen({ name: PRO_TOOLS_SCREEN, component: () => null });
+  });
+  afterEach(() => _clearScreensForTesting());
+
+  it('hides the Pro Tools row when no Pro Tools screen is registered', () => {
+    _clearScreensForTesting();
+    const { queryByTestId } = render(<QuickSettingsPopover {...baseProps} mcpToolCount={0} />);
+    expect(queryByTestId('quick-pro-tools')).toBeNull();
+  });
 
   it('keeps the Tools icon neutral (not green) even when tools are enabled', () => {
     const { getByTestId } = render(<QuickSettingsPopover {...baseProps} enabledToolCount={2} />);

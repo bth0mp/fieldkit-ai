@@ -222,6 +222,7 @@ jest.mock('react-native-gesture-handler/Swipeable', () => {
 
 // Import after mocks
 import { HomeScreen } from '../../../src/screens/HomeScreen';
+import { BRAND } from '../../../src/config/branding';
 import { activeModelService } from '../../../src/services/activeModelService';
 
 const mockNavigation = {
@@ -375,7 +376,7 @@ describe('HomeScreen', () => {
 
     it('shows app title', () => {
       const { getByText } = renderHomeScreen();
-      expect(getByText('Off Grid AI')).toBeTruthy();
+      expect(getByText(BRAND.name)).toBeTruthy();
     });
 
     it('shows Text and Image model card labels', () => {

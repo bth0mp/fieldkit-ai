@@ -3,8 +3,7 @@
  *
  * The tools picker is a full page (it replaced the old bottom-sheet drawer). Tests:
  * - Renders the page header and all free tool rows
- * - Pro Tools row is pinned to the top of the listing and is shown to everyone
- * - Pro Tools routing: free -> ProDetail upsell, pro -> the Pro Tools screen
+ * - Pro Tools row is pinned to the top, only when the Pro Tools screen is registered
  * - Tool toggles flow through the core settings store
  * - Back button navigates back
  */
@@ -82,16 +81,10 @@ describe('ToolsScreen', () => {
     }
   });
 
-  it('shows the Pro Tools row to everyone (even free users)', () => {
-    const { getByTestId, getByText } = render(<ToolsScreen />);
-    expect(getByTestId('tools-pro-tools')).toBeTruthy();
-    expect(getByText('Pro Tools')).toBeTruthy();
-  });
-
-  it('routes a free user to the Pro upsell when Pro Tools is pressed', () => {
-    const { getByTestId } = render(<ToolsScreen />);
-    fireEvent.press(getByTestId('tools-pro-tools'));
-    expect(mockNavigate).toHaveBeenCalledWith('ProDetail');
+  it('hides the Pro Tools row when no Pro Tools screen is registered', () => {
+    const { queryByTestId, queryByText } = render(<ToolsScreen />);
+    expect(queryByTestId('tools-pro-tools')).toBeNull();
+    expect(queryByText('Pro Tools')).toBeNull();
   });
 
   it('routes a pro user straight to the Pro Tools screen', () => {
