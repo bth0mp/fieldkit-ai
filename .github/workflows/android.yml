@@ -1,0 +1,98 @@
+name: Android
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      all_abis:
+        description: Build all four ABIs instead of arm64-v8a only
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+
+  apk:
+    needs: typecheck
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # attach the APK to a GitHub Release on v* tags
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/local/.ghcup "$AGENT_TOOLSDIRECTORY/CodeQL"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Install NDK 27.1.12297006
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;27.1.12297006" > /dev/null
+
+      - run: npm ci
+
+      - name: Decode signing keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
+          else
+            echo "::warning::ANDROID_KEYSTORE_BASE64 is not set. The APK is signed with the public debug key; anyone can sign an update over it."
+          fi
+
+      - name: Build release APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ABIS: ${{ inputs.all_abis && 'armeabi-v7a,arm64-v8a,x86,x86_64' || 'arm64-v8a' }}
+        run: |
+          if [ -f "$RUNNER_TEMP/release.jks" ]; then
+            export ORG_GRADLE_PROJECT_OFFGRID_UPLOAD_STORE_FILE="$RUNNER_TEMP/release.jks"
+            export ORG_GRADLE_PROJECT_OFFGRID_UPLOAD_STORE_PASSWORD="$KEYSTORE_PASSWORD"
+            export ORG_GRADLE_PROJECT_OFFGRID_UPLOAD_KEY_ALIAS="$KEY_ALIAS"
+            export ORG_GRADLE_PROJECT_OFFGRID_UPLOAD_KEY_PASSWORD="$KEY_PASSWORD"
+          fi
+          cd android
+          ./gradlew assembleRelease -PreactNativeArchitectures="$ABIS"
+
+      - name: Collect APK
+        run: |
+          mkdir -p dist
+          name="fieldkit-${GITHUB_REF_NAME//\//-}-${GITHUB_SHA::7}.apk"
+          cp android/app/build/outputs/apk/release/app-release.apk "dist/$name"
+          (cd dist && sha256sum "$name" > "$name.sha256")
+          cat dist/*.sha256
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fieldkit-apk
+          path: dist/
+
+      - name: Attach to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
