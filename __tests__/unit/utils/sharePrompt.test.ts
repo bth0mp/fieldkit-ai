@@ -1,10 +1,8 @@
-import { Linking } from 'react-native';
 import {
   maybeScheduleSharePrompt,
   resetSharePromptSession,
   subscribeSharePrompt,
   emitSharePrompt,
-  shareOnX,
 } from '../../../src/utils/sharePrompt';
 
 describe('maybeScheduleSharePrompt — at most once per session', () => {
@@ -53,23 +51,6 @@ describe('maybeScheduleSharePrompt — at most once per session', () => {
       jest.runOnlyPendingTimers();
       expect(emits).toEqual(['image', 'image']); // once each session
     });
-  });
-});
-
-describe('shareOnX', () => {
-  const openURL = Linking.openURL as jest.Mock;
-
-  beforeEach(() => {
-    openURL.mockReset().mockResolvedValue(undefined);
-  });
-
-  it('opens the X web intent prefilled with the share text, ready to post', async () => {
-    await shareOnX();
-    expect(openURL).toHaveBeenCalledTimes(1);
-    const url = openURL.mock.calls[0][0];
-    expect(url).toMatch(/^https:\/\/x\.com\/intent\/post\?text=/);
-    expect(decodeURIComponent(url)).toContain('Off Grid AI is background intelligence');
-    expect(decodeURIComponent(url)).toContain('getoffgridai.co/early-access');
   });
 });
 

@@ -45,7 +45,7 @@ describe('Models manager sheet — remote TEXT selection carries the cloud marke
     const { React, rtl, RemoteServersScreen, nav } = env;
     const srv = rtl.render(React.createElement(RemoteServersScreen, { navigation: nav }));
     rtl.fireEvent.press(srv.getByText('Add Server'));
-    rtl.fireEvent.changeText(await rtl.waitFor(() => srv.getByPlaceholderText('e.g., Off Grid AI Desktop')), 'My LM Studio');
+    rtl.fireEvent.changeText(await rtl.waitFor(() => srv.getByPlaceholderText('e.g., Ollama on my laptop')), 'My LM Studio');
     rtl.fireEvent.changeText(srv.getByPlaceholderText('http://192.168.1.50:7878'), 'http://localhost:1234');
     rtl.fireEvent.press(srv.getByText('Test Connection'));
     await rtl.waitFor(() => { expect(srv.queryByText(/Connected \(/)).not.toBeNull(); }, { timeout: 4000 });

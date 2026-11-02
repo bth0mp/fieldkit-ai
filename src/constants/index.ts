@@ -7,13 +7,6 @@ export {
   QUANTIZATION_INFO,
 } from './models';
 
-// External URLs
-export const WEDNESDAY_URL = 'https://wednesday.is';
-
-// Off Grid AI Desktop: the free, open-source desktop app (not a Pro feature).
-// Linked from Pro screens and from remote-server discovery alike.
-export const OFF_GRID_DESKTOP_URL = 'https://getoffgridai.co/desktop';
-
 // Hugging Face API configuration
 export const HF_API = {
   baseUrl: 'https://huggingface.co',

@@ -62,7 +62,8 @@ describe('happy — image lightbox (tap a generated image → viewer + controls)
 
     // The image really landed on disk in the gallery folder.
     const RNFS = require('react-native-fs');
-    const dir = `${RNFS.DocumentDirectoryPath}/OffgridMobile_Images`;
+    const { BRAND_FOLDER } = require('../../../src/config/branding');
+    const dir = `${RNFS.DocumentDirectoryPath}/${BRAND_FOLDER}_Images`;
     const files = await RNFS.readDir(dir);
     expect(files.length).toBeGreaterThan(0);
   });

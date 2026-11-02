@@ -203,14 +203,14 @@ describe('RemoteServerModal', () => {
 
     it('shows error when endpoint is empty on Test Connection', async () => {
       const { getByText, getByPlaceholderText } = render(<RemoteServerModal visible onClose={onClose} />);
-      fireEvent.changeText(getByPlaceholderText('e.g., Off Grid AI Desktop'), 'My Server');
+      fireEvent.changeText(getByPlaceholderText('e.g., Ollama on my laptop'), 'My Server');
       fireEvent.press(getByText('Test Connection'));
       await waitFor(() => expect(getByText('Endpoint URL is required')).toBeTruthy());
     });
 
     it('shows invalid URL error for malformed endpoint', async () => {
       const { getByText, getByPlaceholderText } = render(<RemoteServerModal visible onClose={onClose} />);
-      fireEvent.changeText(getByPlaceholderText('e.g., Off Grid AI Desktop'), 'My Server');
+      fireEvent.changeText(getByPlaceholderText('e.g., Ollama on my laptop'), 'My Server');
       fireEvent.changeText(getByPlaceholderText(VALID_ENDPOINT), 'not-a-url');
       fireEvent.press(getByText('Test Connection'));
       await waitFor(() => expect(getByText('Invalid URL format')).toBeTruthy());
@@ -241,7 +241,7 @@ describe('RemoteServerModal', () => {
   // ==========================================================================
   describe('test connection', () => {
     function fillValidForm(getByPlaceholderText: any) {
-      fireEvent.changeText(getByPlaceholderText('e.g., Off Grid AI Desktop'), 'My Server');
+      fireEvent.changeText(getByPlaceholderText('e.g., Ollama on my laptop'), 'My Server');
       fireEvent.changeText(getByPlaceholderText(VALID_ENDPOINT), VALID_ENDPOINT);
     }
 
@@ -310,7 +310,7 @@ describe('RemoteServerModal', () => {
   // ==========================================================================
   describe('save - add new server', () => {
     async function connectAndEnableSave(getByText: any, getByPlaceholderText: any) {
-      fireEvent.changeText(getByPlaceholderText('e.g., Off Grid AI Desktop'), 'New Server');
+      fireEvent.changeText(getByPlaceholderText('e.g., Ollama on my laptop'), 'New Server');
       fireEvent.changeText(getByPlaceholderText(VALID_ENDPOINT), VALID_ENDPOINT);
       mockTestConnection.mockResolvedValueOnce({ success: true, latency: 10 });
       fireEvent.press(getByText('Test Connection'));
@@ -407,7 +407,7 @@ describe('RemoteServerModal', () => {
   describe('public network alert on save', () => {
     async function setupPublicEndpointWithTest(getByText: any, getByPlaceholderText: any) {
       mockIsPrivate.mockReturnValue(false);
-      fireEvent.changeText(getByPlaceholderText('e.g., Off Grid AI Desktop'), 'Cloud Server');
+      fireEvent.changeText(getByPlaceholderText('e.g., Ollama on my laptop'), 'Cloud Server');
       fireEvent.changeText(getByPlaceholderText(VALID_ENDPOINT), 'https://api.example.com');
       mockTestConnection.mockResolvedValueOnce({ success: true, latency: 10 });
       fireEvent.press(getByText('Test Connection'));

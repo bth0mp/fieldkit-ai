@@ -109,7 +109,6 @@ jest.mock('../../../src/stores/remoteServerStore', () => ({
 }));
 
 import { OnboardingScreen } from '../../../src/screens/OnboardingScreen';
-import { WEDNESDAY_URL } from '../../../src/constants';
 
 const mockNavigate = jest.fn();
 const mockReset = jest.fn();
@@ -284,16 +283,9 @@ describe('OnboardingScreen', () => {
     expect(mockDiscoverLANServers).toHaveBeenCalled();
   });
 
-  it('opens correct Wednesday URL when tapping Made with love', () => {
-    const { Linking } = require('react-native');
-    const spy = jest
-      .spyOn(Linking, 'openURL')
-      .mockImplementation(() => Promise.resolve());
-    const { getByText } = render(<OnboardingScreen navigation={navigation} />);
-    fireEvent.press(getByText('Wednesday'));
-    expect(spy).toHaveBeenCalledWith(WEDNESDAY_URL);
-    expect(WEDNESDAY_URL).toBe('https://wednesday.is');
-    spy.mockRestore();
+  it('shows no upstream maker credit', () => {
+    const { queryByText } = render(<OnboardingScreen navigation={navigation} />);
+    expect(queryByText('Wednesday')).toBeNull();
   });
 
   it('completes onboarding when Get Started pressed on last slide', async () => {

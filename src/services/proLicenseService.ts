@@ -23,10 +23,6 @@ import { getDeviceFingerprint, getPlatformTag } from './deviceFingerprint';
 
 const KEYCHAIN_SERVICE = 'off-grid-pro-license';
 
-// Public web pay page (RevenueCat checkout). "Get Pro" opens this; the buyer is
-// emailed a license key by the issuance Worker and enters it via activateProByKey.
-export const PRO_PAY_PAGE_URL = 'https://offgridmobileai.co/pay';
-
 export type ActivateResult = { ok: true } | { ok: false; reason: 'invalid' | 'limit' | 'network' };
 
 type ProLicense = {
@@ -88,38 +84,6 @@ async function readLicense(): Promise<ProLicense> {
 
 export async function readProFromKeychain(): Promise<boolean> {
   return isProActive(await readLicense());
-}
-
-export type ProTier = 'lifetime' | 'yearly';
-
-/**
- * Single source of truth for what each tier MEANS, as data. `label` is the display
- * noun; `renews` says whether it recurs (drives both the status line wording and
- * whether a "Manage subscription" affordance applies). Consumers render from these
- * flags instead of branching on the concrete tier — add a tier here, touch no caller.
- */
-export const PRO_TIER_META: Record<ProTier, { label: string; renews: boolean }> = {
-  lifetime: { label: 'Lifetime', renews: false },
-  yearly: { label: 'Yearly', renews: true },
-};
-
-export interface ProLicenseInfo {
-  isPro: boolean;
-  tier: ProTier | null; // lifetime (no expiry) vs yearly (has expiry); null when not Pro
-  expiry: string | null;
-  verifiedAt: number;
-}
-
-/** Cached license details for the Settings/Pro status UI (offline-safe). */
-export async function getProLicenseInfo(): Promise<ProLicenseInfo> {
-  const lic = await readLicense();
-  const isPro = isProActive(lic);
-  return {
-    isPro,
-    tier: !isPro ? null : lic.expiry ? 'yearly' : 'lifetime',
-    expiry: lic.expiry,
-    verifiedAt: lic.verifiedAt,
-  };
 }
 
 /** Returns the cached entitlement immediately and revalidates in the background. */

@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Feather';
-import IconMC from 'react-native-vector-icons/MaterialCommunityIcons';
 import { AttachStep } from 'react-native-spotlight-tour';
 import { useNavigation, CommonActions, CompositeNavigationProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -17,7 +16,6 @@ import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { Card } from '../components';
 import { AnimatedEntry } from '../components/AnimatedEntry';
 import { AnimatedListItem } from '../components/AnimatedListItem';
-import { MadeWithLove } from '../components/MadeWithLove';
 import { DebugLogsScreen } from '../components/DebugLogsScreen';
 import { useSettingsSections } from '../components/settings/sectionRegistry';
 import { useFocusTrigger } from '../hooks/useFocusTrigger';
@@ -29,7 +27,6 @@ import RNFS from 'react-native-fs';
 import { useAppStore, useRemoteServerStore } from '../stores';
 import { hardwareService } from '../services';
 import { RootStackParamList, MainTabParamList } from '../navigation/types';
-import { GITHUB_URL, FOLLOW_X_URL, SLACK_INVITE_URL, shareOnX } from '../utils/sharePrompt';
 import { clearProForTesting } from '../services/proLicenseService';
 import { BRAND } from '../config/branding';
 import packageJson from '../../package.json';
@@ -86,7 +83,7 @@ export const SettingsScreen: React.FC = () => {
       ? `Device: ${deviceInfo.deviceModel} (${deviceInfo.systemName} ${deviceInfo.systemVersion})`
       : 'Device: Unknown';
 
-    const subject = encodeURIComponent(`[Feedback] Off Grid AI v${packageJson.version}`);
+    const subject = encodeURIComponent(`[Feedback] ${BRAND.name} v${packageJson.version}`);
     const body = encodeURIComponent(
       `Hi,\n\n[Describe your feedback or issue here]\n\n` +
       `---\n` +
@@ -183,7 +180,7 @@ export const SettingsScreen: React.FC = () => {
           <View style={styles.navSection}>
             {[
               { icon: 'sliders', title: 'Model Settings', desc: 'System prompt, generation, and performance', screen: 'ModelSettings' as const },
-              { icon: 'wifi', title: 'Remote Servers', desc: 'Connect to Off Grid AI Desktop, Ollama, LM Studio, and more', screen: 'RemoteServers' as const },
+              { icon: 'wifi', title: 'Remote Servers', desc: 'Connect to Ollama, LM Studio, and other servers on your network', screen: 'RemoteServers' as const },
             //  { icon: 'search', title: 'Web Search', desc: 'Configure search API key for reliable results', screen: 'WebSearchSettings' as const },
               { icon: 'lock', title: 'Security', desc: 'Passphrase and app lock', screen: 'SecuritySettings' as const },
               { icon: 'smartphone', title: 'Device Information', desc: 'Hardware and compatibility', screen: 'DeviceInfo' as const },
@@ -210,76 +207,26 @@ export const SettingsScreen: React.FC = () => {
           </View>
         </AttachStep>
 
-        {/* Stay in the loop */}
-        <AnimatedEntry index={7} staggerMs={40} trigger={focusTrigger}>
-          <View style={styles.followSection}>
-            <View style={styles.followHeader}>
-              <Text style={styles.followHeaderTitle}>Stay in the loop</Text>
-              <Text style={styles.followHeaderDesc}>
-                New features land here first, subscribers get promo discounts, and your feedback shapes what gets built next.
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={styles.navItem}
-              testID="follow-on-x"
-              onPress={() => Linking.openURL(FOLLOW_X_URL)}
-            >
-              <View style={styles.followItemIcon}>
-                <Icon name="twitter" size={16} color={colors.primary} />
-              </View>
-              <View style={styles.navItemContent}>
-                <Text style={styles.navItemTitle}>Follow @alichherawalla on X</Text>
-                <Text style={styles.navItemDesc}>Feature drops, promo discounts, roadmap</Text>
-              </View>
-              <Icon name="external-link" size={14} color={colors.textMuted} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.navItem, styles.navItemLast]}
-              testID="join-slack"
-              onPress={() => Linking.openURL(SLACK_INVITE_URL)}
-            >
-              <View style={styles.followItemIcon}>
-                <IconMC name="slack" size={16} color={colors.primary} />
-              </View>
-              <View style={styles.navItemContent}>
-                <Text style={styles.navItemTitle}>Join the Slack community</Text>
-                <Text style={styles.navItemDesc}>Issues fixed fast, debug together, early access</Text>
-              </View>
-              <Icon name="external-link" size={14} color={colors.textMuted} />
-            </TouchableOpacity>
-          </View>
-        </AnimatedEntry>
-
-        {/* Community */}
+        {/* Source and feedback */}
         <AnimatedEntry index={8} staggerMs={40} trigger={focusTrigger}>
           <View style={styles.navSection}>
-            <TouchableOpacity style={styles.navItem} onPress={() => Linking.openURL(GITHUB_URL)}>
+            <TouchableOpacity style={styles.navItem} onPress={() => Linking.openURL(BRAND.repoUrl)}>
               <View style={styles.navItemIcon}>
-                <Icon name="star" size={16} color={colors.textSecondary} />
+                <Icon name="github" size={16} color={colors.textSecondary} />
               </View>
               <View style={styles.navItemContent}>
-                <Text style={styles.navItemTitle}>Star on GitHub</Text>
-                <Text style={styles.navItemDesc}>Support the open-source project</Text>
+                <Text style={styles.navItemTitle}>Source Code</Text>
+                <Text style={styles.navItemDesc}>View the source on GitHub</Text>
               </View>
               <Icon name="external-link" size={14} color={colors.textMuted} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.navItem} onPress={handleSendFeedback}>
+            <TouchableOpacity style={[styles.navItem, styles.navItemLast]} onPress={handleSendFeedback}>
               <View style={styles.navItemIcon}>
                 <Icon name="mail" size={16} color={colors.textSecondary} />
               </View>
               <View style={styles.navItemContent}>
                 <Text style={styles.navItemTitle}>Send Feedback</Text>
                 <Text style={styles.navItemDesc}>Report a bug or share a suggestion</Text>
-              </View>
-              <Icon name="external-link" size={14} color={colors.textMuted} />
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.navItem, styles.navItemLast]} onPress={() => shareOnX()}>
-              <View style={styles.navItemIcon}>
-                <Icon name="share-2" size={16} color={colors.textSecondary} />
-              </View>
-              <View style={styles.navItemContent}>
-                <Text style={styles.navItemTitle}>Share on X</Text>
-                <Text style={styles.navItemDesc}>Tell others about Off Grid AI</Text>
               </View>
               <Icon name="external-link" size={14} color={colors.textMuted} />
             </TouchableOpacity>
@@ -343,7 +290,6 @@ export const SettingsScreen: React.FC = () => {
           </AnimatedEntry>
         )}
 
-        <MadeWithLove />
         {__DEV__ && <DebugLogsScreen visible={showDebugLogs} onClose={() => setShowDebugLogs(false)} />}
       </ScrollView>
     </SafeAreaView>
@@ -390,22 +336,6 @@ const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
   navItemContent: { flex: 1 },
   navItemTitle: { ...TYPOGRAPHY.body, fontWeight: '400' as const, color: colors.text },
   navItemDesc: { ...TYPOGRAPHY.bodySmall, color: colors.textMuted, marginTop: 2 },
-  followSection: {
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    marginBottom: SPACING.lg,
-    overflow: 'hidden' as const,
-    borderWidth: 1,
-    borderColor: `${colors.primary}40`, // emerald accent so it stands out above About
-    ...shadows.small,
-  },
-  followHeader: { padding: SPACING.md, borderBottomWidth: 1, borderBottomColor: colors.border },
-  followHeaderTitle: { ...TYPOGRAPHY.body, fontWeight: '400' as const, color: colors.primary },
-  followHeaderDesc: { ...TYPOGRAPHY.bodySmall, color: colors.textMuted, marginTop: 4, lineHeight: 18 },
-  followItemIcon: {
-    width: 28, height: 28, borderRadius: 6, backgroundColor: `${colors.primary}1A`,
-    alignItems: 'center' as const, justifyContent: 'center' as const, marginRight: SPACING.md,
-  },
   section: { marginBottom: SPACING.lg },
   aboutRow: {
     flexDirection: 'row' as const, justifyContent: 'space-between' as const,

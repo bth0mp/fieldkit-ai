@@ -136,13 +136,13 @@ describe('RemoteServersScreen', () => {
     it('shows empty state description', () => {
       const { getByText } = render(<RemoteServersScreen />);
       expect(
-        getByText(/Connect to Off Grid AI Desktop, Ollama, LM Studio, or other LLM servers/),
+        getByText(/Connect to Ollama, LM Studio, or other LLM servers/),
       ).toBeTruthy();
     });
 
-    it('offers an Off Grid AI Desktop link from the empty state', () => {
-      const { getAllByText } = render(<RemoteServersScreen />);
-      expect(getAllByText('Get Off Grid AI Desktop').length).toBeGreaterThan(0);
+    it('offers no desktop app link from the empty state', () => {
+      const { queryByText } = render(<RemoteServersScreen />);
+      expect(queryByText(/Off Grid/)).toBeNull();
     });
 
     it('shows "Add Server" button in empty state', () => {
@@ -526,10 +526,8 @@ describe('RemoteServersScreen', () => {
       await waitFor(() => {
         expect(mockShowAlert).toHaveBeenCalledWith(
           'No Servers Found',
-          expect.stringContaining('Off Grid AI Desktop'),
-          expect.arrayContaining([
-            expect.objectContaining({ text: 'Get Off Grid AI Desktop' }),
-          ]),
+          expect.stringContaining('Ollama'),
+          [{ text: 'Dismiss', style: 'cancel' }],
         );
       });
     });

@@ -3,6 +3,7 @@ import { Platform, PermissionsAndroid } from 'react-native';
 import RNFS from 'react-native-fs';
 import { AlertState, showAlert } from '../../components';
 import logger from '../../utils/logger';
+import { BRAND_FOLDER } from '../../config/branding';
 
 export async function saveImageToGallery(
   viewerImageUri: string | null,
@@ -24,8 +25,8 @@ export async function saveImageToGallery(
     }
     const sourcePath = viewerImageUri.replace('file://', '');
     const picturesDir = Platform.OS === 'android'
-      ? `${RNFS.ExternalStorageDirectoryPath}/Pictures/OffgridMobile`
-      : `${RNFS.DocumentDirectoryPath}/OffgridMobile_Images`;
+      ? `${RNFS.ExternalStorageDirectoryPath}/Pictures/${BRAND_FOLDER}`
+      : `${RNFS.DocumentDirectoryPath}/${BRAND_FOLDER}_Images`;
     if (!(await RNFS.exists(picturesDir))) {
       await RNFS.mkdir(picturesDir);
     }
@@ -35,7 +36,7 @@ export async function saveImageToGallery(
     setAlertState(showAlert(
       'Image Saved',
       Platform.OS === 'android'
-        ? `Saved to Pictures/OffgridMobile/${fileName}`
+        ? `Saved to Pictures/${BRAND_FOLDER}/${fileName}`
         : `Saved to ${fileName}`,
     ));
   } catch (error: any) {

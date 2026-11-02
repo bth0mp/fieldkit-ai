@@ -36,8 +36,8 @@ import {
   SecuritySettingsScreen,
   GalleryScreen,
   RemoteServersScreen,
-  ProDetailScreen,
   AboutScreen,
+  OpenSourceLicensesScreen,
   ToolsScreen,
 } from '../screens';
 import {
@@ -238,13 +238,13 @@ export const AppNavigator: React.FC = () => {
         <RootStack.Screen name="StorageSettings" component={StorageSettingsScreen} />
         <RootStack.Screen name="SecuritySettings" component={SecuritySettingsScreen} />
         <RootStack.Screen
-          name="ProDetail"
-          component={ProDetailScreen}
-          options={{ headerShown: false, animation: 'slide_from_bottom' }}
-        />
-        <RootStack.Screen
           name="About"
           component={AboutScreen}
+          options={{ headerShown: false }}
+        />
+        <RootStack.Screen
+          name="OpenSourceLicenses"
+          component={OpenSourceLicensesScreen}
           options={{ headerShown: false }}
         />
         <RootStack.Screen name="Tools" component={ToolsScreen} />

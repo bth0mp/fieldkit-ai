@@ -40,10 +40,10 @@ describe('useOpenProTools', () => {
     _clearScreensForTesting();
   });
 
-  it('routes a free user to the Pro upsell', () => {
+  it('does nothing when no Pro Tools screen is registered', () => {
     const { getByTestId } = render(<Probe />);
     fireEvent.press(getByTestId('open'));
-    expect(mockNavigate).toHaveBeenCalledWith('ProDetail');
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it('routes a pro user to the Pro Tools screen once it is registered', () => {

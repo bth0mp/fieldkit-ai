@@ -30,9 +30,6 @@ import {
   createVisionModel,
   createMessage,
 } from '../../utils/factories';
-import { Linking, Clipboard } from 'react-native';
-import { OFF_GRID_DESKTOP_URL } from '../../../src/constants';
-import { withUtm } from '../../../src/utils/utm';
 
 // Mock requestAnimationFrame
 (globalThis as any).requestAnimationFrame = (cb: () => void) => {
@@ -320,49 +317,9 @@ describe('HomeScreen', () => {
     }
   });
 
-  // ============================================================================
-  // Off Grid AI Desktop promo card
-  // ============================================================================
-  describe('Off Grid AI Desktop promo card', () => {
-    it('shows the card by default (not dismissed)', () => {
-      const { getByTestId, getByText } = renderHomeScreen();
-      expect(getByTestId('desktop-promo-card')).toBeTruthy();
-      expect(getByText('Off Grid AI Desktop')).toBeTruthy();
-    });
-
-    it('hides the card when previously dismissed', () => {
-      useAppStore.setState({ desktopPromoDismissed: true });
-      const { queryByTestId } = renderHomeScreen();
-      expect(queryByTestId('desktop-promo-card')).toBeNull();
-    });
-
-    it('tapping dismiss hides the card and persists the flag', () => {
-      useAppStore.setState({ desktopPromoDismissed: false });
-      const { getByTestId, queryByTestId } = renderHomeScreen();
-      fireEvent.press(getByTestId('desktop-promo-dismiss'));
-      expect(queryByTestId('desktop-promo-card')).toBeNull();
-      expect(useAppStore.getState().desktopPromoDismissed).toBe(true);
-    });
-
-    it('tapping the card opens the Off Grid AI Desktop download URL', () => {
-      useAppStore.setState({ desktopPromoDismissed: false });
-      const spy = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined as never);
-      const { getByTestId } = renderHomeScreen();
-      fireEvent.press(getByTestId('desktop-promo-card'));
-      expect(spy).toHaveBeenCalledWith(withUtm(OFF_GRID_DESKTOP_URL, 'home-promo'));
-      spy.mockRestore();
-    });
-
-    it('tapping copy link copies the URL and shows confirmation (for sharing on mobile)', () => {
-      useAppStore.setState({ desktopPromoDismissed: false });
-      const spy = jest.spyOn(Clipboard, 'setString').mockImplementation(() => {});
-      const { getByTestId, getByText } = renderHomeScreen();
-      expect(getByText('Copy link')).toBeTruthy();
-      fireEvent.press(getByTestId('desktop-promo-copy'));
-      expect(spy).toHaveBeenCalledWith(withUtm(OFF_GRID_DESKTOP_URL, 'home-promo'));
-      expect(getByText('Link copied')).toBeTruthy();
-      spy.mockRestore();
-    });
+  it('shows no desktop app promo card', () => {
+    const { queryByTestId } = renderHomeScreen();
+    expect(queryByTestId('desktop-promo-card')).toBeNull();
   });
 
   // ============================================================================

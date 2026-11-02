@@ -50,7 +50,7 @@ describe('T053 (rendered) — remote model is marked in the selector (cloud/Remo
     // populate the store (serverHealth healthy + discoveredModels from /v1/models).
     const servers = render(<RemoteServersScreen />);
     fireEvent.press(servers.getByText('Add Server'));
-    fireEvent.changeText(await waitFor(() => servers.getByPlaceholderText('e.g., Off Grid AI Desktop')), 'My LM Studio');
+    fireEvent.changeText(await waitFor(() => servers.getByPlaceholderText('e.g., Ollama on my laptop')), 'My LM Studio');
     fireEvent.changeText(servers.getByPlaceholderText('http://192.168.1.50:7878'), 'http://localhost:1234');
     fireEvent.press(servers.getByText('Test Connection'));
     await waitFor(() => { expect(servers.queryByText(/Connected \(/)).not.toBeNull(); }, { timeout: 4000 });

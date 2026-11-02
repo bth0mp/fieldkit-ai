@@ -22,9 +22,9 @@ export interface DiscoveredServer {
 const PROVIDERS = [
   { port: 11434, type: 'ollama' as const,   name: 'Ollama',                probePath: '/api/tags'  },
   { port: 1234,  type: 'lmstudio' as const, name: 'LM Studio',             probePath: '/v1/models' },
-  // Off Grid AI Gateway runs on the user's laptop on the same LAN, so it is
-  // probed across the subnet on its fixed port just like the others.
-  { port: 7878,  type: 'gateway' as const,  name: 'Off Grid AI Gateway',   probePath: '/v1/models' },
+  // A desktop AI gateway on the same LAN is probed across the subnet on its
+  // fixed port just like the others.
+  { port: 7878,  type: 'gateway' as const,  name: 'AI Gateway',            probePath: '/v1/models' },
 ];
 
 const TIMEOUT_MS = 500;

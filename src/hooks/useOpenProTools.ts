@@ -13,9 +13,8 @@ export function hasProToolsScreen(): boolean {
  * One callback for "open the Pro Tools destination", used everywhere the user can
  * reach pro tools (the chat quick-settings row and the Tools page header).
  *
- * Pro active  -> the Pro Tools screen (email/calendar + MCP servers) is registered,
- *                so navigate straight into it and show what is available.
- * Free        -> the screen is not registered, so route to the Pro upsell page.
+ * When the Pro Tools screen (email/calendar + MCP servers) is registered, navigate
+ * into it. Otherwise do nothing; callers only render the entry when it exists.
  *
  * Routing on the registered screen (not on a license flag) keeps this in step with
  * useIsProActive and the rest of the app's single definition of "Pro is active".
@@ -25,8 +24,6 @@ export function useOpenProTools(): () => void {
   return () => {
     if (hasProToolsScreen()) {
       navigation.navigate(PRO_TOOLS_SCREEN as any);
-    } else {
-      navigation.navigate('ProDetail');
     }
   };
 }

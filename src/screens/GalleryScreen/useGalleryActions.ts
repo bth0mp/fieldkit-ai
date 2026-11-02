@@ -6,6 +6,7 @@ import { useAppStore, useChatStore } from '../../stores';
 import { imageGenerationService, onnxImageGeneratorService } from '../../services';
 import type { ImageGenerationState } from '../../services';
 import { GeneratedImage } from '../../types';
+import { BRAND_FOLDER } from '../../config/branding';
 
 export const formatDate = (dateStr: string): string => {
   const ts = Number(dateStr);
@@ -169,14 +170,14 @@ export const useGalleryActions = (conversationId: string | undefined) => {
           buttonPositive: 'OK',
         }
       );
-      const picturesDir = `${RNFS.ExternalStorageDirectoryPath}/Pictures/OffgridMobile`;
+      const picturesDir = `${RNFS.ExternalStorageDirectoryPath}/Pictures/${BRAND_FOLDER}`;
       if (!(await RNFS.exists(picturesDir))) {
         await RNFS.mkdir(picturesDir);
       }
       const timestamp = new Date().toISOString().replaceAll(/[:.]/g, '-');
       const fileName = `generated_${timestamp}.png`;
       await RNFS.copyFile(image.imagePath, `${picturesDir}/${fileName}`);
-      setAlertState(showAlert('Image Saved', `Saved to Pictures/OffgridMobile/${fileName}`));
+      setAlertState(showAlert('Image Saved', `Saved to Pictures/${BRAND_FOLDER}/${fileName}`));
     } catch (error: any) {
       setAlertState(showAlert('Error', `Failed to save image: ${error?.message || 'Unknown error'}`));
     }

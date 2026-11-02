@@ -2,23 +2,19 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Linking, ScrollView, Image, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Feather';
-import IconMC from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTheme, useThemedStyles } from '../theme';
 import type { ThemeColors, ThemeShadows } from '../theme';
 import { SPACING, TYPOGRAPHY } from '../constants';
-import { MadeWithLove } from '../components/MadeWithLove';
 import { AnimatedListItem } from '../components/AnimatedListItem';
 import { useFocusTrigger } from '../hooks/useFocusTrigger';
-import { GITHUB_URL, FOLLOW_X_URL, SLACK_INVITE_URL } from '../utils/sharePrompt';
-import { withUtm } from '../utils/utm';
 import { BRAND } from '../config/branding';
+import { RootStackParamList } from '../navigation/types';
 import packageJson from '../../package.json';
 
-const WEDNESDAY_MOBILE_URL = withUtm('https://wednesday.is', 'about');
-
 export const AboutScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const focusTrigger = useFocusTrigger();
@@ -39,93 +35,47 @@ export const AboutScreen: React.FC = () => {
           <Image source={require('../assets/logo.png')} style={staticStyles.appIcon} />
           <Text style={styles.appName}>{BRAND.name}</Text>
           <Text style={styles.version}>Version {packageJson.version}</Text>
-          <Text style={styles.version}>Based on Off Grid AI by Wednesday Solutions (MIT)</Text>
           <Text style={styles.description}>
             Local AI that runs entirely on your phone. No cloud, no telemetry, nothing leaves the device.
           </Text>
         </View>
 
-        {/* Open Source row */}
         <View style={styles.navSection}>
           <AnimatedListItem
             index={0}
             staggerMs={40}
             trigger={focusTrigger}
-            style={[styles.navItem, styles.navItemLast]}
-            onPress={() => Linking.openURL(GITHUB_URL)}
+            style={styles.navItem}
+            onPress={() => Linking.openURL(BRAND.repoUrl)}
           >
             <View style={styles.navItemIcon}>
               <Icon name="github" size={16} color={colors.textSecondary} />
             </View>
             <View style={styles.navItemContent}>
-              <Text style={styles.navItemTitle}>Open Source</Text>
+              <Text style={styles.navItemTitle}>Source Code</Text>
               <Text style={styles.navItemDesc}>View the source on GitHub</Text>
             </View>
             <Icon name="external-link" size={14} color={colors.textMuted} />
           </AnimatedListItem>
-        </View>
-
-        {/* Follow / Community */}
-        <View style={styles.navSection}>
           <AnimatedListItem
             index={1}
             staggerMs={40}
             trigger={focusTrigger}
-            style={styles.navItem}
-            testID="about-follow-on-x"
-            onPress={() => Linking.openURL(FOLLOW_X_URL)}
-          >
-            <View style={styles.navItemIcon}>
-              <Icon name="twitter" size={16} color={colors.primary} />
-            </View>
-            <View style={styles.navItemContent}>
-              <Text style={styles.navItemTitle}>Follow @alichherawalla on X</Text>
-              <Text style={styles.navItemDesc}>New features first, promo discounts, roadmap</Text>
-            </View>
-            <Icon name="external-link" size={14} color={colors.textMuted} />
-          </AnimatedListItem>
-          <AnimatedListItem
-            index={2}
-            staggerMs={40}
-            trigger={focusTrigger}
             style={[styles.navItem, styles.navItemLast]}
-            testID="about-join-slack"
-            onPress={() => Linking.openURL(SLACK_INVITE_URL)}
+            testID="about-open-source-licenses"
+            onPress={() => navigation.navigate('OpenSourceLicenses')}
           >
             <View style={styles.navItemIcon}>
-              <IconMC name="slack" size={16} color={colors.primary} />
+              <Icon name="file-text" size={16} color={colors.textSecondary} />
             </View>
             <View style={styles.navItemContent}>
-              <Text style={styles.navItemTitle}>Join the Slack community</Text>
-              <Text style={styles.navItemDesc}>Issues fixed fast, debug together, early access</Text>
+              <Text style={styles.navItemTitle}>Open-source licenses</Text>
+              <Text style={styles.navItemDesc}>Software and models this app includes</Text>
             </View>
-            <Icon name="external-link" size={14} color={colors.textMuted} />
-          </AnimatedListItem>
-        </View>
-
-        {/* Built by Wednesday row */}
-        <View style={styles.navSection}>
-          <AnimatedListItem
-            index={3}
-            staggerMs={40}
-            trigger={focusTrigger}
-            style={[styles.navItem, styles.navItemLast]}
-            onPress={() => Linking.openURL(WEDNESDAY_MOBILE_URL)}
-          >
-            <View style={styles.navItemIcon}>
-              <Image source={require('../assets/wednesday_logo.png')} style={styles.wednesdayLogo} />
-            </View>
-            <View style={styles.navItemContent}>
-              <Text style={styles.navItemTitle}>Built by Wednesday</Text>
-              <Text style={styles.navItemDesc}>We build mobile apps for enterprise teams</Text>
-            </View>
-            <Icon name="external-link" size={14} color={colors.textMuted} />
+            <Icon name="chevron-right" size={16} color={colors.textMuted} />
           </AnimatedListItem>
         </View>
       </ScrollView>
-
-      {/* Pinned footer */}
-      <MadeWithLove />
     </SafeAreaView>
   );
 };
@@ -204,5 +154,4 @@ const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
   navItemContent: { flex: 1 },
   navItemTitle: { ...TYPOGRAPHY.body, color: colors.text },
   navItemDesc: { ...TYPOGRAPHY.bodySmall, color: colors.textMuted, marginTop: 2 },
-  wednesdayLogo: { width: 24, height: 24, resizeMode: 'contain' as const },
 });

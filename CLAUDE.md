@@ -12,7 +12,7 @@ S24 Ultra (arm64-v8a).
 - No GPL, AGPL or LGPL dependencies (for example espeak-ng). Prefer MIT, BSD or Apache-2.0.
 - Image generation ships local-dream's `libstable_diffusion_core.so` under CC BY-NC 4.0,
   so the app must stay free and non-commercial while it is included.
-- After adding or upgrading a dependency, run `node scripts/gen-notices.mjs` and commit
+- After adding or upgrading a dependency, run `node scripts/gen-notices.js` and commit
   the regenerated `src/generated/thirdPartyNotices.json`. Add native or bundled
   components (`.so`, models) to the `NATIVE` list in that script by hand.
 - No Off Grid or Wednesday names, logos or links in anything the user sees. App name

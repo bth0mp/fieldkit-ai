@@ -135,7 +135,7 @@ describe('Scan Network — alert matches the rendered list (device state-mismatc
 
     // Terminal artifact: the discovered gateway row is present (its name renders)...
     await waitFor(() => {
-      expect(ui.queryByText(/Off Grid AI Gateway/)).not.toBeNull();
+      expect(ui.queryByText(/AI Gateway/)).not.toBeNull();
     }, { timeout: 5000 });
     // ...and the "not found" alert is NOT shown. The alert and the list AGREE.
     expect(ui.queryByText('No Servers Found')).toBeNull();

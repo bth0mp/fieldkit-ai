@@ -2,12 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
-  Image,
   FlatList,
   Dimensions,
   Animated,
-  TouchableOpacity,
-  Linking,
 } from 'react-native';
 import ReanimatedAnimated, {
   useSharedValue,
@@ -26,7 +23,6 @@ import {
   SPACING,
   TYPOGRAPHY,
   FONTS,
-  WEDNESDAY_URL,
 } from '../constants';
 import { useAppStore } from '../stores';
 import { useRemoteServerStore } from '../stores/remoteServerStore';
@@ -301,23 +297,6 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
             style={styles.nextButton}
             testID="onboarding-next"
           />
-          <TouchableOpacity
-            onPress={() => Linking.openURL(WEDNESDAY_URL)}
-            style={styles.madeWithLove}
-          >
-            <View style={styles.madeWithLoveRow}>
-              <Text style={styles.madeWithLoveText}>
-                {'made with '}
-                <Text style={styles.heart}>{'♥'}</Text>
-                {' by '}
-              </Text>
-              <Image
-                source={require('../assets/wednesday_logo.png')}
-                style={styles.wednesdayLogo}
-              />
-              <Text style={styles.madeWithLoveText}>{'Wednesday'}</Text>
-            </View>
-          </TouchableOpacity>
         </View>
       </View>
     </SafeAreaView>
@@ -386,19 +365,5 @@ const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
   },
   nextButton: {
     width: '100%' as const,
-  },
-  madeWithLove: { alignItems: 'center' as const, paddingTop: SPACING.md },
-  madeWithLoveText: { ...TYPOGRAPHY.bodySmall, color: colors.textMuted },
-  heart: { color: '#FF0000', fontSize: 14 },
-  wednesdayLink: { textDecorationLine: 'underline' as const },
-  wednesdayLogo: {
-    width: 20,
-    height: 20,
-    resizeMode: 'contain' as const,
-    marginHorizontal: 4,
-  },
-  madeWithLoveRow: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
   },
 });

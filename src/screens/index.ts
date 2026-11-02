@@ -20,6 +20,6 @@ export { DeviceInfoScreen } from './DeviceInfoScreen';
 export { StorageSettingsScreen } from './StorageSettingsScreen';
 export { SecuritySettingsScreen } from './SecuritySettingsScreen';
 export { RemoteServersScreen } from './RemoteServersScreen';
-export { ProDetailScreen } from './ProDetailScreen';
+export { OpenSourceLicensesScreen } from './OpenSourceLicensesScreen';
 export { AboutScreen } from './AboutScreen';
 export { ToolsScreen } from './ToolsScreen';

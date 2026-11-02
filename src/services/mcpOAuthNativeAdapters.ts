@@ -18,9 +18,10 @@ import 'react-native-get-random-values'; // side-effect: installs global.crypto.
 import { sha256 } from 'js-sha256';
 import InAppBrowser from 'react-native-inappbrowser-reborn';
 import * as Keychain from 'react-native-keychain';
+import { BRAND } from '../config/branding';
 
 /** Must match the scheme registered in Info.plist / AndroidManifest. */
-export const MCP_OAUTH_REDIRECT_URI = 'offgrid://oauth/callback';
+export const MCP_OAUTH_REDIRECT_URI = 'fieldkit://oauth/callback';
 
 const browser = {
   async authorize(authUrl: string, redirectScheme: string): Promise<string> {
@@ -68,5 +69,5 @@ export const mcpOAuthNativeAdapters = {
   storage,
   crypto: cryptoAdapter,
   redirectUri: MCP_OAUTH_REDIRECT_URI,
-  clientName: 'Off Grid AI',
+  clientName: BRAND.name,
 };

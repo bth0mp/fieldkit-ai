@@ -573,9 +573,7 @@ describe('ModelDownloadScreen', () => {
     expect(mockShowAlert).toHaveBeenCalledWith(
       'No Servers Found',
       expect.stringContaining('WiFi'),
-      expect.arrayContaining([
-        expect.objectContaining({ text: 'Get Off Grid AI Desktop' }),
-      ]),
+      [{ text: 'Dismiss', style: 'cancel' }],
     );
   });
 
