@@ -1,218 +1,172 @@
-<div align="center">
+# Fieldkit AI
 
-<img src="src/assets/logo.png" alt="Off Grid AI Logo" width="120" />
+An offline AI assistant for Android. It runs GGUF language models on the phone with
+llama.cpp and answers questions from PDFs you load into a project knowledge base. Nothing
+is sent anywhere; the model runs in your phone's RAM.
 
-# Off Grid AI
+Fieldkit AI is a fork of [Off Grid AI](https://github.com/off-grid-ai/OGAM) by Wednesday
+Solutions (MIT), based on the v0.0.103 release. The original README is kept at
+[docs/UPSTREAM_README.md](docs/UPSTREAM_README.md).
 
-### The Swiss Army Knife of On-Device AI
+## What it does
 
-**Chat. Generate images. Use tools. See. Listen. All on your phone or Mac. All offline. Zero data leaves your device.**
+- Chat with any GGUF model, with streaming, thinking mode and markdown.
+- Project knowledge base: add PDFs and text files to a project. They are chunked,
+  embedded on-device with a bundled MiniLM model and stored in SQLite. Conversations in
+  that project get a `search_knowledge_base` tool.
+- Attach documents and images to a chat, use vision models, transcribe speech with
+  Whisper, generate images with Stable Diffusion.
+- Connect to an Ollama, LM Studio or other OpenAI-compatible server on your network.
 
-[![GitHub stars](https://img.shields.io/github/stars/alichherawalla/off-grid-mobile?style=social)](https://github.com/alichherawalla/off-grid-mobile)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Google Play](https://img.shields.io/badge/Google%20Play-Download-brightgreen?logo=google-play)](https://play.google.com/store/apps/details?id=ai.offgridmobile)
-[![App Store](https://img.shields.io/badge/App%20Store-Download-blue?logo=apple)](https://apps.apple.com/us/app/off-grid-local-ai/id6759299882)
-[![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS%20%7C%20macOS-green.svg)](#install)
-[![codecov](https://codecov.io/gh/alichherawalla/off-grid-mobile/graph/badge.svg)](https://codecov.io/gh/alichherawalla/off-grid-mobile)
-[![Slack](https://img.shields.io/badge/Slack-Join%20Community-4A154B?logo=slack)](https://join.slack.com/t/off-grid-mobile/shared_invite/zt-411pbtz7r-lcOK4YCeY40vh_~FUdcvLA)
-[![Pro](https://img.shields.io/badge/Off%20Grid%20Pro-%2469%20lifetime%20and%20%2449%20annual-000000?style=flat)](https://offgridmobileai.co/pay/)
+## What changed from upstream
 
-</div>
+- Based on tag `v0.0.103`, the last public release that builds without upstream's private
+  repositories. Upstream history is kept, so upstream fixes can still be cherry-picked.
+- The private `pro` submodule is removed. Without it the app runs as the free edition.
+- Pro upsell screens and prompts are removed: the Home crown button, the Settings banner
+  and PRO card, the share and "Pro aha" sheets in chat, the voice model upsell, and the
+  Pro Tools row (shown only if a Pro Tools screen is registered).
+- Renamed to Fieldkit AI with application id `com.bth0mp.fieldkit`, so it installs
+  alongside the official app. The Kotlin namespace stays `ai.offgridmobile`.
+- CI is a single workflow, `.github/workflows/android.yml`, that builds a release APK.
+- The MIT `LICENSE` is unchanged.
 
----
+## Build with GitHub Actions
 
-<div align="center">
+Every push to `main` and every `v*` tag runs `.github/workflows/android.yml`:
 
-<sub><b>BUILT BY</b></sub>
+1. `typecheck` runs `npm ci` and `npx tsc --noEmit`.
+2. `apk` builds `assembleRelease` for `arm64-v8a` and uploads the APK and its `.sha256`
+   as the `fieldkit-apk` artifact. On a `v*` tag it also attaches both files to a GitHub
+   Release.
 
-<a href="https://wednesday.is/?utm_source=github&utm_medium=offgrid-readme&utm_content=logo"><picture><source media="(prefers-color-scheme: dark)" srcset="src/assets/wednesday-logo-dark.svg" /><img src="src/assets/wednesday-logo.svg" alt="Wednesday Solutions" height="160" /></picture></a>
+To build all four ABIs, run the workflow by hand (Actions > Android > Run workflow) and
+tick `all_abis`.
 
-</div>
-
----
-
-<br />
-
-<div align="center">
-
-## Off Grid AI Pro
-
-**A voice, personas, and actions. $69 for life, or $49/year.**
-
-</div>
-
-<br />
-
-Pro is an optional, additive tier. It gives the assistant a voice that talks back, personas you shape, and the tools to draft real actions you approve. One license covers your phone and your Mac. All on-device.
-
-### What Pro adds
-
-- **Voice mode** - the free app transcribes your speech; Pro adds on-device Kokoro text-to-speech, so it talks back and you run the whole thing hands-free. The voice runs in your phone's RAM.
-- **Custom personas** - give each assistant its own system prompt, voice, and persistent memory, so it stays in character across conversations.
-- **Draft, then approve** - connect Calendar, email, and MCP servers like Linear, Notion, and GitHub. It drafts the reply or files the ticket and waits. Nothing sends without your tap.
-- **Sync, landing through July** - your phone and your Mac merge into one picture over your own network, never a relay. Your license includes it the day it ships.
-
-**[→ Get Pro access](https://offgridmobileai.co/pay/)** - $69 once and it is yours forever (the price climbs as more people join, never down), or $49/year.
-
-Pair it with **[Off Grid AI Desktop](https://github.com/off-grid-ai/desktop/releases/latest)** on your Mac. One Pro license covers both.
-
----
-
-## Not just another chat app
-
-Most "local LLM" apps give you a text chatbot and call it a day. Off Grid AI is a **complete offline AI suite** — text generation, image generation, vision AI, voice transcription, tool calling, and document analysis, all running natively on your phone's or Mac's hardware.
-
----
-
-## What can it do?
-
-<div align="center">
-<table>
-  <tr>
-    <td align="center"><img src="demo-gifs/onboarding.gif" width="200" /><br /><b>Onboarding</b></td>
-    <td align="center"><img src="demo-gifs/text-gen.gif" width="200" /><br /><b>Text Generation</b></td>
-    <td align="center"><img src="demo-gifs/image-gen.gif" width="200" /><br /><b>Image Generation</b></td>
-  </tr>
-  <tr>
-    <td align="center"><img src="demo-gifs/vision.gif" width="200" /><br /><b>Vision AI</b></td>
-    <td align="center"><img src="demo-gifs/attachments.gif" width="200" /><br /><b>Attachments</b></td>
-    <td align="center"><img src="demo-gifs/tool-calling.gif" width="200" /><br /><b>Tool Calling</b></td>
-</tr>
-</table>
-</div>
-
-**Text Generation** — Run Qwen 3, Llama 3.2, Gemma 3, Phi-4, and any GGUF model. Streaming responses, thinking mode, markdown rendering, 15-30 tok/s on flagship devices. Bring your own `.gguf` files too.
-
-**Remote LLM Servers** — Connect to any OpenAI-compatible server on your local network (Ollama, LM Studio, LocalAI). Discover models automatically, stream responses via SSE, store API keys securely in the system keychain. Switch seamlessly between local and remote models.
-
-**Tool Calling** — Models that support function calling can use built-in tools: web search, calculator, date/time, device info, and knowledge base search. Automatic tool loop with runaway prevention. Clickable links in search results.
-
-**Project Knowledge Base** — Upload PDFs and text documents to a project's knowledge base. Documents are chunked, embedded on-device with a bundled MiniLM model, and retrieved via cosine similarity — all stored locally in SQLite. The `search_knowledge_base` tool is automatically available in project conversations.
-
-**Image Generation** — On-device Stable Diffusion with real-time preview. NPU-accelerated on Snapdragon (5-10s per image), Core ML on iOS. 20+ models including Absolute Reality, DreamShaper, Anything V5.
-
-**Vision AI** — Point your camera at anything and ask questions. SmolVLM, Qwen3-VL, Gemma 3n — analyze documents, describe scenes, read receipts. ~7s on flagship devices.
-
-**Voice Input** — On-device Whisper speech-to-text. Hold to record, auto-transcribe. No audio ever leaves your phone.
-
-**Document Analysis** — Attach PDFs, code files, CSVs, and more to your conversations. Native PDF text extraction on both platforms.
-
-**AI Prompt Enhancement** — Simple prompt in, detailed Stable Diffusion prompt out. Your text model automatically enhances image generation prompts.
-
----
-
-## Performance
-
-| Task | Flagship | Mid-range |
-|------|----------|-----------|
-| Text generation | 15-30 tok/s | 5-15 tok/s |
-| Image gen (NPU) | 5-10s | — |
-| Image gen (CPU) | ~15s | ~30s |
-| Vision inference | ~7s | ~15s |
-| Voice transcription | Real-time | Real-time |
-
-Tested on Snapdragon 8 Gen 2/3, Apple A17 Pro. Results vary by model size and quantization.
-
----
-
-<a name="install"></a>
-## Install
-
-<div align="center">
-<table><tr>
-<td align="center"><a href="https://apps.apple.com/us/app/off-grid-local-ai/id6759299882"><img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" width="180" /></a></td>
-<td align="center"><a href="https://play.google.com/store/apps/details?id=ai.offgridmobile"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" width="220" /></a></td>
-</tr></table>
-</div>
-
-Or grab the latest APK from [**GitHub Releases**](https://github.com/alichherawalla/off-grid-mobile/releases/latest).
-
-> **macOS**: The iOS App Store version runs natively on Apple Silicon Macs via Mac Catalyst / iPad compatibility.
-
-### Build from source
+To publish a release:
 
 ```bash
-git clone https://github.com/alichherawalla/off-grid-mobile.git
-cd off-grid-mobile
-npm install
-
-# Android
-cd android && ./gradlew clean && cd ..
-npm run android
-
-# iOS
-cd ios && pod install && cd ..
-npm run ios
+git tag v0.1.0
+git push origin v0.1.0
 ```
 
-> Requires Node.js 20+, JDK 17 / Android SDK 36 (Android), Xcode 15+ (iOS). See [full build guide](docs/ARCHITECTURE.md#building-from-source).
+## Signing key
 
----
+Without signing secrets the workflow signs with the public React Native debug key and
+prints a warning. Anyone can sign an update with that key, so set up your own before you
+rely on the app.
 
-## Testing
+1. Generate a keystore (keytool ships with any JDK):
 
-[![CI](https://github.com/alichherawalla/off-grid-mobile/actions/workflows/ci.yml/badge.svg)](https://github.com/alichherawalla/off-grid-mobile/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/alichherawalla/off-grid-mobile/graph/badge.svg)](https://codecov.io/gh/alichherawalla/off-grid-mobile)
+   ```bash
+   keytool -genkeypair -v -keystore fieldkit-release.jks -alias fieldkit -keyalg RSA -keysize 4096 -validity 10000
+   ```
 
-Tests run across three platforms on every PR:
+2. Base64-encode it.
 
-| Platform | Framework | What's covered |
-|----------|-----------|----------------|
-| React Native | Jest + RNTL | Stores, services, components, screens, contracts |
-| Android | JUnit | LocalDream, DownloadManager, BroadcastReceiver |
-| iOS | XCTest | PDFExtractor, CoreMLDiffusion, DownloadManager |
-| E2E | Maestro | Critical path flows (launch, chat, models, downloads) |
+   Linux:
+
+   ```bash
+   base64 -w0 fieldkit-release.jks > fieldkit-release.jks.b64
+   ```
+
+   macOS:
+
+   ```bash
+   base64 -i fieldkit-release.jks -o fieldkit-release.jks.b64
+   ```
+
+   PowerShell:
+
+   ```powershell
+   [Convert]::ToBase64String([IO.File]::ReadAllBytes("$PWD\fieldkit-release.jks")) | Set-Content -NoNewline fieldkit-release.jks.b64
+   ```
+
+3. Add four repository secrets (Settings > Secrets and variables > Actions), or with `gh`:
+
+   ```bash
+   gh secret set ANDROID_KEYSTORE_BASE64 < fieldkit-release.jks.b64
+   gh secret set ANDROID_KEYSTORE_PASSWORD
+   gh secret set ANDROID_KEY_ALIAS --body fieldkit
+   gh secret set ANDROID_KEY_PASSWORD
+   ```
+
+4. Back up `fieldkit-release.jks` and both passwords somewhere other than this machine,
+   for example a password manager. Android only installs an update signed with the same
+   key. If the key is lost, the only way to update is to uninstall the app, which deletes
+   its downloaded models and chats.
+
+Delete the `.b64` file once the secret is set. Never commit the keystore.
+
+Moving from a debug-signed build to a release-signed build also needs one uninstall,
+because the keys differ.
+
+## Sideload onto a phone
+
+From the browser on the phone:
+
+1. Download the APK from the workflow run (Actions > run > Artifacts) or from the
+   Release page.
+2. Open it and allow your browser or file manager to install unknown apps when Android
+   asks.
+
+From a computer, with USB debugging on (Settings > About phone > Software information >
+tap Build number seven times, then Developer options > USB debugging):
 
 ```bash
-npm test              # Run all tests (Jest + Android + iOS)
-npm run test:e2e      # Run Maestro E2E flows (requires running app)
+adb install -r fieldkit-v0.1.0-abc1234.apk
 ```
 
-This project is tested with BrowserStack.
+Check the download against its `.sha256` first:
 
----
+```bash
+sha256sum -c fieldkit-v0.1.0-abc1234.apk.sha256
+```
 
-## Documentation
+## Suggested models
 
-| Document | Description |
-|----------|-------------|
-| [Architecture & Technical Reference](docs/ARCHITECTURE.md) | System architecture, design patterns, native modules, performance tuning |
-| [Codebase Guide](docs/standards/CODEBASE_GUIDE.md) | Comprehensive code walkthrough |
-| [Design System](docs/design/DESIGN_PHILOSOPHY_SYSTEM.md) | Brutalist design philosophy, theme system, tokens |
-| [Visual Hierarchy Standard](docs/design/VISUAL_HIERARCHY_STANDARD.md) | Visual hierarchy and layout standards |
+In the app, open Models, search for the repository, and download the `Q4_K_M` file.
 
----
+| Model | Repository | Notes |
+| --- | --- | --- |
+| Gemma 4 E2B | `unsloth/gemma-4-E2B-it-GGUF` | Fastest and smallest. Good default. |
+| Gemma 4 E4B | `unsloth/gemma-4-E4B-it-GGUF` | Better answers, still quick on a flagship phone. |
+| Qwen3.5 9B | `unsloth/Qwen3.5-9B-GGUF` | Best quality of the three; slowest and needs the most RAM. |
 
-## Community
+These need llama.rn 0.12.5, which this tag already ships. Do not upgrade llama.rn without
+testing them again.
 
-Join the conversation on [**Slack**](https://join.slack.com/t/off-grid-mobile/shared_invite/zt-411pbtz7r-lcOK4YCeY40vh_~FUdcvLA) — ask questions, share feedback, and connect with other Off Grid AI users and contributors.
+## Rebrand
 
----
+`scripts/rebrand.sh` renames the app in one step:
 
-## Contributing
+```bash
+scripts/rebrand.sh "Fieldkit AI" com.bth0mp.fieldkit
+```
 
-Contributions welcome! Fork, branch, PR. See [development guidelines](docs/ARCHITECTURE.md#contributing) for code style and the [codebase guide](docs/standards/CODEBASE_GUIDE.md) for patterns.
+It sets the Android `app_name` (escaped for XML and Android string resources), the
+`applicationId`, the `.dev` debug id in `package.json`, `displayName` in `app.json`, and
+`BRAND.name` in `src/config/branding.ts`. On Windows, run it from Git Bash. Changing the
+application id makes Android treat the app as a new one.
 
----
+## Build locally
 
-## Acknowledgments
+Needs Node 22.23.4 or newer, JDK 17, and the Android SDK with NDK `27.1.12297006`.
 
-Built on the shoulders of giants:
-[llama.cpp](https://github.com/ggerganov/llama.cpp) | [whisper.cpp](https://github.com/ggerganov/whisper.cpp) | [llama.rn](https://github.com/mybigday/llama.rn) | [whisper.rn](https://github.com/mybigday/whisper.rn) | [local-dream](https://github.com/xororz/local-dream) | [ml-stable-diffusion](https://github.com/apple/ml-stable-diffusion) | [MNN](https://github.com/alibaba/MNN) | [Hugging Face](https://huggingface.co)
+```bash
+npm ci
+cd android && ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a
+```
 
----
+The APK is written to `android/app/build/outputs/apk/release/app-release.apk`.
 
+Checks:
 
-## Star History
+```bash
+npx tsc --noEmit
+npx jest --forceExit
+```
 
-[![Star History Chart](https://api.star-history.com/svg?repos=alichherawalla/off-grid-mobile&type=date&legend=top-left)](https://www.star-history.com/#alichherawalla/off-grid-mobile&type=date&legend=top-left)
+## License
 
-<div align="center">
-
-**Off Grid AI** — Your AI, your device, your data.
-
-*No cloud. No data harvesting. Just AI that works anywhere.*
-
-[Join the Community on Slack](https://join.slack.com/t/off-grid-mobile/shared_invite/zt-411pbtz7r-lcOK4YCeY40vh_~FUdcvLA)
-
-</div>
+MIT. See [LICENSE](LICENSE). Fieldkit AI is based on Off Grid AI by Wednesday Solutions.
