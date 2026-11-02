@@ -29,6 +29,10 @@ const proDependentTestPaths = [
   '__tests__/rntl/components/McpAddServerSheet.test.tsx',
   '__tests__/rntl/components/McpServersScreen.test.tsx',
   '__tests__/unit/tools/mcpPresets.test.ts',
+  // Voice-mode memory suites: enterVoiceMode reads @offgrid/pro/audio/ttsStore.
+  '__tests__/integration/memory/voiceNoteReclaimsStt.rendered.happy.test.tsx',
+  '__tests__/integration/memory/ttsCoresidentInVoiceTurn.rendered.happy.test.tsx',
+  '__tests__/integration/memory/whisperBlockedFreeRetry.rendered.happy.test.tsx',
 ];
 
 module.exports = {
