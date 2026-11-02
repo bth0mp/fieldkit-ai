@@ -71,6 +71,9 @@ module.exports = {
   clearMocks: true,
   verbose: true,
   testTimeout: 10000,
+  // Heavy rendered integration suites need ~1 GB each; one worker per core starves RAM on
+  // many-core machines and they time out. Half the cores ran the suite with no flakes.
+  maxWorkers: '50%',
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/index.ts',

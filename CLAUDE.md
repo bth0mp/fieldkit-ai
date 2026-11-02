@@ -47,8 +47,9 @@ npm run depcruise
 npm run knip
 ```
 
-Heavy integration tests under `__tests__/integration/` flake when Jest runs them in
-parallel. Confirm a failure with `npx jest --runInBand <file>` before treating it as real.
+`jest.config.js` caps Jest at half the CPU cores: with one worker per core the heavy
+rendered suites under `__tests__/integration/` run out of RAM and time out. If one still
+fails, rerun it alone with `npx jest --runInBand <file>` before treating it as real.
 
 ## Testing
 
