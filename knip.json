@@ -30,7 +30,6 @@
     "eslint-plugin-react",
     "eslint-plugin-react-hooks",
     "@babel/preset-env",
-    "@babel/runtime",
-    "sonar-scanner"
+    "@babel/runtime"
   ]
 }

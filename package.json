@@ -10,7 +10,6 @@
     "lint:android": "cd android && ./gradlew :app:lintDebug",
     "lint:ios": "swiftlint lint --quiet || echo 'SwiftLint not installed, skipping iOS lint'",
     "prepare": "husky",
-    "sonar": "bash ./scripts/run-sonar.sh",
     "start": "react-native start",
     "test": "jest --coverage --forceExit --detectOpenHandles && npm run test:android && npm run test:ios",
     "test:e2e": "./scripts/run-tests.sh",
@@ -98,7 +97,6 @@
     "prettier": "2.8.8",
     "react-dom": "19.2.0",
     "react-test-renderer": "19.2.0",
-    "sonar-scanner": "^3.1.0",
     "typescript": "^5.8.3"
   },
   "lint-staged": {

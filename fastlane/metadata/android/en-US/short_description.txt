@@ -1,1 +1,0 @@
-Run open-source LLMs on your device. Voice, vision, image gen — all offline.

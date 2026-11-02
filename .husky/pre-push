@@ -82,8 +82,3 @@ if [ -n "$PUSHED_KOTLIN" ]; then
   echo "▶ Android tests..."
   npm run test:android
 fi
-
-if [ -n "$PUSHED_JS$PUSHED_SWIFT$PUSHED_KOTLIN" ]; then
-  echo "▶ Sonar scan..."
-  npm run sonar
-fi
