@@ -3,7 +3,7 @@
   "version": "0.0.103",
   "private": true,
   "scripts": {
-    "android": "react-native run-android --mode=debug --appId ai.offgridmobile.dev",
+    "android": "react-native run-android --mode=debug --appId com.bth0mp.fieldkit.dev",
     "ios": "react-native run-ios",
     "ios:device": "./scripts/ios-device.sh",
     "lint": "eslint . && npm run lint:android && npm run lint:ios",

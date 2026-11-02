@@ -1,5 +1,5 @@
 // Written by scripts/rebrand.sh. Edit there, or by hand.
 export const BRAND = {
-  name: "Off Grid AI",
+  name: "Fieldkit AI",
   feedbackEmail: '',
 };

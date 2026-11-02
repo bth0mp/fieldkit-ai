@@ -81,7 +81,7 @@ android {
 
     namespace "ai.offgridmobile"
     defaultConfig {
-        applicationId "ai.offgridmobile"
+        applicationId "com.bth0mp.fieldkit"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1784144537
