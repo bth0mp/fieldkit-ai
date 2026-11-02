@@ -20,7 +20,6 @@ import { AnimatedListItem } from '../components/AnimatedListItem';
 import { MadeWithLove } from '../components/MadeWithLove';
 import { DebugLogsScreen } from '../components/DebugLogsScreen';
 import { useSettingsSections } from '../components/settings/sectionRegistry';
-import { ProUpsellBanner } from '../components/settings/ProUpsellBanner';
 import { useFocusTrigger } from '../hooks/useFocusTrigger';
 import { useTheme, useThemedStyles } from '../theme';
 import type { ThemeColors, ThemeShadows } from '../theme';
@@ -32,10 +31,10 @@ import { hardwareService } from '../services';
 import { RootStackParamList, MainTabParamList } from '../navigation/types';
 import { GITHUB_URL, FOLLOW_X_URL, SLACK_INVITE_URL, shareOnX } from '../utils/sharePrompt';
 import { clearProForTesting } from '../services/proLicenseService';
-import { useProStatusLabel } from '../hooks/useProStatusLabel';
+import { BRAND } from '../config/branding';
 import packageJson from '../../package.json';
 
-const FEEDBACK_EMAIL = 'support@offgridmobileai.co';
+const FEEDBACK_EMAIL = BRAND.feedbackEmail;
 
 type NavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'SettingsTab'>,
@@ -63,7 +62,6 @@ export const SettingsScreen: React.FC = () => {
   const devProDisabled = useAppStore((s) => s.devProDisabled);
   const setDevProDisabled = useAppStore((s) => s.setDevProDisabled);
   const setHasRegisteredPro = useAppStore((s) => s.setHasRegisteredPro);
-  const { proStatusLabel } = useProStatusLabel();
 
   useEffect(() => {
     completeChecklistStep('exploredSettings');
@@ -151,9 +149,6 @@ export const SettingsScreen: React.FC = () => {
       </View>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
 
-        {/* PRO Banner */}
-        <ProUpsellBanner trigger={focusTrigger} onGetPro={() => navigation.navigate('ProDetail')} />
-
         {/* Theme Selector */}
         <AnimatedEntry index={0} staggerMs={40} trigger={focusTrigger}>
           <View style={styles.themeToggleRow}>
@@ -214,29 +209,6 @@ export const SettingsScreen: React.FC = () => {
             ))}
           </View>
         </AttachStep>
-
-        {/* PRO Button */}
-        <AnimatedEntry index={6} staggerMs={40} trigger={focusTrigger}>
-          <TouchableOpacity
-            style={styles.proNavButton}
-            onPress={() => navigation.navigate('ProDetail')}
-            activeOpacity={0.75}
-          >
-            <View style={styles.proIconContainer}>
-              <IconMC name="crown" size={18} color={colors.primary} />
-            </View>
-            <View style={styles.proCardText}>
-              <View style={styles.proTitleRow}>
-                <Text style={styles.proNavTitle}>Off Grid AI PRO</Text>
-                <View style={styles.proBadge}>
-                  <Text style={styles.proBadgeText}>PRO</Text>
-                </View>
-              </View>
-              <Text style={styles.proDesc}>{proStatusLabel}</Text>
-            </View>
-            <Icon name="chevron-right" size={16} color={colors.textMuted} />
-          </TouchableOpacity>
-        </AnimatedEntry>
 
         {/* Stay in the loop */}
         <AnimatedEntry index={7} staggerMs={40} trigger={focusTrigger}>
@@ -456,24 +428,4 @@ const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
   },
   devButtonGroup: { gap: 12 },
   devButtonText: { ...TYPOGRAPHY.bodySmall, color: colors.textMuted },
-  proCardText: { flex: 1 },
-  proTitleRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: SPACING.sm, marginBottom: 2 },
-  proBadge: { backgroundColor: colors.primary, borderRadius: 20, paddingHorizontal: SPACING.sm, paddingVertical: 2 },
-  proBadgeText: { ...TYPOGRAPHY.labelSmall, color: '#FFFFFF', letterSpacing: 0.5 },
-  proDesc: { ...TYPOGRAPHY.bodySmall, color: colors.textSecondary },
-  proIconContainer: { width: 44, height: 44, borderRadius: 22, backgroundColor: `${colors.primary}1A`, alignItems: 'center' as const, justifyContent: 'center' as const },
-  proNavButton: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    padding: SPACING.md,
-    gap: SPACING.md,
-    marginBottom: SPACING.lg,
-    ...shadows.small,
-  },
-  proNavTitle: {
-    ...TYPOGRAPHY.body,
-    color: colors.text,
-  },
 });

@@ -13,7 +13,6 @@ import { createStyles } from './styles';
 import { initialFilterState } from './constants';
 import { TextModelsTab } from './TextModelsTab';
 import { ImageModelsTab } from './ImageModelsTab';
-import { VoiceModelsUpsell } from '../../components/models/VoiceModelsUpsell';
 import { TranscriptionModelsTab } from './TranscriptionModelsTab';
 import { useSlot, SLOTS } from '../../bootstrap/slotRegistry';
 
@@ -253,12 +252,8 @@ export const ModelsScreen: React.FC = () => {
         />
       )}
 
-      {/* Voice Models Tab: pro panel when registered, otherwise an upsell. */}
-      {vm.activeTab === 'voice' && (
-        VoiceModelsPanel
-          ? <VoiceModelsPanel />
-          : <VoiceModelsUpsell onGetPro={() => vm.navigation.navigate('ProDetail')} />
-      )}
+      {/* Voice Models Tab: pro panel when registered, otherwise nothing. */}
+      {vm.activeTab === 'voice' && (VoiceModelsPanel ? <VoiceModelsPanel /> : null)}
 
       {/* Transcription Models Tab (speech-to-text, core). */}
       {vm.activeTab === 'transcription' && <TranscriptionModelsTab />}

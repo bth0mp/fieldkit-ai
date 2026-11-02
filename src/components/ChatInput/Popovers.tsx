@@ -8,6 +8,7 @@ import { useAppStore } from '../../stores';
 import { triggerHaptic } from '../../utils/haptics';
 import { FONTS } from '../../constants';
 import { getSlot, SLOTS } from '../../bootstrap/slotRegistry';
+import { hasProToolsScreen } from '../../hooks/useOpenProTools';
 
 const TOOL_WARNING_COLOR = '#F59E0B';
 
@@ -198,23 +199,25 @@ export const QuickSettingsPopover: React.FC<QuickSettingsPopoverProps> = ({
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                testID="quick-pro-tools"
-                style={popoverStyles.row}
-                onPress={() => {
-                  triggerHaptic('impactLight');
-                  onClose();
-                  onMcpPress?.();
-                }}
-              >
-                <IconMC name="crown" size={16} color={showMcpWarning ? TOOL_WARNING_COLOR : colors.primary} />
-                <Text style={[popoverStyles.rowLabel, { color: colors.text }]}>Pro Tools</Text>
-                {mcpToolCount > 0 && (
-                  <View style={[popoverStyles.badge, { backgroundColor: mcpBadgeBg }]}>
-                    <Text style={[popoverStyles.badgeText, { color: colors.background }]}>{mcpToolCount}</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
+              {hasProToolsScreen() && (
+                <TouchableOpacity
+                  testID="quick-pro-tools"
+                  style={popoverStyles.row}
+                  onPress={() => {
+                    triggerHaptic('impactLight');
+                    onClose();
+                    onMcpPress?.();
+                  }}
+                >
+                  <IconMC name="crown" size={16} color={showMcpWarning ? TOOL_WARNING_COLOR : colors.primary} />
+                  <Text style={[popoverStyles.rowLabel, { color: colors.text }]}>Pro Tools</Text>
+                  {mcpToolCount > 0 && (
+                    <View style={[popoverStyles.badge, { backgroundColor: mcpBadgeBg }]}>
+                      <Text style={[popoverStyles.badgeText, { color: colors.background }]}>{mcpToolCount}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              )}
             </View>
           </TouchableWithoutFeedback>
         </View>

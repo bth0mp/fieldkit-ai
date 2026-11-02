@@ -12,6 +12,7 @@ import { AnimatedListItem } from '../components/AnimatedListItem';
 import { useFocusTrigger } from '../hooks/useFocusTrigger';
 import { GITHUB_URL, FOLLOW_X_URL, SLACK_INVITE_URL } from '../utils/sharePrompt';
 import { withUtm } from '../utils/utm';
+import { BRAND } from '../config/branding';
 import packageJson from '../../package.json';
 
 const WEDNESDAY_MOBILE_URL = withUtm('https://wednesday.is', 'about');
@@ -36,8 +37,9 @@ export const AboutScreen: React.FC = () => {
         {/* App identity */}
         <View style={styles.heroSection}>
           <Image source={require('../assets/logo.png')} style={staticStyles.appIcon} />
-          <Text style={styles.appName}>Off Grid AI</Text>
+          <Text style={styles.appName}>{BRAND.name}</Text>
           <Text style={styles.version}>Version {packageJson.version}</Text>
+          <Text style={styles.version}>Based on Off Grid AI by Wednesday Solutions (MIT)</Text>
           <Text style={styles.description}>
             Local AI that runs entirely on your phone. No cloud, no telemetry, nothing leaves the device.
           </Text>

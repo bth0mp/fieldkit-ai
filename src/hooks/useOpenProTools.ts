@@ -4,6 +4,11 @@ import { getRegisteredScreens } from '../navigation/screenRegistry';
 import { RootStackParamList } from '../navigation/types';
 import { PRO_TOOLS_SCREEN } from './useIsProActive';
 
+/** True when the Pro Tools screen is registered (Pro module present). */
+export function hasProToolsScreen(): boolean {
+  return getRegisteredScreens().some(s => s.name === PRO_TOOLS_SCREEN);
+}
+
 /**
  * One callback for "open the Pro Tools destination", used everywhere the user can
  * reach pro tools (the chat quick-settings row and the Tools page header).
@@ -18,8 +23,7 @@ import { PRO_TOOLS_SCREEN } from './useIsProActive';
 export function useOpenProTools(): () => void {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   return () => {
-    const hasProScreen = getRegisteredScreens().some(s => s.name === PRO_TOOLS_SCREEN);
-    if (hasProScreen) {
+    if (hasProToolsScreen()) {
       navigation.navigate(PRO_TOOLS_SCREEN as any);
     } else {
       navigation.navigate('ProDetail');
