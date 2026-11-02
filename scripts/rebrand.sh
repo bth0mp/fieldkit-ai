@@ -28,6 +28,8 @@ const androidName = name
   .replace(/^([@?])/, '\\$1');
 edit('android/app/src/main/res/values/strings.xml',
   /<string name="app_name">[^<]*<\/string>/, `<string name="app_name">${androidName}</string>`);
+edit('android/app/src/debug/res/values/strings.xml',
+  /<string name="app_name">[^<]*<\/string>/, `<string name="app_name">${androidName} (Debug)</string>`);
 
 edit('android/app/build.gradle', /applicationId "[^"]*"/, `applicationId "${id}"`);
 edit('package.json', /--appId [\w.]+/g, `--appId ${id}.dev`);
