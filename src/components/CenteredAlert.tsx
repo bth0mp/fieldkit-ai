@@ -5,6 +5,7 @@ import type { ThemeColors, ThemeShadows } from '../theme';
 import { SPACING, TYPOGRAPHY } from '../constants';
 import type { AlertButton } from './CustomAlert';
 
+/** @public Used by the optional Pro module. */
 export interface CenteredAlertProps {
   visible: boolean;
   title: string;
@@ -24,6 +25,7 @@ export interface CenteredAlertProps {
  *
  * Shares the AlertButton / showAlert / AlertState API with CustomAlert, so it's a
  * drop-in swap.
+ * @public Used by the optional Pro module.
  */
 export const CenteredAlert: React.FC<CenteredAlertProps> = ({
   visible,

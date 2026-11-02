@@ -19,7 +19,7 @@
  * footer mic and the pro hero mic both depend on this one contract.
  */
 
-/** Explicit record lifecycle. `transcribing` is the post-stop window (whisper running). */
+/** Explicit record lifecycle. `transcribing` is the post-stop window (whisper running). @public */
 export type RecordPhase = 'idle' | 'recording' | 'transcribing';
 
 interface RecordingHandlers {
