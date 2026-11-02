@@ -4,9 +4,7 @@ An offline AI assistant for Android. It runs GGUF language models on the phone w
 llama.cpp and answers questions from PDFs you load into a project knowledge base. Nothing
 is sent anywhere; the model runs in your phone's RAM.
 
-Fieldkit AI is a fork of [Off Grid AI](https://github.com/off-grid-ai/OGAM) by Wednesday
-Solutions (MIT), based on the v0.0.103 release. The original README is kept at
-[docs/UPSTREAM_README.md](docs/UPSTREAM_README.md).
+Fieldkit AI is free and non-commercial. See [Credits and licenses](#credits-and-licenses).
 
 ## What it does
 
@@ -17,19 +15,6 @@ Solutions (MIT), based on the v0.0.103 release. The original README is kept at
 - Attach documents and images to a chat, use vision models, transcribe speech with
   Whisper, generate images with Stable Diffusion.
 - Connect to an Ollama, LM Studio or other OpenAI-compatible server on your network.
-
-## What changed from upstream
-
-- Based on tag `v0.0.103`, the last public release that builds without upstream's private
-  repositories. Upstream history is kept, so upstream fixes can still be cherry-picked.
-- The private `pro` submodule is removed. Without it the app runs as the free edition.
-- Pro upsell screens and prompts are removed: the Home crown button, the Settings banner
-  and PRO card, the share and "Pro aha" sheets in chat, the voice model upsell, and the
-  Pro Tools row (shown only if a Pro Tools screen is registered).
-- Renamed to Fieldkit AI with application id `com.bth0mp.fieldkit`, so it installs
-  alongside the official app. The Kotlin namespace stays `ai.offgridmobile`.
-- CI is a single workflow, `.github/workflows/android.yml`, that builds a release APK.
-- The MIT `LICENSE` is unchanged.
 
 ## Build with GitHub Actions
 
@@ -167,6 +152,24 @@ npx tsc --noEmit
 npx jest --forceExit
 ```
 
-## License
+## Credits and licenses
 
-MIT. See [LICENSE](LICENSE). Fieldkit AI is based on Off Grid AI by Wednesday Solutions.
+The code is MIT licensed; see [LICENSE](LICENSE). Fieldkit AI started from the MIT-licensed
+Off Grid AI v0.0.103, whose copyright notice is kept in `LICENSE` as that license requires.
+The `upstream` git remote points at it so fixes can be cherry-picked.
+
+Some bundled parts carry their own terms:
+
+- Image generation uses the prebuilt engine from
+  [local-dream](https://github.com/xororz/local-dream) by xororz, included unmodified
+  under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). Because of it,
+  Fieldkit AI must stay free and non-commercial while that engine ships.
+- Snapdragon NPU acceleration uses Qualcomm AI Engine Direct (QNN) runtime libraries,
+  redistributed under Qualcomm's license terms.
+
+The app lists every bundled component and its license under About > Open-source
+licenses. After adding or upgrading a dependency, regenerate that list:
+
+```bash
+node scripts/gen-notices.js
+```
