@@ -343,8 +343,9 @@ class LocalDreamModuleTest {
         val runtimeDir = makeRuntimeDir()
         val env = LocalDreamModule.buildEnvironment(runtimeDir)
 
-        val paths = requireNotNull(env["LD_LIBRARY_PATH"]).split(":")
-        assertEquals(runtimeDir.absolutePath, paths.first())
+        // Prefix check, not split(":"): on a Windows test host the absolute path itself contains "C:".
+        val ldPath = requireNotNull(env["LD_LIBRARY_PATH"])
+        assertTrue(ldPath.startsWith(runtimeDir.absolutePath + ":"))
     }
 
     @Test
