@@ -32,8 +32,13 @@ S24 Ultra (arm64-v8a).
 
 - `core.autocrlf` must be `false` in this repo; CRLF breaks the bash scripts.
 - Run `npm ci` from PowerShell, not Git Bash: llama.rn's postinstall needs Windows `tar`.
-- Release APKs build in GitHub Actions (`.github/workflows/android.yml`); there is no
-  local NDK yet.
+- Release APKs build in GitHub Actions (`.github/workflows/android.yml`). Debug APKs build
+  locally: `subst F: "D:\Claude Code\Off Grid AI"`, then from Git Bash
+  `cd /f/android && ./gradlew assembleDebug -PreactNativeArchitectures=arm64-v8a`.
+- Windows can reserve a port range that covers 8081 (`netsh interface ipv4 show
+  excludedportrange protocol=tcp`), and then Metro fails with `EACCES`. Start it on a free
+  port and forward the phone's 8081 to it: `npx react-native start --port 8300`, then
+  `adb reverse tcp:8081 tcp:8300`.
 
 ## Checks
 
