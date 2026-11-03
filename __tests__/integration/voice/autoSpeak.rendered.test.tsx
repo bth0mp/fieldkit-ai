@@ -560,6 +560,37 @@ describe('Read replies aloud (rendered)', () => {
     expect(h.view!.queryByText(/Other chat\./) === null).toBe(true);
   }, 30000);
 
+  it('back in a chat that still writes its reply, read-aloud off and on reads the rest of it', async () => {
+    const h = await setupChatScreen({ engine: 'llama', speech: {} });
+    const { leftChat } = await leaveTurnForOtherChat(h, holdReply);
+    // The user goes back to chat X while its reply is still being written, and turns reading off and on to hear it.
+    await backToChat(h, leftChat);
+    await setReadAloud(h, false);
+    await setReadAloud(h, true);
+    // The reply is read again from its first finished sentence, as after any off and on.
+    h.boundary.llama!.releaseStream();
+    const expected = ['One here.', 'One here.', 'Two here.', 'Three here.', 'Four here.'];
+    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(expected), TIMEOUT);
+    await h.settle(200);
+    expect(spoken(h)).toEqual(expected);
+  }, 30000);
+
+  it('back in a chat that still writes its reply, Home keeps the rest of it silent', async () => {
+    const h = await setupChatScreen({ engine: 'llama', speech: {} });
+    const { leftChat } = await leaveTurnForOtherChat(h, holdReply);
+    // Back in chat X, the user turns reading off and on, then goes to the home screen before the rest arrives.
+    await backToChat(h, leftChat);
+    await setReadAloud(h, false);
+    await setReadAloud(h, true);
+    const before = stopCalls(h);
+    await h.rtl.act(async () => { h.boundary.emitAppStateChange('background'); });
+    expect(stopCalls(h)).toBeGreaterThan(before);
+    h.boundary.llama!.releaseStream();
+    await waitUntilIdle(h);
+    await h.settle(200);
+    expect(spoken(h)).toEqual(['One here.']);
+  }, 30000);
+
   it('switching read-aloud off and on again while a reply streams reads the rest of it', async () => {
     const h = await setupChatScreen({ engine: 'llama', speech: {} });
     await readAloudChat(h);

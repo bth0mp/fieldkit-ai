@@ -140,7 +140,9 @@ class SpeechService {
     this.generation++;
     this.session = null;
     if (this.stream) this.stream.stopped = true;
-    const generating = generationSession.getConversationId();
+    // Back in a chat that still generates, there is no generation session (the switch ended it): the chat
+    // store still names the chat it streams for.
+    const generating = generationSession.getConversationId() ?? useChatStore.getState().streamingForConversationId;
     if (generating !== null) this.silencedTurn = generating;
     this.clearSpeaking();
     this.engine.stop().catch(error => logger.warn(`${LOG} stop failed`, error));
@@ -196,9 +198,10 @@ class SpeechService {
       // Check the engine through the memoized setup (it runs again after a failed or unavailable one), not
       // refresh(): refresh's stop() would cut off a message chosen with Speak.
       if (this.engine.isPresent()) this.ensureReady().catch(error => logger.error(`${LOG} engine check failed`, error));
-      // Turning reading on asks to hear the live turn, also one a stop silenced; a chat the user left stays
-      // silent. A stream a stop cut off is dropped, so the reply is read again from its first finished sentence.
-      if (this.silencedTurn === generationSession.getConversationId()) this.silencedTurn = null;
+      // Turning reading on asks to hear the chat on screen, also a turn a stop silenced there; a chat the user
+      // left stays silent. A stream a stop cut off is dropped, so the reply is read again from its first
+      // finished sentence.
+      if (this.silencedTurn === useChatStore.getState().activeConversationId) this.silencedTurn = null;
       this.dropStoppedStream();
     } else if (this.session !== null && this.session === this.stream) {
       this.stop(); // off silences a reply read as it streams; a message chosen with Speak plays on
