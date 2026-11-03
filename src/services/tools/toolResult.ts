@@ -36,6 +36,11 @@ export function toolErrorResult(call: ToolCall, err: unknown, startMs: number): 
   };
 }
 
+/** The result of a call refused before it ran because its arguments cannot work; the model can fix the call. */
+export function toolInvalidResult(call: ToolCall, problem: string, startMs: number): ToolResult {
+  return { ...toolErrorResult(call, new Error(problem), startMs), errorCategory: 'validation' };
+}
+
 /** The result of a call the user declined on the approval card (or that lost its turn while waiting). */
 export function toolDeclinedResult(call: ToolCall, startMs: number): ToolResult {
   return {

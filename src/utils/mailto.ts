@@ -27,10 +27,11 @@ const encodeAddresses = (to: string): string =>
     .map(address => encodeURIComponent(address).replace(/%40/g, '@'))
     .join(',');
 
-/** Why these recipients cannot go in one draft (a message the model can act on), or null when they fit. */
+/** Why these recipients cannot go in one draft (a message the model can act on, written like the other tool
+ *  errors: no final period, the tool result adds its own), or null when they fit. */
 export function recipientsProblem(to: string | undefined): string | null {
   if (!to || encodeAddresses(to).length <= RECIPIENTS_MAX_ENCODED) return null;
-  return 'Too many recipients for one draft. Use fewer addresses, or split them across several drafts.';
+  return 'Too many recipients for one draft. Use fewer addresses, or split them across several drafts';
 }
 
 /** The longest prefix of `text` whose encoding fits in `budget` characters, cut between characters

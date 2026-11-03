@@ -7,9 +7,10 @@ import { useChatStore, useRemoteServerStore, useAppStore } from '../stores';
 import { Message } from '../types';
 import { getToolsAsOpenAISchema, executeToolCall } from './tools';
 import type { ToolCall, ToolResult } from './tools/types';
-import { normalizeToolResult, toolDeclinedResult, toolErrorResult, toolResultModelContent } from './tools/toolResult';
+import { normalizeToolResult, toolDeclinedResult, toolErrorResult, toolInvalidResult, toolResultModelContent } from './tools/toolResult';
 import { approvalRequired, offeredToolIds, toolCallOffered } from './tools/toolOffering';
 import { approvalSummaryFor } from './tools/approvalSummary';
+import { preApprovalProblem } from './tools/callValidation';
 import { actionApprovalService } from './actions/actionApprovalService';
 import { modelInputImageUris, modelInputAudioUris } from './modelMedia';
 import { getToolExtensions } from './tools/extensions';
@@ -301,6 +302,9 @@ async function executeToolCallSafely(tc: ToolCall, ctx: ToolLoopContext): Promis
       logger.log(`[ToolLoop] refused "${tc.name}": not offered this turn`);
       return toolNotOfferedResult(tc, start);
     }
+    // A call that cannot work (a required argument missing, recipients that do not fit) ends here, before any card.
+    const problem = preApprovalProblem(tc);
+    if (problem) return toolInvalidResult(tc, problem, start);
     // A tool that sends or writes waits for the user's tap on the approval card. It runs only when
     // approved AND its turn is still live: a stop (or a newer turn) while the card showed ends it.
     if (approvalRequired({ toolName: tc.name, conversationId: ctx.conversationId })) {
