@@ -1,7 +1,7 @@
 /**
  * speechText — pure sentence splitting and engine-size chunking for speech.
  */
-import { chunkForEngine, splitIntoSentences } from '../../../src/utils/speechText';
+import { chunkForEngine, splitIntoSentences, stableSpeakablePrefix, unreadSentences } from '../../../src/utils/speechText';
 
 describe('splitIntoSentences', () => {
   it('splits after . ! ? followed by whitespace', () => {
@@ -64,5 +64,63 @@ describe('chunkForEngine', () => {
 
   it('drops blank sentences', () => {
     expect(chunkForEngine({ sentences: ['', '  ', 'Hi.'], maxLen: 10 })).toEqual(['Hi.']);
+  });
+});
+
+describe('stableSpeakablePrefix', () => {
+  it('returns text with no open construct unchanged', () => {
+    expect(stableSpeakablePrefix('Plain text. **Bold** and `code` and ```fence``` done.')).toBe('Plain text. **Bold** and `code` and ```fence``` done.');
+  });
+
+  it('cuts before an unclosed code fence', () => {
+    expect(stableSpeakablePrefix('Intro. ```js\nfoo.bar(). b')).toBe('Intro. ');
+    expect(stableSpeakablePrefix('A.\n```\ncode\n```\nB.\n```py\nx')).toBe('A.\n```\ncode\n```\nB.\n');
+  });
+
+  it('cuts before an unclosed ** or __', () => {
+    expect(stableSpeakablePrefix('Said **loud and')).toBe('Said ');
+    expect(stableSpeakablePrefix('**One** and **two')).toBe('**One** and ');
+    expect(stableSpeakablePrefix('A __deep end')).toBe('A ');
+  });
+
+  it('cuts before an unclosed single backtick, but not one inside a closed fence', () => {
+    expect(stableSpeakablePrefix('Call `foo(')).toBe('Call ');
+    expect(stableSpeakablePrefix('Use `a` then `b')).toBe('Use `a` then ');
+    expect(stableSpeakablePrefix('```\nit`s\n``` ok')).toBe('```\nit`s\n``` ok');
+  });
+
+  it('ignores ** and __ inside a closed fence', () => {
+    expect(stableSpeakablePrefix('```\na ** b __ c\n``` after')).toBe('```\na ** b __ c\n``` after');
+  });
+
+  it('cuts at the earliest open construct', () => {
+    expect(stableSpeakablePrefix('Go `x and **y')).toBe('Go ');
+    expect(stableSpeakablePrefix('Go **y and `x ```z')).toBe('Go ');
+  });
+
+  it('returns an empty string for empty text', () => {
+    expect(stableSpeakablePrefix('')).toBe('');
+  });
+});
+
+describe('unreadSentences', () => {
+  const sentences = ['A.', 'B.', 'C.', 'D.'];
+
+  it('continues after the sentences that were read', () => {
+    expect(unreadSentences({ sentences, spokenCount: 2, lastSpoken: 'B.' })).toEqual({ rest: ['C.', 'D.'], aligned: true });
+    expect(unreadSentences({ sentences, spokenCount: 0, lastSpoken: null })).toEqual({ rest: sentences, aligned: true });
+  });
+
+  it('has nothing left when everything was read', () => {
+    expect(unreadSentences({ sentences, spokenCount: 4, lastSpoken: 'D.' })).toEqual({ rest: [], aligned: true });
+  });
+
+  it('continues after the last occurrence of the last read sentence when the count no longer lines up', () => {
+    expect(unreadSentences({ sentences: ['X.', 'A.', 'B.', 'C.'], spokenCount: 2, lastSpoken: 'B.' })).toEqual({ rest: ['C.'], aligned: false });
+    expect(unreadSentences({ sentences: ['B.', 'A.', 'B.', 'C.'], spokenCount: 2, lastSpoken: 'B.' })).toEqual({ rest: ['C.'], aligned: false });
+  });
+
+  it('reads nothing when the last read sentence is gone', () => {
+    expect(unreadSentences({ sentences: ['X.', 'Y.'], spokenCount: 2, lastSpoken: 'B.' })).toEqual({ rest: [], aligned: false });
   });
 });

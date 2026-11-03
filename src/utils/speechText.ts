@@ -51,3 +51,38 @@ export function chunkForEngine(input: { sentences: string[]; maxLen: number }): 
   }
   return chunks;
 }
+
+/** Where the last `marker` in `text` starts when there is an odd number of them (it opened something nothing has closed yet), else -1. */
+function unclosedMarkerAt(text: string, marker: RegExp): number {
+  const matches = [...text.matchAll(marker)];
+  return matches.length % 2 === 1 ? matches[matches.length - 1].index : -1;
+}
+
+/**
+ * The part of a still-streaming reply that is safe to read: the text up to the first construct that is not
+ * closed yet (a code fence, `**`, `__` or an inline backtick), because what follows may turn out to be code
+ * or markup. Closed fences are skipped when counting inline markers, so code does not unbalance the rest.
+ */
+export function stableSpeakablePrefix(text: string): string {
+  const fence = unclosedMarkerAt(text, /```/g);
+  let cut = fence === -1 ? text.length : fence;
+  // Blank the closed fences (same length, so positions stay valid) before counting inline markers.
+  const outsideFences = text.slice(0, cut).replace(/```[\s\S]*?```/g, closed => ' '.repeat(closed.length));
+  for (const marker of [/\*\*/g, /__/g, /`/g]) {
+    const at = unclosedMarkerAt(outsideFences, marker);
+    if (at !== -1) cut = Math.min(cut, at);
+  }
+  return text.slice(0, cut);
+}
+
+/**
+ * What of a finished reply was not read while it streamed. `spokenCount` sentences were handed on, the last
+ * of them `lastSpoken`. `aligned` is false when the finished text no longer has that sentence in that
+ * place; the rest then continues after the last occurrence of it, or is empty when it is gone.
+ */
+export function unreadSentences(input: { sentences: string[]; spokenCount: number; lastSpoken: string | null }): { rest: string[]; aligned: boolean } {
+  const { sentences, spokenCount, lastSpoken } = input;
+  if (spokenCount === 0 || sentences[spokenCount - 1] === lastSpoken) return { rest: sentences.slice(spokenCount), aligned: true };
+  const at = lastSpoken === null ? -1 : sentences.lastIndexOf(lastSpoken);
+  return { rest: at === -1 ? [] : sentences.slice(at + 1), aligned: false };
+}

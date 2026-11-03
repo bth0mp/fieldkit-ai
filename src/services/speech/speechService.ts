@@ -1,8 +1,10 @@
 import { AppState } from 'react-native';
+import { useChatStore } from '../../stores/chatStore';
 import { useSpeechStore, type SpeechPatch } from '../../stores/speechStore';
 import { prepareMessageForSpeech } from '../../utils/messageContent';
 import { chunkForEngine, splitIntoSentences } from '../../utils/speechText';
 import logger from '../../utils/logger';
+import { isUnreadAnswer, StreamingSession } from './streamingSession';
 import { systemSpeechEngine } from './systemSpeechEngine';
 import type { SpeechEngine, SpeechEngineEvent, SpeechPhase, SpeechVoice } from './speechTypes';
 
@@ -13,6 +15,9 @@ const PREVIEW_TEXT = 'This is how your replies will sound.';
 
 /** How a setup run (init, voice list, voice selection) ended. 'superseded' = a newer init replaced it. */
 type SetupOutcome = 'ready' | 'unavailable' | 'error' | 'superseded';
+
+/** The id the store shows while a reply is read as it streams, before the stored message is known. */
+const STREAMING_ID = 'streaming';
 
 /** The chunks of the message being spoken; `done` holds the utterance ids the engine finished. */
 interface Session {
@@ -51,6 +56,8 @@ function generationOf(utteranceId: string): number {
 class SpeechService {
   private generation = 0;
   private session: Session | null = null;
+  private stream: StreamingSession | null = null;
+  private readonly spokenMessageIds = new Set<string>();
   private memo: Promise<SetupOutcome> | null = null;
   private chain: Promise<unknown> = Promise.resolve();
   private maxInputLength = DEFAULT_MAX_INPUT_LENGTH;
@@ -112,10 +119,8 @@ class SpeechService {
   stop(): void {
     this.generation++;
     this.session = null;
-    const { speakingMessageId, phase } = store();
-    if (speakingMessageId !== null || phase === 'speaking') {
-      this.put({ speakingMessageId: null, ...(phase === 'speaking' ? { phase: 'ready' as const } : {}) });
-    }
+    if (this.stream) this.stream.stopped = true;
+    this.clearSpeaking();
     this.engine.stop().catch(error => logger.warn(`${LOG} stop failed`, error));
   }
 
@@ -168,7 +173,125 @@ class SpeechService {
     if (on) this.refreshInBackground();
   }
 
+  /**
+   * The host calls this with the whole answer so far on every streamed token, from inside a store action:
+   * stay synchronous and cheap. Each finished sentence goes to the engine. The last one is held until a
+   * later sentence exists, because it may still grow; the rest is read by onStreamingEnd().
+   */
+  onStreamingToken(cumulative: string): void {
+    if (!store().autoSpeak || !this.canSpeak()) return;
+    const stream = this.streamFor(cumulative.length);
+    if (stream.stopped) return;
+    this.enqueueStream(stream, stream.takeFinished(cumulative));
+  }
+
+  /**
+   * The host calls this each time streaming stops for a conversation, which includes the pause between tool
+   * rounds. The reply's last sentences are read from the stored message; the next token starts a new session.
+   */
+  onStreamingEnd(conversationId: string): void {
+    const stream = this.stream;
+    if (!stream || stream.ended) return;
+    if (stream.conversationId !== null && conversationId !== stream.conversationId) return; // another chat's stream is still live
+    if (!stream.stopped && store().autoSpeak && this.canSpeak()) this.readRemainder({ stream, conversationId });
+    stream.ended = true;
+    this.settleStream(stream);
+  }
+
   // ---------------------------------------------------------------------------------------------
+
+  /** The session this token belongs to: the running one, or a new one when the last reply is over. */
+  private streamFor(length: number): StreamingSession {
+    const { streamingForConversationId: conversationId, getConversationMessages } = useChatStore.getState();
+    const messageCount = conversationId === null ? 0 : getConversationMessages(conversationId).length;
+    const current = this.stream;
+    if (current && !current.isOver({ length, messageCount })) {
+      current.noteLength(length);
+      return current;
+    }
+    // The generation bump drops any queued speech of the reply before; what is already playing finishes.
+    const stream = new StreamingSession({ gen: ++this.generation, conversationId, messageCount, length });
+    this.stream = stream;
+    this.session = stream;
+    return stream;
+  }
+
+  /** Queue sentences of the streaming reply. They reach the engine once it is set up (right away when it is). */
+  private enqueueStream(stream: StreamingSession, sentences: string[]): void {
+    if (sentences.length === 0) return;
+    stream.queue.push(...sentences);
+    if (store().speakingMessageId !== STREAMING_ID || store().phase !== 'speaking') {
+      this.put({ speakingMessageId: STREAMING_ID, phase: 'speaking' });
+    }
+    if (stream.ready) {
+      this.flushStream(stream);
+    } else if (!stream.starting) {
+      stream.starting = true;
+      this.ensureReady()
+        .then(outcome => this.streamReady({ stream, outcome }))
+        .catch(error => logger.error(`${LOG} streaming speech failed`, error));
+    }
+  }
+
+  private streamReady(input: { stream: StreamingSession; outcome: SetupOutcome }): void {
+    const { stream, outcome } = input;
+    stream.starting = false;
+    if (this.stream !== stream || stream.stopped) {
+      stream.queue = []; // a stop or a newer reply got here first and has already reset the state
+      return;
+    }
+    if (outcome !== 'ready') {
+      // No engine to read with: give this reply up instead of retrying the engine on every token.
+      stream.stopped = true;
+      stream.queue = [];
+      this.session = null;
+      this.clearSpeaking();
+      return;
+    }
+    stream.ready = true;
+    this.flushStream(stream);
+  }
+
+  /** Hand the queued sentences to the engine in order, cut to the size it accepts. */
+  private flushStream(stream: StreamingSession): void {
+    const { gen } = stream;
+    for (const text of chunkForEngine({ sentences: stream.queue.splice(0), maxLen: this.maxInputLength })) {
+      const { rate, pitch } = store();
+      const utteranceId = stream.nextUtteranceId();
+      this.serialForGen(gen, () => this.engine.speak({ text, utteranceId, rate, pitch }))
+        .catch(error => this.speakFailed(gen, error));
+    }
+    this.settleStream(stream);
+  }
+
+  /** Read what the stream left over from the message the host stored, and mark it as read. */
+  private readRemainder(input: { stream: StreamingSession; conversationId: string }): void {
+    const { stream, conversationId } = input;
+    const messages = useChatStore.getState().getConversationMessages(conversationId);
+    const message = messages[messages.length - 1];
+    if (!isUnreadAnswer(message, { since: stream.startedAt, spoken: this.spokenMessageIds })) return;
+    const { rest, aligned } = stream.takeRemainder(message.content);
+    if (!aligned) logger.warn(`${LOG} prefix-mismatch between the streamed and the stored reply`);
+    this.enqueueStream(stream, rest);
+    this.spokenMessageIds.add(message.id);
+    // Name the stored reply, so its Speak button shows Stop speaking while it is read.
+    if (store().speakingMessageId === STREAMING_ID) this.put({ speakingMessageId: message.id });
+  }
+
+  /** Once the reply has ended and the engine has finished everything it was given, go back to ready. */
+  private settleStream(stream: StreamingSession): void {
+    if (!stream.ended || stream.stopped || stream.queue.length > 0 || this.stream !== stream) return;
+    stream.total = stream.issued;
+    if (stream.issued > 0 && stream.done.size >= stream.total && this.session === stream) this.finish();
+  }
+
+  /** Clear the speaking state, keeping a phase the service did not set to 'speaking' (unavailable, error). */
+  private clearSpeaking(): void {
+    const { speakingMessageId, phase } = store();
+    if (speakingMessageId !== null || phase === 'speaking') {
+      this.put({ speakingMessageId: null, ...(phase === 'speaking' ? { phase: 'ready' as const } : {}) });
+    }
+  }
 
   /** Fire-and-forget refresh(). refresh() reports its outcome through the store, so there is nothing to await. */
   private refreshInBackground(): void {
