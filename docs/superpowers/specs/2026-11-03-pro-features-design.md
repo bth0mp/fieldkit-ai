@@ -364,7 +364,10 @@ Slice 3 is pure TypeScript and is not blocked by it.
 1. **Native code lands through a local Android toolchain.** Install the Android SDK
    command-line tools and NDK 27.1.12297006 on this PC, and set `ANDROID_HOME` /
    `local.properties`. The pre-push hook's Gradle checks then run, and debug APKs build
-   locally. This is the first task of slice 1.
+   locally. This is the first task of slice 1. The owner also approved (2026-11-03)
+   installing Eclipse Temurin JDK 17 with winget, accepting its license (GPLv2 with Classpath
+   Exception; build tool only, never shipped) and the winget source agreement. React Native's
+   Gradle plugin pins `jvmToolchain(17)`.
 2. **Device testing over USB.** The owner connects the S24 Ultra with USB debugging for
    each native slice, and the builder installs the debug build (`com.bth0mp.fieldkit.dev`)
    with adb and runs the on-device checks in Verification.
