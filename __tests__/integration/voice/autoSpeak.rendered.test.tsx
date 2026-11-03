@@ -261,6 +261,25 @@ describe('Read replies aloud (rendered)', () => {
     expect(spoken(h)).toEqual(['One.', 'Two.', 'Three.']);
   }, 20000);
 
+  it('tool-call markup: nothing of an unclosed call body is read', async () => {
+    const h = await setupChatScreen({ engine: 'llama', speech: {} });
+    await readAloudChat(h, { toolsOff: true });
+
+    // Held inside the call body, which is not closed yet: none of it is read, and 'Two.' waits as the last piece.
+    const call = toolCallText('web_search', { query: 'weather' });
+    h.boundary.llama!.scriptCompletion({ text: `One. Two. ${call} Three.`, pauseAfter: '<tool_call>{"name":' });
+    await h.tapSend('q');
+    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['One.']), TIMEOUT);
+    await h.settle(200);
+    expect(spoken(h)).toEqual(['One.']);
+
+    h.boundary.llama!.releaseStream();
+    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['One.', 'Two.', 'Three.']), TIMEOUT);
+    await h.settle(200);
+    expect(spoken(h)).toEqual(['One.', 'Two.', 'Three.']);
+    for (const text of spoken(h)) expect(text).not.toMatch(/tool|name|web_search|weather|[{}"<>]/);
+  }, 20000);
+
   it('second tool round speaks in full', async () => {
     const h = await setupChatScreen({ engine: 'llama', speech: {} });
     h.enableToolViaUI('calculator');
@@ -373,7 +392,10 @@ describe('Read replies aloud (rendered)', () => {
     // The engine is still starting when the first sentences are ready; the user stops the reply before it is up.
     h.boundary.llama!.scriptCompletion({ text: 'Slow one. Slow two. Slow three.', pauseAfter: 'Slow two. S' });
     await h.tapSend('q');
-    await h.settle(200);
+    // Finished sentences are waiting on the engine, which is still starting: none has reached it yet.
+    const { useSpeechStore } = require('../../../src/stores/speechStore');
+    await h.rtl.waitFor(() => expect(useSpeechStore.getState().speakingMessageId).toBe('streaming'), TIMEOUT);
+    expect(h.boundary.speech!.calls.speak).toEqual([]);
     await pressStop(h);
     await h.rtl.act(async () => { h.boundary.speech!.releaseInit(); });
     await h.rtl.waitFor(() => expect(h.boundary.speech!.module.getVoices).toHaveBeenCalled(), TIMEOUT);
