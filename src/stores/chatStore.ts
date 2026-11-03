@@ -131,6 +131,10 @@ export const useChatStore = create<ChatState>()(
       },
 
       deleteConversation: (conversationId) => {
+        // A tool call of this chat may be waiting on its approval card: decline it, so the action never
+        // runs and its turn moves on. Lazy require: the store does not load the service layer at import.
+        const { actionApprovalService } = require('../services/actions/actionApprovalService');
+        actionApprovalService.declineConversation(conversationId);
         set((state) => ({
           conversations: state.conversations.filter((c) => c.id !== conversationId),
           activeConversationId: state.activeConversationId === conversationId ? null : state.activeConversationId,

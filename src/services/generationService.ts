@@ -3,8 +3,9 @@ import { llmService } from './llm';
 import { getActiveEngineService, stopAllTextEngines } from './engines';
 import { useAppStore, useChatStore, useRemoteServerStore } from '../stores';
 import { Message, GenerationMeta, MediaAttachment } from '../types';
-import { runToolLoop } from './generationToolLoop';
+import { runToolLoop, type ToolLoopOutcome } from './generationToolLoop';
 import type { ToolResult } from './tools/types';
+import { actionApprovalService } from './actions/actionApprovalService';
 import { providerRegistry } from './providers';
 import logger from '../utils/logger';
 import { maybeScheduleSharePrompt } from '../utils/sharePrompt';
@@ -16,6 +17,7 @@ import {
   generateResponseImpl,
   generateRemoteResponseImpl,
   generateRemoteWithToolsImpl,
+  finishToolTurnImpl,
   type GenerationWithToolsRequest,
 } from './generationServiceHelpers';
 
@@ -175,7 +177,7 @@ class GenerationService {
       onToolCallComplete?: (name: string, result: ToolResult) => void;
       onFirstToken?: () => void;
     },
-  ): Promise<import('./generationToolLoop').ToolLoopOutcome | void> {
+  ): Promise<ToolLoopOutcome | void> {
     // Route to remote provider if active
     if (this.isUsingRemoteProvider()) {
       return this.generateRemoteWithTools(conversationId, messages, options);
@@ -183,6 +185,7 @@ class GenerationService {
     // Local generation with tools
     const { enabledToolIds, projectId, ...callbacks } = options;
     if (!(await this.prepareGeneration(conversationId))) return;
+    const handlers = this.buildToolLoopHandlers(); // after prepare: it captures this turn's token
 
     try {
       const outcome = await runToolLoop({
@@ -191,24 +194,13 @@ class GenerationService {
         enabledToolIds,
         projectId,
         callbacks,
-        ...this.buildToolLoopHandlers(),
+        ...handlers,
       });
-
-      // If aborted, stopGeneration() already handled cleanup.
-      logger.log(`[GenService][ToolLoop] runToolLoop done — aborted=${this.abortRequested}, streamingContent=${this.state.streamingContent?.length ?? 0}ch, tokenBuffer=${this.tokenBuffer?.length ?? 0}ch`);
-      if (!this.abortRequested) {
-        this.forceFlushTokens();
-        const store = useChatStore.getState();
-        logger.log(`[GenService][ToolLoop] pre-finalize — streamingForConvId=${store.streamingForConversationId}, targetConvId=${conversationId}, streamingMsg=${store.streamingMessage?.length ?? 0}ch`);
-        const generationTime = this.state.startTime ? Date.now() - this.state.startTime : undefined;
-        store.finalizeStreamingMessage(conversationId, generationTime, this.buildGenerationMeta());
-        logger.log(`[GenService][ToolLoop] finalizeStreamingMessage called — convId=${conversationId}`);
-        this.checkSharePrompt();
-        this.resetState();
-      }
+      // Only the live turn finalizes; a stopped one was cleaned up by stopGeneration().
+      finishToolTurnImpl(this, { conversationId, outcome, isTurnLive: handlers.isTurnLive });
       return outcome;
     } catch (error) {
-      if (this.abortRequested) return;
+      if (!handlers.isTurnLive()) return; // stopped or replaced: the error belongs to a turn that is over
       logger.error('[GenerationService] Tool generation error:', error);
       // Even on error, keep any partial the user already saw — keepShownPartialOrClear flushes the token
       // buffer to the store first (do NOT discard it here), then finalizes.
@@ -264,6 +256,10 @@ class GenerationService {
     // Set abort flag BEFORE stopping so the onComplete callback
     // knows we're stopping and won't finalize/reset on its own.
     this.abortRequested = true;
+    // A tool call of this turn may be waiting on its approval card, in this chat or one the user left:
+    // decline it, so the action never runs and the waiting turn ends.
+    const convId = this.state.conversationId;
+    if (convId) actionApprovalService.declineConversation(convId);
     this.forceFlushTokens();
 
     const { startTime } = this.state;
@@ -315,7 +311,7 @@ class GenerationService {
     conversationId: string,
     messages: Message[],
     options: GenerationWithToolsRequest['options'],
-  ): Promise<void> {
+  ): Promise<ToolLoopOutcome | void> {
     return generateRemoteWithToolsImpl(this, { conversationId, messages, options });
   }
 

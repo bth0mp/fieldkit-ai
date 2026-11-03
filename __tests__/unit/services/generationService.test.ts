@@ -1095,6 +1095,7 @@ describe('generationService', () => {
       mockedRunToolLoop.mockImplementation(async ({ onStream, onThinkingDone }: any) => {
         onThinkingDone?.();
         onStream?.({ content: 'result', reasoningContent: '' });
+        return { interrupted: false };
       });
 
       await generationService.generateWithTools(convId, [
@@ -1113,6 +1114,7 @@ describe('generationService', () => {
         onStream?.({ content: 'before reset' });
         onStreamReset?.();
         onStream?.({ content: 'after reset' });
+        return { interrupted: false };
       });
 
       await generationService.generateWithTools(convId, [
@@ -1128,6 +1130,7 @@ describe('generationService', () => {
 
       mockedRunToolLoop.mockImplementation(async ({ onFinalResponse }: any) => {
         onFinalResponse?.('final answer');
+        return { interrupted: false };
       });
 
       await generationService.generateWithTools(convId, [
@@ -1315,7 +1318,7 @@ describe('generationService', () => {
 
     it('routes generateWithTools to generateRemoteWithTools and calls runToolLoop with forceRemote', async () => {
       const convId = setupWithConversation();
-      mockedRunToolLoop.mockResolvedValue(undefined);
+      mockedRunToolLoop.mockResolvedValue({ interrupted: false });
 
       await generationService.generateWithTools(convId, [
         createMessage({ role: 'user', content: 'use tools' }),
@@ -1343,6 +1346,7 @@ describe('generationService', () => {
       const convId = setupWithConversation();
       mockedRunToolLoop.mockImplementation(async ({ onFinalResponse }: any) => {
         onFinalResponse?.('remote result');
+        return { interrupted: false };
       });
 
       await generationService.generateWithTools(convId, [

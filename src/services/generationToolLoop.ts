@@ -8,7 +8,7 @@ import { Message } from '../types';
 import { getToolsAsOpenAISchema, executeToolCall } from './tools';
 import type { ToolCall, ToolResult } from './tools/types';
 import { normalizeToolResult, toolDeclinedResult, toolErrorResult, toolResultModelContent } from './tools/toolResult';
-import { approvalRequired } from './tools/toolOffering';
+import { approvalRequired, offeredToolIds, toolCallOffered } from './tools/toolOffering';
 import { approvalSummaryFor } from './tools/approvalSummary';
 import { actionApprovalService } from './actions/actionApprovalService';
 import { modelInputImageUris, modelInputAudioUris } from './modelMedia';
@@ -18,7 +18,7 @@ import { selectRelevantTools } from './litertToolSelector';
 import { isMcpEnabled } from './mcpContextBoost';
 import { selectToolsByEmbedding } from './toolEmbeddingRouter';
 import { providerRegistry } from './providers';
-import { getActiveEngineService, isRemoteTextModelActive } from './engines';
+import { activeTextCapabilities, getActiveEngineService, isRemoteTextModelActive } from './engines';
 import type { GenerationOptions, CompletionResult } from './providers/types';
 import logger from '../utils/logger';
 import { XML_TOOL_CALL_FUNCTION_MARKER, XML_TOOL_CALL_PARAMETER_MARKER } from '../utils/messageContent';
@@ -257,6 +257,10 @@ export interface ToolLoopContext {
   isAborted: () => boolean;
   /** False once this turn was stopped or replaced by a newer one (the service's turn token). */
   isTurnLive?: () => boolean;
+  /** Set by runToolLoop: the tool names sent to the model this turn. A built-in tool not named here never runs. */
+  offeredToolNames?: string[];
+  /** Set by runToolLoop: can the engine serving this turn wait on an approval card (EngineCapabilities)? */
+  supportsToolApproval?: boolean;
   onThinkingDone: () => void;
   onStream?: (data: StreamChunk) => void;
   onStreamReset?: () => void;
@@ -273,6 +277,11 @@ function getLastUserQuery(messages: Message[]): string {
     if (messages[i].role === 'user' && messages[i].content.trim()) return messages[i].content.trim();
   return '';
 }
+/** The result of a call for a tool this turn did not offer. The model reads it as a failed call. */
+function toolNotOfferedResult(tc: ToolCall, startMs: number): ToolResult {
+  return { ...toolErrorResult(tc, new Error('This tool is not available right now'), startMs), errorCategory: 'not-found' };
+}
+
 /**
  * The single defensive seam every tool execution funnels through. A tool that THROWS
  * (e.g. an MCP server that's down or disconnected) must NOT crash the turn; an empty
@@ -286,9 +295,17 @@ async function executeToolCallSafely(tc: ToolCall, ctx: ToolLoopContext): Promis
   const ext = exts.find(e => e.canHandle(tc.name));
   const start = Date.now();
   try {
+    // Only an offered tool runs. A call for a built-in tool this turn did not offer (switched off, withheld
+    // from this engine, or named in text injected into a reply) is refused before it can raise a card.
+    if (!toolCallOffered({ toolName: tc.name, offeredToolNames: ctx.offeredToolNames ?? [] })) {
+      logger.log(`[ToolLoop] refused "${tc.name}": not offered this turn`);
+      return toolNotOfferedResult(tc, start);
+    }
     // A tool that sends or writes waits for the user's tap on the approval card. It runs only when
     // approved AND its turn is still live: a stop (or a newer turn) while the card showed ends it.
     if (approvalRequired({ toolName: tc.name, conversationId: ctx.conversationId })) {
+      // An engine that cannot wait for the user (LiteRT's native loop times a call out) never shows a card.
+      if (!ctx.supportsToolApproval) return toolDeclinedResult(tc, start);
       const decision = await actionApprovalService.request({ call: tc, conversationId: ctx.conversationId, summary: approvalSummaryFor(tc) });
       if (decision === 'declined') return toolDeclinedResult(tc, start);
       if (!(ctx.isTurnLive?.() ?? !ctx.isAborted())) return toolDeclinedResult(tc, start);
@@ -864,13 +881,26 @@ async function selectEffectiveSchemas(ctx: ToolLoopContext, builtInSchemas: any[
  *  CONCURRENT next turn resets (the race that painted 'No response' on a user-stopped turn). */
 export interface ToolLoopOutcome { interrupted: boolean }
 
+/** Capabilities of the engine that serves this loop's completions, in callLLMWithRetry's routing order:
+ *  an active LiteRT model first, then a remote provider, then the local llama model. */
+function servingEngineCapabilities(ctx: ToolLoopContext) {
+  const { downloadedModels, activeModelId } = useAppStore.getState();
+  const model = downloadedModels?.find(m => m.id === activeModelId);
+  return activeTextCapabilities({ isRemote: !isLiteRTActive() && isUsingRemote(ctx.forceRemote), model });
+}
+
 export async function runToolLoop(ctx: ToolLoopContext): Promise<ToolLoopOutcome> {
   const chatStore = useChatStore.getState();
+  // Decide once per turn what is offered: an engine that cannot wait on an approval card is never offered a
+  // tool that needs one, and the gate refuses any built-in tool not offered here.
+  ctx.supportsToolApproval = servingEngineCapabilities(ctx).supportsToolApproval;
+  ctx.enabledToolIds = offeredToolIds({ enabledToolIds: ctx.enabledToolIds, conversationId: ctx.conversationId, supportsToolApproval: ctx.supportsToolApproval });
   const builtInSchemas = getToolsAsOpenAISchema(ctx.enabledToolIds);
   const extSchemas = getToolExtensions().flatMap(e => e.getOpenAISchemas?.() ?? []);
 
   const effectiveSchemas = await selectEffectiveSchemas(ctx, builtInSchemas, extSchemas);
-  ctx.onToolsRouted?.(effectiveSchemas.map((s: any) => s?.function?.name).filter(Boolean));
+  ctx.offeredToolNames = effectiveSchemas.map((s: any) => s?.function?.name).filter(Boolean);
+  ctx.onToolsRouted?.(ctx.offeredToolNames);
 
   const loopMessages = [...ctx.messages];
   let totalToolCalls = 0;
@@ -947,6 +977,9 @@ export async function runToolLoop(ctx: ToolLoopContext): Promise<ToolLoopOutcome
     chatStore.addMessage(ctx.conversationId, assistantMsg);
 
     await executeToolCalls(ctx, cappedToolCalls, loopMessages);
+    // The turn may have ended while a call waited on its card (a stop, or a newer turn): end it here, before
+    // another completion. The declined results stay: they pair with the stored tool-call message.
+    if (ctx.isAborted() || !(ctx.isTurnLive?.() ?? true)) return { interrupted: true };
 
     chatStore.setIsThinking(true);
     // The pause exists to let an on-device llama context settle between the tool

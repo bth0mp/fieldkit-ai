@@ -67,7 +67,7 @@ jest.mock('../../../src/stores/debugLogsStore', () => ({
 }));
 
 jest.mock('../../../src/services/generationToolLoop', () => ({
-  runToolLoop: jest.fn(() => Promise.resolve()),
+  runToolLoop: jest.fn(() => Promise.resolve({ interrupted: false })),
   buildLiteRTHistory: jest.fn(() => []),
 }));
 
@@ -103,6 +103,7 @@ function makeServiceSvc(overrides: any = {}) {
     resetState: jest.fn(),
     pendingStop: null,
     abortRequested: false,
+    turnSeq: 0, // the service's turn token (prepareGeneration bumps it; the tool loop handlers capture it)
     tokenBuffer: '',
     reasoningBuffer: '',
     totalReasoningLength: 0,
@@ -387,7 +388,7 @@ describe('generateRemoteWithToolsImpl', () => {
     const provider = { type: 'openai', capabilities: { supportsThinking: false } };
     const svc = makeServiceSvc({ getCurrentProvider: () => provider });
     // prepareGeneration clears abortRequested; the tool loop aborts mid-run.
-    mockedRunToolLoop.mockImplementationOnce(() => { svc.abortRequested = true; return Promise.resolve(); });
+    mockedRunToolLoop.mockImplementationOnce(() => { svc.abortRequested = true; return Promise.resolve({ interrupted: true }); });
 
     await generateRemoteWithToolsImpl(svc, {
       conversationId: 'conv-1',

@@ -15,6 +15,9 @@ export interface EngineCapabilities {
   audio: boolean;
   tools: boolean;
   thinking: boolean;
+  /** Can a tool call wait on the user's approval card? False where the engine's native tool loop times a
+   *  call out (LiteRT, 30 s), so approval-required tools are never offered there. */
+  supportsToolApproval: boolean;
 }
 
 /** Runtime inputs for deriveEngineCapabilities — passed explicitly so the rule is pure/testable. */
@@ -43,7 +46,7 @@ export interface CapabilityInputs {
  * THE single source for "what can the active text model do" — the exact rule previously
  * re-derived in useChatModelStateSync / useChatModelActions / useChatGenerationActions et al.
  * Precedence: remote (declared caps) → LiteRT (vision/audio from the model FLAG, no load needed;
- * tools/thinking only once the engine is loaded) → llama (all from the loaded engine) → none.
+ * tools/thinking only once the engine is loaded) → no engine (all false) → llama (all from the loaded engine).
  * Pure and zero-IO so callers keep their own reactive inputs; adding an engine is a branch here (OCP).
  */
 export function deriveEngineCapabilities(i: CapabilityInputs): EngineCapabilities {
@@ -53,6 +56,7 @@ export function deriveEngineCapabilities(i: CapabilityInputs): EngineCapabilitie
       tools: i.remoteCaps?.supportsToolCalling ?? false,
       thinking: i.remoteCaps?.supportsThinking ?? false,
       audio: false, // remote audio capability is not tracked today
+      supportsToolApproval: true, // the JS tool loop runs the call and can wait for the user
     };
   }
   if (i.engine === 'litert') {
@@ -61,7 +65,12 @@ export function deriveEngineCapabilities(i: CapabilityInputs): EngineCapabilitie
       audio: !!i.liteRTAudio,
       tools: i.liteRTLoaded, // native tool calling, but only once the engine is resident
       thinking: i.liteRTLoaded,
+      supportsToolApproval: false, // the native tool loop times a call out after 30 s, loaded or not
     };
+  }
+  // No engine at all: nothing to run on, so every capability fails closed.
+  if (!i.engine) {
+    return { vision: false, audio: false, tools: false, thinking: false, supportsToolApproval: false };
   }
   // llama (and any future engine): the LOADED engine's template-derived capabilities are
   // authoritative; before the lazy load, fall back to the static name/mmproj PREDICTION so a
@@ -71,6 +80,7 @@ export function deriveEngineCapabilities(i: CapabilityInputs): EngineCapabilitie
     audio: i.llama.loaded ? i.llama.audio : false,
     tools: i.llama.loaded ? i.llama.tools : (i.llamaPredicted?.tools ?? false),
     thinking: i.llama.loaded ? i.llama.thinking : (i.llamaPredicted?.thinking ?? false),
+    supportsToolApproval: true, // the JS tool loop runs the call and can wait for the user
   };
 }
 

@@ -50,6 +50,9 @@ jest.mock('../../../src/services/llm', () => ({
   llmService: {
     generateResponseWithTools: jest.fn(),
     supportsToolCalling: jest.fn(() => false),
+    // runToolLoop reads the serving engine's capabilities (engines.activeTextCapabilities).
+    getMultimodalSupport: jest.fn(() => null),
+    supportsThinking: jest.fn(() => false),
     stopGeneration: jest.fn().mockResolvedValue(undefined),
     isModelLoaded: jest.fn(() => true),
     generateToolSelection: jest.fn(),

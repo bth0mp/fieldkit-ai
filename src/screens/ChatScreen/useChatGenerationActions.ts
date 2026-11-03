@@ -9,6 +9,7 @@ import {
   contextCompactionService, ragService, retrievalService,
 } from '../../services';
 import { getToolExtensions } from '../../services/tools/extensions';
+import { offeredToolIds } from '../../services/tools/toolOffering';
 import { invalidateActiveConversation, activeLocalTextCapabilities, wantsLeadingThinkToken, localModelAcceptsImages } from '../../services/engines';
 import { needsVisionRepair } from '../../utils/visionRepair';
 import { ensureDefaultClassifier } from '../../services/classifierProvisioning';
@@ -329,12 +330,13 @@ const applyGemma4ThinkToken = (prompt: string, model: DownloadedModel | null | u
   return prepend ? `<|think|>\n${prompt}` : prompt;
 };
 
-function resolveToolsAndPrompt(deps: GenerationDeps, conversation: any, _messageText: string): { enabledTools: string[]; rawPrompt: string; localToolSupport: boolean } {
+function resolveToolsAndPrompt(deps: GenerationDeps, conversation: any, _messageText: string): { enabledTools: string[]; hintToolIds: string[]; rawPrompt: string; localToolSupport: boolean } {
   const project = conversation?.projectId ? useProjectStore.getState().getProject(conversation.projectId) : null;
   const { activeServerId, activeRemoteTextModelId } = useRemoteServerStore.getState();
   // Native tool-calling of the ACTIVE LOCAL engine (llama Jinja support / LiteRT loaded), resolved
   // by the engine registry — no engine === 'litert' branch here (OCP: add a backend in engines.ts).
-  const localToolSupport = activeLocalTextCapabilities(deps.activeModel).tools;
+  const localCaps = activeLocalTextCapabilities(deps.activeModel);
+  const localToolSupport = localCaps.tools;
   // Honour the UI gate: "N/A" (supportsToolCalling === false) means the picker is unreachable, so don't inject tools the user can't disable.
   const canUseTools = deps.supportsToolCalling !== false && (localToolSupport || !!(activeServerId && activeRemoteTextModelId));
 
@@ -344,9 +346,12 @@ function resolveToolsAndPrompt(deps: GenerationDeps, conversation: any, _message
   // the two can never drift ("0 tools" in the popover but "Tools sent in request (1)" — device 2026-07-14).
   // The user enables KB search explicitly when they want it.
   const enabledTools = canUseTools ? (deps.settings.enabledTools || []) : [];
+  // The text hint names only what the tool loop will offer (toolOffering), so it never names a tool
+  // this engine withholds.
+  const hintToolIds = offeredToolIds({ enabledToolIds: enabledTools, conversationId: conversation?.id ?? null, supportsToolApproval: localCaps.supportsToolApproval });
 
   const rawPrompt = project?.systemPrompt || deps.settings.systemPrompt || APP_CONFIG.defaultSystemPrompt;
-  return { enabledTools, rawPrompt, localToolSupport };
+  return { enabledTools, hintToolIds, rawPrompt, localToolSupport };
 }
 export async function startGenerationFn(deps: GenerationDeps, call: StartGenerationCall): Promise<void> {
   // PER-TURN stop truth (from the tool loop's outcome) — never the service's shared abort flag,
@@ -363,7 +368,7 @@ export async function startGenerationFn(deps: GenerationDeps, call: StartGenerat
     return;
   }
   const conversation = useChatStore.getState().conversations.find(c => c.id === targetConversationId);
-  const { enabledTools, rawPrompt, localToolSupport } = resolveToolsAndPrompt(deps, conversation, messageText);
+  const { enabledTools, hintToolIds, rawPrompt, localToolSupport } = resolveToolsAndPrompt(deps, conversation, messageText);
   let basePrompt = await injectRagContext(conversation?.projectId, messageText, rawPrompt);
 
   // In voice/audio mode the pro audio feature augments the prompt for spoken
@@ -375,7 +380,7 @@ export async function startGenerationFn(deps: GenerationDeps, call: StartGenerat
   // Text hint only when the LOCAL engine lacks native tool-calling (llama without Jinja); LiteRT
   // and remote pass tools natively, so injecting a hint would double-inject. localToolSupport is
   // the engine-registry answer — no engine === 'litert' branch here.
-  const useTextHint = !isRemote && !localToolSupport && activeTools.length > 0;
+  const useTextHint = !isRemote && !localToolSupport && hintToolIds.length > 0;
 
   // MCP/extension hints are injected once, centrally, by augmentSystemPromptForTools
   // in the tool loop (covers every engine + tool path). Do NOT add them here too, or
@@ -383,7 +388,7 @@ export async function startGenerationFn(deps: GenerationDeps, call: StartGenerat
   // added here, and only when the model lacks native Jinja tool calling.
   const systemPrompt = applyGemma4ThinkToken(
     useTextHint
-      ? `${basePrompt}${buildToolSystemPromptHint(activeTools)}`
+      ? `${basePrompt}${buildToolSystemPromptHint(hintToolIds)}`
       : basePrompt,
     deps.activeModel,
     { isRemote },
@@ -619,16 +624,16 @@ export async function regenerateResponseFn(deps: GenerationDeps, call: Regenerat
   const messages = (conversation?.messages || []).filter((m: Message) => !m.isSystemInfo);
   const messagesUpToUser = messages.slice(0, messages.findIndex((m: Message) => m.id === userMessage.id) + 1)
     .map(m => m.id === userMessage.id ? { ...m, content: messageText } : m);
-  const { enabledTools, rawPrompt, localToolSupport } = resolveToolsAndPrompt(deps, conversation, messageText);
+  const { enabledTools, hintToolIds, rawPrompt, localToolSupport } = resolveToolsAndPrompt(deps, conversation, messageText);
   const isRemote = !!useRemoteServerStore.getState().activeRemoteTextModelId;
   const activeTools = enabledTools;
   const basePrompt = await injectRagContext(conversation?.projectId, messageText, rawPrompt);
-  const useTextHint = !isRemote && !localToolSupport && activeTools.length > 0;
+  const useTextHint = !isRemote && !localToolSupport && hintToolIds.length > 0;
   // MCP/extension hints come solely from augmentSystemPromptForTools in the tool loop
   // (see the send path above) — adding them here too would double-inject.
   const systemPrompt = applyGemma4ThinkToken(
     useTextHint
-      ? `${basePrompt}${buildToolSystemPromptHint(activeTools)}`
+      ? `${basePrompt}${buildToolSystemPromptHint(hintToolIds)}`
       : basePrompt,
     deps.activeModel,
     { isRemote },

@@ -5,7 +5,7 @@ import { liteRTService } from './litert';
 import { getActiveEngineService } from './engines';
 import { useAppStore, useChatStore, useRemoteServerStore } from '../stores';
 import type { Message, GenerationMeta } from '../types';
-import { runToolLoop, buildLiteRTHistory } from './generationToolLoop';
+import { runToolLoop, buildLiteRTHistory, type ToolLoopOutcome } from './generationToolLoop';
 import { effectiveCacheType } from './llmHelpers';
 import { modelInputImageUris, modelInputAudioUris } from './modelMedia';
 import { clearModelFailure } from './modelFailureHandler';
@@ -29,6 +29,21 @@ function keepShownPartialOnError(svc: any, conversationId: string): void {
   const generationTime = svc.state.startTime ? Date.now() - svc.state.startTime : undefined;
   useChatStore.getState().finalizeStreamingMessage(conversationId, generationTime, buildGenerationMetaImpl(svc));
   svc.resetState();
+}
+
+/**
+ * End a tool-loop turn. Only the live turn touches the store: a stopped or replaced one was cleaned up by
+ * stopGeneration(), and finalizing it now would finalize the NEXT turn's stream. A completed live turn
+ * finalizes its reply. A live turn that a native stop interrupted (its chat deleted or its model unloaded
+ * mid-reply, not the user's Stop) still owns the generation state, so it keeps what is shown and ends too.
+ */
+export function finishToolTurnImpl(svc: any, turn: { conversationId: string; outcome: ToolLoopOutcome; isTurnLive: () => boolean }): void {
+  const { conversationId, outcome, isTurnLive } = turn;
+  const live = isTurnLive();
+  logger.log(`[GenService][ToolLoop] turn done conv=${conversationId} interrupted=${outcome.interrupted} live=${live}`);
+  if (!live) return;
+  keepShownPartialOnError(svc, conversationId);
+  if (!outcome.interrupted) svc.checkSharePrompt();
 }
 type StreamChunk = string | { content?: string; reasoningContent?: string };
 
@@ -442,7 +457,7 @@ export async function generateRemoteResponseImpl(
 export async function generateRemoteWithToolsImpl(
   svc: any,
   req: GenerationWithToolsRequest,
-): Promise<void> {
+): Promise<ToolLoopOutcome | void> {
   const { conversationId, messages, options } = req;
   logger.log(`[GenService][DEBUG] generateRemoteWithToolsImpl — conv=${conversationId}, messages=${messages.length}, enabledToolIds=[${options.enabledToolIds.join(', ')}]`);
   if (!(await prepareGenerationImpl(svc, conversationId))) {
@@ -455,29 +470,19 @@ export async function generateRemoteWithToolsImpl(
   logger.log(`[GenService][DEBUG] Provider ready — type=${provider.type}, capabilities=${JSON.stringify(provider.capabilities)}`);
 
   const { enabledToolIds, projectId, ...callbacks } = options;
+  const handlers = buildToolLoopHandlersImpl(svc);
 
   try {
     // Use the same tool loop but with remote provider
-    await runToolLoop({
+    const outcome = await runToolLoop({
       conversationId, messages, enabledToolIds, projectId, callbacks,
-      ...buildToolLoopHandlersImpl(svc),
+      ...handlers,
       forceRemote: true,
     });
-
-    if (svc.abortRequested) {
-      logger.log(`[GenService][DEBUG] Generation was aborted, skipping finalize`);
-    } else {
-      svc.forceFlushTokens();
-      const generationTime = svc.state.startTime ? Date.now() - svc.state.startTime : undefined;
-      logger.log(`[GenService][DEBUG] Finalizing — streamingContent length=${svc.state.streamingContent?.length || 0}, generationTime=${generationTime}ms`);
-      useChatStore.getState().finalizeStreamingMessage(
-        conversationId, generationTime, buildGenerationMetaImpl(svc),
-      );
-      svc.checkSharePrompt();
-      svc.resetState();
-    }
+    finishToolTurnImpl(svc, { conversationId, outcome, isTurnLive: handlers.isTurnLive });
+    return outcome;
   } catch (error) {
-    if (svc.abortRequested) return;
+    if (!handlers.isTurnLive()) return; // stopped or replaced: the error belongs to a turn that is over
     logger.error('[GenerationService] Remote tool generation error:', error);
     // Reset generating state on error, else isGenerating stays stuck → red stop, next send blocked (2026-07-14).
     keepShownPartialOnError(svc, conversationId);

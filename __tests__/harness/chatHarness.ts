@@ -370,6 +370,34 @@ export async function setupChatScreen(opts: ChatHarnessOptions) {
       rtl.fireEvent.press(await rtl.waitFor(btn)); // tap: stop & send → transcribeFile → onTranscript → send
     },
 
+    /**
+     * Arrive-via-UI at another chat: leave this one (going back to Home pops the chat screen, so it unmounts),
+     * then either start a new chat (null) or tap that conversation's `conversation-item-N` row on the real
+     * Home screen (its continueChat sets it active), and mount the chat screen again with the route params
+     * navigation hands it. A fresh mount, not a rerender: the screen applies its route params in an effect
+     * keyed on `params.conversationId`, so a rerender from `{}` to `{}` would leave the old chat active.
+     */
+    async openChat(conversationId: string | null) {
+      // The navigation mock's useRoute requires this module AFTER setupChatScreen's jest.resetModules, so the
+      // screen reads that instance's routeHolder, not the one this closure was imported with.
+      const route: typeof routeHolder = require('./chatHarness').routeHolder;
+      this.view?.unmount();
+      if (conversationId) {
+        const recent: Array<{ id: string }> = useChatStore.getState().conversations.slice(0, 4); // Home's Recent list
+        const index = recent.findIndex((c) => c.id === conversationId);
+        if (index < 0) throw new Error(`openChat: conversation ${conversationId} is not in Home's Recent list`);
+        const homeView = rtl.render(React.createElement(HomeScreen, { navigation: { navigate: () => {}, goBack: () => {}, setOptions: () => {}, addListener: () => () => {} } }));
+        rtl.fireEvent.press(await rtl.waitFor(() => homeView.getByTestId(`conversation-item-${index}`)));
+        await rtl.waitFor(() => { expect(useChatStore.getState().activeConversationId).toBe(conversationId); });
+        homeView.unmount();
+        route.params = { conversationId };
+      } else {
+        route.params = {};
+      }
+      this.render();
+      await rtl.waitFor(() => { expect(useChatStore.getState().activeConversationId).toBe(conversationId); });
+    },
+
     /** Mount the real ChatScreen (plus the real app.root slot when pro is active, so the TTS EngineBridge
      *  mounts and the voice engine can load over the executorch fake — the same slot App.tsx renders). */
     render() {
