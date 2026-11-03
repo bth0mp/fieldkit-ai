@@ -286,7 +286,7 @@ describe('recovery', () => {
     expect(t.state().enginePackage).toBeNull();
   });
 
-  it('setAutoSpeak(true) checks the engine; false only stores the preference', async () => {
+  it('setAutoSpeak(true) checks the engine; false with no streamed reply being read only stores the preference', async () => {
     const t = boot();
     t.service.setAutoSpeak(false);
     expect(t.speech.module.init).not.toHaveBeenCalled();

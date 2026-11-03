@@ -185,7 +185,9 @@ class SpeechService {
   setAutoSpeak(on: boolean): void {
     this.put({ autoSpeak: on });
     if (on) {
-      this.refreshInBackground();
+      // Check the engine through the memoized setup (it runs again after a failed or unavailable one), not
+      // refresh(): refresh's stop() would cut off a message chosen with Speak.
+      if (this.engine.isPresent()) this.ensureReady().catch(error => logger.error(`${LOG} engine check failed`, error));
       // Turning reading on asks to hear the live turn, also one a stop silenced; a chat the user left stays
       // silent. A stream a stop cut off is dropped, so the reply is read again from its first finished sentence.
       if (this.silencedTurn === generationSession.getConversationId()) this.silencedTurn = null;

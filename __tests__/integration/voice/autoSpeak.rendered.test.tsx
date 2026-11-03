@@ -501,6 +501,34 @@ describe('Read replies aloud (rendered)', () => {
     expect(spoken(h)).toEqual(expected);
   }, 20000);
 
+  it('switching read-aloud on keeps a reply chosen with Speak playing', async () => {
+    const h = await setupChatScreen({ engine: 'llama', speech: {} });
+    mountChat(h);
+    await h.send('hi', { text: 'Earlier one. Earlier two.' });
+    await h.rtl.waitFor(() => expect(h.view!.queryByText(/Earlier one\. Earlier two\./)).not.toBeNull(), TIMEOUT);
+    await waitUntilGone(h, 'stop-button');
+
+    // Read-aloud is off. The user taps Speak on the reply, and the engine finishes its first chunk.
+    h.rtl.fireEvent.press(h.view!.getByLabelText('Speak'));
+    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['Earlier one.', 'Earlier two.']), TIMEOUT);
+    await h.rtl.waitFor(() => expect(h.view!.queryByLabelText('Stop speaking') === null).toBe(false), TIMEOUT);
+    const [first, second] = h.boundary.speech!.calls.speak.map(call => call.utteranceId);
+    await h.rtl.act(async () => { h.boundary.speech!.emit('FieldkitSpeech_done', { utteranceId: first }); });
+
+    // Read-aloud on: the engine is not stopped, and the reply is still being read.
+    const before = stopCalls(h);
+    await setReadAloud(h, true);
+    await h.settle(100);
+    expect(stopCalls(h)).toBe(before);
+    expect(h.view!.queryByLabelText('Stop speaking') === null).toBe(false);
+
+    // The engine reads the rest: the reply ends normally and its button is back to Speak.
+    await h.rtl.act(async () => { h.boundary.speech!.emit('FieldkitSpeech_done', { utteranceId: second }); });
+    await h.rtl.waitFor(() => expect(h.view!.queryByLabelText('Stop speaking') === null).toBe(true), TIMEOUT);
+    expect(h.view!.queryByLabelText('Speak') === null).toBe(false);
+    expect(spoken(h)).toEqual(['Earlier one.', 'Earlier two.']);
+  }, 20000);
+
   it('switching read-aloud on while a reply streams reads that reply from its first sentence', async () => {
     const h = await setupChatScreen({ engine: 'llama', speech: {} });
     mountChat(h);
