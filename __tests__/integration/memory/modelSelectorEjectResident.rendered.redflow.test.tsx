@@ -61,5 +61,5 @@ describe('per-model eject (TDD) — model selector In Memory section', () => {
     // The sheet re-projects residency on its poll — wait for the speech chip to clear; image stays.
     await h.rtl.waitFor(() => { expect(v.queryByTestId('models-row-speech-ram')).toBeNull(); }, { timeout: 4000 });
     expect(v.queryByTestId('models-row-image-ram')).not.toBeNull();
-  });
+  }, 30000); // Heavy entry point: runs at about the 10 s default alone, like the other 30 s suites.
 });
