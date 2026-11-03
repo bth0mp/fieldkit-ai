@@ -8,6 +8,7 @@ import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Build
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.speech.tts.TextToSpeech
@@ -107,8 +108,16 @@ class FieldkitSpeechModule(reactContext: ReactApplicationContext) :
         val engine = tts ?: return promise.reject("NOT_BOUND", "Speech engine is not bound")
         try {
             val voice = engine.voices.orEmpty().firstOrNull { it.name == id }
-            val usable = voice != null && isUsableOffline(voice.isNetworkConnectionRequired, voice.features)
-            promise.resolve(usable && engine.setVoice(voice) == TextToSpeech.SUCCESS)
+            if (voice != null &&
+                isUsableOffline(voice.isNetworkConnectionRequired, voice.features) &&
+                engine.setVoice(voice) == TextToSpeech.SUCCESS
+            ) {
+                // One line per selection: the on-device privacy check reads this from logcat.
+                Log.i(NAME, describeVoice(voice.name, voice.isNetworkConnectionRequired, voice.features))
+                promise.resolve(true)
+            } else {
+                promise.resolve(false)
+            }
         } catch (e: Exception) {
             promise.reject("VOICE_ERROR", e.message, e)
         }
@@ -126,7 +135,7 @@ class FieldkitSpeechModule(reactContext: ReactApplicationContext) :
             engine.setSpeechRate(rate.toFloat())
             engine.setPitch(pitch.toFloat())
             synchronized(focusLock) { queuedIds.add(utteranceId) }
-            if (engine.speak(text, TextToSpeech.QUEUE_ADD, null, utteranceId) != TextToSpeech.SUCCESS) {
+            if (engine.speak(text, TextToSpeech.QUEUE_ADD, speakParams(), utteranceId) != TextToSpeech.SUCCESS) {
                 finishUtterance(utteranceId)
                 return promise.reject("SPEAK_ERROR", "speak() failed for ${text.length} characters")
             }
@@ -160,6 +169,9 @@ class FieldkitSpeechModule(reactContext: ReactApplicationContext) :
             promise.resolve(null)
         } catch (e: ActivityNotFoundException) {
             promise.reject("NO_INSTALLER", "No voice installer is available on this device", e)
+        } catch (e: Exception) {
+            // Anything else (for example a SecurityException) must not escape a @ReactMethod.
+            promise.reject("INSTALLER_FAILED", e.message ?: "Could not open the voice installer", e)
         }
     }
 
@@ -386,6 +398,21 @@ class FieldkitSpeechModule(reactContext: ReactApplicationContext) :
 
         internal fun isNotInstalled(features: Set<String>?): Boolean =
             features?.contains(TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED) == true
+
+        /**
+         * Parameters for every utterance. KEY_FEATURE_EMBEDDED_SYNTHESIS asks the engine to
+         * synthesize on the device. It is only a hint (the voice gate in [isUsableOffline] is what
+         * enforces offline use); the platform deprecated the key in API 21, so it is kept only as a
+         * harmless on-device hint.
+         */
+        @Suppress("DEPRECATION")
+        internal fun speakParams(): Bundle = Bundle().apply {
+            putString(TextToSpeech.Engine.KEY_FEATURE_EMBEDDED_SYNTHESIS, "true")
+        }
+
+        /** The log line written when a voice is selected: its name, network flag and sorted feature set. */
+        internal fun describeVoice(name: String, networkRequired: Boolean, features: Set<String>?): String =
+            "voice=$name networkRequired=$networkRequired features=${features?.sorted()}"
 
         /** The requested engine when it is installed, otherwise the system default (null when there is none). */
         internal fun pickEngine(requested: String?, installed: List<String>, defaultEngine: String?): String? =
