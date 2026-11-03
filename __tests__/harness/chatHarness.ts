@@ -20,7 +20,7 @@
  *   await h.send('what is the capital of France', { text: 'Paris.' });  // types, presses send, awaits reply
  *   expect(h.view.queryByText(/Paris\./)).not.toBeNull();
  */
-import { installNativeBoundary, requireRTL, GB, type RamProfile, type CompletionMeta } from './nativeBoundary';
+import { installNativeBoundary, requireRTL, GB, type RamProfile, type CompletionMeta, type SpeechFakeOptions } from './nativeBoundary';
 import { createDownloadedModel } from '../utils/factories';
 
 /** Shared route params the test's navigation mock reads (set by setupChatScreen). */
@@ -38,6 +38,8 @@ export interface ChatHarnessOptions {
   audio?: boolean;
   /** Install the driveable whisper.rn STT fake (for chat-mode voice input flows). */
   whisper?: boolean;
+  /** Install the FieldkitSpeech native fake (system text-to-speech). Omit to model a device without the module. */
+  speech?: SpeechFakeOptions;
   /** Install the stateful background-download native fake (drive DownloadProgress/Complete/Error
    *  events through the real backgroundDownloadService — e.g. an in-flight STT model download). */
   download?: boolean;
@@ -64,7 +66,7 @@ export interface ChatHarnessOptions {
 export async function setupChatScreen(opts: ChatHarnessOptions) {
   const platform = opts.platform ?? 'android';
   const ram = opts.ram ?? { platform, totalBytes: 12 * GB, availBytes: 8 * GB };
-  const boundary = installNativeBoundary({ llama: opts.engine === 'llama', llamaChatTemplate: opts.chatTemplate, fs: true, ram, whisper: opts.whisper, download: opts.download });
+  const boundary = installNativeBoundary({ llama: opts.engine === 'llama', llamaChatTemplate: opts.chatTemplate, fs: true, ram, whisper: opts.whisper, download: opts.download, speech: opts.speech });
 
   // Global boundary polyfill: React 19's error reporter calls window.dispatchEvent; in the node test
   // env there is no window, so an unrelated crash would mask real errors. This is a jsdom/global shim,

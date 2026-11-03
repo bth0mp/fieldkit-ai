@@ -31,6 +31,8 @@
 // error/tool_call. loadModel resolves { backend, maxNumTokens }.
 // ---------------------------------------------------------------------------
 
+import type { SpeechVoice } from '../../src/services/speech/speechTypes';
+
 type Listener = (payload: unknown) => void;
 
 /**
@@ -620,6 +622,97 @@ function makeWhisperFake(): WhisperFake {
 }
 
 // ---------------------------------------------------------------------------
+// Fake: FieldkitSpeech (NativeModules.FieldkitSpeech — Android system TextToSpeech). A recorder of the
+// calls the speech service makes plus a driveable event emitter (FieldkitSpeech_start/done/stopped/error).
+// It enforces the same boundary rules the native module does and nothing more: getVoices/setVoice/speak
+// reject NOT_BOUND until init() resolved with bound:true; setVoice accepts only an offline, installed
+// voice; speak rejects NOT_OFFLINE while the current voice is not one. Utterance events are NOT emitted on
+// speak — the test emits done/stopped/error itself, so it owns when speech "finishes". Opt-in
+// (installNativeBoundary({ speech })); absent otherwise, which is how a device without the module looks.
+// ---------------------------------------------------------------------------
+
+export interface SpeechFakeOptions {
+  /** The voices on the device. Read live, so a test can model a voice install by mutating this array. */
+  voices?: SpeechVoice[];
+  maxInputLength?: number;
+  /** false = no engine could be bound (init resolves bound:false). Default true. */
+  bound?: boolean;
+  enginePackage?: string;
+}
+
+export interface SpeechFake {
+  module: Record<string, jest.Mock>;
+  /** Every speak() / setVoice() attempt, accepted or not, with the arguments the service passed. */
+  calls: { speak: { text: string; utteranceId: string }[]; setVoice: string[] };
+  /** Drive a native event, e.g. emit('FieldkitSpeech_done', { utteranceId }). */
+  emit(event: string, payload: object): void;
+  /** HOLD the next init() open until releaseInit() — the window a real engine bind takes. One-shot. */
+  holdNextInit(): void;
+  /** Release an init held via holdNextInit(). No-op if not held. */
+  releaseInit(): void;
+}
+
+const DEFAULT_SPEECH_VOICES: SpeechVoice[] = [
+  { id: 'en-us-offline', name: 'English US', language: 'en-US', networkRequired: false, notInstalled: false, quality: 400 },
+  { id: 'en-us-network', name: 'English US (network)', language: 'en-US', networkRequired: true, notInstalled: false, quality: 500 },
+];
+
+/** An RN promise rejection: an Error carrying the native `code`. */
+const nativeError = (code: string, message: string) => Object.assign(new Error(message), { code });
+
+function makeSpeechFake(handle: FakeEmitterHandle, opts: SpeechFakeOptions): SpeechFake {
+  const voices = opts.voices ?? DEFAULT_SPEECH_VOICES;
+  const bound = opts.bound ?? true;
+  const calls: SpeechFake['calls'] = { speak: [], setVoice: [] };
+  const isOffline = (v: SpeechVoice) => !v.networkRequired && !v.notInstalled;
+  let engineBound = false; // true once init() resolved with bound:true; init() releases the engine first
+  // An engine's untouched default voice is the worst case: a voice that is not usable offline if one exists.
+  let currentVoice: SpeechVoice | undefined = voices.find(v => !isOffline(v)) ?? voices[0];
+  let initHoldPending = false;
+  let initHoldRelease: (() => void) | null = null;
+  const requireBound = () => { if (!engineBound) throw nativeError('NOT_BOUND', 'Speech engine is not bound'); };
+
+  const module: Record<string, jest.Mock> = {
+    init: jest.fn(async () => {
+      engineBound = false;
+      if (initHoldPending) {
+        initHoldPending = false;
+        await new Promise<void>((res) => { initHoldRelease = res; });
+      }
+      engineBound = bound;
+      return { bound, enginePackage: bound ? (opts.enginePackage ?? 'com.google.android.tts') : null, maxInputLength: opts.maxInputLength ?? 4000 };
+    }),
+    getVoices: jest.fn(async () => { requireBound(); return voices.map(v => ({ ...v })); }),
+    setVoice: jest.fn(async (id: string) => {
+      requireBound();
+      calls.setVoice.push(id);
+      const voice = voices.find(v => v.id === id);
+      if (!voice || !isOffline(voice)) return false;
+      currentVoice = voice;
+      return true;
+    }),
+    speak: jest.fn(async (text: string, utteranceId: string) => {
+      calls.speak.push({ text, utteranceId });
+      requireBound();
+      if (!currentVoice || !isOffline(currentVoice)) throw nativeError('NOT_OFFLINE', 'The current voice needs a network connection or is not installed');
+    }),
+    stop: jest.fn(async () => {}),
+    openVoiceInstaller: jest.fn(async () => {}),
+    // RN's NativeEventEmitter calls these on the module.
+    addListener: jest.fn(),
+    removeListeners: jest.fn(),
+  };
+
+  return {
+    module,
+    calls,
+    emit: (event, payload) => handle.emit(event, payload),
+    holdNextInit: () => { initHoldPending = true; },
+    releaseInit: () => { const f = initHoldRelease; initHoldRelease = null; f?.(); },
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Fake: RAM sensor. DeviceMemoryModule.getMemoryInfo() (dynamic access in hardware.ts) +
 // react-native-device-info.getTotalMemory. Seed exact device numbers; the REAL memoryBudget runs.
 // ---------------------------------------------------------------------------
@@ -723,6 +816,8 @@ export interface InstallOpts {
   download?: boolean;
   /** Replace the global whisper.rn stub with a driveable STT context (boundary.whisper). */
   whisper?: boolean;
+  /** Install the FieldkitSpeech native module (boundary.speech). Omit it to model a device without one. */
+  speech?: SpeechFakeOptions;
 }
 
 export interface NativeBoundary {
@@ -739,10 +834,14 @@ export interface NativeBoundary {
   download?: DownloadFake;
   /** Driveable whisper STT context — present only when installed with { whisper: true }. */
   whisper?: WhisperFake;
+  /** FieldkitSpeech native fake — present only when installed with { speech }. */
+  speech?: SpeechFake;
   /** Re-read RAM at the leaf mid-test (e.g. simulate OS pressure between a pre-check and the load). */
   setRam(profile: RamProfile): void;
   /** Fire the OS 'memoryWarning' AppState event the app's residency manager listens to (auto-eviction). */
   emitMemoryWarning(): void;
+  /** Fire an AppState 'change' event (e.g. 'active' when the user returns from another app). */
+  emitAppStateChange(state: string): void;
 }
 
 /**
@@ -787,6 +886,8 @@ export function installNativeBoundary(opts: InstallOpts = {}): NativeBoundary {
   const whisperFake = opts.whisper ? makeWhisperFake() : undefined;
   if (whisperFake) jest.doMock('whisper.rn', () => whisperFake.module);
 
+  const speechFake = opts.speech ? makeSpeechFake(handle, opts.speech) : undefined;
+
    
   const RN = require('react-native');
   RN.NativeModules.LiteRTModule = litert.module;
@@ -794,6 +895,7 @@ export function installNativeBoundary(opts: InstallOpts = {}): NativeBoundary {
   RN.NativeModules.LocalDreamModule = diffusion.module;
   RN.NativeModules.CoreMLDiffusionModule = diffusion.module;
   if (downloadFake) RN.NativeModules.DownloadManagerModule = downloadFake.module;
+  if (speechFake) RN.NativeModules.FieldkitSpeech = speechFake.module;
   // Mic permission is a device boundary: whisper STT refuses to start recording without RECORD_AUDIO
   // granted (whisperService.requestPermissions → PermissionsAndroid.request). Grant it when whisper is
   // installed so the real STT flow runs; the default jest PermissionsAndroid returns undefined (= denied).
@@ -856,5 +958,5 @@ export function installNativeBoundary(opts: InstallOpts = {}): NativeBoundary {
     Object.defineProperty(RN.Platform, 'Version', { value: profile.platform === 'android' ? 34 : '17.0', configurable: true });
   };
 
-  return { litert, litertEvents: handle, diffusion, fs: fsFake, llama: llamaFake, download: downloadFake, whisper: whisperFake, setRam, emitMemoryWarning: () => appState.handle.emit('memoryWarning') };
+  return { litert, litertEvents: handle, diffusion, fs: fsFake, llama: llamaFake, download: downloadFake, whisper: whisperFake, speech: speechFake, setRam, emitMemoryWarning: () => appState.handle.emit('memoryWarning'), emitAppStateChange: (state) => appState.handle.emit('change', state) };
 }

@@ -212,7 +212,9 @@ export function stripStreamingControlTokens(content: string): string {
  * but removes syntax that Kokoro would read aloud as literal characters.
  */
 function stripMarkdownForSpeech(content: string): string {
-  let result = content;
+  // Code blocks FIRST: removing inline code before fences left the body of a fenced block in the
+  // spoken text. An unclosed trailing fence (the reply was cut off mid-block) goes to the end.
+  let result = content.replace(/```[\s\S]*?```/g, '').replace(/```[\s\S]*$/, '');
   // Headers: ### Title → Title
   result = result.replace(/^#{1,6}\s+/gm, '');
   // Bold/italic: **text** or *text* or __text__ or _text_ → text
@@ -224,8 +226,6 @@ function stripMarkdownForSpeech(content: string): string {
   result = result.replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1');
   // Inline code: `code` → code
   result = result.replace(/`([^`]+)`/g, '$1');
-  // Code blocks: ```...``` → (removed)
-  result = result.replace(/```[\s\S]*?```/g, '');
   // Tables: | cell | cell | → cell, cell (keep cell content, drop pipes/dashes)
   result = result.replace(/^\|[-:|\s]+\|$/gm, ''); // separator rows
   result = result.replace(/\|/g, ','); // pipes → commas

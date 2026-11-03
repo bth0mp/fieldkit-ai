@@ -7,3 +7,4 @@ export { useUiModeStore } from './uiModeStore';
 ;
 export { useRemoteServerStore } from './remoteServerStore';
 export { useAccordionStore, useAccordionExpanded } from './accordionStore';
+export { useSpeechStore } from './speechStore';

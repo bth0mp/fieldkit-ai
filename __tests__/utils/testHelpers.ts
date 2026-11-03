@@ -11,6 +11,7 @@ import { useAuthStore } from '../../src/stores/authStore';
 import { useProjectStore } from '../../src/stores/projectStore';
 import { useWhisperStore } from '../../src/stores/whisperStore';
 import { useRemoteServerStore } from '../../src/stores/remoteServerStore';
+import { useSpeechStore } from '../../src/stores/speechStore';
 import {
   createConversation,
   createMessage,
@@ -146,6 +147,20 @@ export const resetStores = (): void => {
     activeRemoteImageModelId: null,
   });
   require('../../src/stores/downloadStore').useDownloadStore.setState({ downloads: {}, downloadIdIndex: {} });
+
+  // Reset speech store (preferences and transient service state)
+  useSpeechStore.setState({
+    selectedVoiceId: null,
+    rate: 1,
+    pitch: 1,
+    autoSpeak: false,
+    available: false,
+    phase: 'idle',
+    voices: [],
+    speakingMessageId: null,
+    enginePackage: null,
+    needsVoiceInstall: false,
+  });
 };
 
 // ============================================================================

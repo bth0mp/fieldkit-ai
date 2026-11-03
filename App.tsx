@@ -18,6 +18,7 @@ import { useAppStore, useAuthStore, useRemoteServerStore, useWhisperStore } from
 import { useDebugLogsStore } from './src/stores/debugLogsStore';
 import { initDebugLogFile, appendDebugLine } from './src/utils/debugLogFile';
 import { loadProFeatures } from './src/bootstrap/loadProFeatures';
+import { activateFieldkitFeatures } from './src/features';
 import { checkProStatus } from './src/services/proLicenseService';
 import { hydrateDownloadStore } from './src/services/downloadHydration';
 import { initActiveDownloadPersistence } from './src/services/activeDownloadPersistence';
@@ -204,6 +205,10 @@ function App() {
 
   const initializeApp = useCallback(async () => {
     try {
+      // Fieldkit's own features (voice replies) register before the first await so the chat hooks are
+      // in place whatever the rest of boot does. Idempotent and never throws.
+      activateFieldkitFeatures();
+
       // Ensure persisted download metadata is loaded before restore logic reads it.
       await ensureAppStoreHydrated();
 

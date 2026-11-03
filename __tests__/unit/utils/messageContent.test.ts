@@ -6,7 +6,7 @@
  * Priority: P0 (Critical) - Prevents raw control tokens from appearing in chat.
  */
 
-import { stripControlTokens, templateEmitsReasoning } from '../../../src/utils/messageContent';
+import { prepareMessageForSpeech, stripControlTokens, templateEmitsReasoning } from '../../../src/utils/messageContent';
 
 describe('templateEmitsReasoning', () => {
   it('returns false for null/undefined/empty template', () => {
@@ -256,5 +256,20 @@ describe('stripControlTokens', () => {
       accumulated = stripControlTokens(`${accumulated  }<|im_end|>`);
       expect(accumulated).toBe('Response text');
     });
+  });
+});
+
+describe('prepareMessageForSpeech', () => {
+  it('drops the whole body of a fenced code block, not just its fences', () => {
+    const spoken = prepareMessageForSpeech('Try this:\n```js\nconst x = `inline`;\nrun(x);\n```\nThat works.');
+    expect(spoken).toBe('Try this:\n\nThat works.');
+  });
+
+  it('drops an unclosed trailing fence to the end of the text', () => {
+    expect(prepareMessageForSpeech('Here is the code.\n```python\nprint(1)\nprint(2)')).toBe('Here is the code.');
+  });
+
+  it('still unwraps inline code and markdown emphasis', () => {
+    expect(prepareMessageForSpeech('Use `ls` for **all** files.')).toBe('Use ls for all files.');
   });
 });
