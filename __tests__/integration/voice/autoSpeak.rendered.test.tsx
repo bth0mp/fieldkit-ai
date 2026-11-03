@@ -357,6 +357,61 @@ describe('Read replies aloud (rendered)', () => {
     expect(spoken(h)).toEqual(['Let me check.', 'Earlier one.', 'Earlier two.']);
   }, 30000);
 
+  it('leaving a chat during a tool round keeps the rest of that turn silent over the other chat', async () => {
+    const h = await setupChatScreen({ engine: 'llama', speech: {} });
+    h.enableToolViaUI('calculator');
+    mountChat(h);
+    // The other chat: an earlier conversation whose reply arrived while read-aloud was off.
+    await h.send('hi', { text: 'Other chat.' });
+    await h.rtl.waitFor(() => expect(h.view!.queryByText(/Other chat\./)).not.toBeNull(), TIMEOUT);
+    await waitUntilGone(h, 'stop-button');
+    const otherChat = h.conversationId!;
+    // The user opens a new chat (the screen mounts again with no conversation) and switches read-aloud on.
+    h.view!.unmount();
+    h.render();
+    await tapReadAloud(h);
+    await h.rtl.waitFor(() => expect(h.boundary.speech!.calls.setVoice).toEqual(['en-us-offline']), TIMEOUT);
+    await holdToolRoundOne(h);
+    const leftChat = h.conversationId!;
+    expect(leftChat).not.toBe(otherChat);
+
+    // The user goes back and opens the other chat. The harness navigation mock registers no listeners, so
+    // back (beforeRemove) cannot be fired by a gesture: the test calls the registered audio stop hook as
+    // beforeRemove does, then points the route at the other conversation, so the real useChatScreen switch
+    // effect ends the generation session while the left turn generates on.
+    const before = stopCalls(h);
+    const { callHook, HOOKS } = require('../../../src/bootstrap/hookRegistry');
+    callHook(HOOKS.audioStop);
+    expect(stopCalls(h)).toBeGreaterThan(before);
+    const { ChatScreen } = require('../../../src/screens/ChatScreen');
+    await h.rtl.act(async () => {
+      require('../../harness/chatHarness').routeHolder.params = { conversationId: otherChat };
+      h.view!.rerender(h.React.createElement(ChatScreen, {}));
+    });
+    await h.rtl.waitFor(() => expect(h.useChatStore.getState().activeConversationId).toBe(otherChat), TIMEOUT);
+
+    // The left turn's round 2 streams off screen: nothing of it is read over the other chat.
+    h.boundary.llama!.scriptCompletion({ text: 'It is sunny. Bye now.', pauseAfter: 'It is sunny. B' });
+    h.boundary.llama!.releaseStream();
+    await h.rtl.waitFor(() => expect(h.useChatStore.getState().streamingMessage).toMatch(/It is sunny\. B/), TIMEOUT);
+    await h.settle(200);
+    expect(spoken(h)).toEqual(['Let me check.']);
+    const { generationService } = require('../../../src/services/generationService');
+    h.boundary.llama!.releaseStream();
+    await h.rtl.waitFor(() => expect(generationService.getState().isGenerating).toBe(false), TIMEOUT);
+    const leftMessages = h.useChatStore.getState().getConversationMessages(leftChat);
+    expect(leftMessages[leftMessages.length - 1].content).toMatch(/Bye now\./);
+    await h.settle(200);
+    expect(spoken(h)).toEqual(['Let me check.']);
+
+    // A message sent in the other chat is read aloud.
+    h.boundary.llama!.scriptCompletion({ text: 'Next one. Next two.', pauseAfter: 'Next one. N' });
+    await h.tapSend('again');
+    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['Let me check.', 'Next one.']), TIMEOUT);
+    h.boundary.llama!.releaseStream();
+    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['Let me check.', 'Next one.', 'Next two.']), TIMEOUT);
+  }, 30000);
+
   it('control-token-only turn speaks nothing', async () => {
     const h = await setupChatScreen({ engine: 'llama', speech: {} });
     mountChat(h);

@@ -67,9 +67,10 @@ class SpeechService {
   private silencedTurn: string | null = null;
 
   constructor(private readonly engine: SpeechEngine) {
-    // The silence lasts until the host reports that turn over (its later tool rounds stay silent too).
+    // The silence lasts until the host begins a turn (its later tool rounds stay silent too). A session end
+    // is not the turn's end: a conversation switch ends the session while the left turn generates on.
     generationSession.subscribe(() => {
-      if (generationSession.getConversationId() !== this.silencedTurn) this.silencedTurn = null;
+      if (generationSession.getConversationId() !== null) this.silencedTurn = null;
     });
   }
 
