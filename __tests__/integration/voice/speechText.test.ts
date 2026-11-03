@@ -93,6 +93,24 @@ describe('stableSpeakablePrefix', () => {
     expect(stableSpeakablePrefix('```\na ** b __ c\n``` after')).toBe('```\na ** b __ c\n``` after');
   });
 
+  it('ignores ** and __ inside a closed inline code span', () => {
+    expect(stableSpeakablePrefix('Use `a ** b` then. Next')).toBe('Use `a ** b` then. Next');
+    expect(stableSpeakablePrefix('Call `__init__` first. Next')).toBe('Call `__init__` first. Next');
+    expect(stableSpeakablePrefix('Use `x**` and **open')).toBe('Use `x**` and ');
+  });
+
+  it('ignores an intraword __ and a ** between digits', () => {
+    expect(stableSpeakablePrefix('Name it a__b and more. Next')).toBe('Name it a__b and more. Next');
+    expect(stableSpeakablePrefix('So 2**3 is 8. Next')).toBe('So 2**3 is 8. Next');
+    expect(stableSpeakablePrefix('So 2**3 and **bold')).toBe('So 2**3 and ');
+  });
+
+  it('still cuts before an unclosed **bold and an unclosed `code span', () => {
+    expect(stableSpeakablePrefix('Say **bold and')).toBe('Say ');
+    expect(stableSpeakablePrefix('Say a__b then __deep')).toBe('Say a__b then ');
+    expect(stableSpeakablePrefix('Call `foo( now')).toBe('Call ');
+  });
+
   it('cuts at the earliest open construct', () => {
     expect(stableSpeakablePrefix('Go `x and **y')).toBe('Go ');
     expect(stableSpeakablePrefix('Go **y and `x ```z')).toBe('Go ');

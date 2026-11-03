@@ -52,26 +52,39 @@ export function chunkForEngine(input: { sentences: string[]; maxLen: number }): 
   return chunks;
 }
 
-/** Where the last `marker` in `text` starts when there is an odd number of them (it opened something nothing has closed yet), else -1. */
-function unclosedMarkerAt(text: string, marker: RegExp): number {
-  const matches = [...text.matchAll(marker)];
+/**
+ * Where the last `marker` in `text` starts when there is an odd number of them (it opened something nothing has
+ * closed yet), else -1. Matches `isLiteral` accepts are plain text, not markup, and are not counted.
+ */
+function unclosedMarkerAt(text: string, marker: RegExp, isLiteral?: (at: number) => boolean): number {
+  const matches = [...text.matchAll(marker)].filter(match => !isLiteral?.(match.index));
   return matches.length % 2 === 1 ? matches[matches.length - 1].index : -1;
 }
+
+/** Replace each match with spaces of the same length, so positions in the text stay valid. */
+const blank = (text: string, pattern: RegExp): string => text.replace(pattern, found => ' '.repeat(found.length));
+
+/** True when the two characters around a two-character marker at `at` both match `flank`. */
+const flankedBy = (text: string, flank: RegExp) => (at: number): boolean => flank.test(text.charAt(at - 1)) && flank.test(text.charAt(at + 2));
 
 /**
  * The part of a still-streaming reply that is safe to read: the text up to the first construct that is not
  * closed yet (a code fence, `**`, `__` or an inline backtick), because what follows may turn out to be code
- * or markup. Closed fences are skipped when counting inline markers, so code does not unbalance the rest.
+ * or markup. Code (closed fences, and closed inline spans for `**` and `__`) is skipped when counting inline
+ * markers, so it does not unbalance the rest; so are an intraword `__` (snake__case) and a `**` between
+ * digits (2**3), which are not emphasis.
  */
 export function stableSpeakablePrefix(text: string): string {
   const fence = unclosedMarkerAt(text, /```/g);
   let cut = fence === -1 ? text.length : fence;
-  // Blank the closed fences (same length, so positions stay valid) before counting inline markers.
-  const outsideFences = text.slice(0, cut).replace(/```[\s\S]*?```/g, closed => ' '.repeat(closed.length));
-  for (const marker of [/\*\*/g, /__/g, /`/g]) {
-    const at = unclosedMarkerAt(outsideFences, marker);
-    if (at !== -1) cut = Math.min(cut, at);
-  }
+  const outsideFences = blank(text.slice(0, cut), /```[\s\S]*?```/g);
+  const outsideCode = blank(outsideFences, /`[^`]*`/g);
+  const open = [
+    unclosedMarkerAt(outsideFences, /`/g),
+    unclosedMarkerAt(outsideCode, /\*\*/g, flankedBy(outsideCode, /\d/)),
+    unclosedMarkerAt(outsideCode, /__/g, flankedBy(outsideCode, /\w/)),
+  ];
+  for (const at of open) if (at !== -1) cut = Math.min(cut, at);
   return text.slice(0, cut);
 }
 
