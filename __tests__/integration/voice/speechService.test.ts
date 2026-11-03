@@ -231,6 +231,14 @@ describe('recovery', () => {
     await until(() => t.speech.calls.speak.length === 1, 'spoke on the retry');
   });
 
+  it('refresh() with a failing init still reports the engine as available, in the error phase', async () => {
+    const t = boot();
+    t.speech.module.init.mockRejectedValueOnce(nativeError('INIT_ERROR'));
+    await t.service.refresh();
+    expect(t.state().available).toBe(true);
+    expect(t.state().phase).toBe('error');
+  });
+
   it('NOT_OFFLINE stops queuing, clears the message and checks the voices again', async () => {
     const t = boot();
     await t.service.refresh();

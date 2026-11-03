@@ -125,6 +125,8 @@ class SpeechService {
       this.put({ available: false });
       return;
     }
+    // Before setup, not after: a setup that fails (error phase) must not read as "no speech on this device".
+    this.put({ available: true });
     this.stop();
     await this.runSetup();
   }
