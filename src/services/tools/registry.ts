@@ -86,6 +86,30 @@ export const AVAILABLE_TOOLS: ToolDefinition[] = [
       },
     },
   },
+  {
+    id: 'draft_email',
+    name: 'draft_email',
+    displayName: 'Email Draft',
+    description: 'Open an email draft in the mail app. The user approves it first, then reviews and sends it from the mail app. Use this when the user asks you to write or send an email.',
+    icon: 'mail',
+    requiresApproval: true,
+    parameters: {
+      to: {
+        type: 'string',
+        description: 'Recipient email addresses, separated by commas',
+      },
+      subject: {
+        type: 'string',
+        description: 'Subject line',
+        required: true,
+      },
+      body: {
+        type: 'string',
+        description: 'Plain-text message body',
+        required: true,
+      },
+    },
+  },
 ];
 
 export function getToolsAsOpenAISchema(enabledToolIds: string[]) {

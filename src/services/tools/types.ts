@@ -6,6 +6,8 @@ export interface ToolDefinition {
   icon: string;
   parameters: Record<string, ToolParameter>;
   requiresNetwork?: boolean;
+  /** The user approves each call on a card in the chat before it runs (tools that send or write). */
+  requiresApproval?: boolean;
 }
 
 interface ToolParameter {
@@ -29,7 +31,7 @@ type ToolResultStatus = 'ok' | 'empty' | 'error';
 
 /** Coarse failure cause, so the model/UI can tell "retry might help" (timeout/network)
  *  from "the call was wrong" (validation/not-found) from an internal bug. */
-export type ToolErrorCategory = 'timeout' | 'network' | 'validation' | 'not-found' | 'internal';
+export type ToolErrorCategory = 'timeout' | 'network' | 'validation' | 'not-found' | 'internal' | 'declined';
 
 export interface ToolResult {
   toolCallId?: string;

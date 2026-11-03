@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import DeviceInfo from 'react-native-device-info';
 import { ToolCall, ToolResult } from './types';
 import type { RagSearchResult } from '../rag';
+import { emailTool } from './emailTool';
 import logger from '../../utils/logger';
 
 function makeResult(call: ToolCall, start: number, opts: { content: string; error?: string }): ToolResult {
@@ -46,6 +47,7 @@ async function dispatchTool(call: ToolCall): Promise<string> {
       if (!url) throw new Error('Missing required parameter: url');
       return handleReadUrl(url);
     }
+    case 'draft_email': return (await emailTool.run(call)).content;
     default:
       throw new Error(`Unknown tool: ${call.name}`);
   }

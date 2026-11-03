@@ -12,6 +12,7 @@ import { useProjectStore } from '../../src/stores/projectStore';
 import { useWhisperStore } from '../../src/stores/whisperStore';
 import { useRemoteServerStore } from '../../src/stores/remoteServerStore';
 import { useSpeechStore } from '../../src/stores/speechStore';
+import { useActionApprovalStore } from '../../src/stores/actionApprovalStore';
 import {
   createConversation,
   createMessage,
@@ -161,6 +162,9 @@ export const resetStores = (): void => {
     enginePackage: null,
     needsVoiceInstall: false,
   });
+
+  // Reset the approval card's projection (not persisted)
+  useActionApprovalStore.setState({ pending: [] });
 };
 
 // ============================================================================

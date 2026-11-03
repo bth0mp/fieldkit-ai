@@ -839,6 +839,12 @@ export interface NativeBoundary {
   whisper?: WhisperFake;
   /** FieldkitSpeech native fake — present only when installed with { speech }. */
   speech?: SpeechFake;
+  /** RN Linking (its jest mock): openURL records the URL handed to the OS (e.g. a mailto: draft). */
+  linking: { openURL: jest.Mock; canOpenURL: jest.Mock };
+  /** RN Clipboard (its jest mock): setString records what was copied. */
+  clipboard: { setString: jest.Mock; getString: jest.Mock };
+  /** The ShareModule native behind RN Share: share records the content and dialog title. */
+  share: { share: jest.Mock };
   /** Re-read RAM at the leaf mid-test (e.g. simulate OS pressure between a pre-check and the load). */
   setRam(profile: RamProfile): void;
   /** Fire the OS 'memoryWarning' AppState event the app's residency manager listens to (auto-eviction). */
@@ -893,6 +899,8 @@ export function installNativeBoundary(opts: InstallOpts = {}): NativeBoundary {
 
    
   const RN = require('react-native');
+  const shareModule = { share: jest.fn(async () => ({ action: 'sharedAction' })) };
+  RN.NativeModules.ShareModule = shareModule;
   RN.NativeModules.LiteRTModule = litert.module;
   // Both platform names point at the same fake; localDreamGenerator's Platform.select picks one.
   RN.NativeModules.LocalDreamModule = diffusion.module;
@@ -961,5 +969,5 @@ export function installNativeBoundary(opts: InstallOpts = {}): NativeBoundary {
     Object.defineProperty(RN.Platform, 'Version', { value: profile.platform === 'android' ? 34 : '17.0', configurable: true });
   };
 
-  return { litert, litertEvents: handle, diffusion, fs: fsFake, llama: llamaFake, download: downloadFake, whisper: whisperFake, speech: speechFake, setRam, emitMemoryWarning: () => appState.handle.emit('memoryWarning'), emitAppStateChange: (state) => appState.handle.emit('change', state) };
+  return { litert, litertEvents: handle, diffusion, fs: fsFake, llama: llamaFake, download: downloadFake, whisper: whisperFake, speech: speechFake, linking: RN.Linking, clipboard: RN.Clipboard, share: shareModule, setRam, emitMemoryWarning: () => appState.handle.emit('memoryWarning'), emitAppStateChange: (state) => appState.handle.emit('change', state) };
 }

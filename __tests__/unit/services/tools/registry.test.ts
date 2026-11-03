@@ -16,10 +16,8 @@ describe('Tool Registry', () => {
   // AVAILABLE_TOOLS
   // ========================================================================
   describe('AVAILABLE_TOOLS', () => {
-    it('has exactly 6 tools with correct IDs', () => {
-      // Email + calendar tools are pro-gated and live in the pro package
-      // (EmailCalendarExtension), so they are not part of the core registry.
-      expect(AVAILABLE_TOOLS).toHaveLength(6);
+    it('has exactly 7 tools with correct IDs', () => {
+      expect(AVAILABLE_TOOLS).toHaveLength(7);
 
       const ids = AVAILABLE_TOOLS.map(t => t.id);
       expect(ids).toEqual([
@@ -29,7 +27,21 @@ describe('Tool Registry', () => {
         'get_device_info',
         'search_knowledge_base',
         'read_url',
+        'draft_email',
       ]);
+    });
+
+    it('only draft_email requires approval', () => {
+      const approval = Object.fromEntries(AVAILABLE_TOOLS.map(t => [t.id, t.requiresApproval === true]));
+      expect(approval).toEqual({
+        web_search: false,
+        calculator: false,
+        get_current_datetime: false,
+        get_device_info: false,
+        search_knowledge_base: false,
+        read_url: false,
+        draft_email: true,
+      });
     });
 
     it('each tool has required fields (id, name, displayName, description, icon, parameters)', () => {

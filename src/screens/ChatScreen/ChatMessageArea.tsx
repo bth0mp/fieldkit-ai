@@ -8,6 +8,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { AttachStep } from 'react-native-spotlight-tour';
 import { ChatInput, ThinkingIndicator, ModelFailureCard, ImageGenAdviceCard } from '../../components';
 import { AnimatedPressable } from '../../components/AnimatedPressable';
+import { ActionApprovalCard } from '../../components/ActionApprovalCard';
 import { generationService } from '../../services';
 import { EmptyChat, ImageProgressIndicator } from './ChatScreenComponents';
 import { getPlaceholderText, useChatScreen } from './useChatScreen';
@@ -280,6 +281,8 @@ export const ChatMessageArea: React.FC<ChatMessageAreaProps> = ({
         styles={styles}
         colors={colors}
       />
+      {/* A tool call that sends or writes waits here for the user's tap (reads its own store). */}
+      <ActionApprovalCard />
       {/* Steps 3/15 share the same AttachStep wrapping ChatInput (multi-index).
          Steps 12/16 are handled inside ChatInput via activeSpotlight prop. */}
       <View

@@ -9,6 +9,7 @@ import { runToolLoop, buildLiteRTHistory } from './generationToolLoop';
 import { effectiveCacheType } from './llmHelpers';
 import { modelInputImageUris, modelInputAudioUris } from './modelMedia';
 import { clearModelFailure } from './modelFailureHandler';
+import { checkProviderReadiness } from './providerReadiness';
 import type { ToolResult } from './tools/types';
 import type { GenerationOptions, CompletionResult } from './providers/types';
 import logger from '../utils/logger';
@@ -143,8 +144,10 @@ function handleStreamChunk(svc: any, chunk: { content?: string; reasoningContent
 }
 
 export function buildToolLoopHandlersImpl(svc: any) {
+  const turn = svc.turnSeq;
   return {
     isAborted: () => svc.abortRequested,
+    isTurnLive: () => svc.turnSeq === turn && !svc.abortRequested,
     onThinkingDone: () => svc.updateState({ isThinking: false }),
     onStream: (data: StreamChunk) => {
       if (svc.abortRequested) return;
@@ -167,24 +170,6 @@ export function buildToolLoopHandlersImpl(svc: any) {
   };
 }
 
-async function checkProviderReadiness(svc: any): Promise<string | null> {
-  if (svc.isUsingRemoteProvider()) {
-    const provider = svc.getCurrentProvider();
-    if (!provider) return 'Remote provider not found';
-    const ready = await provider.isReady();
-    if (!ready) return 'Remote provider not ready';
-  } else if (isLiteRTActive()) {
-    if (!liteRTService.isModelLoaded()) return 'No LiteRT model loaded';
-  } else {
-    if (!llmService.isModelLoaded()) return 'No model loaded';
-    // A still-unwinding completion (a stop can only take effect once prefill finishes) is NOT an
-    // error — wait for the engine to go idle instead of failing the user's send. Only a genuinely
-    // stuck/concurrent generation (still busy after the bounded wait) surfaces the busy error.
-    if (llmService.isCurrentlyGenerating() && !(await llmService.waitForIdle())) return 'LLM service busy';
-  }
-  return null;
-}
-
 export async function prepareGenerationImpl(svc: any, conversationId: string): Promise<boolean> {
   if (svc.state.isGenerating) return false;
   // A NEW attempt owns the text failure surface: clear any card left by a previous failed/stopped
@@ -200,6 +185,7 @@ export async function prepareGenerationImpl(svc: any, conversationId: string): P
   // Drain pending native stop so LLM is idle before we start.
   if (svc.pendingStop !== null) await svc.pendingStop;
   if (!svc.state.isGenerating) return false; // stop called during drain
+  svc.turnSeq += 1;
   svc.abortRequested = false;
 
   const readinessError = await checkProviderReadiness(svc);

@@ -36,6 +36,19 @@ export function toolErrorResult(call: ToolCall, err: unknown, startMs: number): 
   };
 }
 
+/** The result of a call the user declined on the approval card (or that lost its turn while waiting). */
+export function toolDeclinedResult(call: ToolCall, startMs: number): ToolResult {
+  return {
+    toolCallId: call.id,
+    name: call.name,
+    content: '',
+    error: 'declined by user',
+    errorCategory: 'declined',
+    status: 'error',
+    durationMs: Math.max(0, Date.now() - startMs),
+  };
+}
+
 /** Fill in toolCallId + status (and errorCategory for errors) on a returned result.
  *  Producers may omit these; the loop normalizes so downstream is uniform. */
 export function normalizeToolResult(call: ToolCall, raw: ToolResult): ToolResult {
@@ -67,6 +80,9 @@ export const MAX_TOOL_RESULT_CHARS = 24000;
  * explicitly so the model treats them as such instead of inventing an answer.
  */
 export function toolResultModelContent(result: ToolResult): string {
+  if (result.status === 'error' && result.errorCategory === 'declined') {
+    return 'The user declined this action. It was not done. Do not try it again unless the user asks.';
+  }
   if (result.status === 'error') {
     const cat = result.errorCategory ?? 'internal';
     return `Tool "${result.name}" failed (${cat}): ${result.error ?? 'unknown error'}. It returned no data — do not assume it succeeded.`;

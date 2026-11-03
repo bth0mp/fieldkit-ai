@@ -7,7 +7,10 @@ import { useChatStore, useRemoteServerStore, useAppStore } from '../stores';
 import { Message } from '../types';
 import { getToolsAsOpenAISchema, executeToolCall } from './tools';
 import type { ToolCall, ToolResult } from './tools/types';
-import { normalizeToolResult, toolErrorResult, toolResultModelContent } from './tools/toolResult';
+import { normalizeToolResult, toolDeclinedResult, toolErrorResult, toolResultModelContent } from './tools/toolResult';
+import { approvalRequired } from './tools/toolOffering';
+import { approvalSummaryFor } from './tools/approvalSummary';
+import { actionApprovalService } from './actions/actionApprovalService';
 import { modelInputImageUris, modelInputAudioUris } from './modelMedia';
 import { getToolExtensions } from './tools/extensions';
 import { Platform } from 'react-native';
@@ -252,6 +255,8 @@ export interface ToolLoopContext {
   projectId?: string;
   callbacks?: ToolLoopCallbacks;
   isAborted: () => boolean;
+  /** False once this turn was stopped or replaced by a newer one (the service's turn token). */
+  isTurnLive?: () => boolean;
   onThinkingDone: () => void;
   onStream?: (data: StreamChunk) => void;
   onStreamReset?: () => void;
@@ -276,11 +281,18 @@ function getLastUserQuery(messages: Message[]): string {
  * handler behave identically: success/empty/error all become a typed result whose
  * model-facing string (toolResultModelContent) explicitly states failure/empty.
  */
-async function executeToolCallSafely(tc: ToolCall): Promise<ToolResult> {
+async function executeToolCallSafely(tc: ToolCall, ctx: ToolLoopContext): Promise<ToolResult> {
   const exts = getToolExtensions();
   const ext = exts.find(e => e.canHandle(tc.name));
   const start = Date.now();
   try {
+    // A tool that sends or writes waits for the user's tap on the approval card. It runs only when
+    // approved AND its turn is still live: a stop (or a newer turn) while the card showed ends it.
+    if (approvalRequired({ toolName: tc.name, conversationId: ctx.conversationId })) {
+      const decision = await actionApprovalService.request({ call: tc, conversationId: ctx.conversationId, summary: approvalSummaryFor(tc) });
+      if (decision === 'declined') return toolDeclinedResult(tc, start);
+      if (!(ctx.isTurnLive?.() ?? !ctx.isAborted())) return toolDeclinedResult(tc, start);
+    }
     const raw = ext ? await ext.execute(tc) : await executeToolCall(tc);
     return normalizeToolResult(tc, raw);
   } catch (err) {
@@ -302,7 +314,7 @@ async function executeToolCalls(ctx: ToolLoopContext, toolCalls: import('./tools
     }
     if (ctx.projectId) tc.context = { projectId: ctx.projectId };
     ctx.callbacks?.onToolCallStart?.(tc.name, tc.arguments);
-    const result = await executeToolCallSafely(tc);
+    const result = await executeToolCallSafely(tc, ctx);
     ctx.callbacks?.onToolCallComplete?.(tc.name, result);
     const toolResultMsg: Message = {
       id: `tool-result-${Date.now()}-${tc.id || tc.name}`, role: 'tool',
@@ -490,7 +502,7 @@ function buildLiteRTToolCallHandler(ctx: ToolLoopContext, conversationId: string
     // the model (toolResultModelContent) is never empty — a failure/empty is stated
     // explicitly rather than sent as "" or a bare "Error: ...", so the model can't
     // mistake it for a successful answer.
-    const result = await executeToolCallSafely(toolCall);
+    const result = await executeToolCallSafely(toolCall, ctx);
     ctx.callbacks?.onToolCallComplete?.(name, result);
     const resultContent = toolResultModelContent(result);
     const toolCallMsg: Message = { id: `tc-${Date.now()}-${name}`, role: 'assistant', content: '',
