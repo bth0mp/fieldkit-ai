@@ -87,6 +87,21 @@ describe('approval lifecycle', () => {
     expect(h.boundary.linking.openURL).not.toHaveBeenCalled();
   });
 
+  it('stop answers every call of the message', async () => {
+    const h = await chatWithCard([FIRST, SECOND]);
+    await pressStop(h);
+    // Each stored call pairs with a declined result (remote APIs reject an unanswered call); neither ran.
+    const labels = await h.rtl.waitFor(() => {
+      const found = h.view!.getAllByTestId('tool-result-label-draft_email');
+      expect(found).toHaveLength(2);
+      return found;
+    });
+    labels.forEach(label => h.rtl.fireEvent.press(label));
+    await h.rtl.waitFor(() => { expect(h.view!.getAllByText(/The user declined this action/)).toHaveLength(2); });
+    expect(h.view!.queryByTestId('approval-card')).toBeNull();
+    expect(h.boundary.linking.openURL).not.toHaveBeenCalled();
+  });
+
   it('one card at a time', async () => {
     const h = await chatWithCard([FIRST, SECOND]);
     expect(h.view!.getAllByTestId('approval-card')).toHaveLength(1);

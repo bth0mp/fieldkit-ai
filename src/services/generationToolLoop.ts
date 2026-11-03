@@ -318,10 +318,25 @@ async function executeToolCallSafely(tc: ToolCall, ctx: ToolLoopContext): Promis
   }
 }
 
-async function executeToolCalls(ctx: ToolLoopContext, toolCalls: import('./tools/types').ToolCall[], loopMessages: Message[]): Promise<void> {
-  const chatStore = useChatStore.getState();
+/** This turn was stopped, or replaced by a newer one. */
+function turnEnded(ctx: ToolLoopContext): boolean {
+  return ctx.isAborted() || !(ctx.isTurnLive?.() ?? true);
+}
+
+async function executeToolCalls(ctx: ToolLoopContext, toolCalls: ToolCall[], loopMessages: Message[]): Promise<void> {
+  const addToolResult = (tc: ToolCall, result: ToolResult) => {
+    const toolResultMsg: Message = {
+      id: `tool-result-${Date.now()}-${tc.id || tc.name}`, role: 'tool',
+      content: toolResultModelContent(result), timestamp: Date.now(),
+      toolCallId: tc.id, toolName: tc.name, generationTimeMs: result.durationMs,
+    };
+    loopMessages.push(toolResultMsg);
+    useChatStore.getState().addMessage(ctx.conversationId, toolResultMsg);
+  };
   for (const tc of toolCalls) {
-    if (ctx.isAborted()) break;
+    // A stopped turn runs none of its remaining calls, but each gets a declined result: every call stored in
+    // the tool-call message pairs with a result, or remote APIs reject the history on the next turn.
+    if (turnEnded(ctx)) { addToolResult(tc, toolDeclinedResult(tc, Date.now())); continue; }
     // Small models often call web_search with empty args — use user's message as fallback
     if (tc.name === 'web_search' && (!tc.arguments.query || typeof tc.arguments.query !== 'string' || !tc.arguments.query.trim())) {
       const fallbackQuery = getLastUserQuery(loopMessages);
@@ -333,13 +348,7 @@ async function executeToolCalls(ctx: ToolLoopContext, toolCalls: import('./tools
     ctx.callbacks?.onToolCallStart?.(tc.name, tc.arguments);
     const result = await executeToolCallSafely(tc, ctx);
     ctx.callbacks?.onToolCallComplete?.(tc.name, result);
-    const toolResultMsg: Message = {
-      id: `tool-result-${Date.now()}-${tc.id || tc.name}`, role: 'tool',
-      content: toolResultModelContent(result), timestamp: Date.now(),
-      toolCallId: tc.id, toolName: tc.name, generationTimeMs: result.durationMs,
-    };
-    loopMessages.push(toolResultMsg);
-    chatStore.addMessage(ctx.conversationId, toolResultMsg);
+    addToolResult(tc, result);
   }
 }
 const MAX_LLM_RETRIES = 4;
@@ -979,7 +988,7 @@ export async function runToolLoop(ctx: ToolLoopContext): Promise<ToolLoopOutcome
     await executeToolCalls(ctx, cappedToolCalls, loopMessages);
     // The turn may have ended while a call waited on its card (a stop, or a newer turn): end it here, before
     // another completion. The declined results stay: they pair with the stored tool-call message.
-    if (ctx.isAborted() || !(ctx.isTurnLive?.() ?? true)) return { interrupted: true };
+    if (turnEnded(ctx)) return { interrupted: true };
 
     chatStore.setIsThinking(true);
     // The pause exists to let an on-device llama context settle between the tool
