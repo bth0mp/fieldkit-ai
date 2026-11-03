@@ -187,6 +187,8 @@ class SpeechService {
     if (on) {
       this.refreshInBackground();
       this.silencedTurn = null; // turning reading on asks to hear this turn: undo the silence the refresh's stop() set
+    } else if (this.session !== null && this.session === this.stream) {
+      this.stop(); // off silences a reply read as it streams; a message chosen with Speak plays on
     }
   }
 

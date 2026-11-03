@@ -428,6 +428,52 @@ describe('Read replies aloud (rendered)', () => {
     expect(spoken(h)).toEqual(['First one.', 'Second one.', 'Third one.', 'Last bit']);
   }, 20000);
 
+  it('switching read-aloud off while a reply is read stops it', async () => {
+    const h = await setupChatScreen({ engine: 'llama', speech: {} });
+    await readAloudChat(h);
+    h.boundary.llama!.scriptCompletion({ text: 'One here. Two here. Three here. Four here.', pauseAfter: 'Two here.' });
+    await h.tapSend('q');
+    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['One here.']), TIMEOUT);
+
+    const before = stopCalls(h);
+    await tapReadAloud(h);
+    await h.rtl.waitFor(() => expect(h.view!.getByTestId('quick-read-aloud').props.accessibilityState).toMatchObject({ checked: false }), TIMEOUT);
+    expect(stopCalls(h)).toBeGreaterThan(before);
+
+    await finishTurn(h);
+    expect(spoken(h)).toEqual(['One here.']);
+  }, 20000);
+
+  it('switching read-aloud off keeps a reply chosen with Speak playing', async () => {
+    const h = await setupChatScreen({ engine: 'llama', speech: {} });
+    mountChat(h);
+    await h.send('hi', { text: 'Earlier one. Earlier two.' });
+    await h.rtl.waitFor(() => expect(h.view!.queryByText(/Earlier one\. Earlier two\./)).not.toBeNull(), TIMEOUT);
+    await waitUntilGone(h, 'stop-button');
+    await tapReadAloud(h);
+    await h.rtl.waitFor(() => expect(h.boundary.speech!.calls.setVoice).toEqual(['en-us-offline']), TIMEOUT);
+
+    // No reply streams. The user taps Speak on the reply, and the engine finishes its first chunk.
+    h.rtl.fireEvent.press(h.view!.getByLabelText('Speak'));
+    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['Earlier one.', 'Earlier two.']), TIMEOUT);
+    await h.rtl.waitFor(() => expect(h.view!.queryByLabelText('Stop speaking') === null).toBe(false), TIMEOUT);
+    const [first, second] = h.boundary.speech!.calls.speak.map(call => call.utteranceId);
+    await h.rtl.act(async () => { h.boundary.speech!.emit('FieldkitSpeech_done', { utteranceId: first }); });
+
+    // Read-aloud off: the engine is not stopped, and the reply is still being read.
+    const before = stopCalls(h);
+    await tapReadAloud(h);
+    await h.rtl.waitFor(() => expect(h.view!.getByTestId('quick-read-aloud').props.accessibilityState).toMatchObject({ checked: false }), TIMEOUT);
+    await h.settle(100);
+    expect(stopCalls(h)).toBe(before);
+    expect(h.view!.queryByLabelText('Stop speaking') === null).toBe(false);
+
+    // The engine reads the rest: the reply ends normally and its button is back to Speak.
+    await h.rtl.act(async () => { h.boundary.speech!.emit('FieldkitSpeech_done', { utteranceId: second }); });
+    await h.rtl.waitFor(() => expect(h.view!.queryByLabelText('Stop speaking') === null).toBe(true), TIMEOUT);
+    expect(h.view!.queryByLabelText('Speak') === null).toBe(false);
+  }, 20000);
+
   it('control-token-only turn speaks nothing', async () => {
     const h = await setupChatScreen({ engine: 'llama', speech: {} });
     mountChat(h);
