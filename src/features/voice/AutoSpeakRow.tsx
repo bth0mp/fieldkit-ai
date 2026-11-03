@@ -37,7 +37,7 @@ export const AutoSpeakRow: React.FC<AutoSpeakRowProps> = ({ styles }) => {
     >
       <Icon name="volume-2" size={16} color={autoSpeak ? colors.primary : colors.textMuted} />
       <Text style={[styles.rowLabel, { color: colors.text }]}>Read replies aloud</Text>
-      {autoSpeak && <Icon testID="read-aloud-on" name="check" size={16} color={colors.primary} />}
+      {autoSpeak && <Icon name="check" size={16} color={colors.primary} />}
     </TouchableOpacity>
   );
 };
