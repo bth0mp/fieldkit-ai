@@ -7,7 +7,7 @@ import { modelResidencyManager } from '../../services/modelResidency';
 import { hardwareService } from '../../services/hardware';
 import {
   regenerateResponseFn, executeDeleteConversationFn, handleImageGenerationFn,
-  recordedTurnKind,
+  recordedTurnKind, isAnyGenerationRunning,
 } from './useChatGenerationActions';
 import type { GenerationDeps } from './useChatGenerationActions';
 
@@ -48,6 +48,17 @@ async function retryFromAssistantMessage({ message, genDeps, p, convId, msgs }: 
   }
 }
 
+/**
+ * Retry, resend and edit delete the reply before they write it again, and only one reply is written at a time,
+ * here or in another chat. While one is written, refuse with an alert before anything is deleted.
+ */
+function refusedWhileGenerating(genDeps: GenerationDeps): boolean {
+  if (!isAnyGenerationRunning()) return false;
+  logger.log('[RESEND-SM] BAIL: a reply is still being written');
+  genDeps.setAlertState(showAlert('A reply is still being written', 'Wait for it to finish, then try again.'));
+  return true;
+}
+
 export async function handleRetryMessageFn(
   message: Message, genDeps: GenerationDeps, p: RetryParams,
 ): Promise<void> {
@@ -64,6 +75,7 @@ export async function handleRetryMessageFn(
   // no-op. Mirrors the send path's "No Model Selected" alert (handleSendFn).
   if (!p.hasActiveModel) { logger.log('[RESEND-SM] retry BAIL: no active model'); genDeps.setAlertState(showAlert('No Model Selected', 'Please select a model first.')); return; }
   if (!p.activeConversationId) { logger.log('[RESEND-SM] retry BAIL: no conv'); return; }
+  if (refusedWhileGenerating(genDeps)) return;
   // Stop any in-flight TTS before deleting messages (no-op without pro audio)
   callHook(HOOKS.audioStop);
   const ctx: RetryCtx = { message, genDeps, p, convId: p.activeConversationId, msgs };
@@ -85,7 +97,7 @@ type EditParams = {
 export async function handleEditMessageFn(genDeps: GenerationDeps, p: EditParams): Promise<void> {
   // Same as retry: no model loaded → alert instead of a silent no-op.
   if (!p.hasActiveModel) { genDeps.setAlertState(showAlert('No Model Selected', 'Please select a model first.')); return; }
-  if (!p.activeConversationId) return;
+  if (!p.activeConversationId || refusedWhileGenerating(genDeps)) return;
   // Preserve the turn's modality across an edit: an edited image prompt re-runs the image pipeline
   // (read BEFORE the update/delete strips the reply that records it), not a re-classification.
   const recordedKind = recordedTurnKind(p.activeConversation?.messages || [], p.message.id);

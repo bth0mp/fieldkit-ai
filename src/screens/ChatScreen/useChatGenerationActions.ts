@@ -534,6 +534,10 @@ export async function dispatchGenerationFn(
   deps.addMessage(conversationId, { role: 'user', content: text, attachments });
   await startTextGeneration(conversationId, result.messageText);
 }
+/** A text or image reply is being written, in any chat. One is written at a time: a send queues behind it. */
+export function isAnyGenerationRunning(): boolean {
+  return generationService.getState().isGenerating || imageGenerationService.getState().isGenerating;
+}
 export type SendCall = { text: string; attachments?: MediaAttachment[]; imageMode?: 'auto' | 'force' | 'disabled'; startGeneration: (convId: string, text: string) => Promise<void>; setDebugInfo: SetState<any> };
 export async function handleSendFn(deps: GenerationDeps, call: SendCall): Promise<void> {
   const { text, attachments, imageMode = 'auto', startGeneration } = call;
@@ -550,7 +554,7 @@ export async function handleSendFn(deps: GenerationDeps, call: SendCall): Promis
     deps.setActiveConversation(targetConversationId);
   }
   // Cross-modality serialization: queue if any generation is running (routed later).
-  if (generationService.getState().isGenerating || imageGenerationService.getState().isGenerating) {
+  if (isAnyGenerationRunning()) {
     const messageText = appendAttachmentText(text, attachments);
     // Carry the user's forced modality through the queue so a queued force-image send is dispatched as
     // image on drain — not re-decided at 'auto' by resolveTurnKind (#510).

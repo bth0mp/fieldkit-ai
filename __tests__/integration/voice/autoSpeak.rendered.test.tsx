@@ -147,35 +147,49 @@ async function nextReplyIsRead(h: Harness): Promise<void> {
   await h.rtl.waitFor(() => expect(spoken(h)).toEqual([...before, 'Next one.', 'Next two.']), TIMEOUT);
 }
 
+/** A reply in the chat on screen, held after its second sentence, so only 'One here.' is read. */
+async function holdReply(h: Harness): Promise<void> {
+  h.boundary.llama!.scriptCompletion({ text: 'One here. Two here. Three here. Four here.', pauseAfter: 'Two here.' });
+  await h.tapSend('q');
+  await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['One here.']), TIMEOUT);
+}
+
 /**
- * Chat X runs a tool turn, held in round 1 once 'Let me check.' was read. The user goes back and opens chat Y,
- * an earlier conversation: the test calls the audio stop hook (see backStopsSpeech) and, without remounting
- * the screen, points the route at chat Y, so the real useChatScreen switch effect ends the generation session
- * while X's turn generates on.
+ * Back from the chat on screen and into chat `conversationId`: the test calls the audio stop hook (see
+ * backStopsSpeech) and, without remounting the screen, points the route at that chat, so the real useChatScreen
+ * switch effect runs, while a reply in the chat left behind generates on.
  */
-async function leaveToolTurnForOtherChat(h: Harness): Promise<{ leftChat: string; otherChat: string }> {
+async function backToChat(h: Harness, conversationId: string): Promise<void> {
+  backStopsSpeech(h);
+  const { ChatScreen } = require('../../../src/screens/ChatScreen');
+  await h.rtl.act(async () => {
+    require('../../harness/chatHarness').routeHolder.params = { conversationId };
+    h.view!.rerender(h.React.createElement(ChatScreen, {}));
+  });
+  await h.rtl.waitFor(() => expect(h.useChatStore.getState().activeConversationId).toBe(conversationId), TIMEOUT);
+}
+
+/**
+ * Chat X holds a reply: by default a tool turn in round 1, once 'Let me check.' was read. The user goes back and
+ * opens chat Y, an earlier conversation (see backToChat): the switch ends the generation session while X's turn
+ * generates on.
+ */
+async function leaveTurnForOtherChat(h: Harness, holdTurn = holdToolRoundOne): Promise<{ leftChat: string; otherChat: string }> {
   mountChat(h);
   // Chat Y: an earlier conversation whose reply arrived while read-aloud was off.
   await h.send('hi', { text: 'Other chat.' });
   await h.rtl.waitFor(() => expect(h.view!.queryByText(/Other chat\./)).not.toBeNull(), TIMEOUT);
   await waitUntilGone(h, 'stop-button');
   const otherChat = h.conversationId!;
-  // The user opens a new chat, switches read-aloud on and asks something that needs the calculator.
+  // The user opens a new chat, switches read-aloud on and asks something.
   h.view!.unmount();
   await openChat(h);
   await tapReadAloud(h);
   await h.rtl.waitFor(() => expect(h.boundary.speech!.calls.setVoice).toEqual(['en-us-offline']), TIMEOUT);
-  await holdToolRoundOne(h);
+  await holdTurn(h);
   const leftChat = h.conversationId!;
   expect(leftChat).not.toBe(otherChat);
-
-  backStopsSpeech(h);
-  const { ChatScreen } = require('../../../src/screens/ChatScreen');
-  await h.rtl.act(async () => {
-    require('../../harness/chatHarness').routeHolder.params = { conversationId: otherChat };
-    h.view!.rerender(h.React.createElement(ChatScreen, {}));
-  });
-  await h.rtl.waitFor(() => expect(h.useChatStore.getState().activeConversationId).toBe(otherChat), TIMEOUT);
+  await backToChat(h, otherChat);
   return { leftChat, otherChat };
 }
 
@@ -198,6 +212,18 @@ async function leftTurnEndsUnheard(h: Harness, leftChat: string): Promise<void> 
 async function nativeEvent(h: Harness, event: string, payload: string): Promise<void> {
   await h.rtl.act(async () => { h.boundary.litertEvents.emit(event, payload); });
   await h.settle(100);
+}
+
+/**
+ * In chat Y the user long-presses Y's reply and taps Retry while chat X still writes its reply off screen. Retry
+ * is refused before anything is deleted: Y's reply stays and an alert says why.
+ */
+async function retryRefusedWhileOtherChatWrites(h: Harness): Promise<void> {
+  await h.openActionMenu('assistant', 'longpress');
+  h.rtl.fireEvent.press(h.view!.getByTestId('action-retry'));
+  expect(h.view!.queryByText(/Other chat\./)).not.toBeNull();
+  await h.rtl.waitFor(() => expect(h.view!.queryByText('A reply is still being written')).not.toBeNull(), TIMEOUT);
+  expect(h.view!.queryByText('Wait for it to finish, then try again.')).not.toBeNull();
 }
 
 describe('Read replies aloud (rendered)', () => {
@@ -484,7 +510,7 @@ describe('Read replies aloud (rendered)', () => {
   it('leaving a chat during a tool round keeps the rest of that turn silent over the other chat', async () => {
     const h = await setupChatScreen({ engine: 'llama', speech: {} });
     h.enableToolViaUI('calculator');
-    const { leftChat } = await leaveToolTurnForOtherChat(h);
+    const { leftChat } = await leaveTurnForOtherChat(h);
     await leftTurnEndsUnheard(h, leftChat);
     // A message sent in the other chat is read aloud.
     await nextReplyIsRead(h);
@@ -493,12 +519,45 @@ describe('Read replies aloud (rendered)', () => {
   it('switching read-aloud on in another chat does not read the turn the user left', async () => {
     const h = await setupChatScreen({ engine: 'llama', speech: {} });
     h.enableToolViaUI('calculator');
-    const { leftChat } = await leaveToolTurnForOtherChat(h);
+    const { leftChat } = await leaveTurnForOtherChat(h);
     // In the other chat, the user switches read-aloud off and on again while the left turn generates on.
     await setReadAloud(h, false);
     await setReadAloud(h, true);
     await leftTurnEndsUnheard(h, leftChat);
     await nextReplyIsRead(h);
+  }, 30000);
+
+  it('Retry while another chat still writes its reply is refused and keeps the reply', async () => {
+    const h = await setupChatScreen({ engine: 'llama', speech: {} });
+    const { leftChat, otherChat } = await leaveTurnForOtherChat(h, holdReply);
+    await retryRefusedWhileOtherChatWrites(h);
+
+    // Chat X's reply streams on off screen and ends. None of it is read, and nothing was written in chat Y.
+    h.boundary.llama!.releaseStream();
+    await waitUntilIdle(h);
+    await h.settle(200);
+    expect(spoken(h)).toEqual(['One here.']);
+    const contents = (id: string) => h.useChatStore.getState().getConversationMessages(id).map((m: { content: string }) => m.content);
+    expect(contents(otherChat)).toEqual(['hi', 'Other chat.']);
+    expect(contents(leftChat).pop()).toMatch(/Four here\./);
+  }, 30000);
+
+  it('Retry works once the other chat has finished its reply', async () => {
+    const h = await setupChatScreen({ engine: 'llama', speech: {} });
+    await leaveTurnForOtherChat(h, holdReply);
+    await retryRefusedWhileOtherChatWrites(h);
+    h.rtl.fireEvent.press(h.view!.getByText('OK'));
+    h.boundary.llama!.releaseStream();
+    await waitUntilIdle(h);
+
+    // Chat Y's reply is written again and read aloud.
+    h.boundary.llama!.scriptCompletion({ text: 'Other again. Still here.', pauseAfter: 'Other again. S' });
+    await h.openActionMenu('assistant', 'longpress');
+    h.rtl.fireEvent.press(h.view!.getByTestId('action-retry'));
+    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['One here.', 'Other again.']), TIMEOUT);
+    h.boundary.llama!.releaseStream();
+    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['One here.', 'Other again.', 'Still here.']), TIMEOUT);
+    expect(h.view!.queryByText(/Other chat\./) === null).toBe(true);
   }, 30000);
 
   it('switching read-aloud off and on again while a reply streams reads the rest of it', async () => {
