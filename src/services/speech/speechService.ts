@@ -69,8 +69,12 @@ class SpeechService {
   constructor(private readonly engine: SpeechEngine) {
     // The silence lasts until the host begins a turn (its later tool rounds stay silent too). A session end
     // is not the turn's end: a conversation switch ends the session while the left turn generates on.
+    // A begin always follows the previous turn's end, so a stream a stop cut off is stale by then: drop it,
+    // or the new turn's tokens could continue it unheard. A live stream stays, so a late end still reads it.
     generationSession.subscribe(() => {
-      if (generationSession.getConversationId() !== null) this.silencedTurn = null;
+      if (generationSession.getConversationId() === null) return;
+      this.silencedTurn = null;
+      this.dropStoppedStream();
     });
   }
 

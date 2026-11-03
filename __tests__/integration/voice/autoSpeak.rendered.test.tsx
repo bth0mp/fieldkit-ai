@@ -124,6 +124,12 @@ function backStopsSpeech(h: Harness): void {
   expect(stopCalls(h)).toBeGreaterThan(before);
 }
 
+/** Back from the chat: speech stops (see backStopsSpeech) and the screen is removed. */
+function goBack(h: Harness): void {
+  backStopsSpeech(h);
+  h.view!.unmount();
+}
+
 /** Open a chat screen on `conversationId`, or on a new chat without one, as the chat list and New Chat do. */
 async function openChat(h: Harness, conversationId?: string): Promise<void> {
   require('../../harness/chatHarness').routeHolder.params = conversationId ? { conversationId } : {};
@@ -558,6 +564,60 @@ describe('Read replies aloud (rendered)', () => {
     await nativeEvent(h, 'litert_complete', '{}');
     await waitUntilGone(h, 'stop-button');
     const expected = ['Let me check.', 'Okay.', 'It is four.', 'Bye now.'];
+    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(expected), TIMEOUT);
+    await h.settle(200);
+    expect(spoken(h)).toEqual(expected);
+  }, 30000);
+
+  it('a chat left early in its reply does not silence the next chat', async () => {
+    const h = await setupChatScreen({ engine: 'llama', speech: {} });
+    await readAloudChat(h);
+    // Chat A's reply has only just started ('Sure') when the user goes back and opens a new chat.
+    h.boundary.llama!.scriptCompletion({ text: 'Sure. Here is A. More of A. End of A.', pauseAfter: 'Sure' });
+    await h.tapSend('question for A');
+    await h.rtl.waitFor(() => expect(h.useChatStore.getState().streamingMessage).toMatch(/Sure/), TIMEOUT);
+    const chatA = h.conversationId!;
+    goBack(h);
+    await openChat(h);
+    // Chat A finishes off screen.
+    h.boundary.llama!.releaseStream();
+    await waitUntilIdle(h);
+    await h.settle(200);
+    expect(spoken(h)).toEqual([]);
+
+    // Chat B: the first piece of its reply ('Paris') is longer than all chat A showed.
+    h.boundary.llama!.scriptCompletion({ text: 'Paris is big. It is old. The end.', pauseAfter: 'Paris' });
+    await h.tapSend('question for B');
+    await h.rtl.waitFor(() => expect(h.useChatStore.getState().streamingMessage).toMatch(/Paris/), TIMEOUT);
+    expect(h.conversationId).not.toBe(chatA);
+    h.boundary.llama!.releaseStream();
+    const expected = ['Paris is big.', 'It is old.', 'The end.'];
+    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(expected), TIMEOUT);
+    await h.settle(200);
+    expect(spoken(h)).toEqual(expected);
+  }, 30000);
+
+  it('a reply left early, then retried once it finished, is read', async () => {
+    const h = await setupChatScreen({ engine: 'llama', speech: {} });
+    await readAloudChat(h);
+    // The user leaves chat A just after its reply started; it finishes off screen.
+    h.boundary.llama!.scriptCompletion({ text: 'Sure. Here is A. More of A. End of A.', pauseAfter: 'Sure' });
+    await h.tapSend('question for A');
+    await h.rtl.waitFor(() => expect(h.useChatStore.getState().streamingMessage).toMatch(/Sure/), TIMEOUT);
+    const chatA = h.conversationId!;
+    goBack(h);
+    h.boundary.llama!.releaseStream();
+    await waitUntilIdle(h);
+
+    // Back in chat A from the chat list, the user retries the reply.
+    await openChat(h, chatA);
+    await h.rtl.waitFor(() => expect(h.view!.queryByText(/End of A\./)).not.toBeNull(), TIMEOUT);
+    h.boundary.llama!.scriptCompletion({ text: 'Sure thing. Here it is. Done now.', pauseAfter: 'Here it is. D' });
+    await h.openActionMenu('assistant', 'longpress');
+    h.rtl.fireEvent.press(h.view!.getByTestId('action-retry'));
+    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['Sure thing.', 'Here it is.']), TIMEOUT);
+    h.boundary.llama!.releaseStream();
+    const expected = ['Sure thing.', 'Here it is.', 'Done now.'];
     await h.rtl.waitFor(() => expect(spoken(h)).toEqual(expected), TIMEOUT);
     await h.settle(200);
     expect(spoken(h)).toEqual(expected);
