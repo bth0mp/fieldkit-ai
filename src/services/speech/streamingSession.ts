@@ -2,81 +2,66 @@ import type { Message } from '../../types';
 import { parseModelOutput, prepareMessageForSpeech } from '../../utils/messageContent';
 import { splitIntoSentences, stableSpeakablePrefix, unreadSentences } from '../../utils/speechText';
 
-/** Where the host's stream stands when a session opens. */
-interface StreamStart {
-  gen: number;
-  conversationId: string | null;
-  /** How many messages the conversation holds. The host stores one per finished round. */
-  messageCount: number;
-  /** The first text the session saw. */
-  text: string;
+/** The chat store's streaming fields that mark where a reply starts and ends. */
+interface StreamingFields {
+  streamingForConversationId: string | null;
+  streamingMessage: string;
 }
 
 /**
- * One streamed reply being read aloud as it arrives, from its first token until the host reports the stream
- * ended. It holds the bookkeeping and the text rules; `speechService` owns it, drives the engine and is the
- * only writer of the speech store. Shaped like the service's chunk session (`gen`, `total`, `done`) so the
- * engine events finish it the same way; `total` stays Infinity while more sentences may follow.
+ * Where a chat store update puts a reply boundary, if anywhere. Streaming that starts with an empty text, also
+ * for another chat, is a 'start'. A text emptied while streaming goes on is a 'reset': the JS tool loop empties
+ * it before each further round, and an append that strips a closed tool call can leave it empty. LiteRT's
+ * native tool loop never empties the text, so its whole turn is one reply.
+ */
+export function replyBoundary(state: StreamingFields, prev: StreamingFields): 'start' | 'reset' | null {
+  if (state.streamingForConversationId === null || state.streamingMessage !== '') return null;
+  if (prev.streamingMessage !== '') return 'reset';
+  return prev.streamingForConversationId !== state.streamingForConversationId ? 'start' : null;
+}
+
+/**
+ * One streamed reply being read aloud as it arrives, from its first token until the chat store starts the next
+ * reply or the host reports the stream ended. It holds the bookkeeping and the text rules; `speechService` owns
+ * it, drives the engine and is the only writer of the speech store. Shaped like the service's chunk session
+ * (`gen`, `total`, `done`) so the engine events finish it the same way; `total` stays Infinity while more
+ * sentences may follow.
  */
 export class StreamingSession {
   total = Infinity;
   readonly done = new Set<string>();
   readonly startedAt = Date.now();
-  readonly gen: number;
-  readonly conversationId: string | null;
   /** The speech was cut off (stop, a new message, a failed setup): nothing more is read of this reply. */
   stopped = false;
-  /** The host reported the stream over. The next token starts a new session. */
+  /** The reply is over. The next token starts a new session. */
   ended = false;
   /** The engine is set up: queued sentences go straight to it. */
   ready = false;
   starting = false;
   queue: string[] = [];
+  /** The answer at the last token, markup left out: a reply boundary reads the rest of the reply from it. */
+  answer = '';
   /** Sentences of the reply already handed on; the one after them may still grow. */
   private spokenCount = 0;
   private lastSpoken: string | null = null;
   private nextIndex = 0;
-  private readonly messageCount: number;
-  /** The text at the last token, to tell whether the next token continues this reply. */
-  private seenText: string;
 
-  constructor(start: StreamStart) {
-    this.gen = start.gen;
-    this.conversationId = start.conversationId;
-    this.messageCount = start.messageCount;
-    this.seenText = start.text;
-  }
-
-  /**
-   * True when a token starts a new reply instead of continuing this one: the host reported the stream over; or
-   * it stored a message since and the text started over (the pause between tool rounds does not always show as
-   * a stream end, because a quick tool finishes before the screen redraws; a native tool call adds its messages
-   * while the text streams on, and then it is the same reply); or the text got shorter after a stop.
-   */
-  isOver(now: Pick<StreamStart, 'text' | 'messageCount'>): boolean {
-    return this.ended
-      || (now.messageCount !== this.messageCount && !now.text.startsWith(this.seenText))
-      || (this.stopped && now.text.length < this.seenText.length);
-  }
-
-  noteText(text: string): void {
-    this.seenText = text;
-  }
+  constructor(readonly gen: number, readonly conversationId: string | null) {}
 
   /**
    * The sentences of the answer so far that are finished and not yet handed on. Code, markup and anything
    * still open are left out. The last sentence is held until a later one exists, because it may still grow.
    */
   takeFinished(cumulative: string): string[] {
-    const prefix = stableSpeakablePrefix(parseModelOutput(cumulative).answer);
-    const sentences = splitIntoSentences(prepareMessageForSpeech(prefix));
+    this.answer = parseModelOutput(cumulative).answer;
+    const sentences = splitIntoSentences(prepareMessageForSpeech(stableSpeakablePrefix(this.answer)));
     const finished = sentences.slice(this.spokenCount, sentences.length - 1);
     this.spokenCount = Math.max(this.spokenCount, sentences.length - 1);
     if (finished.length > 0) this.lastSpoken = finished[finished.length - 1];
     return finished;
   }
 
-  /** What of the stored reply was not read while it streamed. `aligned` is false when it no longer matches what was. */
+  /** What of the whole reply was not read while it streamed. `aligned` is false when it no longer matches what was. */
   takeRemainder(content: string): { rest: string[]; aligned: boolean } {
     return unreadSentences({
       sentences: splitIntoSentences(prepareMessageForSpeech(content)),

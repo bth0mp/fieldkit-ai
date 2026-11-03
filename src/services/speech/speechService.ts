@@ -5,7 +5,7 @@ import { useSpeechStore, type SpeechPatch } from '../../stores/speechStore';
 import { prepareMessageForSpeech } from '../../utils/messageContent';
 import { chunkForEngine, splitIntoSentences } from '../../utils/speechText';
 import logger from '../../utils/logger';
-import { isUnreadAnswer, StreamingSession } from './streamingSession';
+import { isUnreadAnswer, replyBoundary, StreamingSession } from './streamingSession';
 import { systemSpeechEngine } from './systemSpeechEngine';
 import type { SpeechEngine, SpeechEngineEvent, SpeechPhase, SpeechVoice } from './speechTypes';
 
@@ -69,12 +69,16 @@ class SpeechService {
   constructor(private readonly engine: SpeechEngine) {
     // The silence lasts until the host begins a turn (its later tool rounds stay silent too). A session end
     // is not the turn's end: a conversation switch ends the session while the left turn generates on.
-    // A begin always follows the previous turn's end, so a stream a stop cut off is stale by then: drop it,
-    // or the new turn's tokens could continue it unheard. A live stream stays, so a late end still reads it.
     generationSession.subscribe(() => {
-      if (generationSession.getConversationId() === null) return;
-      this.silencedTurn = null;
-      this.dropStoppedStream();
+      if (generationSession.getConversationId() !== null) this.silencedTurn = null;
+    });
+    // The chat store marks where one streamed reply ends and the next begins (replyBoundary). The boundary is
+    // handled once the store action that caused it is over: an append that strips the text to '' hands the
+    // token hook the stripped text first, so the rest is read from the text the store settled on.
+    useChatStore.subscribe((state, prev) => {
+      const boundary = replyBoundary(state, prev);
+      const stream = this.stream;
+      if (boundary !== null && stream && !stream.ended) queueMicrotask(() => this.endReply({ stream, readRest: boundary === 'reset' }));
     });
   }
 
@@ -204,20 +208,21 @@ class SpeechService {
   /**
    * The host calls this with the whole answer so far on every streamed token, from inside a store action:
    * stay synchronous and cheap. Each finished sentence goes to the engine. The last one is held until a
-   * later sentence exists, because it may still grow; the rest is read by onStreamingEnd().
+   * later sentence exists, because it may still grow; the rest is read when the next reply starts (endReply)
+   * or by onStreamingEnd(), whichever ends this reply first.
    */
   onStreamingToken(cumulative: string): void {
     // A silenced turn opens no session: the speech of a message the user chose to hear keeps playing.
     if (this.silencedTurn !== null || !store().autoSpeak || !this.canSpeak()) return;
-    const stream = this.streamFor(cumulative);
+    const stream = this.streamFor();
     if (stream.stopped) return;
     this.enqueueStream(stream, stream.takeFinished(cumulative));
   }
 
   /**
-   * The host calls this each time streaming stops for a conversation, which includes the pause between tool
-   * rounds. The reply's last sentences are read from the stored message; the next token starts a new session.
-   * The signal comes from a screen effect, so it can land after the next round started: then it is stale.
+   * The host calls this each time streaming stops for the conversation on screen, once a turn's last round is
+   * over. The reply's last sentences are read from the stored message; the next token starts a new session.
+   * The signal comes from a screen effect, so it can land after the next turn started: then it is stale.
    */
   onStreamingEnd(conversationId: string): void {
     if (useChatStore.getState().streamingForConversationId === conversationId) return; // streaming again
@@ -231,20 +236,27 @@ class SpeechService {
 
   // ---------------------------------------------------------------------------------------------
 
-  /** The session this token belongs to: the running one, or a new one when the last reply is over. */
-  private streamFor(text: string): StreamingSession {
-    const { streamingForConversationId: conversationId, getConversationMessages } = useChatStore.getState();
-    const messageCount = conversationId === null ? 0 : getConversationMessages(conversationId).length;
-    const current = this.stream;
-    if (current && !current.isOver({ text, messageCount })) {
-      current.noteText(text);
-      return current;
-    }
+  /** The session this token belongs to: the running one, or a new one once the reply before is over. */
+  private streamFor(): StreamingSession {
+    if (this.stream && !this.stream.ended) return this.stream;
     // The generation bump drops any queued speech of the reply before; what is already playing finishes.
-    const stream = new StreamingSession({ gen: ++this.generation, conversationId, messageCount, text });
+    const stream = new StreamingSession(++this.generation, useChatStore.getState().streamingForConversationId);
     this.stream = stream;
     this.session = stream;
     return stream;
+  }
+
+  /**
+   * The chat store moved on to the next reply: a new turn, or the next tool round. A round that had text reads
+   * its rest from the answer at its last token (no stream end comes for it: the store only empties the text).
+   * The next token opens a new session.
+   */
+  private endReply(input: { stream: StreamingSession; readRest: boolean }): void {
+    const { stream, readRest } = input;
+    if (stream.ended) return;
+    if (readRest && !stream.stopped && store().autoSpeak && this.canSpeak()) this.enqueueRest(stream, stream.answer);
+    stream.ended = true;
+    this.settleStream(stream);
   }
 
   /** Forget a stream a stop cut off, so the next token opens a new session instead of continuing it unheard. */
@@ -306,12 +318,17 @@ class SpeechService {
     const messages = useChatStore.getState().getConversationMessages(conversationId);
     const message = messages[messages.length - 1];
     if (!isUnreadAnswer(message, { since: stream.startedAt, spoken: this.spokenMessageIds })) return;
-    const { rest, aligned } = stream.takeRemainder(message.content);
-    if (!aligned) logger.warn(`${LOG} prefix-mismatch between the streamed and the stored reply`);
-    this.enqueueStream(stream, rest);
+    this.enqueueRest(stream, message.content);
     this.spokenMessageIds.add(message.id);
     // Name the stored reply, so its Speak button shows Stop speaking while it is read.
     if (store().speakingMessageId === STREAMING_ID) this.put({ speakingMessageId: message.id });
+  }
+
+  /** Queue what of `content`, the reply's whole answer, was not read while it streamed. */
+  private enqueueRest(stream: StreamingSession, content: string): void {
+    const { rest, aligned } = stream.takeRemainder(content);
+    if (!aligned) logger.warn(`${LOG} prefix-mismatch between the streamed and the stored reply`);
+    this.enqueueStream(stream, rest);
   }
 
   /** Once the reply has ended and the engine has finished everything it was given, go back to ready. */

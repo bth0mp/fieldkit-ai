@@ -63,7 +63,7 @@ async function readAloudChat(h: Harness, opts: { toolsOff?: boolean } = {}): Pro
 
 /**
  * Round 1 of a tool turn: a short lead-in, then a calculator call, held after 'Okay.' so 'Let me check.' is
- * read. The last piece of a round that ends in a tool call is not read.
+ * read. 'Okay.' is the round's last piece: it is read once the chat moves on to round 2.
  */
 async function holdToolRoundOne(h: Harness): Promise<void> {
   const call = toolCallText('calculator', { expression: '2+2' });
@@ -385,14 +385,39 @@ describe('Read replies aloud (rendered)', () => {
     await readAloudChat(h);
     await holdToolRoundOne(h);
 
-    // Round 2 starts as soon as the calculator has run, from an empty text: it is read from its first sentence.
+    // Round 1 ends with its last piece, 'Okay.'. Round 2 starts as soon as the calculator has run, from an empty
+    // text: it is read from its first sentence.
     h.boundary.llama!.scriptCompletion({ text: 'It is sunny. Bye', pauseAfter: 'It is sunny. B' });
     h.boundary.llama!.releaseStream();
-    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['Let me check.', 'It is sunny.']), TIMEOUT);
+    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['Let me check.', 'Okay.', 'It is sunny.']), TIMEOUT);
     h.boundary.llama!.releaseStream();
-    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['Let me check.', 'It is sunny.', 'Bye']), TIMEOUT);
+    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['Let me check.', 'Okay.', 'It is sunny.', 'Bye']), TIMEOUT);
     await h.settle(200);
-    expect(spoken(h)).toEqual(['Let me check.', 'It is sunny.', 'Bye']);
+    expect(spoken(h)).toEqual(['Let me check.', 'Okay.', 'It is sunny.', 'Bye']);
+  }, 30000);
+
+  it('a tool turn whose first round is only a tool call reads each sentence once', async () => {
+    const h = await setupChatScreen({ engine: 'llama', speech: {} });
+    h.enableToolViaUI('calculator');
+    await readAloudChat(h);
+
+    // Round 1 calls the calculator without a word first. Once the call is closed, the chat strips it.
+    h.boundary.llama!.scriptCompletion({ text: toolCallText('calculator', { expression: '2+2' }), pauseAfter: '<tool_call>' });
+    await h.tapSend('what is (2+2)*2');
+    await h.rtl.waitFor(() => expect(h.useChatStore.getState().streamingMessage).toMatch(/<tool_call>/), TIMEOUT);
+
+    // Round 2 says something and calls the calculator again. Its call is stripped too once it is closed.
+    const second = toolCallText('calculator', { expression: '4*2' });
+    h.boundary.llama!.scriptCompletion({ text: `It is four. Now times two. ${second}`, pauseAfter: '{"name"' });
+    h.boundary.llama!.releaseStream();
+    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['It is four.']), TIMEOUT);
+
+    // Round 3 answers.
+    h.boundary.llama!.scriptCompletion({ text: 'It is eight. Bye now.', pauseAfter: 'It is eight. B' });
+    h.boundary.llama!.releaseStream();
+    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['It is four.', 'Now times two.', 'It is eight.']), TIMEOUT);
+    await finishTurn(h);
+    expect(spoken(h)).toEqual(['It is four.', 'Now times two.', 'It is eight.', 'Bye now.']);
   }, 30000);
 
   it('leaving the app during a tool round keeps the rest of that turn silent', async () => {
