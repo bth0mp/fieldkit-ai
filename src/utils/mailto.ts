@@ -1,7 +1,9 @@
 /**
  * Builds the `mailto:` URL the email tool hands to the OS (RFC 6068): line breaks become `%0D%0A`,
  * spaces `%20`, and `&`, `+`, `#`, `=` are percent-encoded so they survive the mail app's parser.
- * Some mail apps drop or reject longer URLs, so the whole URL stays under MAILTO_MAX_LENGTH.
+ * Some mail apps drop or reject longer URLs, so the whole URL stays under MAILTO_MAX_LENGTH: the
+ * recipients are never cut (a list that does not fit is refused), the subject gets a bounded share,
+ * and the body gets whatever is left.
  */
 interface MailDraft {
   to?: string;
@@ -10,6 +12,10 @@ interface MailDraft {
 }
 
 const MAILTO_MAX_LENGTH = 4000;
+/** Encoded characters the subject may take, so a runaway subject never crowds out the body. */
+const SUBJECT_MAX_ENCODED = 300;
+/** Encoded characters the recipients may take. A longer list is refused, never shortened. */
+const RECIPIENTS_MAX_ENCODED = 1000;
 
 const encodeText = (text: string): string => encodeURIComponent(text.replace(/\r?\n/g, '\r\n'));
 
@@ -20,6 +26,12 @@ const encodeAddresses = (to: string): string =>
     .filter(Boolean)
     .map(address => encodeURIComponent(address).replace(/%40/g, '@'))
     .join(',');
+
+/** Why these recipients cannot go in one draft (a message the model can act on), or null when they fit. */
+export function recipientsProblem(to: string | undefined): string | null {
+  if (!to || encodeAddresses(to).length <= RECIPIENTS_MAX_ENCODED) return null;
+  return 'Too many recipients for one draft. Use fewer addresses, or split them across several drafts.';
+}
 
 /** The longest prefix of `text` whose encoding fits in `budget` characters, cut between characters
  *  (never inside a percent-escape or a surrogate pair). */
@@ -35,14 +47,15 @@ function encodePrefix(text: string, budget: number): { encoded: string; cut: boo
   return { encoded, cut: true };
 }
 
-export function buildMailtoUrl(draft: MailDraft): { url: string; truncated: boolean } {
-  const head = `mailto:${draft.to ? encodeAddresses(draft.to) : ''}?subject=`;
-  const limit = MAILTO_MAX_LENGTH - 1;
-  const bodyKey = '&body=';
-  const subject = encodePrefix(draft.subject, Math.max(0, limit - head.length - bodyKey.length));
-  const prefix = `${head}${subject.encoded}${bodyKey}`;
-  const body = encodePrefix(draft.body, Math.max(0, limit - prefix.length));
-  return { url: `${prefix}${body.encoded}`, truncated: subject.cut || body.cut };
+/** Throws when the recipients do not fit (see recipientsProblem): they are never dropped. `truncated` is set
+ *  when anything was cut; `bodyTruncated` when the body was. */
+export function buildMailtoUrl(draft: MailDraft): { url: string; truncated: boolean; bodyTruncated: boolean } {
+  const problem = recipientsProblem(draft.to);
+  if (problem) throw new Error(problem);
+  const subject = encodePrefix(draft.subject, SUBJECT_MAX_ENCODED);
+  const prefix = `mailto:${draft.to ? encodeAddresses(draft.to) : ''}?subject=${subject.encoded}&body=`;
+  const body = encodePrefix(draft.body, MAILTO_MAX_LENGTH - 1 - prefix.length);
+  return { url: `${prefix}${body.encoded}`, truncated: subject.cut || body.cut, bodyTruncated: body.cut };
 }
 
 /** Reads a draft from a tool call's arguments. A model may send `to` as a list; anything that is

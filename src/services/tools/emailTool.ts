@@ -13,13 +13,14 @@ import type { ToolCall, ToolResult } from './types';
 
 const OPENED = 'Opened a draft in the mail app. The user sends it from there.';
 const BODY_SHORTENED = ' The body was shortened to fit; the full text was copied to the clipboard.';
+const SUBJECT_SHORTENED = ' The subject was shortened to fit.';
 const NO_MAIL_APP = 'No mail app opened. The draft was copied and the share sheet was opened.';
 
 export const emailTool = {
   async run(call: ToolCall): Promise<ToolResult> {
     const start = Date.now();
     const draft = draftFromArgs(call.arguments);
-    const { url, truncated } = buildMailtoUrl(draft);
+    const { url, truncated, bodyTruncated } = buildMailtoUrl(draft);
     const result = (content: string): ToolResult => ({ toolCallId: call.id, name: call.name, content, durationMs: Date.now() - start });
     try {
       await Linking.openURL(url);
@@ -29,6 +30,7 @@ export const emailTool = {
       return result(NO_MAIL_APP);
     }
     if (!truncated) return result(OPENED);
+    if (!bodyTruncated) return result(OPENED + SUBJECT_SHORTENED);
     Clipboard.setString(draft.body);
     return result(OPENED + BODY_SHORTENED);
   },

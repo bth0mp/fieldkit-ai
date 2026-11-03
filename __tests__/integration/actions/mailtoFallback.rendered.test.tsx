@@ -70,6 +70,22 @@ describe('email draft fallbacks', () => {
     });
   });
 
+  it('keeps the body of a draft with a runaway subject and says only the subject was shortened', async () => {
+    const subject = `${'A very long subject line. '.repeat(100)}SUBJECT END`; // ~2600 characters
+    const h = await chatWithDraft({ to: 'bob@example.com', subject, body: 'The body is intact.' });
+    await approveAndOpenResult(h, 'Opened it.');
+
+    expect(h.boundary.linking.openURL).toHaveBeenCalledTimes(1);
+    const url: string = h.boundary.linking.openURL.mock.calls[0][0];
+    expect(url.length).toBeLessThan(4000);
+    expect(url).toContain('&body=The%20body%20is%20intact.');
+    expect(url).not.toContain('SUBJECT%20END');
+    expect(h.boundary.clipboard.setString).not.toHaveBeenCalled(); // the body went out whole
+    await h.rtl.waitFor(() => {
+      expect(h.view!.getByText('Opened a draft in the mail app. The user sends it from there. The subject was shortened to fit.')).toBeTruthy();
+    });
+  });
+
   it('copies nothing when the draft opens whole', async () => {
     const h = await chatWithDraft({ to: 'bob@example.com', subject: 'Hi', body: 'Short note' });
     await approveAndOpenResult(h, 'Done.');
