@@ -202,8 +202,10 @@ class SpeechService {
   /**
    * The host calls this each time streaming stops for a conversation, which includes the pause between tool
    * rounds. The reply's last sentences are read from the stored message; the next token starts a new session.
+   * The signal comes from a screen effect, so it can land after the next round started: then it is stale.
    */
   onStreamingEnd(conversationId: string): void {
+    if (useChatStore.getState().streamingForConversationId === conversationId) return; // streaming again
     const stream = this.stream;
     if (!stream || stream.ended) return;
     if (stream.conversationId !== null && conversationId !== stream.conversationId) return; // another chat's stream is still live

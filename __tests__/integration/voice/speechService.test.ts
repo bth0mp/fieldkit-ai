@@ -298,6 +298,52 @@ describe('recovery', () => {
   });
 });
 
+describe('reading a reply while it streams', () => {
+  /**
+   * Auto-speak on with the engine ready, and a conversation holding the user's question. The stream runs
+   * through the real chat store actions, whose token hook reaches the service through the real bootstrap.
+   */
+  async function streamingChat() {
+    const t = boot();
+    require('../../../src/features').activateFieldkitFeatures();
+    const { useChatStore } = require('../../../src/stores/chatStore');
+    const chat = () => useChatStore.getState();
+    const conversationId: string = chat().createConversation('m');
+    chat().addMessage(conversationId, { role: 'user', content: 'q' });
+    t.service.setAutoSpeak(true);
+    await until(() => t.state().phase === 'ready', 'engine ready');
+    const texts = (): string[] => t.speech.calls.speak.map(c => c.text);
+    /** Wait for `count` speak calls, then a little longer, so a call too many would show. */
+    const spokenAfter = async (count: number): Promise<string[]> => {
+      await until(() => texts().length >= count, `${count} sentences handed to the engine`);
+      await new Promise(resolve => setTimeout(resolve, 30));
+      return texts();
+    };
+    return { t, chat, conversationId, spokenAfter };
+  }
+
+  it('ignores a stream-end signal that arrives once the stream is live again, and reads the real end', async () => {
+    const { t, chat, conversationId, spokenAfter } = await streamingChat();
+    chat().startStreaming(conversationId);
+    chat().appendToStreamingMessage('One. Two. Thr');
+    expect(await spokenAfter(2)).toEqual(['One.', 'Two.']);
+
+    // The screen's end signal for an earlier pause lands late, while this conversation streams again.
+    t.service.onStreamingEnd(conversationId);
+    chat().appendToStreamingMessage('ee. Four. Last');
+    expect(await spokenAfter(4)).toEqual(['One.', 'Two.', 'Three.', 'Four.']);
+    expect(t.state().speakingMessageId).toBe('streaming');
+
+    // The real end: the host stored the reply and stopped streaming. Only the rest is read, once.
+    chat().appendToStreamingMessage(' bit');
+    chat().finalizeStreamingMessage(conversationId);
+    t.service.onStreamingEnd(conversationId);
+    expect(await spokenAfter(5)).toEqual(['One.', 'Two.', 'Three.', 'Four.', 'Last bit']);
+    const messages = chat().getConversationMessages(conversationId);
+    expect(t.state().speakingMessageId).toBe(messages[messages.length - 1].id);
+  });
+});
+
 describe('without the native module', () => {
   it('cannot speak, and every call is a harmless no-op', async () => {
     const t = boot();
