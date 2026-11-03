@@ -61,6 +61,39 @@ async function readAloudChat(h: Harness, opts: { toolsOff?: boolean } = {}): Pro
   await h.rtl.waitFor(() => expect(h.boundary.speech!.calls.setVoice).toEqual(['en-us-offline']), TIMEOUT);
 }
 
+/**
+ * Round 1 of a tool turn: a short lead-in, then a calculator call, held after 'Okay.' so 'Let me check.' is
+ * read. The last piece of a round that ends in a tool call is not read.
+ */
+async function holdToolRoundOne(h: Harness): Promise<void> {
+  const call = toolCallText('calculator', { expression: '2+2' });
+  h.boundary.llama!.scriptCompletion({ text: `Let me check. Okay. ${call}`, pauseAfter: 'Okay.' });
+  await h.tapSend('what is 2 + 2');
+  await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['Let me check.']), TIMEOUT);
+}
+
+/** Let round 1 finish so the calculator runs, then hold round 2 once 'It is sunny. B' is on screen. */
+async function holdToolRoundTwo(h: Harness): Promise<void> {
+  h.boundary.llama!.scriptCompletion({ text: 'It is sunny. Bye', pauseAfter: 'It is sunny. B' });
+  h.boundary.llama!.releaseStream();
+  await h.rtl.waitFor(() => expect(h.view!.queryByText(/It is sunny\. B/)).not.toBeNull(), TIMEOUT);
+}
+
+/**
+ * Wait until nothing on screen carries `testID`. The check compares with null, so a poll that fails prints a
+ * boolean: printing the element itself formats its whole fiber tree and blocks the test for seconds.
+ */
+async function waitUntilGone(h: Harness, testID: string): Promise<void> {
+  await h.rtl.waitFor(() => expect(h.view!.queryByTestId(testID) === null).toBe(true), TIMEOUT);
+}
+
+/** Let the held reply finish and wait until the turn is over (the stop button is gone). */
+async function finishTurn(h: Harness): Promise<void> {
+  h.boundary.llama!.releaseStream();
+  await waitUntilGone(h, 'stop-button');
+  await h.settle(200);
+}
+
 /** Press the stop button, as the user does while a reply is streaming. */
 async function pressStop(h: Harness): Promise<void> {
   const stop = await h.rtl.waitFor(() => h.view!.getByTestId('stop-button'), TIMEOUT);
@@ -232,12 +265,7 @@ describe('Read replies aloud (rendered)', () => {
     const h = await setupChatScreen({ engine: 'llama', speech: {} });
     h.enableToolViaUI('calculator');
     await readAloudChat(h);
-
-    // Round 1: a short lead-in, then a calculator call. The last piece of a round that ends in a tool call is not read.
-    const call = toolCallText('calculator', { expression: '2+2' });
-    h.boundary.llama!.scriptCompletion({ text: `Let me check. Okay. ${call}`, pauseAfter: 'Okay.' });
-    await h.tapSend('what is 2 + 2');
-    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['Let me check.']), TIMEOUT);
+    await holdToolRoundOne(h);
 
     // Round 2 starts as soon as the calculator has run, from an empty text: it is read from its first sentence.
     h.boundary.llama!.scriptCompletion({ text: 'It is sunny. Bye', pauseAfter: 'It is sunny. B' });
@@ -247,6 +275,67 @@ describe('Read replies aloud (rendered)', () => {
     await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['Let me check.', 'It is sunny.', 'Bye']), TIMEOUT);
     await h.settle(200);
     expect(spoken(h)).toEqual(['Let me check.', 'It is sunny.', 'Bye']);
+  }, 30000);
+
+  it('leaving the app during a tool round keeps the rest of that turn silent', async () => {
+    const h = await setupChatScreen({ engine: 'llama', speech: {} });
+    h.enableToolViaUI('calculator');
+    await readAloudChat(h);
+    await holdToolRoundOne(h);
+
+    // The user goes to the home screen while round 1 is still streaming.
+    const before = stopCalls(h);
+    await h.rtl.act(async () => { h.boundary.emitAppStateChange('background'); });
+    expect(stopCalls(h)).toBeGreaterThan(before);
+
+    // The turn goes on without the user; round 2 is not read, not even its first sentence.
+    await holdToolRoundTwo(h);
+    await h.settle(200);
+    expect(spoken(h)).toEqual(['Let me check.']);
+    await finishTurn(h);
+    expect(spoken(h)).toEqual(['Let me check.']);
+
+    // Back in the app, the next reply is read again.
+    await h.rtl.act(async () => { h.boundary.emitAppStateChange('active'); });
+    h.boundary.llama!.scriptCompletion({ text: 'Next one. Next two.', pauseAfter: 'Next one. N' });
+    await h.tapSend('again');
+    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['Let me check.', 'Next one.']), TIMEOUT);
+    h.boundary.llama!.releaseStream();
+    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['Let me check.', 'Next one.', 'Next two.']), TIMEOUT);
+  }, 30000);
+
+  it('Speak on an earlier reply during a tool round reads it to the end, and the turn stays silent', async () => {
+    const h = await setupChatScreen({ engine: 'llama', speech: {} });
+    h.enableToolViaUI('calculator');
+    mountChat(h);
+    // An earlier reply, which arrived before read-aloud was switched on, so it was not read.
+    await h.send('hi', { text: 'Earlier one. Earlier two.' });
+    await h.rtl.waitFor(() => expect(h.view!.queryByText(/Earlier one\. Earlier two\./)).not.toBeNull(), TIMEOUT);
+    await tapReadAloud(h);
+    await h.rtl.waitFor(() => expect(h.boundary.speech!.calls.setVoice).toEqual(['en-us-offline']), TIMEOUT);
+    await holdToolRoundOne(h);
+
+    // While round 1 streams, the user taps Speak on the earlier reply (the only finished reply on screen).
+    h.rtl.fireEvent.press(h.view!.getByLabelText('Speak'));
+    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['Let me check.', 'Earlier one.', 'Earlier two.']), TIMEOUT);
+    await h.rtl.waitFor(() => expect(h.view!.queryByLabelText('Stop speaking')).not.toBeNull(), TIMEOUT);
+    const earlier = h.boundary.speech!.calls.speak.slice(1).map(call => call.utteranceId);
+
+    // Round 2 streams. The earlier reply is still being read: nothing of round 2 is, and its button stays Stop speaking.
+    await holdToolRoundTwo(h);
+    await h.settle(200);
+    expect(spoken(h)).toEqual(['Let me check.', 'Earlier one.', 'Earlier two.']);
+    expect(h.view!.queryByLabelText('Stop speaking')).not.toBeNull();
+
+    // The engine finishes the earlier reply: its button is back to Speak.
+    await h.rtl.act(async () => {
+      for (const utteranceId of earlier) h.boundary.speech!.emit('FieldkitSpeech_done', { utteranceId });
+    });
+    await h.rtl.waitFor(() => expect(h.view!.queryByLabelText('Stop speaking') === null).toBe(true), TIMEOUT);
+    expect(h.view!.queryByLabelText('Speak') === null).toBe(false);
+
+    await finishTurn(h);
+    expect(spoken(h)).toEqual(['Let me check.', 'Earlier one.', 'Earlier two.']);
   }, 30000);
 
   it('control-token-only turn speaks nothing', async () => {

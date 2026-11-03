@@ -1,4 +1,5 @@
 import { AppState } from 'react-native';
+import { generationSession } from '../generationSession';
 import { useChatStore } from '../../stores/chatStore';
 import { useSpeechStore, type SpeechPatch } from '../../stores/speechStore';
 import { prepareMessageForSpeech } from '../../utils/messageContent';
@@ -62,8 +63,15 @@ class SpeechService {
   private chain: Promise<unknown> = Promise.resolve();
   private maxInputLength = DEFAULT_MAX_INPUT_LENGTH;
   private attached = false;
+  /** The conversation whose generating turn a stop() silenced: nothing more of that turn is read aloud. */
+  private silencedTurn: string | null = null;
 
-  constructor(private readonly engine: SpeechEngine) {}
+  constructor(private readonly engine: SpeechEngine) {
+    // The silence lasts until the host reports that turn over (its later tool rounds stay silent too).
+    generationSession.subscribe(() => {
+      if (generationSession.getConversationId() !== this.silencedTurn) this.silencedTurn = null;
+    });
+  }
 
   /** Cached and synchronous: the engine exists and is not known to lack an offline voice. */
   canSpeak(): boolean {
@@ -115,11 +123,16 @@ class SpeechService {
     }
   }
 
-  /** Synchronous, idempotent and always runs: silence the engine and drop everything pending. */
+  /**
+   * Synchronous, idempotent and always runs: silence the engine and drop everything pending. A stop while a
+   * turn is generating also keeps the rest of that turn from being read aloud.
+   */
   stop(): void {
     this.generation++;
     this.session = null;
     if (this.stream) this.stream.stopped = true;
+    const generating = generationSession.getConversationId();
+    if (generating !== null) this.silencedTurn = generating;
     this.clearSpeaking();
     this.engine.stop().catch(error => logger.warn(`${LOG} stop failed`, error));
   }
@@ -179,7 +192,8 @@ class SpeechService {
    * later sentence exists, because it may still grow; the rest is read by onStreamingEnd().
    */
   onStreamingToken(cumulative: string): void {
-    if (!store().autoSpeak || !this.canSpeak()) return;
+    // A silenced turn opens no session: the speech of a message the user chose to hear keeps playing.
+    if (this.silencedTurn !== null || !store().autoSpeak || !this.canSpeak()) return;
     const stream = this.streamFor(cumulative.length);
     if (stream.stopped) return;
     this.enqueueStream(stream, stream.takeFinished(cumulative));
