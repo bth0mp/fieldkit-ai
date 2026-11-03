@@ -108,7 +108,7 @@ same methods and events on iOS: each module gets an iOS counterpart that reports
 capability as unavailable (declared data, not a silent difference) until it is implemented.
 Pushing any `.kt` file makes the pre-push hook run Gradle (compile, lint, unit tests). This
 machine has an Android SDK but no `ANDROID_HOME`, no `local.properties` and no NDK, so that
-push fails today (see Open decisions).
+push fails until the local toolchain is set up (Owner decisions, item 1).
 
 **Tests.** One rendered integration test per change, faking only at the device boundary
 (`__tests__/harness/nativeBoundary.ts`). New voice tests must NOT go in
@@ -238,9 +238,22 @@ risk.
 **Private data and remote models (owner decision).** A chat can run on a remote server
 (Ollama or LM Studio on another computer, or a public endpoint), and the tool loop sends
 tool results to whichever model is active.
-- Private-data tools (`read_calendar_events`, and later persona memory) are not offered
-  while a remote text model is active. This is a rule in the tool-offering service, not in
-  callers, and the toggle says "Hidden while a remote model is active".
+- Private-data tools are exactly `read_calendar_events` and, later, persona memory.
+  `search_knowledge_base` is NOT in this class (my call): the knowledge base is documents
+  the user deliberately added to a project, and it keeps working on remote models as it
+  does today.
+- Private-data tools are not offered while a remote text model is active. This is a rule in
+  the tool-offering service, not in callers, and the toggle says "Hidden while a remote
+  model is active".
+- Chat history is covered too (my call). When a private-data tool result is added, the
+  conversation is marked `containsPrivateData`. Sending such a conversation to a remote
+  model is refused before any request is made. A notice explains why and offers "Start a
+  new chat" or "Use the on-device model". The history is never silently stripped, because
+  that would confuse the model's answers. This gets one rendered test through
+  `__tests__/harness/remoteHarness.ts`.
+- On LiteRT, approval-required tools are withheld (above). So once a LiteRT chat has read
+  private data, `web_search` and `read_url` drop out for the rest of that chat. The plan
+  checks whether LiteRT's tool set can change mid-conversation without a reset.
 - Once a conversation has read private data, `web_search` and `read_url` need approval for
   the rest of that conversation. This stops calendar contents from leaking into a search
   query or a URL.
@@ -339,7 +352,12 @@ Slice 3 is pure TypeScript and is not blocked by it.
   Tools and quick settings. The Speak button is always available once a voice is ready.
 - The TypeScript side of a native slice may merge before its Kotlin lands, with the
   "unavailable" path covered by a rendered test.
-- Commits go straight to `main` through the pre-push hook, as so far.
+- Approving this design authorizes pushing each green slice to `main` on the public repo
+  through the pre-push hook, without asking each time. No tags, releases, signing or
+  workflow-permission changes without asking.
+- Toolchain setup: if `sdkmanager` shows a license not already accepted in the existing
+  SDK's `licenses/` folder, the owner is asked to accept it; it is never auto-accepted.
+  Removing `react-native-calendar-events` reruns `node scripts/gen-notices.js`.
 
 ## Owner decisions (2026-11-03)
 
