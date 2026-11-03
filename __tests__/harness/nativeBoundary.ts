@@ -650,6 +650,8 @@ export interface SpeechFake {
   holdNextInit(): void;
   /** Release an init held via holdNextInit(). No-op if not held. */
   releaseInit(): void;
+  /** Replace the voices on the device, e.g. to model the user installing one: the next getVoices() returns them. */
+  setVoices(voices: SpeechVoice[]): void;
 }
 
 const DEFAULT_SPEECH_VOICES: SpeechVoice[] = [
@@ -661,7 +663,7 @@ const DEFAULT_SPEECH_VOICES: SpeechVoice[] = [
 const nativeError = (code: string, message: string) => Object.assign(new Error(message), { code });
 
 function makeSpeechFake(handle: FakeEmitterHandle, opts: SpeechFakeOptions): SpeechFake {
-  const voices = opts.voices ?? DEFAULT_SPEECH_VOICES;
+  let voices = opts.voices ?? DEFAULT_SPEECH_VOICES;
   const bound = opts.bound ?? true;
   const calls: SpeechFake['calls'] = { speak: [], setVoice: [] };
   const isOffline = (v: SpeechVoice) => !v.networkRequired && !v.notInstalled;
@@ -709,6 +711,7 @@ function makeSpeechFake(handle: FakeEmitterHandle, opts: SpeechFakeOptions): Spe
     emit: (event, payload) => handle.emit(event, payload),
     holdNextInit: () => { initHoldPending = true; },
     releaseInit: () => { const f = initHoldRelease; initHoldRelease = null; f?.(); },
+    setVoices: (next) => { voices = next; },
   };
 }
 

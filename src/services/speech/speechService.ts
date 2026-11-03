@@ -28,8 +28,11 @@ const errorCode = (error: unknown): unknown => (error as { code?: unknown } | nu
 /** Only voices that work offline and are installed are ever selected or spoken. */
 const isOfflineVoice = (voice: SpeechVoice): boolean => !voice.networkRequired && !voice.notInstalled;
 
-/** The selected voice if it is still available, else the highest quality one (first wins a tie). */
-function pickVoice(voices: SpeechVoice[], selectedId: string | null): SpeechVoice | undefined {
+/**
+ * The voice the engine speaks with: the selected one if it is still available, else the highest quality
+ * one (first wins a tie). The voice panel calls this too, so its check mark is always the voice in use.
+ */
+export function pickVoice(voices: SpeechVoice[], selectedId: string | null): SpeechVoice | undefined {
   return voices.find(voice => voice.id === selectedId)
     ?? voices.reduce<SpeechVoice | undefined>((best, voice) => (!best || voice.quality > best.quality ? voice : best), undefined);
 }
