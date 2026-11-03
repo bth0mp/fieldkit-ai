@@ -188,6 +188,12 @@ async function leftTurnEndsUnheard(h: Harness, leftChat: string): Promise<void> 
   expect(spoken(h)).toEqual(['Let me check.']);
 }
 
+/** Play one LiteRT native event, then give the 50 ms token batching time to hand it on. */
+async function nativeEvent(h: Harness, event: string, payload: string): Promise<void> {
+  await h.rtl.act(async () => { h.boundary.litertEvents.emit(event, payload); });
+  await h.settle(100);
+}
+
 describe('Read replies aloud (rendered)', () => {
   it('is off until switched on: the reply is not spoken', async () => {
     const h = await setupChatScreen({ engine: 'llama', speech: {} });
@@ -528,6 +534,34 @@ describe('Read replies aloud (rendered)', () => {
     expect(h.view!.queryByLabelText('Speak') === null).toBe(false);
     expect(spoken(h)).toEqual(['Earlier one.', 'Earlier two.']);
   }, 20000);
+
+  it('a LiteRT reply with a native tool call in the middle reads each sentence once', async () => {
+    const h = await setupChatScreen({ engine: 'litert', speech: {} });
+    h.enableToolViaUI('calculator');
+    await readAloudChat(h);
+
+    // The native engine takes the prompt; the test plays its events: a lead-in, a tool call, then the answer.
+    h.boundary.litert.scriptHang();
+    await h.tapSend('what is 2 + 2');
+    await h.rtl.waitFor(() => expect(h.boundary.litert.module.sendMessage).toHaveBeenCalled(), TIMEOUT);
+    await nativeEvent(h, 'litert_token', 'Let me check.');
+    await nativeEvent(h, 'litert_token', ' Okay.');
+    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['Let me check.']), TIMEOUT);
+
+    // The call and its result are added to the chat while the reply's text streams on.
+    const messages = () => h.useChatStore.getState().getConversationMessages(h.conversationId!);
+    const count = messages().length;
+    await nativeEvent(h, 'litert_tool_call', JSON.stringify({ id: 'tc-0', name: 'calculator', arguments: { expression: '2+2' } }));
+    await h.rtl.waitFor(() => expect(messages().length).toBe(count + 2), TIMEOUT);
+    await nativeEvent(h, 'litert_token', ' It is four.');
+    await nativeEvent(h, 'litert_token', ' Bye now.');
+    await nativeEvent(h, 'litert_complete', '{}');
+    await waitUntilGone(h, 'stop-button');
+    const expected = ['Let me check.', 'Okay.', 'It is four.', 'Bye now.'];
+    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(expected), TIMEOUT);
+    await h.settle(200);
+    expect(spoken(h)).toEqual(expected);
+  }, 30000);
 
   it('switching read-aloud on while a reply streams reads that reply from its first sentence', async () => {
     const h = await setupChatScreen({ engine: 'llama', speech: {} });

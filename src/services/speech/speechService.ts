@@ -205,7 +205,7 @@ class SpeechService {
   onStreamingToken(cumulative: string): void {
     // A silenced turn opens no session: the speech of a message the user chose to hear keeps playing.
     if (this.silencedTurn !== null || !store().autoSpeak || !this.canSpeak()) return;
-    const stream = this.streamFor(cumulative.length);
+    const stream = this.streamFor(cumulative);
     if (stream.stopped) return;
     this.enqueueStream(stream, stream.takeFinished(cumulative));
   }
@@ -228,16 +228,16 @@ class SpeechService {
   // ---------------------------------------------------------------------------------------------
 
   /** The session this token belongs to: the running one, or a new one when the last reply is over. */
-  private streamFor(length: number): StreamingSession {
+  private streamFor(text: string): StreamingSession {
     const { streamingForConversationId: conversationId, getConversationMessages } = useChatStore.getState();
     const messageCount = conversationId === null ? 0 : getConversationMessages(conversationId).length;
     const current = this.stream;
-    if (current && !current.isOver({ length, messageCount })) {
-      current.noteLength(length);
+    if (current && !current.isOver({ text, messageCount })) {
+      current.noteText(text);
       return current;
     }
     // The generation bump drops any queued speech of the reply before; what is already playing finishes.
-    const stream = new StreamingSession({ gen: ++this.generation, conversationId, messageCount, length });
+    const stream = new StreamingSession({ gen: ++this.generation, conversationId, messageCount, text });
     this.stream = stream;
     this.session = stream;
     return stream;

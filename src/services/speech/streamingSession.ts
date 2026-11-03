@@ -8,8 +8,8 @@ interface StreamStart {
   conversationId: string | null;
   /** How many messages the conversation holds. The host stores one per finished round. */
   messageCount: number;
-  /** Length of the first text the session saw. */
-  length: number;
+  /** The first text the session saw. */
+  text: string;
 }
 
 /**
@@ -37,27 +37,30 @@ export class StreamingSession {
   private lastSpoken: string | null = null;
   private nextIndex = 0;
   private readonly messageCount: number;
-  /** Length of the text at the last token. After a stop, a shorter text is the next reply. */
-  private seenLength: number;
+  /** The text at the last token, to tell whether the next token continues this reply. */
+  private seenText: string;
 
   constructor(start: StreamStart) {
     this.gen = start.gen;
     this.conversationId = start.conversationId;
     this.messageCount = start.messageCount;
-    this.seenLength = start.length;
+    this.seenText = start.text;
   }
 
   /**
    * True when a token starts a new reply instead of continuing this one: the host reported the stream over; or
-   * it stored a message since (the pause between tool rounds does not always show as a stream end, because a
-   * quick tool finishes before the screen redraws); or the text restarted after a stop.
+   * it stored a message since and the text started over (the pause between tool rounds does not always show as
+   * a stream end, because a quick tool finishes before the screen redraws; a native tool call adds its messages
+   * while the text streams on, and then it is the same reply); or the text got shorter after a stop.
    */
-  isOver(now: Pick<StreamStart, 'length' | 'messageCount'>): boolean {
-    return this.ended || now.messageCount !== this.messageCount || (this.stopped && now.length < this.seenLength);
+  isOver(now: Pick<StreamStart, 'text' | 'messageCount'>): boolean {
+    return this.ended
+      || (now.messageCount !== this.messageCount && !now.text.startsWith(this.seenText))
+      || (this.stopped && now.text.length < this.seenText.length);
   }
 
-  noteLength(length: number): void {
-    this.seenLength = length;
+  noteText(text: string): void {
+    this.seenText = text;
   }
 
   /**
