@@ -18,14 +18,16 @@ jest.mock('@react-navigation/native', () => ({
 
 const toolCallText = (name: string, args: Record<string, unknown>) => `<tool_call>${JSON.stringify({ name, arguments: args })}</tool_call>`;
 const DRAFT = { to: 'bob@example.com', subject: 'Hi', body: 'Hello' };
+const FIRST = { to: 'ann@example.com', subject: 'First', body: 'One' };
+const SECOND = { to: 'cal@example.com', subject: 'Second', body: 'Two' };
 
 type Harness = Awaited<ReturnType<typeof setupChatScreen>>;
 
-/** llama chat with draft_email on, the model's draft_email call waiting on its card. */
-async function chatWithCard(): Promise<Harness> {
+/** llama chat with draft_email on, the model's draft_email calls (one message) waiting on the first card. */
+async function chatWithCard(drafts = [DRAFT]): Promise<Harness> {
   const h = await setupChatScreen({ engine: 'llama' });
   h.enableToolViaUI('draft_email'); h.render();
-  await h.send('email bob', { text: `Drafting. ${toolCallText('draft_email', DRAFT)}` });
+  await h.send('email them', { text: `Drafting. ${drafts.map(d => toolCallText('draft_email', d)).join('')}` });
   await h.rtl.waitFor(() => h.view!.getByTestId('approval-card'));
   return h;
 }
@@ -33,6 +35,17 @@ async function chatWithCard(): Promise<Harness> {
 async function pressStop(h: Harness) {
   await h.rtl.act(async () => { h.rtl.fireEvent.press(h.view!.getByTestId('stop-button')); });
   await h.rtl.waitFor(() => { expect(h.view!.queryByTestId('stop-button')).toBeNull(); }, { timeout: 4000 });
+}
+
+/** The chat's own delete menu: settings sheet -> Delete Conversation -> confirm. */
+async function deleteOpenChat(h: Harness) {
+  const id = h.conversationId!;
+  h.rtl.fireEvent.press(h.view!.getByTestId('chat-settings-icon'));
+  h.rtl.fireEvent.press(await h.rtl.waitFor(() => h.view!.getByText('Delete Conversation')));
+  h.rtl.fireEvent.press(await h.rtl.waitFor(() => h.view!.getByText('Delete')));
+  await h.rtl.waitFor(() => {
+    expect(h.useChatStore.getState().conversations.some((c: { id: string }) => c.id === id)).toBe(false);
+  });
 }
 
 async function expectToolResultShows(h: Harness, text: RegExp) {
@@ -57,6 +70,10 @@ describe('approval lifecycle', () => {
     expect(h.boundary.llama!.calls.completion).toHaveLength(completionsBefore + 1);
     expect(h.view!.queryByTestId('approval-card')).toBeNull();
     expect(h.boundary.linking.openURL).not.toHaveBeenCalled();
+
+    // A stop ends that turn's cards only (unlike a delete): the chat's next turn can ask again.
+    await h.send('email bob after all', { text: toolCallText('draft_email', DRAFT) });
+    await h.rtl.waitFor(() => h.view!.getByTestId('approval-card'));
   });
 
   it('stop from another chat', async () => {
@@ -71,12 +88,7 @@ describe('approval lifecycle', () => {
   });
 
   it('one card at a time', async () => {
-    const h = await setupChatScreen({ engine: 'llama' });
-    h.enableToolViaUI('draft_email'); h.render();
-    const first = { to: 'ann@example.com', subject: 'First', body: 'One' };
-    const second = { to: 'cal@example.com', subject: 'Second', body: 'Two' };
-    await h.send('email ann and cal', { text: `Two drafts. ${toolCallText('draft_email', first)}${toolCallText('draft_email', second)}` });
-    await h.rtl.waitFor(() => h.view!.getByTestId('approval-card'));
+    const h = await chatWithCard([FIRST, SECOND]);
     expect(h.view!.getAllByTestId('approval-card')).toHaveLength(1);
     expect(h.view!.getByText(/Subject: First/)).toBeTruthy();
     expect(h.view!.queryByText(/Subject: Second/)).toBeNull();
@@ -106,21 +118,18 @@ describe('approval lifecycle', () => {
     await h.rtl.waitFor(() => { expect(h.view!.queryByText(/Left it alone\./)).not.toBeNull(); }, { timeout: 4000 });
   });
 
-  it('delete declines', async () => {
-    const h = await chatWithCard();
-    const chatA = h.conversationId!;
-    // The chat's own delete menu: settings sheet -> Delete Conversation -> confirm.
-    h.rtl.fireEvent.press(h.view!.getByTestId('chat-settings-icon'));
-    h.rtl.fireEvent.press(await h.rtl.waitFor(() => h.view!.getByText('Delete Conversation')));
-    h.rtl.fireEvent.press(await h.rtl.waitFor(() => h.view!.getByText('Delete')));
-    await h.rtl.waitFor(() => {
-      expect(h.useChatStore.getState().conversations.some((c: { id: string }) => c.id === chatA)).toBe(false);
-    });
-    h.boundary.llama!.scriptCompletion({ text: 'Fresh start here.' }); // the deleted chat's turn moves on with it
+  it('delete declines every call of the message', async () => {
+    const h = await chatWithCard([FIRST, SECOND]);
+    const completions = h.boundary.llama!.calls.completion.length;
+    h.boundary.llama!.scriptCompletion({ text: 'Deleted chat follow-up.' }); // the deleted chat's turn moves on with it
+    await deleteOpenChat(h);
+    // Both calls are declined (the second never asks for a card nobody can see), so that turn ends.
+    await h.rtl.waitFor(() => { expect(h.boundary.llama!.calls.completion).toHaveLength(completions + 1); }, { timeout: 4000 });
 
     await h.openChat(null);
     await h.send('hello', { text: 'Fresh start here.' });
     await h.rtl.waitFor(() => { expect(h.view!.queryByText(/Fresh start here\./)).not.toBeNull(); }, { timeout: 6000 });
+    expect(h.view!.queryByText(/Deleted chat follow-up\./)).toBeNull();
     expect(h.view!.queryByTestId('approval-card')).toBeNull();
     expect(h.boundary.linking.openURL).not.toHaveBeenCalled();
   });
@@ -133,10 +142,7 @@ describe('approval lifecycle', () => {
     h.boundary.llama!.scriptCompletion({ text: 'Partial answer and the rest', pauseAfter: 'Partial answer' });
     await h.tapSend('long question');
     await h.rtl.waitFor(() => { expect(h.useChatStore.getState().isStreaming).toBe(true); }, { timeout: 4000 });
-    h.rtl.fireEvent.press(h.view!.getByTestId('chat-settings-icon'));
-    h.rtl.fireEvent.press(await h.rtl.waitFor(() => h.view!.getByText('Delete Conversation')));
-    h.rtl.fireEvent.press(await h.rtl.waitFor(() => h.view!.getByText('Delete')));
-    await h.rtl.waitFor(() => { expect(h.useChatStore.getState().conversations).toHaveLength(0); });
+    await deleteOpenChat(h);
 
     await h.openChat(null);
     await h.send('hello', { text: 'Fresh reply.' });

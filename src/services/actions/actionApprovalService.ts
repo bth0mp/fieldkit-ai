@@ -25,10 +25,17 @@ interface ApprovalRequest {
 class ActionApprovalService {
   private queue: ApprovalRequest[] = [];
   private nextId = 0;
+  // ponytail: ids of deleted chats, kept for the app's lifetime; ids are never reused and deletes are few.
+  private closed = new Set<string>();
 
-  /** Wait for the user's decision on this call. */
+  /** Wait for the user's decision on this call. A deleted chat's call is declined at once: its card could
+   *  never show, and its turn would wait on it forever. */
   request(input: { call: ToolCall; conversationId: string; summary: ApprovalSummary }): Promise<ApprovalDecision> {
     const { call, conversationId, summary } = input;
+    if (this.closed.has(conversationId)) {
+      logger.log(`${LOG} request declined conv=${conversationId} tool=${call.name}: chat deleted`);
+      return Promise.resolve('declined');
+    }
     return new Promise(settle => {
       this.nextId += 1;
       const id = `approval-${this.nextId}`;
@@ -60,6 +67,14 @@ class ActionApprovalService {
     logger.log(`${LOG} declineConversation conv=${conversationId} declined=${declined.length}`);
     this.publish();
     declined.forEach(r => r.settle('declined'));
+  }
+
+  /** The chat was deleted: decline what waits and every later request of it. Unlike a stop, which declines
+   *  only what waits, so the chat's next turn can ask again. */
+  closeConversation(conversationId: string): void {
+    this.closed.add(conversationId);
+    logger.log(`${LOG} closeConversation conv=${conversationId}`);
+    this.declineConversation(conversationId);
   }
 
   private publish(): void {
