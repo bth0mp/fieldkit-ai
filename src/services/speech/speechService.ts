@@ -184,7 +184,10 @@ class SpeechService {
 
   setAutoSpeak(on: boolean): void {
     this.put({ autoSpeak: on });
-    if (on) this.refreshInBackground();
+    if (on) {
+      this.refreshInBackground();
+      this.silencedTurn = null; // turning reading on asks to hear this turn: undo the silence the refresh's stop() set
+    }
   }
 
   /**

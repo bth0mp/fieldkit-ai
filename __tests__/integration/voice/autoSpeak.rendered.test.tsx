@@ -412,6 +412,22 @@ describe('Read replies aloud (rendered)', () => {
     await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['Let me check.', 'Next one.', 'Next two.']), TIMEOUT);
   }, 30000);
 
+  it('switching read-aloud on while a reply streams reads that reply from its first sentence', async () => {
+    const h = await setupChatScreen({ engine: 'llama', speech: {} });
+    mountChat(h);
+    h.boundary.llama!.scriptCompletion({ text: 'First one. Second one. Third one. Last bit', pauseAfter: 'Second one. T' });
+    await h.tapSend('q');
+    await h.rtl.waitFor(() => expect(h.view!.queryByText(/Second one\. T/)).not.toBeNull(), TIMEOUT);
+    expect(spoken(h)).toEqual([]);
+
+    await tapReadAloud(h);
+    await h.rtl.waitFor(() => expect(h.boundary.speech!.calls.setVoice).toEqual(['en-us-offline']), TIMEOUT);
+    h.boundary.llama!.releaseStream();
+    await h.rtl.waitFor(() => expect(spoken(h)).toEqual(['First one.', 'Second one.', 'Third one.', 'Last bit']), TIMEOUT);
+    await h.settle(200);
+    expect(spoken(h)).toEqual(['First one.', 'Second one.', 'Third one.', 'Last bit']);
+  }, 20000);
+
   it('control-token-only turn speaks nothing', async () => {
     const h = await setupChatScreen({ engine: 'llama', speech: {} });
     mountChat(h);
