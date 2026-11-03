@@ -166,6 +166,20 @@ describe('speaking', () => {
     expect(t.state().phase).toBe('ready');
   });
 
+  it('prepares text for speech once: prepared text is spoken as given, other text is prepared here', async () => {
+    const t = boot();
+    const spoken = () => t.speech.calls.speak.map(c => c.text).join(' ');
+
+    await t.service.speakMessage({ text: '2024. was a good year', messageId: 'm1', prepared: true });
+    await until(() => spoken().includes('good year'), 'prepared text queued');
+    expect(spoken()).toContain('2024');
+
+    const before = t.speech.calls.speak.length;
+    await t.service.speakMessage({ text: '2024. was a good year', messageId: 'm2' });
+    await until(() => t.speech.calls.speak.length > before, 'unprepared text queued');
+    expect(t.speech.calls.speak.slice(before).map(c => c.text).join(' ')).not.toContain('2024');
+  });
+
   it('speaks nothing for a reply that has no speakable text', async () => {
     const t = boot();
     await t.service.speakMessage({ text: '```js\nx()\n```', messageId: 'm1' });

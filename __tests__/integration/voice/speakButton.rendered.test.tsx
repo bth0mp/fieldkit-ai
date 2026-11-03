@@ -81,6 +81,17 @@ describe('Speak button on assistant replies (rendered)', () => {
     expect(h.view!.queryByLabelText('Stop speaking')).toBeNull();
   }, 20000);
 
+  it('a numbered reply that starts with a year is read with the year', async () => {
+    const h = await setupChatScreen({ engine: 'llama', speech: {} });
+    await chatWithReply(h, '1. 2024. was a good year', /was a good year/);
+    const spoken = (): string => h.boundary.speech!.calls.speak.map(c => c.text).join(' ');
+
+    await tap(h, 'Speak');
+    await h.rtl.waitFor(() => expect(spoken()).toContain('good year'));
+
+    expect(spoken()).toContain('2024');
+  }, 20000);
+
   it('stop during init: nothing is spoken and the button is back to Speak', async () => {
     const h = await setupChatScreen({ engine: 'llama', speech: {} });
     await chatWithReply(h, 'One. Two.', /One\. Two\./);

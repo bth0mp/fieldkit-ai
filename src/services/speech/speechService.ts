@@ -60,7 +60,11 @@ class SpeechService {
     return this.engine.isPresent() && store().phase !== 'unavailable';
   }
 
-  async speakMessage(input: { text: string; messageId: string }): Promise<void> {
+  /**
+   * `prepared` says the caller already ran the text through prepareMessageForSpeech. Preparing is not
+   * idempotent (a second pass eats a leading "2024." as a list number), so prepared text is not touched again.
+   */
+  async speakMessage(input: { text: string; messageId: string; prepared?: boolean }): Promise<void> {
     if (!this.engine.isPresent()) return;
     // Native speak() queues behind whatever is playing, so cut that off first.
     this.stop();
@@ -78,7 +82,7 @@ class SpeechService {
     }
 
     const chunks = chunkForEngine({
-      sentences: splitIntoSentences(prepareMessageForSpeech(input.text)),
+      sentences: splitIntoSentences(input.prepared ? input.text : prepareMessageForSpeech(input.text)),
       maxLen: this.maxInputLength,
     });
     if (chunks.length === 0) {

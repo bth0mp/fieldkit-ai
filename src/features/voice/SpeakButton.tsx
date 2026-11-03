@@ -31,7 +31,7 @@ export const SpeakButton: React.FC<SpeakButtonProps> = ({ text, messageId }) => 
       speechService.stop();
       return;
     }
-    speechService.speakMessage({ text, messageId }).catch(error => logger.warn('[SPEECH-UI] speak failed', error));
+    speechService.speakMessage({ text, messageId, prepared: true }).catch(error => logger.warn('[SPEECH-UI] speak failed', error));
   };
 
   return (
@@ -40,6 +40,7 @@ export const SpeakButton: React.FC<SpeakButtonProps> = ({ text, messageId }) => 
       accessibilityRole="button"
       accessibilityLabel={speaking ? 'Stop speaking' : 'Speak'}
       style={styles.button}
+      hitSlop={SPACING.sm}
       onPress={onPress}
     >
       <Icon name={speaking ? 'square' : 'volume-2'} size={14} color={colors.textMuted} />
