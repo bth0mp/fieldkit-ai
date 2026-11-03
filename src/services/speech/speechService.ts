@@ -186,7 +186,10 @@ class SpeechService {
     this.put({ autoSpeak: on });
     if (on) {
       this.refreshInBackground();
-      this.silencedTurn = null; // turning reading on asks to hear this turn: undo the silence the refresh's stop() set
+      // Turning reading on asks to hear the live turn, also one a stop silenced; a chat the user left stays
+      // silent. A stream a stop cut off is dropped, so the reply is read again from its first finished sentence.
+      if (this.silencedTurn === generationSession.getConversationId()) this.silencedTurn = null;
+      this.dropStoppedStream();
     } else if (this.session !== null && this.session === this.stream) {
       this.stop(); // off silences a reply read as it streams; a message chosen with Speak plays on
     }
@@ -236,6 +239,11 @@ class SpeechService {
     this.stream = stream;
     this.session = stream;
     return stream;
+  }
+
+  /** Forget a stream a stop cut off, so the next token opens a new session instead of continuing it unheard. */
+  private dropStoppedStream(): void {
+    if (this.stream?.stopped) this.stream = null;
   }
 
   /** Queue sentences of the streaming reply. They reach the engine once it is set up (right away when it is). */
