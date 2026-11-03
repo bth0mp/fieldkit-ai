@@ -97,7 +97,11 @@ Prompt assembly is duplicated between send and retry/edit, so anything persona-s
 in one shared builder. Changing the system prompt resets LiteRT's conversation, so
 per-turn context goes on the latest user message, not the system prompt.
 
-**Native code.** New Android modules follow the existing pattern
+**Native code.** iOS parity is declared in TypeScript: when `NativeModules.FieldkitSpeech`
+(or `FieldkitCalendar`) is absent, the engine reports `available: false` and the UI shows
+the feature as unavailable. No Swift or Objective-C stubs are added, because pushing a
+`.swift` file makes the pre-push hook run `xcodebuild`, which cannot run on Windows.
+New Android modules follow the existing pattern
 (`ReactContextBaseJavaModule` + `ReactPackage` in `MainApplication.kt`, interop layer under
 `newArchEnabled=true`, e.g. `devicememory/DeviceMemoryModule.kt`). CLAUDE.md requires the
 same methods and events on iOS: each module gets an iOS counterpart that reports the
@@ -134,8 +138,10 @@ Native contract (Android implements it; iOS reports `available: false` for now):
 - `init(enginePackage?)`: binds to the requested engine if installed, else the default.
   Returns which engine actually bound. (Samsung TTS may refuse third-party apps on
   One UI 7+, so Google's engine is the expected one on the S24 Ultra.)
-- `getVoices()`: ONLY voices with `isNetworkConnectionRequired() == false` and no
-  `KEY_FEATURE_NOT_INSTALLED` (selecting a not-installed voice starts a download).
+- `getVoices()`: every voice with its `networkRequired` and `notInstalled` flags
+  (`isNetworkConnectionRequired()`, `KEY_FEATURE_NOT_INSTALLED`). `speechService` filters
+  to offline, installed voices, so the filter is covered by a Jest test; native
+  `speak` re-checks as defense in depth. (A not-installed voice starts a download if selected.)
 - `setVoice(id)`: never followed by `setLanguage()` (which resets the voice).
 - `speak(text, utteranceId, rate, pitch)`: `QUEUE_ADD`, re-checks the current voice is still
   offline before speaking and refuses otherwise.
@@ -200,10 +206,18 @@ risk.
   above the input, read through the store, never called from services).
 - Approve runs the tool. Deny returns a "user declined" result so the model can answer
   gracefully. A user stop resolves any pending request as declined.
-- LiteRT's native tool loop shows the card with the call's own name and arguments, since
-  no "Using X" message exists yet. If LiteRT cannot tolerate a long await before
-  `respondToToolCall`, approval-required tools are not offered on LiteRT; this is verified
-  on device first.
+- LiteRT: its native tool loop times out every tool call after 30 s
+  (`LiteRTModule.kt`, `withTimeout(30_000L)`), which an approval can easily exceed. So
+  approval-required tools are not offered while a LiteRT model is active. This is an engine
+  capability flag (`supportsToolApproval`) on the engine abstraction, not a type check in
+  callers. Lifting this needs a later Kotlin change to that timeout.
+- Pending approvals are shown one at a time, in call order. Each belongs to the conversation
+  whose turn asked for it: it stays pending while the user switches chats, opens another app
+  or backgrounds Fieldkit, and the card shows when that conversation is on screen. Stop,
+  or deleting that conversation, declines it.
+- In hands-free mode (slice 6) approval is by tap only, never by voice, because a misheard
+  "yes" must not run an action. The spoken reply says the action is waiting on screen, and
+  the audio-mode input renders the card.
 - Cards show readable summaries ("New event: Dentist, Thu 5 Nov 10:00-10:30"), not raw JSON.
 
 **Tools (built-in `AVAILABLE_TOOLS` entries, so they get toggles, schemas and hints):**
@@ -220,6 +234,17 @@ risk.
   `mailto:` URL encoded per RFC 6068 (`\r\n` line breaks, `%20` spaces), kept to a few
   KB. If no mail app opens, it copies the draft and offers the share sheet.
 - Tool result bubbles get proper Feather icons and labels for the new tools.
+
+**Private data and remote models (owner decision).** A chat can run on a remote server
+(Ollama or LM Studio on another computer, or a public endpoint), and the tool loop sends
+tool results to whichever model is active.
+- Private-data tools (`read_calendar_events`, and later persona memory) are not offered
+  while a remote text model is active. This is a rule in the tool-offering service, not in
+  callers, and the toggle says "Hidden while a remote model is active".
+- Once a conversation has read private data, `web_search` and `read_url` need approval for
+  the rest of that conversation. This stops calendar contents from leaking into a search
+  query or a URL.
+- The toggle copy says events are read on the phone and never sent anywhere.
 - Remove `react-native-calendar-events`, the `WRITE_CALENDAR` permission and its knip entry.
 
 ### 4. Personas
@@ -282,8 +307,8 @@ Rules:
 7. MCP servers.
 8. Optional neural voice.
 
-Slices 1 and 4 add Kotlin, so they depend on how native code is landed (Open decisions).
-Slice 3 is pure TypeScript and can go first if native landing is not ready.
+Slices 1 and 4 add Kotlin and start with the local toolchain setup (Owner decisions).
+Slice 3 is pure TypeScript and is not blocked by it.
 
 ## Verification
 
@@ -309,13 +334,27 @@ Slice 3 is pure TypeScript and can go first if native landing is not ready.
 - Approval for every action that writes or sends; reads need only the permission prompt
   and the tool toggle.
 - Build order above, with MCP and the neural voice last.
+- New tools (`read_calendar_events`, `create_calendar_event`, `draft_email`) and auto-speak
+  start switched off, and are not added to existing installs; the user turns them on in
+  Tools and quick settings. The Speak button is always available once a voice is ready.
+- The TypeScript side of a native slice may merge before its Kotlin lands, with the
+  "unavailable" path covered by a rendered test.
+- Commits go straight to `main` through the pre-push hook, as so far.
 
-## Open decisions (owner)
+## Owner decisions (2026-11-03)
 
-1. How to land native Kotlin code (needed for slices 1, 4 and 6). This blocks only those
-   slices; work starts on slice 3 either way.
-2. Whether "Projects" should be renamed to "Assistants" or "Personas" in the UI.
-3. (Later, before slice 8) whether the misaki lexicon provenance question is acceptable.
+1. **Native code lands through a local Android toolchain.** Install the Android SDK
+   command-line tools and NDK 27.1.12297006 on this PC, and set `ANDROID_HOME` /
+   `local.properties`. The pre-push hook's Gradle checks then run, and debug APKs build
+   locally. This is the first task of slice 1.
+2. **Device testing over USB.** The owner connects the S24 Ultra with USB debugging for
+   each native slice, and the builder installs the debug build (`com.bth0mp.fieldkit.dev`)
+   with adb and runs the on-device checks in Verification.
+3. **Private data is blocked on remote models**, as described in section 3.
+4. **`ios/` stays.** It never ships. Parity is declared in TypeScript, as in Constraints.
+
+Still open, for later: before slice 8, whether the misaki lexicon provenance question is
+acceptable. The UI keeps the name "Projects" (my call, owner can override).
 
 ## Left to the builder
 
