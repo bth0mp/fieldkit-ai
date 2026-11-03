@@ -98,7 +98,7 @@ async function finishTurn(h: Harness): Promise<void> {
 async function pressStop(h: Harness): Promise<void> {
   const stop = await h.rtl.waitFor(() => h.view!.getByTestId('stop-button'), TIMEOUT);
   await h.rtl.act(async () => { h.rtl.fireEvent.press(stop); });
-  await h.rtl.waitFor(() => expect(h.view!.queryByTestId('stop-button')).toBeNull(), TIMEOUT);
+  await waitUntilGone(h, 'stop-button');
 }
 
 describe('Read replies aloud (rendered)', () => {
@@ -371,7 +371,7 @@ describe('Read replies aloud (rendered)', () => {
     await h.tapSend('empty');
     await h.rtl.waitFor(() => expect(h.view!.queryByTestId('stop-button')).not.toBeNull(), TIMEOUT);
     h.boundary.llama!.releaseStream();
-    await h.rtl.waitFor(() => expect(h.view!.queryByTestId('stop-button')).toBeNull(), TIMEOUT);
+    await waitUntilGone(h, 'stop-button');
     await h.settle(300);
     expect(spoken(h)).toEqual([]);
 
