@@ -48,6 +48,13 @@ async function deleteOpenChat(h: Harness) {
   });
 }
 
+/** Script the next completion once `after` completions have started. The fake holds one sticky script, so
+ *  scripting before the current completion starts would replace it. */
+async function scriptNextCompletion(h: Harness, after: number, text: string) {
+  await h.rtl.waitFor(() => { expect(h.boundary.llama!.calls.completion.length).toBeGreaterThan(after); });
+  h.boundary.llama!.scriptCompletion({ text });
+}
+
 async function expectToolResultShows(h: Harness, text: RegExp) {
   h.rtl.fireEvent.press(await h.rtl.waitFor(() => h.view!.getByTestId('tool-result-label-draft_email')));
   await h.rtl.waitFor(() => { expect(h.view!.getByText(text)).toBeTruthy(); });
@@ -85,6 +92,9 @@ describe('approval lifecycle', () => {
     expect(h.view!.queryByTestId('approval-card')).toBeNull();
     await expectToolResultShows(h, /The user declined this action/);
     expect(h.boundary.linking.openURL).not.toHaveBeenCalled();
+
+    await h.send('thanks', { text: 'Back in this chat.' });
+    await h.rtl.waitFor(() => { expect(h.view!.queryByText(/Back in this chat\./)).not.toBeNull(); }, { timeout: 4000 });
   });
 
   it('stop answers every call of the message', async () => {
@@ -170,7 +180,9 @@ describe('approval lifecycle', () => {
     await h.send('email bob', { toolCalls: [{ name: 'draft_email', arguments: DRAFT }], content: 'I could not open a draft.' });
     await h.rtl.waitFor(() => { expect(h.view!.queryByTestId('tool-result-label-draft_email')).not.toBeNull(); }, { timeout: 4000 });
     expect(h.view!.queryByTestId('approval-card')).toBeNull();
-    await expectToolResultShows(h, /declined|not available/);
+    // LiteRT is never offered draft_email, so the not-offered gate refuses it. The gate for an offered tool on an
+    // engine that cannot wait (generationToolLoop) is unreachable today and stays untested until Tasks 5-7.
+    await expectToolResultShows(h, /This tool is not available right now\./);
     await h.rtl.waitFor(() => { expect(h.view!.queryByText(/I could not open a draft\./)).not.toBeNull(); }, { timeout: 4000 });
     expect(h.view!.queryByTestId('approval-card')).toBeNull();
     expect(h.boundary.linking.openURL).not.toHaveBeenCalled();
@@ -179,9 +191,10 @@ describe('approval lifecycle', () => {
   it('a text tool call for a tool that is off never runs', async () => {
     const h = await setupChatScreen({ engine: 'llama' });
     h.enableToolViaUI('calculator'); h.render(); // draft_email stays off
+    const completions = h.boundary.llama!.calls.completion.length;
     await h.send('email bob', { text: `Drafting. ${toolCallText('draft_email', DRAFT)}` });
+    await scriptNextCompletion(h, completions, 'Email drafts are off.'); // the follow-up, before the result lands
     await h.rtl.waitFor(() => { expect(h.view!.queryByTestId('tool-result-label-draft_email')).not.toBeNull(); }, { timeout: 4000 });
-    h.boundary.llama!.scriptCompletion({ text: 'Email drafts are off.' }); // before the follow-up completion
     expect(h.view!.queryByTestId('approval-card')).toBeNull();
     await expectToolResultShows(h, /This tool is not available right now\./);
     await h.rtl.waitFor(() => { expect(h.view!.queryByText(/Email drafts are off\./)).not.toBeNull(); }, { timeout: 4000 });
