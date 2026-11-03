@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import Icon from 'react-native-vector-icons/Feather';
 import { Button } from '../../components/Button';
 import { SliderSetting } from '../../components/SliderSetting';
+import { BRAND } from '../../config/branding';
 import { SPACING, TYPOGRAPHY } from '../../constants';
 import { pickVoice, speechService } from '../../services/speech/speechService';
 import type { SpeechVoice } from '../../services/speech/speechTypes';
@@ -147,7 +148,7 @@ const VoiceBody: React.FC = () => {
   if (needsVoiceInstall) {
     return (
       <Notice
-        text="No offline voice is installed. Fieldkit only uses voices that work without internet."
+        text={`No offline voice is installed. ${BRAND.name} only uses voices that work without internet.`}
         actionTitle="Install a voice"
         actionTestID="voice-install"
         onAction={run('openVoiceInstaller', () => speechService.openVoiceInstaller())}
