@@ -67,6 +67,8 @@ fastlane/*.p8
 
 # Bundle artifact
 *.jsbundle
+# Release builds generate this; a committed copy makes debug builds run stale JS without Metro
+android/app/src/main/assets/index.android.bundle
 
 # Ruby / CocoaPods
 **/Pods/
