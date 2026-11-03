@@ -296,7 +296,7 @@ git commit -m "feat(android): FieldkitCalendar module; drop react-native-calenda
   - `userNote: 'Events are read on this phone and never sent anywhere. Hidden while a remote model is active.'`
 - Modify: `src/services/tools/handlers.ts` (one-line case), `src/services/tools/toolOffering.ts` (`toolAvailability`; `offeredToolIds` drops unavailable tools)
 - Modify: `src/screens/ToolsScreen/index.tsx`.
-  - Toggling calls only `toolPermissions.setToolEnabled`, and the screen keeps the last `'denied'` as local UI state.
+  - Toggling calls only `toolPermissions.setToolEnabled({ toolId, enabled: !enabledTools.includes(toolId) })`. This keeps today's flip semantics: the switch value is ignored, and `h.enableToolViaUI` and existing suites such as `staleFailureCardClearedOnNewSend` rely on it. The screen keeps the last `'denied'` as local UI state.
   - Rows with `available: false` render disabled with "Not available on this device".
   - Rows show `tool.userNote` when set.
   - Denial copy: "Calendar access was not allowed".
