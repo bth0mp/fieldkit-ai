@@ -19,13 +19,12 @@ const RECIPIENTS_MAX_ENCODED = 1000;
 
 const encodeText = (text: string): string => encodeURIComponent(text.replace(/\r?\n/g, '\r\n'));
 
+/** The addresses a draft goes to, as the URL carries them. The approval card shows this same list. */
+export const recipientList = (to: string): string[] => to.split(',').map(address => address.trim()).filter(Boolean);
+
 /** Each address is encoded on its own, keeping `@` readable; the list stays comma-separated. */
 const encodeAddresses = (to: string): string =>
-  to.split(',')
-    .map(address => address.trim())
-    .filter(Boolean)
-    .map(address => encodeURIComponent(address).replace(/%40/g, '@'))
-    .join(',');
+  recipientList(to).map(address => encodeURIComponent(address).replace(/%40/g, '@')).join(',');
 
 /** Why these recipients cannot go in one draft (a message the model can act on, written like the other tool
  *  errors: no final period, the tool result adds its own), or null when they fit. */

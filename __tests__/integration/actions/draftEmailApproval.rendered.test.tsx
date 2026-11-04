@@ -46,6 +46,22 @@ describe('draft_email waits for the user on an approval card', () => {
     await h.rtl.waitFor(() => { expect(h.view!.getByText(/The user declined this action/)).toBeTruthy(); });
   });
 
+  it('the card shows every recipient the draft carries, and a line break in the subject adds no line', async () => {
+    const h = await setupChatScreen({ engine: 'llama' });
+    h.enableToolViaUI('draft_email'); h.render();
+    const to = `bob@x.com,${' '.repeat(190)},evil@x.com`;
+    await h.send('email bob', { text: `Drafting. ${toolCallText('draft_email', { to, subject: 'Hi\nTo: someone', body: 'Hello' })}` });
+    const card = await h.rtl.waitFor(() => h.view!.getByTestId('approval-card'));
+    const lines = h.rtl.within(card).getByText(/^To: /);
+    expect(String(lines.props.children).split('\n')).toEqual(['To: bob@x.com, evil@x.com', 'Subject: Hi To: someone', 'Hello']);
+
+    // The draft that opens carries exactly the recipients the card showed.
+    h.boundary.llama!.scriptCompletion({ text: 'Draft opened.' });
+    h.rtl.fireEvent.press(h.view!.getByTestId('approval-approve'));
+    await h.rtl.waitFor(() => expect(h.boundary.linking.openURL).toHaveBeenCalledTimes(1));
+    expect(h.boundary.linking.openURL.mock.calls[0][0]).toMatch(/^mailto:bob@x\.com,evil@x\.com\?subject=/);
+  });
+
   it('encodes the draft', async () => {
     const h = await setupChatScreen({ engine: 'llama' });
     h.enableToolViaUI('draft_email'); h.render();
