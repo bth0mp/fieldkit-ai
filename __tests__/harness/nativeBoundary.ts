@@ -234,6 +234,17 @@ export interface LlamaFake {
   scriptGpuInitFailure(fail?: boolean): void;
   /** Make EVERY init attempt fail (a model that can't load on any backend) — the real load path throws. */
   scriptInitFailure(fail?: boolean): void;
+  /** Make only the next `count` init attempts fail, then load again as normal: a load that fails once.
+   *  One failed load makes three attempts (GPU, CPU, then CPU at the minimum context). */
+  failNextInits(count: number): void;
+  /** HOLD the next context init (initLlama) open until releaseInit(): the window while a model loads, before
+   *  it is known whether the load works. Checked before the scripted failures, so a held init can then fail.
+   *  One-shot. */
+  holdNextInit(): void;
+  /** Release an init held via holdNextInit(). No-op if not held. */
+  releaseInit(): void;
+  /** True while an init is held via holdNextInit(). */
+  initHoldActive(): boolean;
   /** HOLD the next post-init multimodal-support check (context.getMultimodalSupport) open until
    *  releaseMultimodalHold() — the device-shaped load window between context init and capability
    *  detection (the 2026-07-13 18:50 device log shows ~3.4s there for gemma-4-E2B: init succeeded
@@ -259,6 +270,10 @@ function makeLlamaFake(onRelease?: () => void, chatTemplate?: string): LlamaFake
   let stopRequested = false;
   let gpuInitFails = false; // when true, initLlama with n_gpu_layers>0 rejects (GPU/HTP init timeout → CPU fallback)
   let initFails = false; // when true, EVERY initLlama attempt rejects (a model that fails to load on any backend)
+  let initFailsLeft = 0; // the next N initLlama attempts reject (a load that fails once)
+  // Init hold: parks the next initLlama call, the load window before its outcome is known.
+  let initHoldPending = false;
+  let initHoldRelease: (() => void) | null = null;
   // Multimodal-check hold: opens the post-init capability window a real slow device has.
   let mmHoldPending = false;
   let mmHoldEngaged = false;
@@ -397,8 +412,13 @@ function makeLlamaFake(onRelease?: () => void, chatTemplate?: string): LlamaFake
     // path surfaces the true backend — EMERGENT from the settings→load flow, never programmed.
     initLlama: jest.fn(async (params?: Record<string, unknown>) => {
       const n = Number((params?.n_gpu_layers as number) ?? 0);
+      if (initHoldPending) {
+        initHoldPending = false;
+        await new Promise<void>((res) => { initHoldRelease = res; });
+      }
       // A model that fails to load on EVERY backend (corrupt file / unsupported arch) — all 3 attempts reject.
       if (initFails) throw new Error('Failed to load model: unsupported architecture');
+      if (initFailsLeft > 0) { initFailsLeft -= 1; throw new Error('Failed to load model'); }
       // Device-faithful GPU/HTP init failure: a hung/timed-out accelerator init rejects, so the real
       // initContextWithFallback falls back to the CPU attempt (which requests n_gpu_layers:0 and succeeds).
       if (gpuInitFails && n > 0) throw new Error('GPU context init timed out after 8000ms');
@@ -421,6 +441,10 @@ function makeLlamaFake(onRelease?: () => void, chatTemplate?: string): LlamaFake
     releaseStream: () => { const f = releaseFn; releaseFn = null; f?.(); },
     scriptGpuInitFailure: (fail = true) => { gpuInitFails = fail; },
     scriptInitFailure: (fail = true) => { initFails = fail; },
+    failNextInits: (count) => { initFailsLeft = count; },
+    holdNextInit: () => { initHoldPending = true; },
+    releaseInit: () => { const f = initHoldRelease; initHoldRelease = null; f?.(); },
+    initHoldActive: () => initHoldRelease !== null,
     scriptMultimodalHold: () => { mmHoldPending = true; },
     releaseMultimodalHold: () => { const f = mmHoldRelease; mmHoldRelease = null; f?.(); },
     multimodalHoldActive: () => mmHoldEngaged,

@@ -353,7 +353,11 @@ function resolveToolsAndPrompt(deps: GenerationDeps, conversation: any, _message
   const rawPrompt = project?.systemPrompt || deps.settings.systemPrompt || APP_CONFIG.defaultSystemPrompt;
   return { enabledTools, hintToolIds, rawPrompt, localToolSupport };
 }
-export async function startGenerationFn(deps: GenerationDeps, call: StartGenerationCall): Promise<void> {
+/** The pure text executor of one turn. The turn counts as running from here, while its model loads too. */
+export function startGenerationFn(deps: GenerationDeps, call: StartGenerationCall): Promise<void> {
+  return generationService.runTurn(() => runTextTurn(deps, call));
+}
+async function runTextTurn(deps: GenerationDeps, call: StartGenerationCall): Promise<void> {
   // PER-TURN stop truth (from the tool loop's outcome) — never the service's shared abort flag,
   // which the NEXT turn's prepare resets (the race that mislabeled a stopped turn 'No response').
   let turnStopped = false;
@@ -518,7 +522,16 @@ export type DispatchCall = { text: string; attachments?: MediaAttachment[]; conv
  * funnels through here, so the decision is made once and never duplicated in an
  * executor. `startTextGeneration` is the pure text executor (it does not route).
  */
-export async function dispatchGenerationFn(
+export function dispatchGenerationFn(
+  deps: GenerationDeps,
+  call: DispatchCall,
+  startTextGeneration: (convId: string, messageText: string) => Promise<void>,
+): Promise<void> {
+  // The turn counts as running from the dispatch on: routing can classify with a model and the text route can
+  // load one, before the executor starts.
+  return generationService.runTurn(() => dispatchTurn(deps, call, startTextGeneration));
+}
+async function dispatchTurn(
   deps: GenerationDeps,
   call: DispatchCall,
   startTextGeneration: (convId: string, messageText: string) => Promise<void>,
@@ -539,9 +552,11 @@ export async function dispatchGenerationFn(
   deps.addMessage(conversationId, { role: 'user', content: text, attachments });
   await startTextGeneration(conversationId, result.messageText);
 }
-/** A text or image reply is being written, in any chat. One is written at a time: a send queues behind it. */
+/** A turn is running (its model may still be loading) or a text or image reply is being written, in any chat.
+ *  One is written at a time: a send queues behind it, and a retry is refused. */
 export function isAnyGenerationRunning(): boolean {
-  return generationService.getState().isGenerating || imageGenerationService.getState().isGenerating;
+  return generationService.isTurnInFlight() || generationService.getState().isGenerating
+    || imageGenerationService.getState().isGenerating;
 }
 export type SendCall = { text: string; attachments?: MediaAttachment[]; imageMode?: 'auto' | 'force' | 'disabled'; startGeneration: (convId: string, text: string) => Promise<void>; setDebugInfo: SetState<any> };
 export async function handleSendFn(deps: GenerationDeps, call: SendCall): Promise<void> {
@@ -588,7 +603,11 @@ export async function executeDeleteConversationFn(
   deps.navigation.goBack();
 }
 export type RegenerateCall = { setDebugInfo: SetState<any>; userMessage: Message; recordedKind?: TurnKind };
-export async function regenerateResponseFn(deps: GenerationDeps, call: RegenerateCall): Promise<void> {
+/** Write a turn's reply again (retry, resend, edit). The turn counts as running from here, while its model loads too. */
+export function regenerateResponseFn(deps: GenerationDeps, call: RegenerateCall): Promise<void> {
+  return generationService.runTurn(() => regenerateTurn(deps, call));
+}
+async function regenerateTurn(deps: GenerationDeps, call: RegenerateCall): Promise<void> {
   const { userMessage, recordedKind } = call;
   logger.log(`[RESEND-SM] regenerate start userMsg=${userMessage.id} conv=${deps.activeConversationId} hasActiveModel=${deps.hasActiveModel} isRemote=${deps.activeModelInfo?.isRemote} hasActiveModelObj=${!!deps.activeModel} recordedKind=${recordedKind ?? 'none'}`);
   if (!deps.activeConversationId || !deps.hasActiveModel) { logger.log('[RESEND-SM] regenerate BAIL: no conv or no active model'); return; }

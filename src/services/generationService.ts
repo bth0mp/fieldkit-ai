@@ -56,6 +56,8 @@ class GenerationService {
   /** Turn token: every new generation and every stop bumps it, so a tool call that waited (on an
    *  approval card) can tell whether its turn is still the live one. */
   private turnSeq = 0;
+  /** One claim per chat turn that has started and not ended (see runTurn). */
+  private readonly turnsInFlight = new Set<symbol>();
   /** Whether the last/active generation was stopped by the user — lets callers skip a
    *  "no response" retry prompt when the empty result was an intentional abort. */
   wasAborted(): boolean { return this.abortRequested; }
@@ -127,6 +129,29 @@ class GenerationService {
   isGeneratingFor(conversationId: string): boolean {
     return this.state.isGenerating && this.state.conversationId === conversationId;
   }
+
+  /**
+   * Run one chat turn (a send, retry or edit) from its start to its end. The turn counts as running the whole
+   * time, also while its model loads, before isGenerating is set: a send in any chat queues behind it and a
+   * retry is refused. It ends when `turn` settles, however it ends (a reply, a model that was not ready, an
+   * error), or when the user stops generation: a stopped turn can stay pending (LiteRT's tool loop waits for a
+   * completion event that a stop unsubscribes), so stopGeneration ends it. Each end releases only its own
+   * claim, so a stopped turn that settles late leaves a newer turn running. When no turn is left running, the
+   * queue drains, also after a turn that never generated and so never reached resetState.
+   */
+  async runTurn<T>(turn: () => Promise<T>): Promise<T> {
+    const claim = Symbol('turn');
+    this.turnsInFlight.add(claim);
+    try {
+      return await turn();
+    } finally {
+      this.turnsInFlight.delete(claim);
+      this.drainQueue();
+    }
+  }
+
+  /** Whether a turn started with runTurn is still running, its model possibly still loading. */
+  isTurnInFlight(): boolean { return this.turnsInFlight.size > 0; }
 
   subscribe(listener: GenerationListener): () => void {
     this.listeners.add(listener); listener(this.getState()); return () => this.listeners.delete(listener);
@@ -238,6 +263,7 @@ class GenerationService {
   /** Stop the current generation. Returns partial content if any was generated. */
   async stopGeneration(): Promise<string> {
     this.turnSeq += 1; // any stop ends the live turn, including one waiting on an approval
+    this.turnsInFlight.clear(); // and the running turns (see runTurn): their late ends release nothing
     if (!this.state.isGenerating) {
       // Stop generation on every engine through the registry — no engine enumeration leaked into the caller.
       await stopAllTextEngines();
@@ -333,10 +359,12 @@ class GenerationService {
    * Process queued messages now. Text generation drains its own queue on
    * completion, but image generation finishes outside this service, so the
    * image path calls this to release messages that queued behind it. No-op if a
-   * text generation is currently running.
+   * text generation or a turn is currently running: the end of that one drains.
+   * processNextInQueue empties the queue before it sends, so two drains at one
+   * turn end send a message once.
    */
   drainQueue(): void {
-    if (this.state.isGenerating) return;
+    if (this.state.isGenerating || this.isTurnInFlight()) return;
     this.processNextInQueue();
   }
 
@@ -375,7 +403,7 @@ class GenerationService {
       startTime: null,
     });
     if (hasQueuedItems) {
-      setTimeout(() => this.processNextInQueue(), 100);
+      setTimeout(() => this.drainQueue(), 100);
     }
   }
 }

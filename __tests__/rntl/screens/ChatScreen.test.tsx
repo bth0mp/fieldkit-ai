@@ -96,6 +96,8 @@ jest.mock('../../../src/services/generationService', () => ({
     removeFromQueue: jest.fn(),
     clearQueue: jest.fn(),
     setQueueProcessor: jest.fn(),
+    runTurn: jest.fn((turn: () => Promise<unknown>) => turn()),
+    isTurnInFlight: jest.fn(() => false),
   },
 }));
 
