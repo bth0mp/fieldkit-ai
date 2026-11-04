@@ -20,6 +20,11 @@ export function replyBoundary(state: StreamingFields, prev: StreamingFields): 's
   return prev.streamingForConversationId !== state.streamingForConversationId ? 'start' : null;
 }
 
+/** The chat store streams a reply for a chat other than the one on screen. */
+export function streamsOffScreen(state: StreamingFields & { activeConversationId: string | null }): boolean {
+  return state.streamingForConversationId !== state.activeConversationId;
+}
+
 /**
  * One streamed reply being read aloud as it arrives, from its first token until the chat store starts the next
  * reply or the host reports the stream ended. It holds the bookkeeping and the text rules; `speechService` owns

@@ -5,7 +5,7 @@ import { useSpeechStore, type SpeechPatch } from '../../stores/speechStore';
 import { prepareMessageForSpeech } from '../../utils/messageContent';
 import { chunkForEngine, splitIntoSentences } from '../../utils/speechText';
 import logger from '../../utils/logger';
-import { isUnreadAnswer, replyBoundary, StreamingSession } from './streamingSession';
+import { isUnreadAnswer, replyBoundary, streamsOffScreen, StreamingSession } from './streamingSession';
 import { systemSpeechEngine } from './systemSpeechEngine';
 import type { SpeechEngine, SpeechEngineEvent, SpeechPhase, SpeechVoice } from './speechTypes';
 
@@ -217,6 +217,8 @@ class SpeechService {
   onStreamingToken(cumulative: string): void {
     // A silenced turn opens no session: the speech of a message the user chose to hear keeps playing.
     if (this.silencedTurn !== null || !store().autoSpeak || !this.canSpeak()) return;
+    // A reply opens a session only in the chat on screen: a queued send answered in another chat is not read here.
+    if ((!this.stream || this.stream.ended) && streamsOffScreen(useChatStore.getState())) return;
     const stream = this.streamFor();
     if (stream.stopped) return;
     this.enqueueStream(stream, stream.takeFinished(cumulative));
