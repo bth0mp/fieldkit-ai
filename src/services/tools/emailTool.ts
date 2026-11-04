@@ -9,12 +9,26 @@
  */
 import { Clipboard, Linking, Share } from 'react-native';
 import { buildMailtoUrl, draftFromArgs } from '../../utils/mailto';
+import logger from '../../utils/logger';
 import type { ToolCall, ToolResult } from './types';
 
 const OPENED = 'Opened a draft in the mail app. The user sends it from there.';
 const BODY_SHORTENED = ' The body was shortened to fit; the full text was copied to the clipboard.';
 const SUBJECT_SHORTENED = ' The subject was shortened to fit.';
 const NO_MAIL_APP = 'No mail app opened. The draft was copied and the share sheet was opened.';
+const NO_MAIL_APP_NO_SHARE = 'No mail app opened. The draft was copied to the clipboard.';
+
+/** No mail app opened: copy the draft (unless it already is) and open the share sheet. Says which happened. */
+async function shareInstead(draft: { subject: string; body: string }, copied: boolean): Promise<string> {
+  if (!copied) Clipboard.setString(draft.body);
+  try {
+    await Share.share({ title: draft.subject, message: draft.body });
+    return NO_MAIL_APP;
+  } catch (error) {
+    logger.error('[emailTool] the share sheet did not open', error);
+    return NO_MAIL_APP_NO_SHARE;
+  }
+}
 
 export const emailTool = {
   async run(call: ToolCall): Promise<ToolResult> {
@@ -22,16 +36,14 @@ export const emailTool = {
     const draft = draftFromArgs(call.arguments);
     const { url, truncated, bodyTruncated } = buildMailtoUrl(draft);
     const result = (content: string): ToolResult => ({ toolCallId: call.id, name: call.name, content, durationMs: Date.now() - start });
+    // Copy the full body before the mail app opens: once it does, this app may no longer be in front.
+    if (bodyTruncated) Clipboard.setString(draft.body);
     try {
       await Linking.openURL(url);
     } catch {
-      Clipboard.setString(draft.body);
-      await Share.share({ title: draft.subject, message: draft.body });
-      return result(NO_MAIL_APP);
+      return result(await shareInstead(draft, bodyTruncated));
     }
     if (!truncated) return result(OPENED);
-    if (!bodyTruncated) return result(OPENED + SUBJECT_SHORTENED);
-    Clipboard.setString(draft.body);
-    return result(OPENED + BODY_SHORTENED);
+    return result(OPENED + (bodyTruncated ? BODY_SHORTENED : SUBJECT_SHORTENED));
   },
 };

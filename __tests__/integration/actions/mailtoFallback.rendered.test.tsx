@@ -54,6 +54,21 @@ describe('email draft fallbacks', () => {
     });
   });
 
+  it('says the draft was copied when no mail app opens and the share sheet does not open either', async () => {
+    const draft = { to: 'bob@example.com', subject: 'Lunch', body: 'Are you free on Friday?' };
+    const h = await chatWithDraft(draft, ({ boundary }) => {
+      boundary.linking.openURL.mockRejectedValueOnce(new Error('no activity'));
+      boundary.share.share.mockRejectedValueOnce(new Error('share sheet failed'));
+    });
+    await approveAndOpenResult(h, 'Copied it for you.');
+
+    expect(h.boundary.clipboard.setString).toHaveBeenCalledWith(draft.body);
+    await h.rtl.waitFor(() => {
+      expect(h.view!.getByText('No mail app opened. The draft was copied to the clipboard.')).toBeTruthy();
+    });
+    expect(h.view!.queryByText(/share sheet failed/)).toBeNull();
+  });
+
   it('opens a shortened draft and copies the full body when it is too long for a link', async () => {
     const body = `${'Paragraph of the long email. '.repeat(250)}THE END`; // ~7000 characters, one line
     const h = await chatWithDraft({ to: 'bob@example.com', subject: 'Report', body });
@@ -67,6 +82,8 @@ describe('email draft fallbacks', () => {
     const copied: string = h.boundary.clipboard.setString.mock.calls[0][0];
     expect(copied).toHaveLength(body.length); // the whole body, not the shortened one
     expect(copied.endsWith('THE END')).toBe(true);
+    // Copied before the mail app opens: once it does, this app may no longer be in front.
+    expect(h.boundary.clipboard.setString.mock.invocationCallOrder[0]).toBeLessThan(h.boundary.linking.openURL.mock.invocationCallOrder[0]);
     expect(h.boundary.share.share).not.toHaveBeenCalled();
     await h.rtl.waitFor(() => {
       expect(h.view!.getByText(/Opened a draft in the mail app\. The user sends it from there\. The body was shortened to fit; the full text was copied to the clipboard\./)).toBeTruthy();
