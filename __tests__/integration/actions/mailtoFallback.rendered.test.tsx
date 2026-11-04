@@ -40,6 +40,9 @@ async function approveAndOpenResult(h: Harness, reply: string) {
   h.rtl.fireEvent.press(await h.rtl.waitFor(() => h.view!.getByTestId('tool-result-label-draft_email')));
 }
 
+// Rendered chat suites take seconds per test; the first one also pays the first render.
+jest.setTimeout(40000);
+
 describe('email draft fallbacks', () => {
   it('falls back to copy and share when no mail app opens', async () => {
     const draft = { to: 'bob@example.com', subject: 'Lunch', body: 'Are you free on Friday?' };

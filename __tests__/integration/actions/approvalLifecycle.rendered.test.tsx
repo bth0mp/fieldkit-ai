@@ -63,6 +63,9 @@ async function expectToolResultShows(h: Harness, text: RegExp) {
   await h.rtl.waitFor(() => { expect(h.view!.getByText(text)).toBeTruthy(); });
 }
 
+// Rendered chat suites take seconds per test; the first one also pays the first render.
+jest.setTimeout(40000);
+
 describe('approval lifecycle', () => {
   it('stop declines', async () => {
     const h = await chatWithCard();

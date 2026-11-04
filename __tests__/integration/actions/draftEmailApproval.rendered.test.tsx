@@ -19,6 +19,9 @@ const toolCallText = (name: string, args: Record<string, unknown>) => `<tool_cal
 /** A card ignores taps for a moment after it is shown; the tests wait this long before they tap it. */
 const CARD_READ_MS = 550;
 
+// Rendered chat suites take seconds per test; the first one also pays the first render.
+jest.setTimeout(40000);
+
 describe('draft_email waits for the user on an approval card', () => {
   it('approve opens the mail app with the draft', async () => {
     const h = await setupChatScreen({ engine: 'llama' });

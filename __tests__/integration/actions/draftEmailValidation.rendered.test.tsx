@@ -36,6 +36,9 @@ async function refusedDraft(args: Record<string, unknown>, reply: string): Promi
   return h;
 }
 
+// Rendered chat suites take seconds per test; the first one also pays the first render.
+jest.setTimeout(40000);
+
 describe('draft_email calls that cannot become a draft', () => {
   it('an empty body shows no card and names the missing body', async () => {
     const h = await refusedDraft({ to: 'bob@example.com', subject: 'Hi', body: '' }, 'I need the message text.');
