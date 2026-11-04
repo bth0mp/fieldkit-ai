@@ -630,6 +630,7 @@ describe('generationService', () => {
     });
 
     it('processNextInQueue aggregates multiple messages', async () => {
+      setupWithConversation({ id: 'conv-1' });
       const processor = jest.fn().mockResolvedValue(undefined);
       generationService.setQueueProcessor(processor);
 
@@ -669,6 +670,7 @@ describe('generationService', () => {
     });
 
     it('processNextInQueue passes single message directly', async () => {
+      setupWithConversation({ id: 'conv-1' });
       const processor = jest.fn().mockResolvedValue(undefined);
       generationService.setQueueProcessor(processor);
 
@@ -1497,6 +1499,7 @@ describe('generationService', () => {
     });
 
     it('merges multiple queued messages into a single combined message', async () => {
+      setupWithConversation({ id: 'c1' });
       const processor = jest.fn(() => Promise.resolve());
       (generationService as any).queueProcessor = processor;
       (generationService as any).state.queuedMessages = [
@@ -1513,6 +1516,7 @@ describe('generationService', () => {
     });
 
     it('passes single queued message directly without merging', async () => {
+      setupWithConversation({ id: 'c1' });
       const processor = jest.fn(() => Promise.resolve());
       (generationService as any).queueProcessor = processor;
       const singleMsg = { id: '1', conversationId: 'c1', text: 'single', messageText: 'single' };
@@ -1783,6 +1787,7 @@ describe('generationService', () => {
 
   describe('drainQueue', () => {
     it('processes queued messages through the queue processor when idle', () => {
+      setupWithConversation({ id: 'c1' });
       const processor = jest.fn().mockResolvedValue(undefined);
       generationService.setQueueProcessor(processor);
       generationService.enqueueMessage({ id: 'q1', conversationId: 'c1', text: 'hi', messageText: 'hi' });

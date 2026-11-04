@@ -360,19 +360,27 @@ class GenerationService {
    * completion, but image generation finishes outside this service, so the
    * image path calls this to release messages that queued behind it. No-op if a
    * text generation or a turn is currently running: the end of that one drains.
-   * processNextInQueue empties the queue before it sends, so two drains at one
-   * turn end send a message once.
+   * processNextInQueue takes the messages it sends off the queue before it sends,
+   * and the send claims a turn at once (runTurn), so two drains at one turn end
+   * send a message once and the next chat's messages wait for that turn's end.
    */
   drainQueue(): void {
     if (this.state.isGenerating || this.isTurnInFlight()) return;
     this.processNextInQueue();
   }
 
+  /**
+   * Send the first queued chat's messages as one turn; the other chats' messages stay queued, in order, for the
+   * next turn end. A message whose chat was deleted is dropped here, so it can never be sent.
+   */
   private processNextInQueue(): void {
     if (this.state.queuedMessages.length === 0 || !this.queueProcessor) return;
-    const all = this.state.queuedMessages;
-    this.state = { ...this.state, queuedMessages: [] };
+    const { conversations } = useChatStore.getState();
+    const live = this.state.queuedMessages.filter(m => conversations.some(c => c.id === m.conversationId));
+    const all = live.filter(m => m.conversationId === live[0]?.conversationId);
+    this.state = { ...this.state, queuedMessages: live.filter(m => !all.includes(m)) };
     this.notifyListeners();
+    if (all.length === 0) return;
     const combined: QueuedMessage = all.length === 1 ? all[0] : {
       id: all[0].id, conversationId: all[0].conversationId,
       text: all.map(m => m.text).join('\n\n'),
