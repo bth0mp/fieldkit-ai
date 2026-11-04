@@ -17,7 +17,7 @@ type MessageRendererProps = {
   showGenerationDetails: boolean;
   onCopy: (content: string) => void;
   onRetry: (message: Message) => void;
-  onEdit: (message: Message, newContent: string) => void;
+  onEdit: (message: Message, newContent: string) => boolean | void;
   onGenerateImage: (prompt: string) => void;
   onImagePress: (uri: string) => void;
 };

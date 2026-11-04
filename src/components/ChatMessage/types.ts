@@ -6,7 +6,8 @@ export interface ChatMessageProps {
   onImagePress?: (uri: string) => void;
   onCopy?: (content: string) => void;
   onRetry?: (message: Message) => void;
-  onEdit?: (message: Message, newContent: string) => void;
+  /** Return false when the edit is refused: the editor then stays open with the typed text. */
+  onEdit?: (message: Message, newContent: string) => boolean | void;
   onGenerateImage?: (prompt: string) => void;
   showActions?: boolean;
   canGenerateImage?: boolean;

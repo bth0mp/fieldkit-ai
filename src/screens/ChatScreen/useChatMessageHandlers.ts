@@ -94,16 +94,20 @@ type EditParams = {
   setDebugInfo: SetState<any>;
 };
 
-export async function handleEditMessageFn(genDeps: GenerationDeps, p: EditParams): Promise<void> {
+/** Save an edit and write the reply again. Returns false when the edit is refused, so the editor keeps the typed
+ *  text; otherwise the reply is written after it returns. */
+export function handleEditMessageFn(genDeps: GenerationDeps, p: EditParams): boolean {
   // Same as retry: no model loaded → alert instead of a silent no-op.
-  if (!p.hasActiveModel) { genDeps.setAlertState(showAlert('No Model Selected', 'Please select a model first.')); return; }
-  if (!p.activeConversationId || refusedWhileGenerating(genDeps)) return;
+  if (!p.hasActiveModel) { genDeps.setAlertState(showAlert('No Model Selected', 'Please select a model first.')); return false; }
+  if (!p.activeConversationId || refusedWhileGenerating(genDeps)) return false;
   // Preserve the turn's modality across an edit: an edited image prompt re-runs the image pipeline
   // (read BEFORE the update/delete strips the reply that records it), not a re-classification.
   const recordedKind = recordedTurnKind(p.activeConversation?.messages || [], p.message.id);
   p.updateMessageContent(p.activeConversationId, p.message.id, p.newContent);
   p.deleteMessagesAfter(p.activeConversationId, p.message.id);
-  await regenerateResponseFn(genDeps, { setDebugInfo: p.setDebugInfo, userMessage: { ...p.message, content: p.newContent }, recordedKind });
+  regenerateResponseFn(genDeps, { setDebugInfo: p.setDebugInfo, userMessage: { ...p.message, content: p.newContent }, recordedKind })
+    .catch(e => logger.error('[RESEND-SM] edit regenerate failed:', e));
+  return true;
 }
 
 export function handleDeleteConversationFn(

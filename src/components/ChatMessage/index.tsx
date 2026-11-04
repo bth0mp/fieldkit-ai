@@ -361,7 +361,8 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
 
   const handleSaveEdit = () => {
     const trimmed = editedContent.trim();
-    if (trimmed !== message.content) onEdit?.(message, trimmed);
+    // A refused edit keeps the editor open with the typed text, to save again later.
+    if (trimmed !== message.content && onEdit?.(message, trimmed) === false) return;
     setIsEditing(false);
   };
 
