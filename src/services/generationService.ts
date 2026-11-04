@@ -353,7 +353,12 @@ class GenerationService {
 
   clearQueue(): void { this.state = { ...this.state, queuedMessages: [] }; this.notifyListeners(); }
 
-  setQueueProcessor(processor: QueueProcessor | null): void { this.queueProcessor = processor; }
+  /** A chat screen registers how queued messages are sent. A queue left while none was registered (every chat
+   *  screen closed when a turn ended) drains as soon as one is, unless a turn is running. */
+  setQueueProcessor(processor: QueueProcessor | null): void {
+    this.queueProcessor = processor;
+    if (processor) this.drainQueue();
+  }
 
   /**
    * Process queued messages now. Text generation drains its own queue on
