@@ -23,7 +23,6 @@
   "ignoreDependencies": [
     "@offgrid/pro",
     "@modelcontextprotocol/sdk",
-    "react-native-calendar-events",
     "react-compiler-runtime",
     "eslint-plugin-react-compiler",
     "eslint-plugin-react-native",

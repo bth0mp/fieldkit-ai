@@ -32,9 +32,11 @@
     <!-- Android 13+ needs this to SHOW the ongoing download notification (requested at runtime). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- For reading and creating calendar events -->
+    <!-- For reading calendar events. New events open in the Calendar app's own form, so the
+         app never holds the write permission: the remove marker below drops it even if a
+         library merges it in. -->
     <uses-permission android:name="android.permission.READ_CALENDAR" />
-    <uses-permission android:name="android.permission.WRITE_CALENDAR" />
+    <uses-permission android:name="android.permission.WRITE_CALENDAR" tools:node="remove" />
 
     <!-- To list the installed text-to-speech engines (package visibility on Android 11+) -->
     <queries>
