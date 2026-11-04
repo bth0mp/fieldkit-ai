@@ -796,7 +796,7 @@ interface ToolLoopState {
 function buildStreamHandler(ctx: ToolLoopContext, state: ToolLoopState): ((data: StreamChunk) => void) | undefined {
   if (!ctx.onStream) return undefined;
   return (data: StreamChunk) => {
-    if (ctx.isAborted()) return;
+    if (turnEnded(ctx)) return; // a stopped or replaced turn's late tokens are not this turn's
     const chunk = normalizeStreamChunk(data);
     // Only fire onThinkingDone when the first *content* token arrives — reasoning
     // tokens mean the model is still thinking, so keep isThinking=true until then.
@@ -919,7 +919,9 @@ export async function runToolLoop(ctx: ToolLoopContext): Promise<ToolLoopOutcome
   let totalToolCalls = 0;
   const state: ToolLoopState = { firstTokenFired: false, thinkingDoneFired: false, streamedContent: '', reasoningContent: '' };
   for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
-    if (ctx.isAborted()) {
+    // Not only aborted: a stop during the post-tool pause can be followed by a queued turn that resets the
+    // abort flag before this one wakes, so the turn token decides.
+    if (turnEnded(ctx)) {
       break;
     }
 
@@ -942,7 +944,7 @@ export async function runToolLoop(ctx: ToolLoopContext): Promise<ToolLoopOutcome
     // whose empty output painted the wrong "No response / incompatible backend" card. Finalize
     // whatever streamed; issue NO further completions. When aborted, stopGeneration() owns the
     // partial-content cleanup — emit nothing here.
-    if (interrupted || ctx.isAborted()) {
+    if (interrupted || turnEnded(ctx)) {
       // Streamed partial content is already in the store's streaming message: the aborted path is
       // finalized by stopGeneration(), the non-aborted path by generate()'s post-loop finalize.
       logger.log(`[ToolLoop] completion interrupted (aborted=${ctx.isAborted()}) — ending turn, no follow-up generation`);
@@ -957,7 +959,7 @@ export async function runToolLoop(ctx: ToolLoopContext): Promise<ToolLoopOutcome
     if (cappedToolCalls.length === 0) {
       // Empty response with tools — retry once without tools (some models choke on tool schemas).
       // Never after an abort: this retry is a FULL generation, the exact zombie a stop must kill.
-      if (!state.streamedContent && !displayResponse && !ctx.isAborted()) {
+      if (!state.streamedContent && !displayResponse && !turnEnded(ctx)) {
         state.streamedContent = '';
         state.reasoningContent = '';
         state.firstTokenFired = false;
@@ -1002,6 +1004,6 @@ export async function runToolLoop(ctx: ToolLoopContext): Promise<ToolLoopOutcome
       await new Promise<void>(resolve => setTimeout(resolve, CONTEXT_RELEASE_PAUSE_MS));
     }
   }
-  // Reached only via the top-of-iteration abort break or iteration exhaustion.
-  return { interrupted: ctx.isAborted() };
+  // Reached only via the top-of-iteration break (the turn ended) or iteration exhaustion.
+  return { interrupted: turnEnded(ctx) };
 }

@@ -165,7 +165,7 @@ export function buildToolLoopHandlersImpl(svc: any) {
     isTurnLive: () => svc.turnSeq === turn && !svc.abortRequested,
     onThinkingDone: () => svc.updateState({ isThinking: false }),
     onStream: (data: StreamChunk) => {
-      if (svc.abortRequested) return;
+      if (svc.abortRequested || svc.turnSeq !== turn) return; // a stopped or replaced turn streams nowhere
       const chunk = typeof data === 'string' ? { content: data } : data;
       handleStreamChunk(svc, chunk);
       if (!svc.flushTimer) {
