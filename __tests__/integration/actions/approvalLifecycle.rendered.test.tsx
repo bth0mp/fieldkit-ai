@@ -155,6 +155,28 @@ describe('approval lifecycle', () => {
     expect(h.view!.queryByTestId('approval-card')).toBeNull();
   });
 
+  it('Retry in another chat while a card waits says to answer the card first', async () => {
+    const h = await setupChatScreen({ engine: 'llama' });
+    h.enableToolViaUI('draft_email'); h.render();
+    // Chat Y: an earlier conversation with a reply.
+    await h.send('hi', { text: 'Other chat.' });
+    await h.rtl.waitFor(() => { expect(h.view!.queryByText(/Other chat\./)).not.toBeNull(); }, { timeout: 4000 });
+    await h.rtl.waitFor(() => { expect(h.view!.queryByTestId('stop-button') === null).toBe(true); }, { timeout: 4000 });
+    const chatY = h.conversationId!;
+    // Chat X: the model's draft_email call waits on its card.
+    await h.openChat(null);
+    await h.send('email them', { text: `Drafting. ${toolCallText('draft_email', DRAFT)}` });
+    await h.rtl.waitFor(() => h.view!.getByTestId('approval-card'));
+
+    await h.openChat(chatY);
+    await h.openActionMenu('assistant', 'longpress');
+    h.rtl.fireEvent.press(h.view!.getByTestId('action-retry'));
+    await h.rtl.waitFor(() => { expect(h.view!.queryByText('Waiting for your approval')).not.toBeNull(); }, { timeout: 4000 });
+    expect(h.view!.queryByText('Approve or decline the card first, then try again.')).not.toBeNull();
+    expect(h.view!.queryByText('A reply is still being written')).toBeNull();
+    expect(h.view!.queryByText(/Other chat\./)).not.toBeNull();
+  });
+
   it('stays with its conversation', async () => {
     const h = await chatWithCard();
     const chatA = h.conversationId!;

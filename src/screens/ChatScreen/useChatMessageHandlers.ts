@@ -5,6 +5,7 @@ import { callHook, HOOKS } from '../../bootstrap/hookRegistry';
 import logger from '../../utils/logger';
 import { modelResidencyManager } from '../../services/modelResidency';
 import { hardwareService } from '../../services/hardware';
+import { useActionApprovalStore } from '../../stores/actionApprovalStore';
 import {
   regenerateResponseFn, executeDeleteConversationFn, handleImageGenerationFn,
   recordedTurnKind, isAnyGenerationRunning,
@@ -50,12 +51,16 @@ async function retryFromAssistantMessage({ message, genDeps, p, convId, msgs }: 
 
 /**
  * Retry, resend and edit delete the reply before they write it again, and only one reply is written at a time,
- * here or in another chat. While one is written, refuse with an alert before anything is deleted.
+ * here or in another chat. While one is written, refuse with an alert before anything is deleted. When that turn
+ * waits on an approval card, the alert says so: waiting would not end it.
  */
 function refusedWhileGenerating(genDeps: GenerationDeps): boolean {
   if (!isAnyGenerationRunning()) return false;
   logger.log('[RESEND-SM] BAIL: a reply is still being written');
-  genDeps.setAlertState(showAlert('A reply is still being written', 'Wait for it to finish, then try again.'));
+  const waitsOnCard = useActionApprovalStore.getState().pending.length > 0;
+  genDeps.setAlertState(waitsOnCard
+    ? showAlert('Waiting for your approval', 'Approve or decline the card first, then try again.')
+    : showAlert('A reply is still being written', 'Wait for it to finish, then try again.'));
   return true;
 }
 
