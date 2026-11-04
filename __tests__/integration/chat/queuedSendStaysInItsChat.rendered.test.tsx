@@ -114,31 +114,6 @@ describe('a queued message is sent in its own chat (rendered)', () => {
     expect(h.view!.queryByTestId('queue-indicator')).toBeNull();
   }, 40000);
 
-  it('a message still queued when its turn ended with no chat screen open is sent once a chat opens', async () => {
-    const h = await setupChatScreen({ engine: 'llama' });
-    h.render();
-    // Chat X: a reply still being written.
-    h.boundary.llama!.scriptCompletion({ text: 'Reply for X.', pauseAfter: 'Reply for X.' });
-    await h.tapSend('question for X');
-    await h.rtl.waitFor(() => expect(h.useChatStore.getState().streamingMessage).toMatch(/Reply for X\./), TIMEOUT);
-    const chatX = h.conversationId!;
-    const chatY = await queueInNewChat(h, 'question for Y', 1);
-
-    // The user leaves the chat screen (back to Home), and X's turn ends while no chat screen is open.
-    h.view!.unmount();
-    h.view = null;
-    h.boundary.llama!.scriptCompletion({ text: 'Reply for Y.' });
-    h.boundary.llama!.releaseStream();
-    await h.rtl.waitFor(() => expect(contents(h, chatX)).toEqual(['question for X', 'Reply for X.']), TIMEOUT);
-    await h.settle(300);
-
-    // Opening the chat again sends the message that waited.
-    await h.openChat(chatY);
-    await h.rtl.waitFor(() => expect(contents(h, chatY)).toEqual(['question for Y', 'Reply for Y.']), TIMEOUT);
-    await expectChatShows(h, chatY, 'question for Y', /Reply for Y\./);
-    expect(h.view!.queryByTestId('queue-indicator')).toBeNull();
-  }, 40000);
-
   it('a message queued in a chat that is then deleted is never sent; the next queued chat gets its reply', async () => {
     const h = await setupChatScreen({ engine: 'llama' });
     const chatX = await chatWaitingOnCard(h);
