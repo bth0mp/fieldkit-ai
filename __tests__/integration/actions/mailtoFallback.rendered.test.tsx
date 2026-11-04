@@ -16,6 +16,8 @@ jest.mock('@react-navigation/native', () => ({
 }));
 
 const toolCallText = (name: string, args: Record<string, unknown>) => `<tool_call>${JSON.stringify({ name, arguments: args })}</tool_call>`;
+/** A card ignores taps for a moment after it is shown; the tests wait this long before they tap it. */
+const CARD_READ_MS = 550;
 
 type Harness = Awaited<ReturnType<typeof setupChatScreen>>;
 
@@ -32,6 +34,7 @@ async function chatWithDraft(args: Record<string, unknown>, beforeSend?: (h: Har
 /** Approve the card, wait for the model's closing reply, then open the tool result bubble. */
 async function approveAndOpenResult(h: Harness, reply: string) {
   h.boundary.llama!.scriptCompletion({ text: reply }); // re-script before approving: scripts are sticky
+  await h.settle(CARD_READ_MS);
   h.rtl.fireEvent.press(h.view!.getByTestId('approval-approve'));
   await h.rtl.waitFor(() => { expect(h.view!.queryByText(reply)).not.toBeNull(); }, { timeout: 4000 });
   h.rtl.fireEvent.press(await h.rtl.waitFor(() => h.view!.getByTestId('tool-result-label-draft_email')));

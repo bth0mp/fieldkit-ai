@@ -23,6 +23,8 @@ type Harness = Awaited<ReturnType<typeof setupChatScreen>>;
 
 const TIMEOUT = { timeout: 4000 };
 const toolCallText = (name: string, args: Record<string, unknown>) => `<tool_call>${JSON.stringify({ name, arguments: args })}</tool_call>`;
+/** A card ignores taps for a moment after it is shown; the tests wait this long before they tap it. */
+const CARD_READ_MS = 550;
 const DRAFT = { to: 'bob@example.com', subject: 'Hi', body: 'Hello' };
 const contents = (h: Harness, conversationId: string): string[] =>
   h.useChatStore.getState().getConversationMessages(conversationId).map((m: { content: string }) => String(m.content));
@@ -50,6 +52,7 @@ async function declineInChat(h: Harness, chatX: string): Promise<number> {
   await h.rtl.waitFor(() => h.view!.getByTestId('approval-card'));
   const before = h.boundary.llama!.calls.completion.length;
   h.boundary.llama!.scriptCompletion({ text: 'Left it alone.', pauseAfter: 'Left it alone.' });
+  await h.settle(CARD_READ_MS);
   h.rtl.fireEvent.press(h.view!.getByTestId('approval-decline'));
   await completionStarted(h, before + 1);
   return before + 1;

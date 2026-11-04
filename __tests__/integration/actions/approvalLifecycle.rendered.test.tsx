@@ -23,6 +23,9 @@ const SECOND = { to: 'cal@example.com', subject: 'Second', body: 'Two' };
 
 type Harness = Awaited<ReturnType<typeof setupChatScreen>>;
 
+/** A card ignores taps for a moment after it is shown; the tests wait this long before they tap it. */
+const CARD_READ_MS = 550;
+
 /** llama chat with draft_email on, the model's draft_email calls (one message) waiting on the first card. */
 async function chatWithCard(drafts = [DRAFT]): Promise<Harness> {
   const h = await setupChatScreen({ engine: 'llama' });
@@ -119,11 +122,33 @@ describe('approval lifecycle', () => {
     expect(h.view!.queryByText(/Subject: Second/)).toBeNull();
 
     h.boundary.llama!.scriptCompletion({ text: 'Both drafts are open.' }); // scripts are sticky
+    await h.settle(CARD_READ_MS);
     h.rtl.fireEvent.press(h.view!.getByTestId('approval-approve'));
     await h.rtl.waitFor(() => { expect(h.view!.getByText(/Subject: Second/)).toBeTruthy(); });
     expect(h.view!.getAllByTestId('approval-card')).toHaveLength(1);
     expect(h.boundary.linking.openURL).toHaveBeenCalledTimes(1);
 
+    await h.settle(CARD_READ_MS);
+    h.rtl.fireEvent.press(h.view!.getByTestId('approval-approve'));
+    await h.rtl.waitFor(() => { expect(h.view!.queryByText(/Both drafts are open\./)).not.toBeNull(); }, { timeout: 4000 });
+    expect(h.boundary.linking.openURL).toHaveBeenCalledTimes(2);
+    expect(h.view!.queryByTestId('approval-card')).toBeNull();
+  });
+
+  it('a double tap answers only the card the user saw', async () => {
+    const h = await chatWithCard([FIRST, SECOND]);
+    await h.settle(CARD_READ_MS);
+    h.rtl.fireEvent.press(h.view!.getByTestId('approval-approve'));
+    await h.rtl.waitFor(() => { expect(h.view!.getByText(/Subject: Second/)).toBeTruthy(); });
+    // The second tap of a double tap lands on the card that has just replaced the first one.
+    h.rtl.fireEvent.press(h.view!.getByTestId('approval-approve'));
+    await h.settle(100);
+    expect(h.boundary.linking.openURL).toHaveBeenCalledTimes(1);
+    expect(h.view!.getByText(/Subject: Second/)).toBeTruthy();
+
+    // Once the card has been in view for a moment, Approve works.
+    h.boundary.llama!.scriptCompletion({ text: 'Both drafts are open.' });
+    await h.settle(CARD_READ_MS);
     h.rtl.fireEvent.press(h.view!.getByTestId('approval-approve'));
     await h.rtl.waitFor(() => { expect(h.view!.queryByText(/Both drafts are open\./)).not.toBeNull(); }, { timeout: 4000 });
     expect(h.boundary.linking.openURL).toHaveBeenCalledTimes(2);
@@ -139,6 +164,7 @@ describe('approval lifecycle', () => {
     await h.rtl.waitFor(() => h.view!.getByTestId('approval-card'));
 
     h.boundary.llama!.scriptCompletion({ text: 'Left it alone.' });
+    await h.settle(CARD_READ_MS);
     h.rtl.fireEvent.press(h.view!.getByTestId('approval-decline'));
     await h.rtl.waitFor(() => { expect(h.view!.queryByText(/Left it alone\./)).not.toBeNull(); }, { timeout: 4000 });
   });

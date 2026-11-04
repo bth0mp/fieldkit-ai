@@ -16,6 +16,8 @@ jest.mock('@react-navigation/native', () => ({
 }));
 
 const toolCallText = (name: string, args: Record<string, unknown>) => `<tool_call>${JSON.stringify({ name, arguments: args })}</tool_call>`;
+/** A card ignores taps for a moment after it is shown; the tests wait this long before they tap it. */
+const CARD_READ_MS = 550;
 
 describe('draft_email waits for the user on an approval card', () => {
   it('approve opens the mail app with the draft', async () => {
@@ -25,6 +27,7 @@ describe('draft_email waits for the user on an approval card', () => {
     await h.rtl.waitFor(() => h.view!.getByTestId('approval-card'));
     expect(h.view!.getByText(/Subject: Hi & bye/)).toBeTruthy();
     h.boundary.llama!.scriptCompletion({ text: 'I opened a draft in your mail app.' }); // re-script before approving: scripts are sticky
+    await h.settle(CARD_READ_MS);
     h.rtl.fireEvent.press(h.view!.getByTestId('approval-approve'));
     await h.rtl.waitFor(() => expect(h.boundary.linking.openURL).toHaveBeenCalledWith(
       'mailto:bob@example.com?subject=Hi%20%26%20bye&body=Line%20one%0D%0ALine%20two'));
@@ -38,6 +41,7 @@ describe('draft_email waits for the user on an approval card', () => {
     await h.send('email bob', { text: `Drafting. ${toolCallText('draft_email', { to: 'bob@example.com', subject: 'Hi', body: 'Hello' })}` });
     await h.rtl.waitFor(() => h.view!.getByTestId('approval-card'));
     h.boundary.llama!.scriptCompletion({ text: 'Okay, I left it alone.' });
+    await h.settle(CARD_READ_MS);
     h.rtl.fireEvent.press(h.view!.getByTestId('approval-decline'));
     await h.rtl.waitFor(() => { expect(h.view!.queryByText(/Okay, I left it alone\./)).not.toBeNull(); }, { timeout: 4000 });
     expect(h.view!.queryByTestId('approval-card')).toBeNull();
@@ -57,6 +61,7 @@ describe('draft_email waits for the user on an approval card', () => {
 
     // The draft that opens carries exactly the recipients the card showed.
     h.boundary.llama!.scriptCompletion({ text: 'Draft opened.' });
+    await h.settle(CARD_READ_MS);
     h.rtl.fireEvent.press(h.view!.getByTestId('approval-approve'));
     await h.rtl.waitFor(() => expect(h.boundary.linking.openURL).toHaveBeenCalledTimes(1));
     expect(h.boundary.linking.openURL.mock.calls[0][0]).toMatch(/^mailto:bob@x\.com,evil@x\.com\?subject=/);
@@ -68,6 +73,7 @@ describe('draft_email waits for the user on an approval card', () => {
     await h.send('email bob', { text: `Drafting. ${toolCallText('draft_email', { to: 'bob@example.com', subject: 'Notes', body: 'A\nB & C + D # E = F Café' })}` });
     await h.rtl.waitFor(() => h.view!.getByTestId('approval-card'));
     h.boundary.llama!.scriptCompletion({ text: 'Draft opened.' });
+    await h.settle(CARD_READ_MS);
     h.rtl.fireEvent.press(h.view!.getByTestId('approval-approve'));
     await h.rtl.waitFor(() => expect(h.boundary.linking.openURL).toHaveBeenCalledTimes(1));
     const url: string = h.boundary.linking.openURL.mock.calls[0][0];

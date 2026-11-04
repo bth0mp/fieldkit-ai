@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import { useTheme, useThemedStyles } from '../theme';
@@ -10,6 +10,10 @@ import { actionApprovalService } from '../services/actions/actionApprovalService
 import { Button } from './Button';
 import { Card } from './Card';
 
+/** Taps are ignored this long after a card is shown, so the second tap of a double tap (or a tap as the card
+ *  appears) cannot answer a card the user has not seen. */
+const FRESH_CARD_MS = 500;
+
 /**
  * The approval card above the composer: a tool call that sends or writes waits here for the user's tap.
  * Shows the first waiting request of the open conversation; a read-only projection of
@@ -20,8 +24,13 @@ export const ActionApprovalCard: React.FC = () => {
   const styles = useThemedStyles(createStyles);
   const activeConversationId = useChatStore(s => s.activeConversationId);
   const head = useActionApprovalStore(s => s.pending.find(p => p.conversationId === activeConversationId));
+  const shown = useRef<{ id: string | undefined; at: number }>({ id: undefined, at: 0 });
+  useEffect(() => { shown.current = { id: head?.id, at: Date.now() }; }, [head?.id]);
   if (!head) return null;
-  const decide = (decision: 'approved' | 'declined') => actionApprovalService.resolve({ id: head.id, decision });
+  const decide = (decision: 'approved' | 'declined') => {
+    if (shown.current.id !== head.id || Date.now() - shown.current.at < FRESH_CARD_MS) return;
+    actionApprovalService.resolve({ id: head.id, decision });
+  };
 
   return (
     <Card style={styles.card} testID="approval-card">
