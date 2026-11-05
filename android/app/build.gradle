@@ -84,8 +84,9 @@ android {
         applicationId "com.bth0mp.fieldkit"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1784144537
-        versionName "0.0.103"
+        // Fieldkit releases: versionCode = major * 10000 + minor * 100 + patch; it must grow every release.
+        versionCode 100
+        versionName "0.1.0"
     }
     signingConfigs {
         debug {
