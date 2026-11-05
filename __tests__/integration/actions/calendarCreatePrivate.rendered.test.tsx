@@ -173,4 +173,16 @@ describe('calendar events and private data in the tool loop', () => {
     expect(h.view!.queryByTestId('approval-card')).toBeNull();
     await expectToolResultShows(h, 'web_search', /This tool is not available right now\./);
   });
+
+  it('litert read then search in one turn: the search is not available', async () => {
+    const h = await setupChatScreen({ engine: 'litert', calendar: { permission: 'granted', events: [DENTIST] } });
+    await enableTool(h, 'read_calendar_events');
+    h.render();
+    const calls = [{ name: 'read_calendar_events', arguments: FRIDAY }, { name: 'web_search', arguments: { query: 'Dentist Thursday' } }];
+    await h.send('what is on friday, then search it', { toolCalls: calls, content: 'You see the dentist at two.' });
+    await h.rtl.waitFor(() => { expect(h.view!.queryByText(/You see the dentist at two\./)).not.toBeNull(); }, { timeout: 5000 });
+    expect(isPrivate(h)).toBe(true);
+    expect(h.view!.queryByTestId('approval-card')).toBeNull();
+    await expectToolResultShows(h, 'web_search', /This tool is not available right now\./);
+  });
 });

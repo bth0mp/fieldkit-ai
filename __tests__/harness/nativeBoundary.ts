@@ -141,7 +141,7 @@ function makeLiteRTFake(handle: FakeEmitterHandle): LiteRTFake {
   let pending: LiteRTTurn | null = null;
   const queue: LiteRTTurn[] = [];
   let currentTurn: LiteRTTurn | null = null; // the turn onSend picked (for respondToToolCall completion)
-  let toolCallsRemaining = 0;
+  let toolCallsLeft: NonNullable<LiteRTTurn['toolCalls']> = []; // emitted one at a time, as the native loop does
   let pendingError: string | null = null; // one-shot: next send emits litert_error instead of completing
   let pendingHang = false; // one-shot: next send never completes (generation stays in-flight)
   let pendingPartialHang: { content?: string; reasoning?: string } | null = null; // one-shot: emit a partial token/reasoning then never complete
@@ -159,12 +159,17 @@ function makeLiteRTFake(handle: FakeEmitterHandle): LiteRTFake {
     const turn = queue.length ? queue.shift()! : pending;
     currentTurn = turn;
     if (!turn) { defer(() => handle.emit('litert_complete', '{}')); return; }
-    const tcs = turn.toolCalls ?? [];
-    toolCallsRemaining = tcs.length;
-    if (tcs.length === 0) { defer(() => emitCompletion(turn)); return; }
-    // Emit each tool call; the REAL service dispatches it and calls respondToToolCall.
-    defer(() => tcs.forEach((tc, i) =>
-      handle.emit('litert_tool_call', JSON.stringify({ id: tc.id ?? `tc-${i}`, name: tc.name, arguments: tc.arguments }))));
+    toolCallsLeft = [...(turn.toolCalls ?? [])];
+    if (toolCallsLeft.length === 0) { defer(() => emitCompletion(turn)); return; }
+    emitNextToolCall(turn);
+  };
+
+  // Native OpenApiTool.execute blocks until JS answers (respondToToolCall), so the model's next tool call
+  // comes only after the previous one's result. The REAL service dispatches each call and answers it.
+  const emitNextToolCall = (turn: LiteRTTurn) => {
+    const index = (turn.toolCalls ?? []).length - toolCallsLeft.length;
+    const tc = toolCallsLeft.shift()!;
+    defer(() => handle.emit('litert_tool_call', JSON.stringify({ id: tc.id ?? `tc-${index}`, name: tc.name, arguments: tc.arguments })));
   };
 
   const module: Record<string, jest.Mock> = {
@@ -176,7 +181,10 @@ function makeLiteRTFake(handle: FakeEmitterHandle): LiteRTFake {
     sendMessageWithMedia: jest.fn((...args: unknown[]) => { calls.sendMessageWithMedia.push(args); onSend(); return Promise.resolve(); }),
     respondToToolCall: jest.fn(() => {
       // After the LAST tool result is delivered, the native model continues and completes.
-      if (currentTurn && --toolCallsRemaining <= 0) { const turn = currentTurn; defer(() => emitCompletion(turn)); }
+      if (!currentTurn) return Promise.resolve();
+      const turn = currentTurn;
+      if (toolCallsLeft.length > 0) emitNextToolCall(turn);
+      else defer(() => emitCompletion(turn));
       return Promise.resolve();
     }),
     generateRaw: jest.fn((...args: unknown[]) => { calls.generateRaw.push(args); return Promise.resolve(''); }),

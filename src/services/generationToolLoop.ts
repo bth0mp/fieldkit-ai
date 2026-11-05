@@ -319,8 +319,9 @@ async function executeToolCallSafely(tc: ToolCall, ctx: ToolLoopContext): Promis
     // A tool that sends or writes waits for the user's tap on the approval card. It runs only when
     // approved AND its turn is still live: a stop (or a newer turn) while the card showed ends it.
     if (approvalRequired({ toolName: tc.name, conversationId: ctx.conversationId })) {
-      // An engine that cannot wait for the user (LiteRT's native loop times a call out) never shows a card.
-      if (!ctx.supportsToolApproval) return toolDeclinedResult(tc, start);
+      // An engine that cannot wait for the user (LiteRT's native loop times a call out) never shows a card. The
+      // user declined nothing: the tool is not available to it (a read in this turn made the chat private).
+      if (!ctx.supportsToolApproval) return toolNotOfferedResult(tc, start);
       const decision = await actionApprovalService.request({ call: tc, conversationId: ctx.conversationId, summary: approvalSummaryFor(tc) });
       if (decision === 'declined') return toolDeclinedResult(tc, start);
       if (!(ctx.isTurnLive?.() ?? !ctx.isAborted())) return toolDeclinedResult(tc, start);
