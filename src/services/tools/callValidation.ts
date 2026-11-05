@@ -6,15 +6,17 @@
  */
 import { draftFromArgs, recipientsProblem } from '../../utils/mailto';
 import { AVAILABLE_TOOLS } from './registry';
+import { approvalRequired } from './toolOffering';
 import type { ToolCall } from './types';
 
 const hasText = (value: unknown): boolean => typeof value === 'string' && value.trim().length > 0;
 
 /** What is wrong with this call (a required text argument is missing or blank, or the tool's own limits are
- *  broken), or null when it may go to the user for approval. Tools that need no approval are not checked. */
-export function preApprovalProblem(call: ToolCall): string | null {
+ *  broken), or null when it may go to the user for approval. Calls that need no approval in this
+ *  conversation (approvalRequired) are not checked. */
+export function preApprovalProblem(call: ToolCall, context: { conversationId: string | null }): string | null {
   const tool = AVAILABLE_TOOLS.find(candidate => candidate.name === call.name);
-  if (!tool?.requiresApproval) return null;
+  if (!tool || !approvalRequired({ toolName: call.name, conversationId: context.conversationId })) return null;
   const missing = Object.entries(tool.parameters)
     .filter(([name, param]) => param.required && !hasText(call.arguments[name]))
     .map(([name]) => name);
