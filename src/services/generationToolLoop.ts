@@ -8,7 +8,7 @@ import { Message } from '../types';
 import { getToolsAsOpenAISchema, executeToolCall } from './tools';
 import type { ToolCall, ToolResult } from './tools/types';
 import { normalizeToolResult, toolDeclinedResult, toolErrorResult, toolInvalidResult, toolResultModelContent } from './tools/toolResult';
-import { approvalRequired, handlesPrivateData, offeredToolIds, toolCallOffered } from './tools/toolOffering';
+import { approvalRequired, handlesPrivateData, offeredToolIdsForTurn, toolCallOffered } from './tools/toolOffering';
 import { approvalSummaryFor } from './tools/approvalSummary';
 import { preApprovalProblem } from './tools/callValidation';
 import { actionApprovalService } from './actions/actionApprovalService';
@@ -924,8 +924,7 @@ export async function runToolLoop(ctx: ToolLoopContext): Promise<ToolLoopOutcome
   // Decide once per turn what is offered: an engine that cannot wait on an approval card is never offered a
   // tool that needs one, and the gate refuses any built-in tool not offered here.
   ctx.supportsToolApproval = servingEngineCapabilities(ctx).supportsToolApproval;
-  const remoteActive = servingEngine({ forceRemote: ctx.forceRemote, conversationId: ctx.conversationId }) === 'remote';
-  ctx.enabledToolIds = offeredToolIds({ enabledToolIds: ctx.enabledToolIds, conversationId: ctx.conversationId, supportsToolApproval: ctx.supportsToolApproval, remoteActive });
+  ctx.enabledToolIds = offeredToolIdsForTurn({ enabledToolIds: ctx.enabledToolIds, conversationId: ctx.conversationId, forceRemote: ctx.forceRemote, supportsToolApproval: ctx.supportsToolApproval });
   const builtInSchemas = getToolsAsOpenAISchema(ctx.enabledToolIds);
   const extSchemas = getToolExtensions().flatMap(e => e.getOpenAISchemas?.() ?? []);
 

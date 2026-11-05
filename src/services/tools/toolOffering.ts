@@ -6,6 +6,7 @@
 import { AVAILABLE_TOOLS } from './registry';
 import { calendarService } from '../calendar/calendarService';
 import { isConversationPrivate } from '../privateDataGuard';
+import { servingEngine } from '../servingEngine';
 import type { ToolDefinition } from './types';
 
 const MODULE_PRESENT: Record<NonNullable<ToolDefinition['requiredModule']>, () => boolean> = {
@@ -29,11 +30,13 @@ export function approvalRequired({ toolName, conversationId }: { toolName: strin
 
 /**
  * The enabled tools this turn may offer the model. A tool this device cannot run is never offered, a tool
- * whose results are private data is never offered to a remote model, and an engine that cannot wait on an
- * approval card (EngineCapabilities.supportsToolApproval false) is never offered a tool that needs one.
+ * whose results are private data is never offered to a remote model (servingEngine decides which engine
+ * serves the turn), and an engine that cannot wait on an approval card (EngineCapabilities.supportsToolApproval
+ * false) is never offered a tool that needs one. The tool loop and the prompt's tool hint both ask here.
  */
-export function offeredToolIds(input: { enabledToolIds: string[]; conversationId: string | null; supportsToolApproval: boolean; remoteActive: boolean }): string[] {
-  const { conversationId, supportsToolApproval, remoteActive } = input;
+export function offeredToolIdsForTurn(input: { enabledToolIds: string[]; conversationId: string | null; forceRemote?: boolean; supportsToolApproval: boolean }): string[] {
+  const { conversationId, supportsToolApproval, forceRemote } = input;
+  const remoteActive = servingEngine({ forceRemote, conversationId }) === 'remote';
   const enabledToolIds = input.enabledToolIds.filter(id => {
     if (!toolAvailability(id).available) return false;
     return !(remoteActive && handlesPrivateData(id));

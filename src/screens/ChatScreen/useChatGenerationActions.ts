@@ -9,9 +9,8 @@ import {
   contextCompactionService, ragService, retrievalService,
 } from '../../services';
 import { getToolExtensions } from '../../services/tools/extensions';
-import { offeredToolIds } from '../../services/tools/toolOffering';
+import { offeredToolIdsForTurn } from '../../services/tools/toolOffering';
 import { isPrivateDataRemoteError } from '../../services/privateDataGuard';
-import { servingEngine } from '../../services/servingEngine';
 import { invalidateActiveConversation, activeLocalTextCapabilities, wantsLeadingThinkToken, localModelAcceptsImages } from '../../services/engines';
 import { needsVisionRepair } from '../../utils/visionRepair';
 import { ensureDefaultClassifier } from '../../services/classifierProvisioning';
@@ -375,8 +374,7 @@ function resolveToolsAndPrompt(deps: GenerationDeps, conversation: any, _message
   // The text hint names only what the tool loop will offer (toolOffering), so it never names a tool
   // this engine withholds.
   const conversationId = conversation?.id ?? null;
-  const remoteActive = servingEngine({ conversationId }) === 'remote';
-  const hintToolIds = offeredToolIds({ enabledToolIds: enabledTools, conversationId, supportsToolApproval: localCaps.supportsToolApproval, remoteActive });
+  const hintToolIds = offeredToolIdsForTurn({ enabledToolIds: enabledTools, conversationId, supportsToolApproval: localCaps.supportsToolApproval });
 
   const rawPrompt = project?.systemPrompt || deps.settings.systemPrompt || APP_CONFIG.defaultSystemPrompt;
   return { enabledTools, hintToolIds, rawPrompt, localToolSupport };
