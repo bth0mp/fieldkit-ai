@@ -5,7 +5,7 @@
 import { draftFromArgs, recipientList } from '../../utils/mailto';
 import { formatEventTime } from '../../utils/calendarTime';
 import { AVAILABLE_TOOLS } from './registry';
-import { eventTimes } from './calendarTools';
+import { eventTimes, isAllDay } from './calendarTools';
 import type { ToolCall } from './types';
 
 export interface ApprovalSummary {
@@ -48,8 +48,8 @@ function emailSummary(call: ToolCall): ApprovalSummary {
 
 function eventSummary(call: ToolCall): ApprovalSummary {
   const times = eventTimes(call.arguments);
-  const allDay = call.arguments.all_day === true || call.arguments.all_day === 'true';
-  const when = 'problem' in times ? '' : formatEventTime({ begin: times.beginMs, end: times.endMs, allDay });
+  // The days the model asked for, in the user's own days (the times parse to local midnights).
+  const when = 'problem' in times ? '' : formatEventTime({ begin: times.beginMs, end: times.endMs, allDay: isAllDay(call.arguments) }, 'local');
   const location = clip(oneLine(argText(call.arguments.location)));
   return { title: 'New event', lines: [clip(oneLine(argText(call.arguments.title))), when, location].filter(Boolean) };
 }

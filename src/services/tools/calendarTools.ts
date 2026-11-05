@@ -31,6 +31,9 @@ export function eventTimes(args: Record<string, unknown>): { beginMs: number; en
   return { beginMs, endMs };
 }
 
+/** Whether the model asked for an all-day event (small models sometimes send the flag as a string). */
+export const isAllDay = (args: Record<string, unknown>): boolean => args.all_day === true || args.all_day === 'true';
+
 export async function createCalendarEvent(call: ToolCall): Promise<string> {
   const args = call.arguments;
   const title = optionalText(args.title);
@@ -42,7 +45,7 @@ export async function createCalendarEvent(call: ToolCall): Promise<string> {
     ...times,
     location: optionalText(args.location),
     notes: optionalText(args.notes),
-    allDay: args.all_day === true || args.all_day === 'true',
+    allDay: isAllDay(args),
   });
   return 'Opened in Calendar. The user saves or cancels it there.';
 }

@@ -47,15 +47,17 @@ const clockText = (date: Date): string => `${pad(date.getHours())}:${pad(date.ge
 
 /**
  * "Fri 6 Nov 14:00-14:30" in local time; an event that ends on a later day names both days
- * ("Fri 6 Nov 22:00-Sat 7 Nov 01:00"). An all-day event is stored as UTC midnights with an exclusive end,
- * so its days are read in UTC: "Fri 6 Nov, all day", or "Fri 6 Nov-Sun 8 Nov, all day".
+ * ("Fri 6 Nov 22:00-Sat 7 Nov 01:00"). An all-day event has an exclusive end: "Fri 6 Nov, all day", or
+ * "Fri 6 Nov-Sun 8 Nov, all day". The calendar stores one as UTC midnights, so its days are read in UTC
+ * (the default); one the model asks for ("2026-11-06", which parses to local midnight) is read in local days.
  */
-export function formatEventTime(event: { begin: number; end: number; allDay?: boolean }): string {
+export function formatEventTime(event: { begin: number; end: number; allDay?: boolean }, allDayIn: 'utc' | 'local' = 'utc'): string {
   const begin = new Date(event.begin);
   if (event.allDay) {
     const last = new Date(Math.max(event.begin, event.end - 1));
-    const first = dayText(begin, true);
-    const lastDay = dayText(last, true);
+    const utc = allDayIn === 'utc';
+    const first = dayText(begin, utc);
+    const lastDay = dayText(last, utc);
     return first === lastDay ? `${first}, all day` : `${first}-${lastDay}, all day`;
   }
   const end = new Date(event.end);
