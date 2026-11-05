@@ -16,8 +16,8 @@ describe('Tool Registry', () => {
   // AVAILABLE_TOOLS
   // ========================================================================
   describe('AVAILABLE_TOOLS', () => {
-    it('has exactly 8 tools with correct IDs', () => {
-      expect(AVAILABLE_TOOLS).toHaveLength(8);
+    it('has exactly 9 tools with correct IDs', () => {
+      expect(AVAILABLE_TOOLS).toHaveLength(9);
 
       const ids = AVAILABLE_TOOLS.map(t => t.id);
       expect(ids).toEqual([
@@ -29,10 +29,11 @@ describe('Tool Registry', () => {
         'read_url',
         'draft_email',
         'read_calendar_events',
+        'create_calendar_event',
       ]);
     });
 
-    it('only draft_email requires approval', () => {
+    it('only draft_email and create_calendar_event require approval of every call', () => {
       const approval = Object.fromEntries(AVAILABLE_TOOLS.map(t => [t.id, t.requiresApproval === true]));
       expect(approval).toEqual({
         web_search: false,
@@ -43,6 +44,7 @@ describe('Tool Registry', () => {
         read_url: false,
         draft_email: true,
         read_calendar_events: false,
+        create_calendar_event: true,
       });
     });
 

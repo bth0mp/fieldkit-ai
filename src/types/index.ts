@@ -245,6 +245,9 @@ export interface Conversation {
   projectId?: string;
   compactionSummary?: string;
   compactionCutoffMessageId?: string;
+  /** Set once a private-data tool (the calendar) returned data in this chat; never cleared. Such a chat
+   *  is never sent to a remote model, and its web tools need the user's approval. */
+  containsPrivateData?: boolean;
 }
 
 

@@ -8,7 +8,7 @@ import { Message } from '../types';
 import { getToolsAsOpenAISchema, executeToolCall } from './tools';
 import type { ToolCall, ToolResult } from './tools/types';
 import { normalizeToolResult, toolDeclinedResult, toolErrorResult, toolInvalidResult, toolResultModelContent } from './tools/toolResult';
-import { approvalRequired, offeredToolIds, toolCallOffered } from './tools/toolOffering';
+import { approvalRequired, handlesPrivateData, offeredToolIds, toolCallOffered } from './tools/toolOffering';
 import { approvalSummaryFor } from './tools/approvalSummary';
 import { preApprovalProblem } from './tools/callValidation';
 import { actionApprovalService } from './actions/actionApprovalService';
@@ -279,6 +279,9 @@ function getLastUserQuery(messages: Message[]): string {
     if (messages[i].role === 'user' && messages[i].content.trim()) return messages[i].content.trim();
   return '';
 }
+/** Why a private-data tool did not run for a remote model (no trailing period: the tool result adds it). */
+const PRIVATE_DATA_REMOTE = 'Not available while a remote model is active';
+
 /** The result of a call for a tool this turn did not offer. The model reads it as a failed call. */
 function toolNotOfferedResult(tc: ToolCall, startMs: number): ToolResult {
   return { ...toolErrorResult(tc, new Error('This tool is not available right now'), startMs), errorCategory: 'not-found' };
@@ -297,6 +300,12 @@ async function executeToolCallSafely(tc: ToolCall, ctx: ToolLoopContext): Promis
   const ext = exts.find(e => e.canHandle(tc.name));
   const start = Date.now();
   try {
+    // Private data never reaches a remote model: a private-data tool it calls (even by name, never offered) does
+    // not run. Checked live, so a switch to a remote model mid-turn is covered too.
+    if (handlesPrivateData(tc.name) && servingEngine({ forceRemote: ctx.forceRemote, conversationId: ctx.conversationId }) === 'remote') {
+      logger.log(`[ToolLoop] refused "${tc.name}": private data, remote model active`);
+      return toolInvalidResult(tc, PRIVATE_DATA_REMOTE, start);
+    }
     // Only an offered tool runs. A call for a built-in tool this turn did not offer (switched off, withheld
     // from this engine, or named in text injected into a reply) is refused before it can raise a card.
     if (!toolCallOffered({ toolName: tc.name, offeredToolNames: ctx.offeredToolNames ?? [] })) {
@@ -316,7 +325,10 @@ async function executeToolCallSafely(tc: ToolCall, ctx: ToolLoopContext): Promis
       if (!(ctx.isTurnLive?.() ?? !ctx.isAborted())) return toolDeclinedResult(tc, start);
     }
     const raw = ext ? await ext.execute(tc) : await executeToolCall(tc);
-    return normalizeToolResult(tc, raw);
+    const result = normalizeToolResult(tc, raw);
+    // From now on this chat holds private data: it stays off remote models, and its web tools need approval.
+    if (result.status === 'ok' && handlesPrivateData(tc.name)) useChatStore.getState().markConversationPrivate(ctx.conversationId);
+    return result;
   } catch (err) {
     logger.error(`[ToolLoop] tool "${tc.name}" threw — surfacing as a typed error result`, err);
     return toolErrorResult(tc, err, start);
@@ -908,7 +920,8 @@ export async function runToolLoop(ctx: ToolLoopContext): Promise<ToolLoopOutcome
   // Decide once per turn what is offered: an engine that cannot wait on an approval card is never offered a
   // tool that needs one, and the gate refuses any built-in tool not offered here.
   ctx.supportsToolApproval = servingEngineCapabilities(ctx).supportsToolApproval;
-  ctx.enabledToolIds = offeredToolIds({ enabledToolIds: ctx.enabledToolIds, conversationId: ctx.conversationId, supportsToolApproval: ctx.supportsToolApproval });
+  const remoteActive = servingEngine({ forceRemote: ctx.forceRemote, conversationId: ctx.conversationId }) === 'remote';
+  ctx.enabledToolIds = offeredToolIds({ enabledToolIds: ctx.enabledToolIds, conversationId: ctx.conversationId, supportsToolApproval: ctx.supportsToolApproval, remoteActive });
   const builtInSchemas = getToolsAsOpenAISchema(ctx.enabledToolIds);
   const extSchemas = getToolExtensions().flatMap(e => e.getOpenAISchemas?.() ?? []);
 

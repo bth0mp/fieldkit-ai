@@ -133,6 +133,44 @@ export const AVAILABLE_TOOLS: ToolDefinition[] = [
       },
     },
   },
+  {
+    id: 'create_calendar_event',
+    name: 'create_calendar_event',
+    displayName: 'New Calendar Event',
+    description: "Open a new event in the user's calendar app, filled in. The user approves it first, then saves or cancels it in the calendar app. Use this when the user asks you to add, book or schedule something.",
+    icon: 'calendar',
+    requiresApproval: true,
+    requiredModule: 'calendar',
+    parameters: {
+      title: {
+        type: 'string',
+        description: 'Event title',
+        required: true,
+      },
+      start: {
+        type: 'string',
+        description: 'Start, ISO 8601 local time, e.g. 2026-11-06T14:00:00',
+        required: true,
+      },
+      end: {
+        type: 'string',
+        description: 'End, ISO 8601 local time, e.g. 2026-11-06T14:30:00',
+        required: true,
+      },
+      location: {
+        type: 'string',
+        description: 'Where the event is',
+      },
+      notes: {
+        type: 'string',
+        description: 'Notes for the event',
+      },
+      all_day: {
+        type: 'boolean',
+        description: 'True for an all-day event',
+      },
+    },
+  },
 ];
 
 export function getToolsAsOpenAISchema(enabledToolIds: string[]) {

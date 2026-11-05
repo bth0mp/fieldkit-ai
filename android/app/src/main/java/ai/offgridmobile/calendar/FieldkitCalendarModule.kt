@@ -181,11 +181,14 @@ class FieldkitCalendarModule(reactContext: ReactApplicationContext) :
             return rows
         }
 
-        /** The event from JS, or null when the title is blank or a time is missing or not a finite number. */
+        /**
+         * The event from JS, or null when the title is blank, a time is missing or not a finite number,
+         * or the event ends before it starts.
+         */
         private fun parseInsertInput(event: ReadableMap): InsertInput? {
             val title = readString(event, "title")?.trim()?.takeIf { it.isNotEmpty() } ?: return null
             val begin = readNumber(event, "beginMs") ?: return null
-            val end = readNumber(event, "endMs") ?: return null
+            val end = readNumber(event, "endMs")?.takeIf { it >= begin } ?: return null
             return InsertInput(
                 title = title,
                 beginMs = begin.toLong(),

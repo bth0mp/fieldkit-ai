@@ -3,7 +3,9 @@
  * before approving. Never raw JSON.
  */
 import { draftFromArgs, recipientList } from '../../utils/mailto';
+import { formatEventTime } from '../../utils/calendarTime';
 import { AVAILABLE_TOOLS } from './registry';
+import { eventTimes } from './calendarTools';
 import type { ToolCall } from './types';
 
 export interface ApprovalSummary {
@@ -12,11 +14,16 @@ export interface ApprovalSummary {
 }
 
 const MAX_VALUE_CHARS = 200;
+/** A query or URL is shown whole (the card wraps it) up to this length, so the user sees what leaves the phone. */
+const MAX_FULL_CHARS = 500;
 const BODY_PREVIEW_LINES = 3;
 
 const clip = (text: string): string => (text.length > MAX_VALUE_CHARS ? `${text.slice(0, MAX_VALUE_CHARS - 1)}…` : text);
 /** A single-line field stays on one card line: a line break in it must not pass for another field. */
 const oneLine = (text: string): string => text.replace(/\r\n|[\r\n\u0085\u2028\u2029]/g, ' ');
+
+const full = (text: string): string => (text.length > MAX_FULL_CHARS ? `${text.slice(0, MAX_FULL_CHARS)} (shortened)` : text);
+const argText = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
 
 /** A readable rendering of an argument value: lists joined by commas, objects as `key: value` pairs. */
 function valueText(value: unknown): string {
@@ -39,8 +46,19 @@ function emailSummary(call: ToolCall): ApprovalSummary {
   };
 }
 
+function eventSummary(call: ToolCall): ApprovalSummary {
+  const times = eventTimes(call.arguments);
+  const allDay = call.arguments.all_day === true || call.arguments.all_day === 'true';
+  const when = 'problem' in times ? '' : formatEventTime({ begin: times.beginMs, end: times.endMs, allDay });
+  const location = clip(oneLine(argText(call.arguments.location)));
+  return { title: 'New event', lines: [clip(oneLine(argText(call.arguments.title))), when, location].filter(Boolean) };
+}
+
 export function approvalSummaryFor(call: ToolCall): ApprovalSummary {
   if (call.name === 'draft_email') return emailSummary(call);
+  if (call.name === 'create_calendar_event') return eventSummary(call);
+  if (call.name === 'web_search') return { title: 'Web search', lines: [`Query: ${full(oneLine(argText(call.arguments.query)))}`] };
+  if (call.name === 'read_url') return { title: 'Open web page', lines: [`URL: ${full(oneLine(argText(call.arguments.url)))}`] };
   const title = AVAILABLE_TOOLS.find(tool => tool.name === call.name)?.displayName ?? call.name;
   const lines = Object.entries(call.arguments).map(([key, value]) => `${key}: ${clip(valueText(value))}`);
   return { title, lines };

@@ -232,7 +232,8 @@ describe('approval lifecycle', () => {
     await h.rtl.waitFor(() => { expect(h.view!.queryByTestId('tool-result-label-draft_email')).not.toBeNull(); }, { timeout: 4000 });
     expect(h.view!.queryByTestId('approval-card')).toBeNull();
     // LiteRT is never offered draft_email, so the not-offered gate refuses it. The gate for an offered tool on an
-    // engine that cannot wait (generationToolLoop) is unreachable today and stays untested until Tasks 5-7.
+    // engine that cannot wait (generationToolLoop) is reached only when a chat turns private mid-turn (a calendar
+    // read, then a web search in the same LiteRT turn), and gives a declined result.
     await expectToolResultShows(h, /This tool is not available right now\./);
     await h.rtl.waitFor(() => { expect(h.view!.queryByText(/I could not open a draft\./)).not.toBeNull(); }, { timeout: 4000 });
     expect(h.view!.queryByTestId('approval-card')).toBeNull();

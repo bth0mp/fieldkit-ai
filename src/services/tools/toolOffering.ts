@@ -5,6 +5,7 @@
  */
 import { AVAILABLE_TOOLS } from './registry';
 import { calendarService } from '../calendar/calendarService';
+import { useChatStore } from '../../stores';
 import type { ToolDefinition } from './types';
 
 const MODULE_PRESENT: Record<NonNullable<ToolDefinition['requiredModule']>, () => boolean> = {
@@ -18,23 +19,40 @@ export function toolAvailability(toolId: string): { available: boolean; reason?:
   return { available: true };
 }
 
-export function approvalRequired({ toolName }: { toolName: string; conversationId: string | null }): boolean {
-  return AVAILABLE_TOOLS.some(tool => tool.name === toolName && tool.requiresApproval === true);
+/** Tools that send what the model writes to the network: in a private chat they wait for the user's approval. */
+const NETWORK_TOOLS_GATED_IN_PRIVATE_CHATS = ['web_search', 'read_url'];
+
+function conversationHoldsPrivateData(conversationId: string | null): boolean {
+  if (!conversationId) return false;
+  return useChatStore.getState().conversations?.find(conv => conv.id === conversationId)?.containsPrivateData === true;
+}
+
+export function approvalRequired({ toolName, conversationId }: { toolName: string; conversationId: string | null }): boolean {
+  if (AVAILABLE_TOOLS.some(tool => tool.name === toolName && tool.requiresApproval === true)) return true;
+  return NETWORK_TOOLS_GATED_IN_PRIVATE_CHATS.includes(toolName) && conversationHoldsPrivateData(conversationId);
 }
 
 /**
- * The enabled tools this turn may offer the model. A tool this device cannot run is never offered, and an
- * engine that cannot wait on an approval card (EngineCapabilities.supportsToolApproval false) is never
- * offered a tool that needs one.
+ * The enabled tools this turn may offer the model. A tool this device cannot run is never offered, a tool
+ * whose results are private data is never offered to a remote model, and an engine that cannot wait on an
+ * approval card (EngineCapabilities.supportsToolApproval false) is never offered a tool that needs one.
  */
-export function offeredToolIds(input: { enabledToolIds: string[]; conversationId: string | null; supportsToolApproval: boolean }): string[] {
-  const { conversationId, supportsToolApproval } = input;
-  const enabledToolIds = input.enabledToolIds.filter(id => toolAvailability(id).available);
+export function offeredToolIds(input: { enabledToolIds: string[]; conversationId: string | null; supportsToolApproval: boolean; remoteActive: boolean }): string[] {
+  const { conversationId, supportsToolApproval, remoteActive } = input;
+  const enabledToolIds = input.enabledToolIds.filter(id => {
+    if (!toolAvailability(id).available) return false;
+    return !(remoteActive && handlesPrivateData(id));
+  });
   if (supportsToolApproval) return enabledToolIds;
   return enabledToolIds.filter(id => {
     const toolName = AVAILABLE_TOOLS.find(tool => tool.id === id)?.name ?? id;
     return !approvalRequired({ toolName, conversationId });
   });
+}
+
+/** Its results are the user's private data (the calendar). Takes a tool id or name (built-ins use the same). */
+export function handlesPrivateData(toolIdOrName: string): boolean {
+  return AVAILABLE_TOOLS.some(tool => (tool.id === toolIdOrName || tool.name === toolIdOrName) && tool.handlesPrivateData === true);
 }
 
 /**

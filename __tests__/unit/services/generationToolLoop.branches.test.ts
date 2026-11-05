@@ -356,12 +356,18 @@ describe('runToolLoop — LiteRT loop branches', () => {
 // ===========================================================================
 describe('runToolLoop — precise date/time context for calendar tools', () => {
   beforeEach(resetMocks);
+  // The calendar tools are offered only where the FieldkitCalendar native module exists (the device boundary).
+  const { NativeModules } = require('react-native');
+  beforeEach(() => { NativeModules.FieldkitCalendar = {}; });
+  afterEach(() => { delete NativeModules.FieldkitCalendar; });
 
   it('appends a precise time-of-day note to the latest user message when a calendar tool is enabled', async () => {
     mockedGenerateResponseWithTools.mockResolvedValue({ fullResponse: 'ok', toolCalls: [] });
 
+    // read_calendar_events: this context's engine cannot wait on an approval card, so create_calendar_event
+    // (which needs one) would not be offered.
     const ctx = createContext({
-      enabledToolIds: ['create_calendar_event'],
+      enabledToolIds: ['read_calendar_events'],
       messages: [
         makeMessage({ role: 'system', content: 'You are helpful.' }),
         makeMessage({ role: 'user', content: 'Schedule a sync' }),

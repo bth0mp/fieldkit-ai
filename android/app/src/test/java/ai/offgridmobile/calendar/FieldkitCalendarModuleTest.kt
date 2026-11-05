@@ -243,6 +243,23 @@ class FieldkitCalendarModuleTest {
     verifyNoMoreInteractions(promise)
   }
 
+  @Test fun `openInsertForm rejects INVALID_EVENT without launching when the event ends before it starts`() {
+    val promise = mock<Promise>()
+    val context = mock<ReactApplicationContext>()
+    FieldkitCalendarModule(context).openInsertForm(eventMap("title", "Dentist", "beginMs", 2.0, "endMs", 1.0), promise)
+    verify(promise).reject(eq("INVALID_EVENT"), any<String>())
+    verifyNoMoreInteractions(promise)
+    verify(context, never()).startActivity(any())
+  }
+
+  @Test fun `openInsertForm accepts an event that ends when it starts`() {
+    val promise = mock<Promise>()
+    val context = mock<ReactApplicationContext>()
+    FieldkitCalendarModule(context).openInsertForm(eventMap("title", "Reminder", "beginMs", 1.0, "endMs", 1.0), promise)
+    verify(context).startActivity(any())
+    verify(promise).resolve(true)
+  }
+
   @Test fun `openInsertForm rejects INVALID_EVENT without launching when the title or a time is missing`() {
     val bad = listOf(
       eventMap("beginMs", 1.0, "endMs", 2.0),

@@ -76,6 +76,8 @@ interface ChatState {
   setActiveConversation: (conversationId: string | null) => void;
   getActiveConversation: () => Conversation | null;
   setConversationProject: (conversationId: string, projectId: string | null) => void;
+  /** The chat now holds private data (a calendar read returned events); it stays marked. */
+  markConversationPrivate: (conversationId: string) => void;
   /** Unfile every conversation filed under a project (used when the project is deleted,
    *  so no chat is left pointing at a project that no longer exists). */
   unfileConversationsForProject: (projectId: string) => void;
@@ -157,6 +159,16 @@ export const useChatStore = create<ChatState>()(
             conv.id !== conversationId
               ? conv
               : { ...conv, projectId: projectId || undefined, updatedAt: nextUpdatedAt(conv.updatedAt) }
+          ),
+        }));
+      },
+
+      markConversationPrivate: (conversationId) => {
+        set((state) => ({
+          conversations: state.conversations.map((conv) =>
+            conv.id !== conversationId || conv.containsPrivateData
+              ? conv
+              : { ...conv, containsPrivateData: true, updatedAt: nextUpdatedAt(conv.updatedAt) }
           ),
         }));
       },
