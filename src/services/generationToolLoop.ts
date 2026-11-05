@@ -20,6 +20,7 @@ import { isMcpEnabled } from './mcpContextBoost';
 import { selectToolsByEmbedding } from './toolEmbeddingRouter';
 import { providerRegistry } from './providers';
 import { activeTextCapabilities, getActiveEngineService, isRemoteTextModelActive } from './engines';
+import { servingEngine } from './servingEngine';
 import type { GenerationOptions, CompletionResult } from './providers/types';
 import logger from '../utils/logger';
 import { XML_TOOL_CALL_FUNCTION_MARKER, XML_TOOL_CALL_PARAMETER_MARKER } from '../utils/messageContent';
@@ -718,23 +719,23 @@ async function callLLMWithRetry(
   // We shallow-copy messages to avoid mutating the caller's array.
   const exts = getToolExtensions();
   const extCount = exts.reduce((n, e) => n + e.enabledToolCount(), 0);
-  const useRemote = isUsingRemote(forceRemote);
+  const engine = servingEngine({ forceRemote, conversationId });
   // LiteRT (OpenApiTool), remote providers, and llama with a Jinja tool template all do
   // native tool calling — the text hint must be suppressed for them (see augmentSystemPromptForTools).
-  const nativeToolCalling = (isLiteRTActive() && !!conversationId) || useRemote || llmService.supportsToolCalling();
+  const nativeToolCalling = engine !== 'llama' || llmService.supportsToolCalling();
   logger.log(
     `[ToolLoop] preLLM: tools=${tools.length} extCount=${extCount} ` +
       `enabledToolIds=[${(ctx?.enabledToolIds ?? []).join(',')}] ` +
-      `willAugment=${tools.length > 0 || extCount > 0} liteRT=${isLiteRTActive()} useRemote=${useRemote} nativeToolCalling=${nativeToolCalling}`,
+      `willAugment=${tools.length > 0 || extCount > 0} engine=${engine} nativeToolCalling=${nativeToolCalling}`,
   );
   const augmentedMessages = (tools.length > 0 || extCount > 0)
     ? augmentSystemPromptForTools(messages, ctx?.enabledToolIds, nativeToolCalling)
     : messages;
 
-  if (isLiteRTActive() && conversationId) {
+  if (engine === 'litert' && conversationId) {
     return callLiteRTForLoop(conversationId, augmentedMessages, { tools, onStream, ctx });
   }
-  if (useRemote) {
+  if (engine === 'remote') {
     try { return await callRemoteLLMWithTools(augmentedMessages, tools, { onStream, disableThinking }); }
     catch (e: any) { throw new Error(e?.message || String(e) || 'Remote LLM error'); }
   }
@@ -894,12 +895,12 @@ async function selectEffectiveSchemas(ctx: ToolLoopContext, builtInSchemas: any[
  *  CONCURRENT next turn resets (the race that painted 'No response' on a user-stopped turn). */
 export interface ToolLoopOutcome { interrupted: boolean }
 
-/** Capabilities of the engine that serves this loop's completions, in callLLMWithRetry's routing order:
- *  an active LiteRT model first, then a remote provider, then the local llama model. */
+/** Capabilities of the engine that serves this loop's completions (servingEngine, the routing callLLMWithRetry follows). */
 function servingEngineCapabilities(ctx: ToolLoopContext) {
   const { downloadedModels, activeModelId } = useAppStore.getState();
   const model = downloadedModels?.find(m => m.id === activeModelId);
-  return activeTextCapabilities({ isRemote: !isLiteRTActive() && isUsingRemote(ctx.forceRemote), model });
+  const isRemote = servingEngine({ forceRemote: ctx.forceRemote, conversationId: ctx.conversationId }) === 'remote';
+  return activeTextCapabilities({ isRemote, model });
 }
 
 export async function runToolLoop(ctx: ToolLoopContext): Promise<ToolLoopOutcome> {
