@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, Switch, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -7,11 +7,15 @@ import IconMC from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTheme, useThemedStyles } from '../../theme';
 import { FONTS, TYPOGRAPHY, SPACING } from '../../constants';
 import { AVAILABLE_TOOLS } from '../../services/tools';
+import { toolAvailability } from '../../services/tools/toolOffering';
+import { toolPermissions } from '../../services/tools/toolPermissions';
 import { useAppStore } from '../../stores';
 import { hasProToolsScreen, useOpenProTools } from '../../hooks/useOpenProTools';
 import type { ThemeColors, ThemeShadows } from '../../theme';
 
 const TOOL_WARNING_COLOR = '#F59E0B';
+/** What the row says after the user refused the permission the tool asks for. */
+const DENIED_COPY: Record<string, string> = { calendar_read: 'Calendar access was not allowed' };
 
 /**
  * Full-page tool picker (replaces the old bottom-sheet drawer). Lists the free
@@ -27,15 +31,18 @@ export const ToolsScreen: React.FC = () => {
   const openProTools = useOpenProTools();
 
   const enabledTools = useAppStore(st => st.settings.enabledTools) || [];
-  const updateSettings = useAppStore(st => st.updateSettings);
   const toolCountHintDismissed = useAppStore(st => st.toolCountHintDismissed);
   const setToolCountHintDismissed = useAppStore(st => st.setToolCountHintDismissed);
 
-  const handleToggleTool = (toolId: string) => {
-    const cur = useAppStore.getState().settings.enabledTools || [];
-    updateSettings({
-      enabledTools: cur.includes(toolId) ? cur.filter(id => id !== toolId) : [...cur, toolId],
-    });
+  // The last tool whose permission the user refused; its row says so until it is switched on.
+  const [deniedToolId, setDeniedToolId] = useState<string | null>(null);
+
+  // The switch's own value is ignored: a tap flips what the store holds now.
+  const handleToggleTool = async (toolId: string) => {
+    const enabled = !(useAppStore.getState().settings.enabledTools || []).includes(toolId);
+    const outcome = await toolPermissions.setToolEnabled({ toolId, enabled });
+    if (outcome === 'denied') setDeniedToolId(toolId);
+    else if (deniedToolId === toolId) setDeniedToolId(null);
   };
 
   const showHint = enabledTools.length > 3 && !toolCountHintDismissed;
@@ -89,6 +96,8 @@ export const ToolsScreen: React.FC = () => {
 
         {AVAILABLE_TOOLS.map(tool => {
           const isEnabled = enabledTools.includes(tool.id);
+          const { available } = toolAvailability(tool.id);
+          const deniedCopy = deniedToolId === tool.id && tool.requiredPermission ? DENIED_COPY[tool.requiredPermission] : undefined;
           return (
             <View key={tool.id} style={styles.toolRow} testID={`tool-picker-row-${tool.id}`}>
               <View style={styles.toolIcon}>
@@ -102,12 +111,16 @@ export const ToolsScreen: React.FC = () => {
                   )}
                 </View>
                 <Text style={styles.toolDescription}>{tool.description}</Text>
+                {tool.userNote ? <Text style={styles.toolNote}>{tool.userNote}</Text> : null}
+                {!available && <Text style={styles.toolNote}>Not available on this device</Text>}
+                {deniedCopy ? <Text style={[styles.toolNote, { color: colors.error }]}>{deniedCopy}</Text> : null}
               </View>
               <Switch
-                value={isEnabled}
-                onValueChange={() => handleToggleTool(tool.id)}
+                value={isEnabled && available}
+                disabled={!available}
+                onValueChange={() => { handleToggleTool(tool.id); }}
                 trackColor={{ false: colors.border, true: `${colors.primary}80` }}
-                thumbColor={isEnabled ? colors.primary : colors.textMuted}
+                thumbColor={isEnabled && available ? colors.primary : colors.textMuted}
               />
             </View>
           );
@@ -203,6 +216,11 @@ const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
     fontFamily: FONTS.mono,
     color: colors.textMuted,
     marginTop: 2,
+  },
+  toolNote: {
+    ...TYPOGRAPHY.meta,
+    color: colors.textSecondary,
+    marginTop: SPACING.xs,
   },
   hint: {
     ...TYPOGRAPHY.meta,

@@ -110,6 +110,29 @@ export const AVAILABLE_TOOLS: ToolDefinition[] = [
       },
     },
   },
+  {
+    id: 'read_calendar_events',
+    name: 'read_calendar_events',
+    displayName: 'Calendar',
+    description: "Read the events in the user's calendar between two times, at most 31 days apart. Use this when the user asks what is on their calendar or when they are free.",
+    icon: 'calendar',
+    handlesPrivateData: true,
+    requiredModule: 'calendar',
+    requiredPermission: 'calendar_read',
+    userNote: 'Events are read on this phone and never sent anywhere. Hidden while a remote model is active.',
+    parameters: {
+      start: {
+        type: 'string',
+        description: 'Start of the range, ISO 8601 local time, e.g. 2026-11-06T00:00:00',
+        required: true,
+      },
+      end: {
+        type: 'string',
+        description: 'End of the range, ISO 8601 local time, e.g. 2026-11-07T00:00:00',
+        required: true,
+      },
+    },
+  },
 ];
 
 export function getToolsAsOpenAISchema(enabledToolIds: string[]) {

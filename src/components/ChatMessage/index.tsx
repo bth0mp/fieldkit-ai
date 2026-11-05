@@ -27,6 +27,7 @@ function getToolIcon(toolName?: string): string {
     case 'get_current_datetime': return 'clock';
     case 'get_device_info': return 'smartphone';
     case 'draft_email': return 'mail';
+    case 'read_calendar_events': return 'calendar';
     default: return 'tool';
   }
 }
@@ -42,6 +43,7 @@ function getToolLabel(toolName?: string, content?: string): string {
     case 'get_current_datetime': return 'Retrieved date/time';
     case 'get_device_info': return 'Retrieved device info';
     case 'draft_email': return 'Email draft';
+    case 'read_calendar_events': return 'Calendar';
     default: return toolName || 'Tool result';
   }
 }

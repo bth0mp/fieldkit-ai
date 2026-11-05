@@ -12,6 +12,7 @@ import {
 } from '../../services';
 import { effectiveCacheType } from '../../services/llmHelpers';
 import { generationSession } from '../../services/generationSession';
+import { toolPermissions } from '../../services/tools/toolPermissions';
 import { useGeneratingConversationId } from '../../hooks/useGenerationSession';
 import { Message, MediaAttachment, Project, DownloadedModel, DebugInfo, RemoteModel } from '../../types';
 import { RootStackParamList } from '../../navigation/types';
@@ -327,8 +328,8 @@ export const useChatScreen = () => {
   startGenerationRef.current = startGeneration;
   const enabledTools = supportsToolCalling ? (settings.enabledTools || []) : [];
   const handleToggleTool = (toolId: string) => {
-    const cur = settings.enabledTools || [];
-    useAppStore.getState().updateSettings({ enabledTools: cur.includes(toolId) ? cur.filter((id: string) => id !== toolId) : [...cur, toolId] });
+    const enabled = !(useAppStore.getState().settings.enabledTools || []).includes(toolId);
+    toolPermissions.setToolEnabled({ toolId, enabled }).catch(error => logger.error('[ChatScreen] tool toggle failed', error));
   };
   // Whether settings changed since the model was loaded (drives the reload banner).
   const hasPendingSettings = computePendingSettings(activeModel?.engine, settings, loadedSettings);

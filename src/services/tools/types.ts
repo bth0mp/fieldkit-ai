@@ -8,6 +8,14 @@ export interface ToolDefinition {
   requiresNetwork?: boolean;
   /** The user approves each call on a card in the chat before it runs (tools that send or write). */
   requiresApproval?: boolean;
+  /** Its results are the user's private data (the calendar): it is never offered to, or run for, a remote model. */
+  handlesPrivateData?: boolean;
+  /** A native module the tool needs; without it the tool is unavailable on this device (toolAvailability). */
+  requiredModule?: 'calendar';
+  /** An OS permission asked for when the user switches the tool on (toolPermissions). */
+  requiredPermission?: 'calendar_read';
+  /** A note shown to the user on the Tools screen. Never sent to the model. */
+  userNote?: string;
 }
 
 interface ToolParameter {

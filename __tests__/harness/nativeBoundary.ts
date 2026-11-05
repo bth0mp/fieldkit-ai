@@ -744,6 +744,91 @@ function makeSpeechFake(handle: FakeEmitterHandle, opts: SpeechFakeOptions): Spe
 }
 
 // ---------------------------------------------------------------------------
+// Fake: FieldkitCalendar (NativeModules.FieldkitCalendar — Android calendar provider + insert form) and the
+// READ_CALENDAR prompt behind PermissionsAndroid. A data source and recorder that enforces the module's own
+// rules and nothing more: queryInstances rejects PERMISSION until access is granted and INVALID_RANGE for a
+// bad range, returns the seeded events that overlap the range (begin order, limit clamped to 1..50) with
+// exactly the native keys; openInsertForm rejects INVALID_EVENT like the module and NO_CALENDAR_APP when no
+// calendar app is installed. Opt-in (installNativeBoundary({ calendar })); absent, it models a device
+// without the module (iOS).
+// ---------------------------------------------------------------------------
+
+export interface CalendarFakeEvent {
+  id?: string;
+  title?: string | null;
+  begin: number;
+  end: number;
+  allDay?: boolean;
+  location?: string | null;
+  calendarName?: string | null;
+}
+
+export interface CalendarFakeOptions {
+  /** The events on the device calendar (times in epoch ms). */
+  events?: CalendarFakeEvent[];
+  /** No calendar app is installed: openInsertForm rejects NO_CALENDAR_APP. */
+  noApp?: boolean;
+  /** How the user answers the READ_CALENDAR prompt. Default 'granted'. */
+  permission?: 'granted' | 'denied';
+}
+
+export interface CalendarFake {
+  module: Record<string, jest.Mock>;
+  /** Every queryInstances / openInsertForm call, with the arguments the service passed. */
+  calls: { queryInstances: unknown[][]; openInsertForm: unknown[][] };
+  /** The PermissionsAndroid.request / check stubs (READ_CALENDAR answered here, other permissions passed on). */
+  permissions: { request: jest.Mock; check: jest.Mock };
+  /** Change READ_CALENDAR from outside the app, as Android settings do (e.g. revoke it while the tool is on). */
+  setPermission(state: 'granted' | 'denied'): void;
+}
+
+const READ_CALENDAR_PERMISSION = 'android.permission.READ_CALENDAR';
+
+function makeCalendarFake(opts: CalendarFakeOptions, others: { request?: (...a: unknown[]) => unknown; check?: (...a: unknown[]) => unknown }): CalendarFake {
+  const answer = opts.permission ?? 'granted';
+  let granted = false; // not asked yet
+  const calls: CalendarFake['calls'] = { queryInstances: [], openInsertForm: [] };
+  const blankToNull = (s: string | null | undefined) => (s && s.trim() ? s : null);
+  const finite = (n: unknown) => typeof n === 'number' && Number.isFinite(n);
+  const module: Record<string, jest.Mock> = {
+    queryInstances: jest.fn(async (beginMs: number, endMs: number, limit: number) => {
+      calls.queryInstances.push([beginMs, endMs, limit]);
+      if (!finite(beginMs) || !finite(endMs) || endMs < beginMs) throw nativeError('INVALID_RANGE', 'The time range is not valid');
+      if (!granted) throw nativeError('PERMISSION', 'Calendar access has not been granted');
+      return (opts.events ?? [])
+        .filter(e => e.begin <= endMs && e.end >= beginMs)
+        .sort((a, b) => a.begin - b.begin)
+        .slice(0, Math.min(50, Math.max(1, Math.trunc(limit))))
+        .map((e, i) => ({
+          id: e.id ?? `${i + 1}-${e.begin}`, title: e.title ?? '', begin: e.begin, end: e.end, allDay: !!e.allDay,
+          location: blankToNull(e.location), calendarName: blankToNull(e.calendarName),
+        }));
+    }),
+    openInsertForm: jest.fn(async (event: Record<string, unknown>) => {
+      calls.openInsertForm.push([event]);
+      const title = typeof event.title === 'string' ? event.title.trim() : '';
+      if (!title || !finite(event.beginMs) || !finite(event.endMs) || (event.endMs as number) < (event.beginMs as number)) {
+        throw nativeError('INVALID_EVENT', 'The event needs a title, a start and an end');
+      }
+      if (opts.noApp) throw nativeError('NO_CALENDAR_APP', 'No calendar app is available on this device');
+      return true;
+    }),
+  };
+  const permissions = {
+    request: jest.fn(async (permission: string, ...rest: unknown[]) => {
+      if (permission !== READ_CALENDAR_PERMISSION) return others.request?.(permission, ...rest) ?? 'denied';
+      granted = answer === 'granted';
+      return answer;
+    }),
+    check: jest.fn(async (permission: string, ...rest: unknown[]) => {
+      if (permission !== READ_CALENDAR_PERMISSION) return others.check?.(permission, ...rest) ?? false;
+      return granted;
+    }),
+  };
+  return { module, calls, permissions, setPermission: (state) => { granted = state === 'granted'; } };
+}
+
+// ---------------------------------------------------------------------------
 // Fake: RAM sensor. DeviceMemoryModule.getMemoryInfo() (dynamic access in hardware.ts) +
 // react-native-device-info.getTotalMemory. Seed exact device numbers; the REAL memoryBudget runs.
 // ---------------------------------------------------------------------------
@@ -918,6 +1003,9 @@ export interface InstallOpts {
   whisper?: boolean;
   /** Install the FieldkitSpeech native module (boundary.speech). Omit it to model a device without one. */
   speech?: SpeechFakeOptions;
+  /** Install the FieldkitCalendar native module and the READ_CALENDAR prompt (boundary.calendar). Omit it to
+   *  model a device without the module. */
+  calendar?: CalendarFakeOptions;
 }
 
 export interface NativeBoundary {
@@ -936,6 +1024,8 @@ export interface NativeBoundary {
   whisper?: WhisperFake;
   /** FieldkitSpeech native fake — present only when installed with { speech }. */
   speech?: SpeechFake;
+  /** FieldkitCalendar native fake — present only when installed with { calendar }. */
+  calendar?: CalendarFake;
   /** RN Linking (its jest mock): openURL records the URL handed to the OS (e.g. a mailto: draft). */
   linking: { openURL: jest.Mock; canOpenURL: jest.Mock };
   /** RN Clipboard (its jest mock): setString records what was copied. */
@@ -1015,6 +1105,16 @@ export function installNativeBoundary(opts: InstallOpts = {}): NativeBoundary {
     RN.PermissionsAndroid.request = jest.fn().mockResolvedValue(RN.PermissionsAndroid.RESULTS?.GRANTED ?? 'granted');
     RN.PermissionsAndroid.check = jest.fn().mockResolvedValue(true);
   }
+  // Calendar access is a device boundary too: the fake answers the READ_CALENDAR prompt and passes any other
+  // permission on to the stubs above (or to a denial, like the default jest PermissionsAndroid).
+  const calendarFake = opts.calendar && RN.PermissionsAndroid
+    ? makeCalendarFake(opts.calendar, { request: whisperFake ? RN.PermissionsAndroid.request : undefined, check: whisperFake ? RN.PermissionsAndroid.check : undefined })
+    : undefined;
+  if (calendarFake) {
+    RN.NativeModules.FieldkitCalendar = calendarFake.module;
+    RN.PermissionsAndroid.request = calendarFake.permissions.request;
+    RN.PermissionsAndroid.check = calendarFake.permissions.check;
+  }
   RN.NativeModules.DeviceMemoryModule = {
     // Live read from memState so a context release (freeModelMemory) is reflected — the reclaim barrier
     // must be able to SEE the footprint drop, exactly as it does on device.
@@ -1070,5 +1170,5 @@ export function installNativeBoundary(opts: InstallOpts = {}): NativeBoundary {
     Object.defineProperty(RN.Platform, 'Version', { value: profile.platform === 'android' ? 34 : '17.0', configurable: true });
   };
 
-  return { litert, litertEvents: handle, diffusion, fs: fsFake, llama: llamaFake, download: downloadFake, whisper: whisperFake, speech: speechFake, linking: RN.Linking, clipboard: RN.Clipboard, share: shareModule, setRam, emitMemoryWarning: () => appState.handle.emit('memoryWarning'), emitAppStateChange: (state) => appState.handle.emit('change', state) };
+  return { litert, litertEvents: handle, diffusion, fs: fsFake, llama: llamaFake, download: downloadFake, whisper: whisperFake, speech: speechFake, calendar: calendarFake, linking: RN.Linking, clipboard: RN.Clipboard, share: shareModule, setRam, emitMemoryWarning: () => appState.handle.emit('memoryWarning'), emitAppStateChange: (state) => appState.handle.emit('change', state) };
 }

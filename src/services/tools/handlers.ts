@@ -3,6 +3,7 @@ import DeviceInfo from 'react-native-device-info';
 import { ToolCall, ToolResult } from './types';
 import type { RagSearchResult } from '../rag';
 import { emailTool } from './emailTool';
+import { readCalendarEvents } from './calendarTools';
 import logger from '../../utils/logger';
 
 function makeResult(call: ToolCall, start: number, opts: { content: string; error?: string }): ToolResult {
@@ -48,6 +49,7 @@ async function dispatchTool(call: ToolCall): Promise<string> {
       return handleReadUrl(url);
     }
     case 'draft_email': return (await emailTool.run(call)).content;
+    case 'read_calendar_events': return readCalendarEvents(call);
     default:
       throw new Error(`Unknown tool: ${call.name}`);
   }

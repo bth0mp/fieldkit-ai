@@ -4,18 +4,33 @@
  * approval.
  */
 import { AVAILABLE_TOOLS } from './registry';
+import { calendarService } from '../calendar/calendarService';
+import type { ToolDefinition } from './types';
+
+const MODULE_PRESENT: Record<NonNullable<ToolDefinition['requiredModule']>, () => boolean> = {
+  calendar: () => calendarService.isPresent(),
+};
+
+/** Can this device run the tool? A tool whose native module is missing is never offered or switched on. */
+export function toolAvailability(toolId: string): { available: boolean; reason?: 'module-missing' } {
+  const required = AVAILABLE_TOOLS.find(tool => tool.id === toolId)?.requiredModule;
+  if (required && !MODULE_PRESENT[required]()) return { available: false, reason: 'module-missing' };
+  return { available: true };
+}
 
 export function approvalRequired({ toolName }: { toolName: string; conversationId: string | null }): boolean {
   return AVAILABLE_TOOLS.some(tool => tool.name === toolName && tool.requiresApproval === true);
 }
 
 /**
- * The enabled tools this turn may offer the model. An engine that cannot wait on an approval card
- * (EngineCapabilities.supportsToolApproval false) is never offered a tool that needs one.
+ * The enabled tools this turn may offer the model. A tool this device cannot run is never offered, and an
+ * engine that cannot wait on an approval card (EngineCapabilities.supportsToolApproval false) is never
+ * offered a tool that needs one.
  */
 export function offeredToolIds(input: { enabledToolIds: string[]; conversationId: string | null; supportsToolApproval: boolean }): string[] {
-  const { enabledToolIds, conversationId, supportsToolApproval } = input;
-  if (supportsToolApproval) return [...enabledToolIds];
+  const { conversationId, supportsToolApproval } = input;
+  const enabledToolIds = input.enabledToolIds.filter(id => toolAvailability(id).available);
+  if (supportsToolApproval) return enabledToolIds;
   return enabledToolIds.filter(id => {
     const toolName = AVAILABLE_TOOLS.find(tool => tool.id === id)?.name ?? id;
     return !approvalRequired({ toolName, conversationId });

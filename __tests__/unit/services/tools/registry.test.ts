@@ -16,8 +16,8 @@ describe('Tool Registry', () => {
   // AVAILABLE_TOOLS
   // ========================================================================
   describe('AVAILABLE_TOOLS', () => {
-    it('has exactly 7 tools with correct IDs', () => {
-      expect(AVAILABLE_TOOLS).toHaveLength(7);
+    it('has exactly 8 tools with correct IDs', () => {
+      expect(AVAILABLE_TOOLS).toHaveLength(8);
 
       const ids = AVAILABLE_TOOLS.map(t => t.id);
       expect(ids).toEqual([
@@ -28,6 +28,7 @@ describe('Tool Registry', () => {
         'search_knowledge_base',
         'read_url',
         'draft_email',
+        'read_calendar_events',
       ]);
     });
 
@@ -41,7 +42,13 @@ describe('Tool Registry', () => {
         search_knowledge_base: false,
         read_url: false,
         draft_email: true,
+        read_calendar_events: false,
       });
+    });
+
+    it('only read_calendar_events handles private data', () => {
+      const privateData = AVAILABLE_TOOLS.filter(t => t.handlesPrivateData === true).map(t => t.id);
+      expect(privateData).toEqual(['read_calendar_events']);
     });
 
     it('each tool has required fields (id, name, displayName, description, icon, parameters)', () => {

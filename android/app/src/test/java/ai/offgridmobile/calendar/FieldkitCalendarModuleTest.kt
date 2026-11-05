@@ -12,7 +12,9 @@ import android.provider.CalendarContract
 import com.facebook.react.bridge.JavaOnlyMap
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReadableType
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -129,6 +131,50 @@ class FieldkitCalendarModuleTest {
     FieldkitCalendarModule(context).queryInstances(0.0, 1.0, 10.0, promise)
     verify(promise).reject(eq("QUERY_ERROR"), eq("provider died"), any<Throwable>())
     verifyNoMoreInteractions(promise)
+  }
+
+  @Test fun `queryInstances asks the provider for visible calendars only, in start order`() {
+    val promise = mock<Promise>()
+    val resolver = mock<ContentResolver>()
+    val context = mock<ReactApplicationContext>()
+    whenever(context.checkSelfPermission(Manifest.permission.READ_CALENDAR))
+      .thenReturn(PackageManager.PERMISSION_GRANTED)
+    whenever(context.contentResolver).thenReturn(resolver)
+    // The query throws so the promise settles without building a bridge array; the arguments are what count.
+    doThrow(IllegalStateException("stop")).whenever(resolver)
+      .query(any(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
+    FieldkitCalendarModule(context).queryInstances(1_000.0, 2_000.0, 10.0, promise)
+    val selection = argumentCaptor<String>()
+    val args = argumentCaptor<Array<String>>()
+    val order = argumentCaptor<String>()
+    verify(resolver).query(
+      eq(FieldkitCalendarModule.instancesUri(1_000L, 2_000L)), eq(FieldkitCalendarModule.PROJECTION),
+      selection.capture(), args.capture(), order.capture())
+    assertEquals("${CalendarContract.Instances.VISIBLE} = ?", selection.firstValue)
+    assertArrayEquals(arrayOf("1"), args.firstValue)
+    assertEquals("${CalendarContract.Instances.BEGIN} ASC", order.firstValue)
+  }
+
+  @Test fun `an instance becomes a map with exactly the keys the app reads`() {
+    val full = JavaOnlyMap()
+    FieldkitCalendarModule.putInstance(full, CalendarInstance("7-1000", "Dentist", 1_000L, 2_000L, false, "Clinic", "Personal"))
+    assertEquals(setOf("id", "title", "begin", "end", "allDay", "location", "calendarName"), full.toHashMap().keys)
+    assertEquals("7-1000", full.getString("id"))
+    assertEquals("Dentist", full.getString("title"))
+    assertEquals(ReadableType.Number, full.getType("begin"))
+    assertEquals(1_000.0, full.getDouble("begin"), 0.0)
+    assertEquals(2_000.0, full.getDouble("end"), 0.0)
+    assertEquals(ReadableType.Boolean, full.getType("allDay"))
+    assertFalse(full.getBoolean("allDay"))
+    assertEquals("Clinic", full.getString("location"))
+    assertEquals("Personal", full.getString("calendarName"))
+
+    val bare = JavaOnlyMap()
+    FieldkitCalendarModule.putInstance(bare, CalendarInstance("8-3000", "", 3_000L, 4_000L, true, null, null))
+    assertEquals(setOf("id", "title", "begin", "end", "allDay", "location", "calendarName"), bare.toHashMap().keys)
+    assertEquals(ReadableType.Null, bare.getType("location"))
+    assertEquals(ReadableType.Null, bare.getType("calendarName"))
+    assertTrue(bare.getBoolean("allDay"))
   }
 
   @Test fun `queryInstances rejects INVALID_RANGE for a reversed or non-finite range`() {

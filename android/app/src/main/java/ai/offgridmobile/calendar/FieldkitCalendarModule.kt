@@ -15,6 +15,7 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableType
+import com.facebook.react.bridge.WritableMap
 
 /** The fields of a new event, as handed to the Calendar app's own insert form. */
 internal data class InsertInput(
@@ -67,21 +68,11 @@ class FieldkitCalendarModule(reactContext: ReactApplicationContext) :
         try {
             val uri = instancesUri(beginMs.toLong(), endMs.toLong())
             val rows = context.contentResolver
-                .query(uri, PROJECTION, null, null, "${CalendarContract.Instances.BEGIN} ASC")
+                .query(uri, PROJECTION, VISIBLE_SELECTION, VISIBLE_ARGS, "${CalendarContract.Instances.BEGIN} ASC")
                 ?.use { readInstances(it, clampLimit(limit.toInt())) }
                 .orEmpty()
             val result = Arguments.createArray()
-            for (row in rows) {
-                result.pushMap(Arguments.createMap().apply {
-                    putString("id", row.id)
-                    putString("title", row.title)
-                    putDouble("begin", row.begin.toDouble())
-                    putDouble("end", row.end.toDouble())
-                    putBoolean("allDay", row.allDay)
-                    putString("location", row.location)
-                    putString("calendarName", row.calendarName)
-                })
-            }
+            for (row in rows) result.pushMap(Arguments.createMap().also { putInstance(it, row) })
             promise.resolve(result)
         } catch (e: SecurityException) {
             // The user can revoke the permission between the check above and the query.
@@ -125,6 +116,24 @@ class FieldkitCalendarModule(reactContext: ReactApplicationContext) :
             CalendarContract.Instances.EVENT_LOCATION,
             CalendarContract.Instances.CALENDAR_DISPLAY_NAME,
         )
+
+        /** Only calendars the user shows in the Calendar app: a hidden calendar stays hidden here too. */
+        internal val VISIBLE_SELECTION = "${CalendarContract.Instances.VISIBLE} = ?"
+        internal val VISIBLE_ARGS = arrayOf("1")
+
+        /**
+         * One occurrence as the map JS reads: exactly id, title, begin, end, allDay, location and
+         * calendarName. Times are numbers (epoch ms); a missing location or calendar name is null.
+         */
+        internal fun putInstance(map: WritableMap, instance: CalendarInstance) {
+            map.putString("id", instance.id)
+            map.putString("title", instance.title)
+            map.putDouble("begin", instance.begin.toDouble())
+            map.putDouble("end", instance.end.toDouble())
+            map.putBoolean("allDay", instance.allDay)
+            map.putString("location", instance.location)
+            map.putString("calendarName", instance.calendarName)
+        }
 
         /** The insert form for [input]: an `ACTION_INSERT` on the events table, so no write permission is needed. */
         internal fun buildInsertIntent(input: InsertInput): Intent =
