@@ -21,6 +21,7 @@ import { selectToolsByEmbedding } from './toolEmbeddingRouter';
 import { providerRegistry } from './providers';
 import { activeTextCapabilities, getActiveEngineService, isRemoteTextModelActive } from './engines';
 import { servingEngine } from './servingEngine';
+import { assertRemoteAllowed } from './privateDataGuard';
 import type { GenerationOptions, CompletionResult } from './providers/types';
 import logger from '../utils/logger';
 import { XML_TOOL_CALL_FUNCTION_MARKER, XML_TOOL_CALL_PARAMETER_MARKER } from '../utils/messageContent';
@@ -748,6 +749,8 @@ async function callLLMWithRetry(
     return callLiteRTForLoop(conversationId, augmentedMessages, { tools, onStream, ctx });
   }
   if (engine === 'remote') {
+    // Also covers a chat that turned private, or a switch to a remote model, in the middle of a turn.
+    assertRemoteAllowed(conversationId ?? null);
     try { return await callRemoteLLMWithTools(augmentedMessages, tools, { onStream, disableThinking }); }
     catch (e: any) { throw new Error(e?.message || String(e) || 'Remote LLM error'); }
   }

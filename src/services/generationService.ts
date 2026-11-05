@@ -7,6 +7,7 @@ import { runToolLoop, type ToolLoopOutcome } from './generationToolLoop';
 import type { ToolResult } from './tools/types';
 import { actionApprovalService } from './actions/actionApprovalService';
 import { providerRegistry } from './providers';
+import { assertRemoteAllowed } from './privateDataGuard';
 import logger from '../utils/logger';
 import { maybeScheduleSharePrompt } from '../utils/sharePrompt';
 import { checkProPromptForText } from './proPrompt';
@@ -329,6 +330,7 @@ class GenerationService {
     messages: Message[],
     onFirstToken?: () => void,
   ): Promise<void> {
+    assertRemoteAllowed(conversationId); // before any request: a private chat never reaches a remote model
     return generateRemoteResponseImpl(this, { conversationId, messages, onFirstToken });
   }
 
@@ -338,6 +340,7 @@ class GenerationService {
     messages: Message[],
     options: GenerationWithToolsRequest['options'],
   ): Promise<ToolLoopOutcome | void> {
+    assertRemoteAllowed(conversationId); // before any request: a private chat never reaches a remote model
     return generateRemoteWithToolsImpl(this, { conversationId, messages, options });
   }
 

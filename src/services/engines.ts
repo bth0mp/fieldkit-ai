@@ -2,6 +2,7 @@ import { useAppStore, useRemoteServerStore } from '../stores';
 import { llmService } from './llm';
 import { liteRTService } from './litert';
 import { providerRegistry } from './providers';
+import { assertRemoteAllowed } from './privateDataGuard';
 import { isLiteRTModel, type DownloadedModel, type Message } from '../types';
 import { predictGgufCapabilities, type PredictedGgufCapabilities } from '../utils/ggufCapabilities';
 import logger from '../utils/logger';
@@ -258,6 +259,12 @@ export function isRemoteTextModelActive(): boolean {
   return true;
 }
 
+/** Does a one-shot standalone completion go to the remote model? A loaded LiteRT model still wins over a
+ *  selected remote server (isRemoteTextModelActive only rules out a loaded llama model). */
+function standaloneUsesRemote(): boolean {
+  return isRemoteTextModelActive() && getActiveEngineService() !== liteRTService;
+}
+
 /**
  * One-shot standalone text completion on the ACTIVE text engine — engine-agnostic.
  *
@@ -273,16 +280,16 @@ export function isRemoteTextModelActive(): boolean {
 export async function generateStandalone(
   messages: Message[],
   onToken?: (token: string) => void,
+  opts?: { conversationId?: string },
 ): Promise<string> {
   // Remote/gateway text model active with no local engine loaded: enhancement used to
   // fall through to the (unloaded) local llama and throw, so it was silently skipped
   // (Q8). Route the one-shot through the active provider, streaming content so the UI
   // can show live progress (B30b). Thinking OFF — enhancement is a utility rewrite.
-  const { activeServerId, activeRemoteTextModelId } = useRemoteServerStore.getState();
-  // A loaded LiteRT model still wins over a selected remote server (isRemoteTextModelActive only
-  // rules out a loaded LLAMA model), so keep the litert guard here.
-  const useRemote = isRemoteTextModelActive() && getActiveEngineService() !== liteRTService;
-  if (useRemote) {
+  if (standaloneUsesRemote()) {
+    // The messages carry the chat's recent context: a private chat's never go to a remote model.
+    assertRemoteAllowed(opts?.conversationId ?? null);
+    const { activeServerId, activeRemoteTextModelId } = useRemoteServerStore.getState();
     const provider = providerRegistry.getProvider(activeServerId!)!;
     if (activeRemoteTextModelId && provider.getLoadedModelId() !== activeRemoteTextModelId) {
       await provider.loadModel(activeRemoteTextModelId);

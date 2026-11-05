@@ -2,6 +2,7 @@
 import { localDreamGeneratorService as onnxImageGeneratorService } from './localDreamGenerator';
 import { activeModelService } from './activeModelService';
 import { getActiveEngineService, generateStandalone, isRemoteTextModelActive } from './engines';
+import { isPrivateDataRemoteError } from './privateDataGuard';
 import { useAppStore, useChatStore } from '../stores';
 import { GeneratedImage } from '../types';
 import logger from '../utils/logger';
@@ -256,7 +257,7 @@ class ImageGenerationService {
           );
         }
       };
-      let raw = await generateStandalone(buildEnhancementMessages(params.prompt, contextMessages), onEnhanceToken);
+      let raw = await generateStandalone(buildEnhancementMessages(params.prompt, contextMessages), onEnhanceToken, { conversationId: params.conversationId });
       logger.log('[ImageGen] 📥 generateStandalone returned');
       raw = cleanEnhancedPrompt(raw);
       logger.log('[ImageGen] ✅ Original prompt:', params.prompt);
@@ -268,12 +269,16 @@ class ImageGenerationService {
     } catch (error: any) {
       logger.error('[ImageGen] ❌ Prompt enhancement failed:', error);
       logger.error('[ImageGen] Error details:', error?.message || 'Unknown error');
-      await this._resetLlmAfterEnhancement();
-      if (params.conversationId && tempMessageId) {
-        useChatStore.getState().deleteMessage(params.conversationId, tempMessageId);
-      }
+      await this._cleanUpFailedEnhancement(params.conversationId, tempMessageId, error);
       return params.prompt;
     }
+  }
+
+  /** A failed enhancement leaves no trace but the original prompt; a refusal to send a private chat says why. */
+  private async _cleanUpFailedEnhancement(conversationId: string | undefined, tempMessageId: string | null, error: unknown): Promise<void> {
+    await this._resetLlmAfterEnhancement();
+    if (conversationId && tempMessageId) useChatStore.getState().deleteMessage(conversationId, tempMessageId);
+    if (isPrivateDataRemoteError(error)) this._noticeEnhancementSkipped('this chat contains calendar data, which stays on your phone');
   }
 
   private async _ensureImageModelLoaded(activeImageModelId: string | null, activeImageModel: ActiveImageModel, opts: { desiredThreads: number; override?: boolean }): Promise<boolean> {

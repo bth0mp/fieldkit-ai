@@ -10,6 +10,7 @@ import {
 } from '../../services';
 import { getToolExtensions } from '../../services/tools/extensions';
 import { offeredToolIds } from '../../services/tools/toolOffering';
+import { isPrivateDataRemoteError } from '../../services/privateDataGuard';
 import { servingEngine } from '../../services/servingEngine';
 import { invalidateActiveConversation, activeLocalTextCapabilities, wantsLeadingThinkToken, localModelAcceptsImages } from '../../services/engines';
 import { needsVisionRepair } from '../../utils/visionRepair';
@@ -20,7 +21,7 @@ import { reportModelFailure } from '../../services/modelFailureHandler';
 import { embeddingService } from '../../services/rag/embedding';
 import { useChatStore, useProjectStore, useRemoteServerStore, useAppStore } from '../../stores';
 import { callHook, HOOKS } from '../../bootstrap/hookRegistry';
-import { Message, MediaAttachment, Project, DownloadedModel, RemoteModel, CacheType } from '../../types';
+import { Conversation, Message, MediaAttachment, Project, DownloadedModel, RemoteModel, CacheType } from '../../types';
 import logger from '../../utils/logger';
 import { ModelReadyOutcome, ensureReadyOrAlert } from './modelReadiness';
 type SetState<T> = Dispatch<SetStateAction<T>>;
@@ -74,7 +75,31 @@ export type GenerationDeps = {
   setPendingMessage?: (text: string, attachments?: MediaAttachment[]) => void;
   createConversation: (modelId: string, title?: string, projectId?: string) => string;
   pendingProjectId?: string;
+  setShowModelSelector?: (v: boolean) => void;
+  setModelSelectorTab?: (tab: 'text' | 'image') => void;
 };
+/** A chat with calendar data was about to go to a remote model: say why it stopped, and offer the two ways on.
+ *  The alert closes itself after a button's onPress. */
+function showPrivateDataNotice(deps: GenerationDeps, conversation: Conversation | undefined): void {
+  deps.setAlertState(showAlert(
+    'This chat contains calendar data',
+    "Calendar details read in this chat stay on your phone, so it can't be sent to a remote model.",
+    [
+      {
+        text: 'Start a new chat',
+        onPress: () => {
+          const modelId = deps.activeModelInfo?.modelId;
+          if (!modelId) return;
+          deps.setActiveConversation(deps.createConversation(modelId, undefined, conversation?.projectId));
+        },
+      },
+      {
+        text: 'Use the on-device model',
+        onPress: () => { deps.setModelSelectorTab?.('text'); deps.setShowModelSelector?.(true); },
+      },
+    ],
+  ));
+}
 function applyCompactionPrefix(conversation: any, systemPrompt: string, messages: Message[]): { prefix: Message[]; filtered: Message[] } {
   const prefix: Message[] = [{ id: 'system', role: 'system', content: systemPrompt, timestamp: 0 }];
   let filtered = messages;
@@ -405,6 +430,7 @@ async function runTextTurn(deps: GenerationDeps, call: StartGenerationCall): Pro
   try {
     turnStopped = await generateWithCompactionRetry({ id: targetConversationId, prompt: systemPrompt, messages: messagesForContext }, activeTools, conversation?.projectId);
   } catch (error: any) {
+    if (isPrivateDataRemoteError(error)) { showPrivateDataNotice(deps, conversation); generationSession.end('error'); return; }
     const msg = error?.message || error?.toString?.() || 'Failed to generate response';
     logger.error('[ChatGen] Generation failed:', msg, error);
     const isContextOverflow = msg.includes('too long') || msg.includes('Exceeding the maximum number of tokens') || msg.includes('Input token ids');
@@ -664,6 +690,7 @@ async function regenerateTurn(deps: GenerationDeps, call: RegenerateCall): Promi
   try {
     await generateWithCompactionRetry({ id: targetConversationId, prompt: systemPrompt, messages: [...prefix, ...filtered] }, activeTools, conversation?.projectId);
   } catch (error: any) {
+    if (isPrivateDataRemoteError(error)) { showPrivateDataNotice(deps, conversation); generationSession.end('error'); return; }
     const msg = error?.message || 'Failed to generate response';
     const isContextOverflow = msg.includes('too long') || msg.includes('Exceeding the maximum number of tokens') || msg.includes('Input token ids');
     if (isContextOverflow) {

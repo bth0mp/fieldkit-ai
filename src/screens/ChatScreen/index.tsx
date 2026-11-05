@@ -41,9 +41,6 @@ export const ChatScreen: React.FC = () => {
 
   // Collapsed Models control (shared with home): header "Models" → manager sheet.
   const [modelsManagerOpen, setModelsManagerOpen] = useState(false);
-  // Which tab the model selector opens on — set from the manager row the user tapped so
-  // tapping "Image" focuses the Image tab (it defaulted to Text regardless of the row).
-  const [modelSelectorTab, setModelSelectorTab] = useState<'text' | 'image'>('text');
   const [whisperOpen, setWhisperOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const voiceSummary = useUiModeStore((s) => s.voiceSummary);
@@ -78,7 +75,7 @@ export const ChatScreen: React.FC = () => {
     ]));
   };
   const openModelRowNow = (type: ModelRowType) => {
-    if (type === 'text' || type === 'image') { setModelSelectorTab(type); chat.setShowModelSelector(true); }
+    if (type === 'text' || type === 'image') { chat.setModelSelectorTab(type); chat.setShowModelSelector(true); }
     else if (type === 'speech') setWhisperOpen(true);
     else setVoiceOpen(true);
   };
@@ -299,7 +296,7 @@ export const ChatScreen: React.FC = () => {
           setShowDebugPanel={chat.setShowDebugPanel}
           showModelSelector={chat.showModelSelector}
           setShowModelSelector={chat.setShowModelSelector}
-          modelSelectorTab={modelSelectorTab}
+          modelSelectorTab={chat.modelSelectorTab}
           showSettingsPanel={chat.showSettingsPanel}
           setShowSettingsPanel={chat.setShowSettingsPanel}
           debugInfo={chat.debugInfo}

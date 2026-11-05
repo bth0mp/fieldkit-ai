@@ -92,6 +92,9 @@ export const useChatScreen = () => {
   const [showProjectSelector, setShowProjectSelector] = useState(false);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [showModelSelector, setShowModelSelector] = useState(false);
+  // Which tab the model selector opens on (the models manager row the user tapped, or a notice that asks for
+  // the on-device text model).
+  const [modelSelectorTab, setModelSelectorTab] = useState<'text' | 'image'>('text');
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null);
   const [alertState, setAlertState] = useState<AlertState>(initialAlertState);
@@ -233,6 +236,8 @@ export const useChatScreen = () => {
     setPendingMessage: (text: string, attachments?: MediaAttachment[]) => { pendingMessageRef.current = { text, attachments }; },
     createConversation,
     pendingProjectId,
+    setShowModelSelector,
+    setModelSelectorTab,
   };
   genDepsRef.current = genDeps;
 
@@ -368,7 +373,7 @@ export const useChatScreen = () => {
     isModelLoading, loadingModel, supportsVision,
     showProjectSelector, setShowProjectSelector,
     showDebugPanel, setShowDebugPanel,
-    showModelSelector, setShowModelSelector,
+    showModelSelector, setShowModelSelector, modelSelectorTab, setModelSelectorTab,
     showSettingsPanel, setShowSettingsPanel,
     supportsToolCalling, supportsThinking,
     debugInfo, alertState, setAlertState,

@@ -5,7 +5,7 @@
  */
 import { AVAILABLE_TOOLS } from './registry';
 import { calendarService } from '../calendar/calendarService';
-import { useChatStore } from '../../stores';
+import { isConversationPrivate } from '../privateDataGuard';
 import type { ToolDefinition } from './types';
 
 const MODULE_PRESENT: Record<NonNullable<ToolDefinition['requiredModule']>, () => boolean> = {
@@ -22,14 +22,9 @@ export function toolAvailability(toolId: string): { available: boolean; reason?:
 /** Tools that send what the model writes to the network: in a private chat they wait for the user's approval. */
 const NETWORK_TOOLS_GATED_IN_PRIVATE_CHATS = ['web_search', 'read_url'];
 
-function conversationHoldsPrivateData(conversationId: string | null): boolean {
-  if (!conversationId) return false;
-  return useChatStore.getState().conversations?.find(conv => conv.id === conversationId)?.containsPrivateData === true;
-}
-
 export function approvalRequired({ toolName, conversationId }: { toolName: string; conversationId: string | null }): boolean {
   if (AVAILABLE_TOOLS.some(tool => tool.name === toolName && tool.requiresApproval === true)) return true;
-  return NETWORK_TOOLS_GATED_IN_PRIVATE_CHATS.includes(toolName) && conversationHoldsPrivateData(conversationId);
+  return NETWORK_TOOLS_GATED_IN_PRIVATE_CHATS.includes(toolName) && isConversationPrivate(conversationId);
 }
 
 /**
