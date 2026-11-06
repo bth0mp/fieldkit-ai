@@ -129,6 +129,21 @@ describe('calendar events and private data in the tool loop', () => {
     await expectToolResultShows(h, 'web_search', /The user declined this action/);
   });
 
+  it('a query too long to show whole never reaches the card', async () => {
+    const h = await setupChatScreen({ engine: 'llama', calendar: { permission: 'granted', events: [DENTIST] } });
+    await enableTool(h, 'read_calendar_events'); // web_search is on by default
+    h.render();
+    const completions = h.boundary.llama!.calls.completion.length;
+    await h.send('what is on friday, and search it', {
+      text: `${toolCallText('read_calendar_events', FRIDAY)}${toolCallText('web_search', { query: 'Dentist '.repeat(75) })}`,
+    });
+    await scriptNextCompletion(h, completions, 'The search was too long.');
+    await h.rtl.waitFor(() => { expect(h.view!.queryByText(/The search was too long\./)).not.toBeNull(); }, { timeout: 5000 });
+    expect(isPrivate(h)).toBe(true);
+    expect(h.view!.queryByTestId('approval-card')).toBeNull();
+    await expectToolResultShows(h, 'web_search', /The query is too long to show for approval \(500 characters at most\)/);
+  });
+
   it('remote call by name is refused', async () => {
     const h = await setupChatScreen({ engine: 'llama', platform: 'android', calendar: { permission: 'granted', events: [DENTIST] } });
     await installRemoteModel({ name: 'LM Studio', caps: { supportsThinking: false, supportsToolCalling: true } });
