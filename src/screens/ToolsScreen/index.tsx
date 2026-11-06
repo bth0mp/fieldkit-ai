@@ -18,11 +18,10 @@ const TOOL_WARNING_COLOR = '#F59E0B';
 const DENIED_COPY: Record<string, string> = { calendar_read: 'Calendar access was not allowed' };
 
 /**
- * Full-page tool picker (replaces the old bottom-sheet drawer). Lists the free
- * core-registry tools as toggles. Pro tools (email/calendar) and MCP servers live
- * on the dedicated Pro Tools destination, reached via the row pinned to the top of
- * the list — for everyone. Free users land on the Pro upsell, pro users go
- * straight to the Pro Tools screen (see useOpenProTools).
+ * Full-page tool picker (replaces the old bottom-sheet drawer). Lists the core-registry tools as toggles,
+ * email and calendar tools included; a tool that needs an OS permission asks for it when switched on
+ * (toolPermissions). A Pro Tools screen for MCP servers is optional: its row is pinned to the top of the
+ * list only when one is registered (hasProToolsScreen, useOpenProTools).
  */
 export const ToolsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
