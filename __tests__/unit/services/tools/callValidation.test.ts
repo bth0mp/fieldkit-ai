@@ -1,4 +1,5 @@
 import { preApprovalProblem } from '../../../../src/services/tools/callValidation';
+import { useChatStore } from '../../../../src/stores/chatStore';
 
 const call = (name: string, args: Record<string, unknown>) => ({ name, arguments: args });
 const inChat = { conversationId: null };
@@ -26,5 +27,15 @@ describe('preApprovalProblem', () => {
     expect(preApprovalProblem(call('web_search', {}), inChat)).toBeNull();
     expect(preApprovalProblem(call('calculator', {}), inChat)).toBeNull();
     expect(preApprovalProblem(call('some_mcp_tool', {}), inChat)).toBeNull();
+  });
+
+  it('checks a web search in a private chat, where it needs approval', () => {
+    const { conversations } = useChatStore.getState();
+    const privateChat = useChatStore.getState().createConversation('m');
+    const normalChat = useChatStore.getState().createConversation('m');
+    useChatStore.getState().markConversationPrivate(privateChat);
+    expect(preApprovalProblem(call('web_search', {}), { conversationId: privateChat })).toBe('Missing required parameter: query');
+    expect(preApprovalProblem(call('web_search', {}), { conversationId: normalChat })).toBeNull();
+    useChatStore.setState({ conversations });
   });
 });
