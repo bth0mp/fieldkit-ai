@@ -46,6 +46,14 @@ async function restorePrivateChat(h: Harness) {
   require('../../harness/chatHarness').routeHolder.params = { conversationId: PRIVATE_ID };
 }
 
+/** The chat-completion bodies the app sent (JSON with `messages`). Another request, such as a probe, carries
+ *  no chat and is no leak. */
+function chatCompletionBodies(sendSpy: jest.SpyInstance): string[] {
+  return sendSpy.mock.calls.map(args => String(args[0])).filter(body => {
+    try { return Array.isArray(JSON.parse(body).messages); } catch { return false; }
+  });
+}
+
 const isEnhancementRequest = (p: { messages?: Array<{ role: string; content?: string }> }) =>
   !!p.messages?.some(m => m.role === 'system' && /image generation prompt/i.test(m.content || ''));
 
@@ -75,7 +83,7 @@ describe('a private chat stays off remote models', () => {
     await h.tapSend('next question');
     await h.rtl.waitFor(() => { expect(h.view!.getByText(NOTICE_TITLE)).toBeTruthy(); });
     expect(h.view!.getByText(NOTICE_BODY)).toBeTruthy();
-    expect(sendSpy).not.toHaveBeenCalled();
+    expect(chatCompletionBodies(sendSpy)).toEqual([]);
     // "Use the on-device model" opens the model selector on its Text tab.
     h.rtl.fireEvent.press(h.view!.getByText('Use the on-device model'));
     await h.rtl.waitFor(() => { expect(h.view!.getByText('Select Model')).toBeTruthy(); });
@@ -85,7 +93,7 @@ describe('a private chat stays off remote models', () => {
     // Regenerate: the same notice, still nothing sent.
     await h.regenerateLast({ text: 'never used' });
     await h.rtl.waitFor(() => { expect(h.view!.getByText(NOTICE_TITLE)).toBeTruthy(); });
-    expect(sendSpy).not.toHaveBeenCalled();
+    expect(chatCompletionBodies(sendSpy)).toEqual([]);
     h.rtl.fireEvent.press(h.view!.getByText('Use the on-device model'));
     await h.rtl.waitFor(() => { expect(h.view!.queryByText(NOTICE_TITLE)).toBeNull(); });
 
@@ -95,7 +103,7 @@ describe('a private chat stays off remote models', () => {
     await h.tapSend('draw it');
     await h.rtl.waitFor(() => { expect(h.boundary.diffusion.calls.generateImage.length).toBe(1); }, { timeout: 6000 });
     expect(h.boundary.diffusion.calls.generateImage[0].prompt).toBe('draw it');
-    expect(sendSpy).not.toHaveBeenCalled();
+    expect(chatCompletionBodies(sendSpy)).toEqual([]);
     await h.rtl.waitFor(() => { expect(h.view!.getByText('Prompt enhancement skipped')).toBeTruthy(); });
     expect(h.view!.queryByText(/Enhancing your prompt/)).toBeNull();
   });
