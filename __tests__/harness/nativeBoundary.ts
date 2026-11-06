@@ -776,8 +776,9 @@ export interface CalendarFakeOptions {
   events?: CalendarFakeEvent[];
   /** No calendar app is installed: openInsertForm rejects NO_CALENDAR_APP. */
   noApp?: boolean;
-  /** How the user answers the READ_CALENDAR prompt. Default 'granted'. */
-  permission?: 'granted' | 'denied';
+  /** How the user answers the READ_CALENDAR prompt; a list answers successive prompts, its last answer
+   *  repeating. Default 'granted'. */
+  permission?: 'granted' | 'denied' | Array<'granted' | 'denied'>;
 }
 
 export interface CalendarFake {
@@ -793,7 +794,7 @@ export interface CalendarFake {
 const READ_CALENDAR_PERMISSION = 'android.permission.READ_CALENDAR';
 
 function makeCalendarFake(opts: CalendarFakeOptions, others: { request?: (...a: unknown[]) => unknown; check?: (...a: unknown[]) => unknown }): CalendarFake {
-  const answer = opts.permission ?? 'granted';
+  const answers = ([] as Array<'granted' | 'denied'>).concat(opts.permission ?? 'granted');
   let granted = false; // not asked yet
   const calls: CalendarFake['calls'] = { queryInstances: [], openInsertForm: [] };
   const blankToNull = (s: string | null | undefined) => (s && s.trim() ? s : null);
@@ -825,6 +826,7 @@ function makeCalendarFake(opts: CalendarFakeOptions, others: { request?: (...a: 
   const permissions = {
     request: jest.fn(async (permission: string, ...rest: unknown[]) => {
       if (permission !== READ_CALENDAR_PERMISSION) return others.request?.(permission, ...rest) ?? 'denied';
+      const answer = answers.length > 1 ? answers.shift()! : answers[0];
       granted = answer === 'granted';
       return answer;
     }),

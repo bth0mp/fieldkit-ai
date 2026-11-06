@@ -104,6 +104,21 @@ describe('reading the device calendar', () => {
     expect(h.boundary.calendar!.calls.queryInstances).toHaveLength(0);
   });
 
+  it('a quick second tap that is allowed clears the denial', async () => {
+    const h = await setupChatScreen({ engine: 'llama', calendar: { permission: ['denied', 'granted'] } });
+    const tools = openTools(h);
+    const { Switch } = require('react-native');
+    const toggle = h.rtl.within(tools.getByTestId('tool-picker-row-read_calendar_events')).UNSAFE_getByType(Switch);
+    // Two taps before the first prompt is answered: the user says no to the first and yes to the second.
+    await h.rtl.act(async () => {
+      h.rtl.fireEvent(toggle, 'valueChange', true);
+      h.rtl.fireEvent(toggle, 'valueChange', true);
+    });
+    await h.rtl.waitFor(() => { expect(enabledTools(h)).toContain('read_calendar_events'); });
+    expect(switchOf(h, tools, 'read_calendar_events').props.value).toBe(true);
+    expect(tools.queryByText('Calendar access was not allowed')).toBeNull();
+  });
+
   it('a read after calendar access was taken away gives an error result', async () => {
     const h = await setupChatScreen({ engine: 'llama', calendar: { permission: 'granted', events: [DENTIST] } });
     const tools = openTools(h);

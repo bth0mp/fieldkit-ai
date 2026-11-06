@@ -41,8 +41,9 @@ export const ToolsScreen: React.FC = () => {
   const handleToggleTool = async (toolId: string) => {
     const enabled = !(useAppStore.getState().settings.enabledTools || []).includes(toolId);
     const outcome = await toolPermissions.setToolEnabled({ toolId, enabled });
+    // From the latest state, not this render's: a second tap may have started before the first one's answer.
     if (outcome === 'denied') setDeniedToolId(toolId);
-    else if (deniedToolId === toolId) setDeniedToolId(null);
+    else setDeniedToolId(current => (current === toolId ? null : current));
   };
 
   const showHint = enabledTools.length > 3 && !toolCountHintDismissed;
