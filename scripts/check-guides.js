@@ -379,7 +379,7 @@ function measureCandidate(candidate) {
     if (problem) throw new Error(problem);
     const creditsProblem = thirdPartyProblem(candidate, layer);
     if (creditsProblem) throw new Error(creditsProblem);
-    const stray = pdfText(file, ['-nopgbrk']).split('').length - 1;
+    const stray = pdfText(file, ['-nopgbrk']).split('\f').length - 1;
     return { ...candidate, ...measured, pages: exactPages(layer.pages, stray), hasText: teachable(candidate, layer.hasText) };
   });
 }
