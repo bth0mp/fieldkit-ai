@@ -226,20 +226,6 @@
       "hasText": true
     },
     {
-      "id": "navy-neets-module-02",
-      "title": "NEETS Module 02: Introduction to Alternating Current and Transformers",
-      "category": "power",
-      "publisher": "US Navy",
-      "year": 1998,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14174 (NEETS Module 2), September 1998, cover and title page: Distribution Statement A, approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; an identical copy is at lifeboat.com. No official or institutional copy was found. The licence rests on the release statement printed in the document.",
-      "url": "https://legacy.maritime.org/doc/neets/mod02.pdf",
-      "bytes": 4060970,
-      "sha256": "c592ec9f684644d7ddb45b1f0c1842920afcac1bcf377d5f68cf8397659c79e1",
-      "pages": 414,
-      "hasText": true
-    },
-    {
       "id": "navy-neets-module-03",
       "title": "NEETS Module 03: Introduction to Circuit Protection, Control, and Measurement",
       "category": "power",

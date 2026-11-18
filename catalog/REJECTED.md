@@ -266,3 +266,7 @@ The Army listing pages were fetched with a browser User-Agent; every PDF with th
 ## Licence review of the third batch
 
 - Safe Use of Small Generators (US Forest Service, https://www.fs.usda.gov/t-d/pubs/pdfpubs/pdf06512323/pdf06512323dpi300.pdf): incomplete safety advice. It never mentions carbon monoxide or keeping a generator outdoors and away from doors and windows, and its statements that every generator must be grounded and that a GFCI needs a ground to work are inaccurate for portable generators. Its licence note also claimed it covers carbon monoxide. Licence facts were confirmed (sole federal author, no outside credits); proof rests on the Forest Service notice that website information "may be distributed or copied", which the owner has not yet ruled on.
+
+## Removed after a content check of the Navy modules
+
+- NEETS Module 02: Introduction to Alternating Current and Transformers (US Navy, https://legacy.maritime.org/doc/neets/mod02.pdf): incomplete file. The transformers chapter (Chapter 5, which the index says includes electric shock rescue) is missing from the PDF on both sites, and the answer sections have garbled text. Licence was confirmed.

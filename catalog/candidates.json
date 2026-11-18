@@ -398,23 +398,6 @@
     "creditsNote": "Wider search: one hit, the reproduction statement itself ('can be reproduced in any form'). Every photo credit is federal (USGS; United States Southern Command, part of the Department of Defense); the four captioned illustrations (A to D) of debris-flow sites carry no credit and the sheet is USGS's alone. 'University departments of geology' appears only as advice on whom to ask about local landslide history; 'Layout & Design by Pamela Svendsen Detra' is a design credit, not a content owner."
   },
   {
-    "id": "navy-neets-module-02",
-    "title": "NEETS Module 02: Introduction to Alternating Current and Transformers",
-    "category": "power",
-    "publisher": "US Navy",
-    "year": 1998,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14174 (NEETS Module 2), September 1998, cover and title page: Distribution Statement A, approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; an identical copy is at lifeboat.com. No official or institutional copy was found. The licence rests on the release statement printed in the document.",
-    "url": "https://legacy.maritime.org/doc/neets/mod02.pdf",
-    "mirrors": [
-      "https://lifeboat.com/InfoPreserver/images/3/37/NEETS-v02-AC.pdf"
-    ],
-    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (cover, title page; repeated on the following page)",
-    "approxBytes": 4060970,
-    "creditsNote": "Whole text searched and every hit read in context (permission, courtesy, copyright, reprint, reproduce, credits, acknowledgements, trademark, hyphen-split forms). There is no credits or acknowledgements page. Hits: 'credit' only in the Navy course-completion boilerplate (Naval Reserve retirement credit, receiving credit for completed courses); 'reproductions' only in the answer-sheet instructions; 'reproduce' and 'reproduction' only in the technical sense of signals and sound.",
-    "creditsReviewed": true
-  },
-  {
     "id": "navy-neets-module-03",
     "title": "NEETS Module 03: Introduction to Circuit Protection, Control, and Measurement",
     "category": "power",
