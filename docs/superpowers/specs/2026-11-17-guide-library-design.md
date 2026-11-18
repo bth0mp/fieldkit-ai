@@ -142,7 +142,15 @@ that is stricter or looser.
    named outside owner's work. A table of plain data with no such attribution is taken to be the publisher's own
    compilation, even when the reference list cites a handbook, standard or company sheet that prints similar
    data; a reference-list entry is a citation. Wording that a federal regulation itself prints is the
-   regulation's, whoever it names. This one test applies to every guide.
+   regulation's, whoever it names. This one test applies to every guide. Three cases it settles:
+   - "Based on", "according to" or "in accordance with" a named standard or statement is a citation when the
+     item is in the publisher's own words or drawing, and the `creditsNote` says what was compared. "Adapted
+     from", "reprinted from", "courtesy of" and "by permission" mean the item itself was carried over.
+   - A statement that a whole document or chapter condenses, or is drawn from, a named outside work counts as a
+     credit on everything it covers.
+   - A source long out of copyright (the Beaufort wind scale) has no owner.
+   The contractor rule above still stands by itself: content the document says a contractor wrote stays out
+   unless the document states it is public domain.
 3. **The second-copy rule stays.** A guide whose only copy is on a site that is not the publisher's own or an
    institutional archive needs a byte-identical copy on a second, independent site. Guides without one stay in
    `catalog/pending/third-party-host-class.json` until a second copy is found.
