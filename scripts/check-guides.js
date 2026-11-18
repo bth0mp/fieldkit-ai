@@ -155,10 +155,14 @@ function releaseStatementProblem(candidate, headText, hasText) {
   return hasReleaseStatement(headText) ? null : 'release statement not found in the document';
 }
 
+// pdftotext wraps lines mid-phrase, so words are joined with \s+ (any run of spaces and line breaks).
+const wordsOf = phrase => phrase.split(' ').join('\\s+');
 const THIRD_PARTY_PATTERN = new RegExp([
   'copyright', '©', 'all rights reserved', 'courtesy of', 'by permission', 'permission to reproduce', 'permission of',
-  '\\breprinted (?:from|with)', '\\breproduced (?:from|with|by)', '^[ \\t]*credits[ \\t]*$', 'acknowledg(?:e)?ments?',
-].join('|'), 'gim');
+  'permission to use', 'gratefully acknowledged',
+].map(wordsOf).concat([
+  '\\breprinted\\s+(?:from|with)', '\\breproduced\\s+(?:from|with|by)', '^[ \\t\\r]*credits[ \\t\\r]*$', 'acknowledg(?:e)?ments?',
+]).join('|'), 'gim');
 const SNIPPET_RADIUS = 60;
 const MAX_SNIPPETS = 5;
 
@@ -178,8 +182,9 @@ function thirdPartyMentions(text) {
 const quoted = s => `"${s}"`;
 
 /** Why a document with third-party wording cannot be accepted without review, or null. */
-function thirdPartyProblem(record, text) {
+function thirdPartyProblem(record, { text, hasText }) {
   if (record && record.creditsReviewed === true) return null;
+  if (!hasText) return 'scanned, third-party credits must be confirmed by eye';
   const snippets = thirdPartyMentions(text);
   if (!snippets.length) return null;
   return `third-party material mentioned, review needed: ${snippets.map(quoted).join(' | ')}`;
@@ -210,6 +215,8 @@ function validateCandidate(candidate, categoryIds) {
 }
 
 const hostOf = url => new URL(url).hostname.toLowerCase();
+// The last two labels, so www.example.org and example.org count as one site (not exact for co.uk-style suffixes).
+const siteOf = url => hostOf(url).split('.').slice(-2).join('.');
 
 /** True when a guide's host is not one we trust to serve the file unaltered, so an identical second copy is required. */
 function needsMirror(url) {
@@ -223,10 +230,10 @@ function needsMirror(url) {
 function mirrorProblem(candidate) {
   if (candidate.mirrors === undefined) return null;
   if (!Array.isArray(candidate.mirrors)) return 'mirrors must be an array of urls';
-  const primaryHost = hostOf(candidate.url);
+  const primarySite = siteOf(candidate.url);
   for (const mirror of candidate.mirrors) {
     if (typeof mirror !== 'string' || !HTTPS_DNS_HOST_URL_PATTERN.test(mirror)) return `mirror ${mirror} must be https with a plain DNS host`;
-    if (hostOf(mirror) === primaryHost) return `mirror ${mirror} is on the same host as url`;
+    if (siteOf(mirror) === primarySite) return `mirror ${mirror} is on the same host as url`;
   }
   return null;
 }
@@ -281,7 +288,7 @@ function measureCandidate(candidate) {
     validateMeasured(measured, layer);
     const problem = releaseStatementProblem(candidate, layer.head, layer.hasText);
     if (problem) throw new Error(problem);
-    const creditsProblem = thirdPartyProblem(candidate, layer.text);
+    const creditsProblem = thirdPartyProblem(candidate, layer);
     if (creditsProblem) throw new Error(creditsProblem);
     return { ...candidate, ...measured, pages: layer.pages, hasText: layer.hasText };
   });
@@ -328,7 +335,7 @@ function verifyPrimary(guide, record) {
     if (actual.bytes !== guide.bytes) problems.push(`size changed (${guide.bytes} -> ${actual.bytes})`);
     if (actual.sha256 !== guide.sha256) problems.push('sha256 changed');
     try {
-      const problem = thirdPartyProblem(record, pdfText(file));
+      const problem = thirdPartyProblem(record, readTextLayer(file));
       if (problem) problems.push(problem);
     } catch (err) {
       problems.push(err.message);
@@ -396,4 +403,4 @@ if (require.main === module) {
   run().then(code => process.exit(code), err => { console.error(err.message); process.exit(2); });
 }
 
-module.exports = { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem, thirdPartyMentions };
+module.exports = { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem, thirdPartyMentions, thirdPartyProblem };

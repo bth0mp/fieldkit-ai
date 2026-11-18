@@ -2,7 +2,42 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
-const { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem, thirdPartyMentions } = require('../../../scripts/check-guides.js');
+const { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem, thirdPartyMentions, thirdPartyProblem } = require('../../../scripts/check-guides.js');
+
+describe('thirdPartyMentions across wrapped lines', () => {
+  it.each([
+    ['permission to\nreproduce'], ['Permission  to   reproduce'], ['Courtesy\nof Tektronix'], ['courtesy  of'],
+    ['all rights\nreserved'], ['All  Rights  Reserved'], ['by\npermission'], ['by  permission'],
+    ['reprinted\nfrom Acme'], ['Reprinted  from'], ['reproduced\nwith'], ['reproduced  with'],
+    ['  CREDITS  '], ['Permission to\nuse these illustrations'], ['is gratefully\nacknowledged'],
+  ])('finds %j', phrase => {
+    expect(thirdPartyMentions(`some text before\n${phrase}\nafter`)).toHaveLength(1);
+  });
+});
+
+describe('thirdPartyProblem', () => {
+  const text = 'x'.repeat(10);
+  it('fails a document with no text layer unless credits were reviewed', () => {
+    expect(thirdPartyProblem({}, { text: '', hasText: false })).toBe('scanned, third-party credits must be confirmed by eye');
+    expect(thirdPartyProblem(undefined, { text: '', hasText: false })).toBe('scanned, third-party credits must be confirmed by eye');
+    expect(thirdPartyProblem({ creditsReviewed: true }, { text: '', hasText: false })).toBeNull();
+  });
+  it('passes clean text, fails mentions unless reviewed', () => {
+    expect(thirdPartyProblem({}, { text, hasText: true })).toBeNull();
+    expect(thirdPartyProblem({}, { text: 'Courtesy of Acme', hasText: true })).toMatch('review needed');
+    expect(thirdPartyProblem({ creditsReviewed: true }, { text: 'Courtesy of Acme', hasText: true })).toBeNull();
+  });
+});
+
+describe('mirror independence', () => {
+  it('refuses a mirror on the same site under another host name', () => {
+    expect(mirrorProblem({ url: 'https://www.militarynewbie.com/x.pdf', mirrors: ['https://militarynewbie.com/x.pdf'] })).toMatch('same host');
+    expect(mirrorProblem({ url: 'https://archive.org/download/a/x.pdf', mirrors: ['https://web.archive.org/web/1/x.pdf'] })).toMatch('same host');
+  });
+  it('accepts a mirror on a different site', () => {
+    expect(mirrorProblem({ url: 'https://legacy.maritime.org/x.pdf', mirrors: ['https://archive.org/download/a/x.pdf'] })).toBeNull();
+  });
+});
 
 describe('thirdPartyMentions', () => {
   it('finds a permission notice for supplied figures', () => {
