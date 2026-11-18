@@ -396,5 +396,192 @@
     "evidence": "Page 1: 'This Fact Sheet is published in English and Spanish and can be reproduced in any form for further distribution.' Page 1 footer: 'U.S. Department of the Interior U.S. Geological Survey ... USGS Fact Sheet FS-071-00 May 2000'. Photo credits (pages 1 and 2): '(Photo: United States Southern Command)', '(Photo: USGS, Ed Harp)', '(Photo: USGS/CVO)'. Contact: Lynn Highland, National Landslide Information Center, U.S. Geological Survey. No copyright notice. USGS copyrights page: 'USGS-authored or produced data and information are considered to be in the U.S. Public Domain.'",
     "approxBytes": 553380,
     "creditsNote": "Wider search: one hit, the reproduction statement itself ('can be reproduced in any form'). Every photo credit is federal (USGS; United States Southern Command, part of the Department of Defense); the four captioned illustrations (A to D) of debris-flow sites carry no credit and the sheet is USGS's alone. 'University departments of geology' appears only as advice on whom to ask about local landslide history; 'Layout & Design by Pamela Svendsen Detra' is a design credit, not a content owner."
+  },
+  {
+    "id": "navy-neets-module-02",
+    "title": "NEETS Module 02: Introduction to Alternating Current and Transformers",
+    "category": "power",
+    "publisher": "US Navy",
+    "year": 1998,
+    "licence": "Public domain",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14174 (NEETS Module 2), September 1998, cover and title page: Distribution Statement A, approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; an identical copy is at lifeboat.com. No official or institutional copy was found. The licence rests on the release statement printed in the document.",
+    "url": "https://legacy.maritime.org/doc/neets/mod02.pdf",
+    "mirrors": [
+      "https://lifeboat.com/InfoPreserver/images/3/37/NEETS-v02-AC.pdf"
+    ],
+    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (cover, title page; repeated on the following page)",
+    "approxBytes": 4060970,
+    "creditsNote": "Whole text searched and every hit read in context (permission, courtesy, copyright, reprint, reproduce, credits, acknowledgements, trademark, hyphen-split forms). There is no credits or acknowledgements page. Hits: 'credit' only in the Navy course-completion boilerplate (Naval Reserve retirement credit, receiving credit for completed courses); 'reproductions' only in the answer-sheet instructions; 'reproduce' and 'reproduction' only in the technical sense of signals and sound.",
+    "creditsReviewed": true
+  },
+  {
+    "id": "navy-neets-module-03",
+    "title": "NEETS Module 03: Introduction to Circuit Protection, Control, and Measurement",
+    "category": "power",
+    "publisher": "US Navy",
+    "year": 1998,
+    "licence": "Public domain",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14175 (NEETS Module 3), September 1998, cover and title page: Distribution Statement A, approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; an identical copy is at lifeboat.com. No official or institutional copy was found. The licence rests on the release statement printed in the document.",
+    "url": "https://legacy.maritime.org/doc/neets/mod03.pdf",
+    "mirrors": [
+      "https://lifeboat.com/InfoPreserver/images/0/0d/NEETS-v03-Circuits.pdf"
+    ],
+    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (cover, title page; repeated on the following page)",
+    "approxBytes": 2475490,
+    "creditsNote": "Whole text searched and every hit read in context (permission, courtesy, copyright, reprint, reproduce, credits, acknowledgements, trademark, hyphen-split forms). There is no credits or acknowledgements page. Hits: 'credit' only in the Navy course-completion boilerplate (Naval Reserve retirement credit, receiving credit for completed courses); 'reproductions' only in the answer-sheet instructions; 'reproduce' and 'reproduction' only in the technical sense of signals and sound.",
+    "creditsReviewed": true
+  },
+  {
+    "id": "navy-neets-module-04",
+    "title": "NEETS Module 04: Introduction to Electrical Conductors, Wiring Techniques, and Schematic Reading",
+    "category": "power",
+    "publisher": "US Navy",
+    "year": 1998,
+    "licence": "Public domain",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14176 (NEETS Module 4), September 1998, cover and title page: Distribution Statement A, approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; an identical copy is at lifeboat.com. No official or institutional copy was found. The licence rests on the release statement printed in the document.",
+    "url": "https://legacy.maritime.org/doc/neets/mod04.pdf",
+    "mirrors": [
+      "https://lifeboat.com/InfoPreserver/images/d/d9/NEETS-v04-Conductors.pdf"
+    ],
+    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (cover, title page; repeated on the following page)",
+    "approxBytes": 1568011,
+    "creditsNote": "Whole text searched and every hit read in context (permission, courtesy, copyright, reprint, reproduce, credits, acknowledgements, trademark, hyphen-split forms). There is no credits or acknowledgements page. Hits: 'credit' only in the Navy course-completion boilerplate (Naval Reserve retirement credit, receiving credit for completed courses); 'reproductions' only in the answer-sheet instructions; 'reproduce' and 'reproduction' only in the technical sense of signals and sound.",
+    "creditsReviewed": true
+  },
+  {
+    "id": "navy-neets-module-05",
+    "title": "NEETS Module 05: Introduction to Generators and Motors",
+    "category": "power",
+    "publisher": "US Navy",
+    "year": 1998,
+    "licence": "Public domain",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14177 (NEETS Module 5), September 1998, cover and title page: Distribution Statement A, approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; an identical copy is at lifeboat.com. No official or institutional copy was found. The licence rests on the release statement printed in the document.",
+    "url": "https://legacy.maritime.org/doc/neets/mod05.pdf",
+    "mirrors": [
+      "https://lifeboat.com/InfoPreserver/images/8/89/NEETS-v05-Motors.pdf"
+    ],
+    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (cover, title page; repeated on the following page)",
+    "approxBytes": 1342518,
+    "creditsNote": "Whole text searched and every hit read in context (permission, courtesy, copyright, reprint, reproduce, credits, acknowledgements, trademark, hyphen-split forms). There is no credits or acknowledgements page. Hits: 'credit' only in the Navy course-completion boilerplate (Naval Reserve retirement credit, receiving credit for completed courses); 'reproductions' only in the answer-sheet instructions; 'reproduce' and 'reproduction' only in the technical sense of signals and sound.",
+    "creditsReviewed": true
+  },
+  {
+    "id": "navy-neets-module-06",
+    "title": "NEETS Module 06: Introduction to Electronic Emission, Tubes, and Power Supplies",
+    "category": "radio",
+    "publisher": "US Navy",
+    "year": 1998,
+    "licence": "Public domain",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14178 (NEETS Module 6), September 1998, cover and title page: Distribution Statement A, approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; an identical copy is at lifeboat.com. No official or institutional copy was found. The licence rests on the release statement printed in the document.",
+    "url": "https://legacy.maritime.org/doc/neets/mod06.pdf",
+    "mirrors": [
+      "https://lifeboat.com/InfoPreserver/images/2/2d/NEETS-v06-Tubes.pdf"
+    ],
+    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (cover, title page; repeated on the following page)",
+    "approxBytes": 1610543,
+    "creditsNote": "Whole text searched and every hit read in context (permission, courtesy, copyright, reprint, reproduce, credits, acknowledgements, trademark, hyphen-split forms). There is no credits or acknowledgements page. Hits: 'credit' only in the Navy course-completion boilerplate (Naval Reserve retirement credit, receiving credit for completed courses); 'reproductions' only in the answer-sheet instructions; 'reproduce' and 'reproduction' only in the technical sense of signals and sound.",
+    "creditsReviewed": true
+  },
+  {
+    "id": "navy-neets-module-07",
+    "title": "NEETS Module 07: Introduction to Solid-State Devices and Power Supplies",
+    "category": "power",
+    "publisher": "US Navy",
+    "year": 1998,
+    "licence": "Public domain",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14179 (NEETS Module 7), September 1998, cover and title page: Distribution Statement A, approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; an identical copy is at lifeboat.com. No official or institutional copy was found. The licence rests on the release statement printed in the document.",
+    "url": "https://legacy.maritime.org/doc/neets/mod07.pdf",
+    "mirrors": [
+      "https://lifeboat.com/InfoPreserver/images/e/ea/NEETS-v07-SolidState.pdf"
+    ],
+    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (cover, title page; repeated on the following page)",
+    "approxBytes": 2530628,
+    "creditsNote": "Whole text searched and every hit read in context (permission, courtesy, copyright, reprint, reproduce, credits, acknowledgements, trademark, hyphen-split forms). There is no credits or acknowledgements page. Hits: 'credit' only in the Navy course-completion boilerplate (Naval Reserve retirement credit, receiving credit for completed courses); 'reproductions' only in the answer-sheet instructions; 'reproduce' and 'reproduction' only in the technical sense of signals and sound.",
+    "creditsReviewed": true
+  },
+  {
+    "id": "navy-neets-module-08",
+    "title": "NEETS Module 08: Introduction to Amplifiers",
+    "category": "radio",
+    "publisher": "US Navy",
+    "year": 1998,
+    "licence": "Public domain",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14180 (NEETS Module 8), September 1998, cover and title page: Distribution Statement A, approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; an identical copy is at lifeboat.com. No official or institutional copy was found. The licence rests on the release statement printed in the document.",
+    "url": "https://legacy.maritime.org/doc/neets/mod08.pdf",
+    "mirrors": [
+      "https://lifeboat.com/InfoPreserver/images/8/85/NEETS-v08-Amplifiers.pdf"
+    ],
+    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (cover, title page; repeated on the following page)",
+    "approxBytes": 1250067,
+    "creditsNote": "Whole text searched and every hit read in context (permission, courtesy, copyright, reprint, reproduce, credits, acknowledgements, trademark, hyphen-split forms). There is no credits or acknowledgements page. Hits: 'credit' only in the Navy course-completion boilerplate (Naval Reserve retirement credit, receiving credit for completed courses); 'reproductions' only in the answer-sheet instructions; 'reproduce' and 'reproduction' only in the technical sense of signals and sound.",
+    "creditsReviewed": true
+  },
+  {
+    "id": "navy-neets-module-09",
+    "title": "NEETS Module 09: Introduction to Wave-Generation and Wave-Shaping Circuits",
+    "category": "radio",
+    "publisher": "US Navy",
+    "year": 1998,
+    "licence": "Public domain",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14181 (NEETS Module 9), September 1998, cover and title page: Distribution Statement A, approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; an identical copy is at lifeboat.com. No official or institutional copy was found. The licence rests on the release statement printed in the document.",
+    "url": "https://legacy.maritime.org/doc/neets/mod09.pdf",
+    "mirrors": [
+      "https://lifeboat.com/InfoPreserver/images/9/97/NEETS-v09-Wavegen.pdf"
+    ],
+    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (cover, title page; repeated on the following page)",
+    "approxBytes": 1901495,
+    "creditsNote": "Whole text searched and every hit read in context (permission, courtesy, copyright, reprint, reproduce, credits, acknowledgements, trademark, hyphen-split forms). There is no credits or acknowledgements page. Hits: 'credit' only in the Navy course-completion boilerplate (Naval Reserve retirement credit, receiving credit for completed courses); 'reproductions' only in the answer-sheet instructions; 'reproduce' and 'reproduction' only in the technical sense of signals and sound.",
+    "creditsReviewed": true
+  },
+  {
+    "id": "navy-neets-module-10",
+    "title": "NEETS Module 10: Introduction to Wave Propagation, Transmission Lines, and Antennas",
+    "category": "radio",
+    "publisher": "US Navy",
+    "year": 1998,
+    "licence": "Public domain",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14182 (NEETS Module 10), September 1998, cover and title page: Distribution Statement A, approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; an identical copy is at lifeboat.com. No official or institutional copy was found. The licence rests on the release statement printed in the document.",
+    "url": "https://legacy.maritime.org/doc/neets/mod10.pdf",
+    "mirrors": [
+      "https://lifeboat.com/InfoPreserver/images/d/db/NEETS-v10-WaveProp.pdf"
+    ],
+    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (cover, title page; repeated on the following page)",
+    "approxBytes": 2525381,
+    "creditsNote": "Whole text searched and every hit read in context (permission, courtesy, copyright, reprint, reproduce, credits, acknowledgements, trademark, hyphen-split forms). There is no credits or acknowledgements page. Hits: 'credit' only in the Navy course-completion boilerplate (Naval Reserve retirement credit, receiving credit for completed courses); 'reproductions' only in the answer-sheet instructions; 'reproduce' and 'reproduction' only in the technical sense of signals and sound.",
+    "creditsReviewed": true
+  },
+  {
+    "id": "navy-neets-module-11",
+    "title": "NEETS Module 11: Microwave Principles",
+    "category": "radio",
+    "publisher": "US Navy",
+    "year": 1998,
+    "licence": "Public domain",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14183 (NEETS Module 11), September 1998, cover and title page: Distribution Statement A, approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; an identical copy is at lifeboat.com. No official or institutional copy was found. The licence rests on the release statement printed in the document.",
+    "url": "https://legacy.maritime.org/doc/neets/mod11.pdf",
+    "mirrors": [
+      "https://lifeboat.com/InfoPreserver/images/f/f0/NEETS-v11-Microwave.pdf"
+    ],
+    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (cover, title page; repeated on the following page)",
+    "approxBytes": 4493836,
+    "creditsNote": "Whole text searched and every hit read in context (permission, courtesy, copyright, reprint, reproduce, credits, acknowledgements, trademark, hyphen-split forms). There is no credits or acknowledgements page. Hits: 'credit' only in the Navy course-completion boilerplate (Naval Reserve retirement credit, receiving credit for completed courses); 'reproductions' only in the answer-sheet instructions; 'reproduce' and 'reproduction' only in the technical sense of signals and sound. One passing remark that Amplitron is a trademark of the Raytheon Manufacturing Company: a name remark in the text, not a reproduced figure, table or passage.",
+    "creditsReviewed": true
+  },
+  {
+    "id": "navy-neets-module-12",
+    "title": "NEETS Module 12: Modulation Principles",
+    "category": "radio",
+    "publisher": "US Navy",
+    "year": 1998,
+    "licence": "Public domain",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14184 (NEETS Module 12), September 1998, cover and title page: Distribution Statement A, approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; an identical copy is at lifeboat.com. No official or institutional copy was found. The licence rests on the release statement printed in the document.",
+    "url": "https://legacy.maritime.org/doc/neets/mod12.pdf",
+    "mirrors": [
+      "https://lifeboat.com/InfoPreserver/images/d/d9/NEETS-v12-Modulation.pdf"
+    ],
+    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (cover, title page; repeated on the following page)",
+    "approxBytes": 1739811,
+    "creditsNote": "Whole text searched and every hit read in context (permission, courtesy, copyright, reprint, reproduce, credits, acknowledgements, trademark, hyphen-split forms). There is no credits or acknowledgements page. Hits: 'credit' only in the Navy course-completion boilerplate (Naval Reserve retirement credit, receiving credit for completed courses); 'reproductions' only in the answer-sheet instructions; 'reproduce' and 'reproduction' only in the technical sense of signals and sound.",
+    "creditsReviewed": true
   }
 ]
