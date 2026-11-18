@@ -61,12 +61,17 @@ export interface ChatHarnessOptions {
    *  detection. Omit for the reasoning-capable default; pass a marker-free template (Mistral's tool-use
    *  template) to model a model that does NOT support thinking so the Thinking toggle stays hidden. */
   chatTemplate?: string;
+  /** Install the native PDF text extractor (knowledge-base flows). */
+  pdf?: boolean;
+  /** Back op-sqlite with a real node:sqlite engine, so the knowledge base stores and retrieves for real. */
+  sqlite?: boolean;
 }
 
 export async function setupChatScreen(opts: ChatHarnessOptions) {
   const platform = opts.platform ?? 'android';
   const ram = opts.ram ?? { platform, totalBytes: 12 * GB, availBytes: 8 * GB };
-  const boundary = installNativeBoundary({ llama: opts.engine === 'llama', llamaChatTemplate: opts.chatTemplate, fs: true, ram, whisper: opts.whisper, download: opts.download, speech: opts.speech });
+  const boundary = installNativeBoundary({ llama: opts.engine === 'llama', llamaChatTemplate: opts.chatTemplate, fs: true, pdf: opts.pdf, ram, whisper: opts.whisper, download: opts.download, speech: opts.speech });
+  if (opts.sqlite) require('./sqliteFake').doMockRealSqlite();
 
   // Global boundary polyfill: React 19's error reporter calls window.dispatchEvent; in the node test
   // env there is no window, so an unrelated crash would mask real errors. This is a jsdom/global shim,

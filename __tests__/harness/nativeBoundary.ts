@@ -245,6 +245,8 @@ export interface LlamaFake {
   releaseInit(): void;
   /** True while an init is held via holdNextInit(). */
   initHoldActive(): boolean;
+  /** Make the embedding model return `vectorFor(text)` (e.g. keyword vectors, so RAG ranking is predictable). */
+  scriptEmbedding(vectorFor: (text: string) => number[]): void;
   /** HOLD the next post-init multimodal-support check (context.getMultimodalSupport) open until
    *  releaseMultimodalHold() — the device-shaped load window between context init and capability
    *  detection (the 2026-07-13 18:50 device log shows ~3.4s there for gemma-4-E2B: init succeeded
@@ -445,6 +447,7 @@ function makeLlamaFake(onRelease?: () => void, chatTemplate?: string): LlamaFake
     holdNextInit: () => { initHoldPending = true; },
     releaseInit: () => { const f = initHoldRelease; initHoldRelease = null; f?.(); },
     initHoldActive: () => initHoldRelease !== null,
+    scriptEmbedding: (vectorFor) => { context.embedding.mockImplementation(async (text: string) => ({ embedding: vectorFor(String(text)) })); },
     scriptMultimodalHold: () => { mmHoldPending = true; },
     releaseMultimodalHold: () => { const f = mmHoldRelease; mmHoldRelease = null; f?.(); },
     multimodalHoldActive: () => mmHoldEngaged,
@@ -768,6 +771,8 @@ export interface FsFake {
   seedFile(path: string, sizeBytes: number): void;
   /** Seed a directory so exists()/readDir() see it even when empty. */
   seedDir(path: string): void;
+  /** Seed a file shipped inside the APK (android/app/src/main/assets/<assetPath>), read by copyFileAssets. */
+  seedAsset(assetPath: string, contents: string): void;
   DocumentDirectoryPath: string;
 }
 
@@ -793,6 +798,13 @@ function makeFsFake(): FsFake {
     vol.writeFileSync(p, Buffer.alloc(sizeBytes));
   };
   const seedDir = (path: string) => vol.mkdirSync(norm(path), { recursive: true });
+  // APK assets live outside the app's writable dirs; copyFileAssets is the only way to read them.
+  const ASSETS = '/android_asset';
+  const seedAsset = (assetPath: string, contents: string) => {
+    const p = `${ASSETS}/${assetPath}`;
+    vol.mkdirSync(p.slice(0, p.lastIndexOf('/')), { recursive: true });
+    vol.writeFileSync(p, contents);
+  };
 
   const module: Record<string, unknown> = {
     DocumentDirectoryPath,
@@ -817,11 +829,12 @@ function makeFsFake(): FsFake {
     unlink: jest.fn(async (p: string) => { vol.rmSync(norm(p), { recursive: true, force: true }); }),
     moveFile: jest.fn(async (from: string, to: string) => { vol.renameSync(norm(from), norm(to)); }),
     copyFile: jest.fn(async (from: string, to: string) => { vol.copyFileSync(norm(from), norm(to)); }),
+    copyFileAssets: jest.fn(async (from: string, to: string) => { vol.copyFileSync(`${ASSETS}/${from}`, norm(to)); }),
     hash: jest.fn(async () => 'deadbeef'),
     downloadFile: jest.fn(() => ({ jobId: 1, promise: Promise.resolve({ statusCode: 200, bytesWritten: 0 }) })),
     stopDownload: jest.fn(),
   };
-  return { module, seedFile, seedDir, DocumentDirectoryPath };
+  return { module, seedFile, seedDir, seedAsset, DocumentDirectoryPath };
 }
 
 // ---------------------------------------------------------------------------
@@ -833,6 +846,9 @@ export interface InstallOpts {
   ram?: RamProfile;
   /** Replace the dumb global react-native-fs stub with a stateful in-memory filesystem. */
   fs?: boolean;
+  /** Install the native PDF text extractor (PDFExtractorModule); a seeded file's contents are its text layer.
+   *  Needs { fs: true }. Omit it to model a device without the module. */
+  pdf?: boolean;
   /** Replace the global llama.rn stub with a scriptable context (boundary.llama.scriptCompletion). */
   llama?: boolean;
   /** GGUF chat_template exposed on the llama context's model.metadata — drives the REAL
@@ -931,6 +947,10 @@ export function installNativeBoundary(opts: InstallOpts = {}): NativeBoundary {
   RN.NativeModules.CoreMLDiffusionModule = diffusion.module;
   if (downloadFake) RN.NativeModules.DownloadManagerModule = downloadFake.module;
   if (speechFake) RN.NativeModules.FieldkitSpeech = speechFake.module;
+  if (opts.pdf && fsFake) {
+    const readFile = fsFake.module.readFile as (p: string) => Promise<string>;
+    RN.NativeModules.PDFExtractorModule = { extractText: jest.fn(async (p: string, maxChars: number) => (await readFile(p)).slice(0, maxChars)) };
+  }
   // Mic permission is a device boundary: whisper STT refuses to start recording without RECORD_AUDIO
   // granted (whisperService.requestPermissions → PermissionsAndroid.request). Grant it when whisper is
   // installed so the real STT flow runs; the default jest PermissionsAndroid returns undefined (= denied).

@@ -11,7 +11,8 @@ interface ProjectState {
   projects: Project[];
 
   // Actions
-  createProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => Project;
+  /** Pass `id` only for a built-in project the app looks up by a fixed id (e.g. Field guides). */
+  createProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }) => Project;
   updateProject: (id: string, updates: Partial<Omit<Project, 'id' | 'createdAt'>>) => void;
   deleteProject: (id: string) => void;
   getProject: (id: string) => Project | undefined;
@@ -91,7 +92,7 @@ export const useProjectStore = create<ProjectState>()(
       createProject: (projectData) => {
         const project: Project = {
           ...projectData,
-          id: generateId(),
+          id: projectData.id ?? generateId(),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
