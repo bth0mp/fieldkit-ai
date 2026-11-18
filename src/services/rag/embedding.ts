@@ -1,7 +1,7 @@
 import { initLlama, LlamaContext } from 'llama.rn';
-import { Platform } from 'react-native';
 import RNFS from 'react-native-fs';
 import logger from '../../utils/logger';
+import { copyBundledAsset } from '../../utils/bundledAsset';
 import { modelResidencyManager } from '../modelResidency';
 
 const EMBEDDING_MODEL_FILENAME = 'all-MiniLM-L6-v2-Q8_0.gguf';
@@ -95,12 +95,7 @@ class EmbeddingService {
     const destPath = `${RNFS.DocumentDirectoryPath}/${EMBEDDING_MODEL_FILENAME}`;
     const exists = await RNFS.exists(destPath);
     if (!exists) {
-      if (Platform.OS === 'android') {
-        await RNFS.copyFileAssets(`models/${EMBEDDING_MODEL_FILENAME}`, destPath);
-      } else {
-        const bundlePath = `${RNFS.MainBundlePath}/${EMBEDDING_MODEL_FILENAME}`;
-        await RNFS.copyFile(bundlePath, destPath);
-      }
+      await copyBundledAsset(`models/${EMBEDDING_MODEL_FILENAME}`, destPath);
       logger.log('[Embedding] Copied embedding model to documents directory');
     }
     return destPath;
