@@ -16,6 +16,8 @@ const CANDIDATES_FILE = path.join(ROOT, 'catalog/candidates.json');
 const USER_AGENT = 'Dalvik/2.1.0 (Linux; U; Android 14)';
 const MAX_GUIDE_BYTES = 60 * 1024 * 1024;
 const MAX_REDIRECTS = 5;
+// Hosts that serve a file unaltered by their own account of it; everything else needs an identical second copy.
+const TRUSTED_HOSTS = ['digital.library.unt.edu', 'webarchive.library.unt.edu', 'fs-prod-nwcg.s3.us-gov-west-1.amazonaws.com'];
 const PDFTOTEXT_TIMEOUT_MS = 60000;
 const PDFTOTEXT_MAX_BUFFER = 64 * 1024 * 1024;
 // Mirrors ID_PATTERN and HTTPS_DNS_HOST_URL_PATTERN in src/features/guideLibrary/catalogue.ts, the source of truth.
@@ -173,6 +175,48 @@ function validateCandidate(candidate, categoryIds) {
   if (typeof candidate.url !== 'string' || !HTTPS_DNS_HOST_URL_PATTERN.test(candidate.url)) {
     throw new Error('url must be https with a plain DNS host (no credentials, port, IP address or localhost)');
   }
+  const problem = mirrorProblem(candidate);
+  if (problem) throw new Error(problem);
+}
+
+const hostOf = url => new URL(url).hostname.toLowerCase();
+
+/** True when a guide's host is not one we trust to serve the file unaltered, so an identical second copy is required. */
+function needsMirror(url) {
+  const host = hostOf(url);
+  if (TRUSTED_HOSTS.includes(host) || host.endsWith('.mil') || host.endsWith('.gov')) return false;
+  const rawCapture = host === 'web.archive.org' && /^\/web\/\d{14}id_\//.test(new URL(url).pathname);
+  return !rawCapture;
+}
+
+/** Why a candidate's `mirrors` list is unusable, or null. Each mirror must be strict https on a host other than `url`. */
+function mirrorProblem(candidate) {
+  if (candidate.mirrors === undefined) return null;
+  if (!Array.isArray(candidate.mirrors)) return 'mirrors must be an array of urls';
+  const primaryHost = hostOf(candidate.url);
+  for (const mirror of candidate.mirrors) {
+    if (typeof mirror !== 'string' || !HTTPS_DNS_HOST_URL_PATTERN.test(mirror)) return `mirror ${mirror} must be https with a plain DNS host`;
+    if (hostOf(mirror) === primaryHost) return `mirror ${mirror} is on the same host as url`;
+  }
+  return null;
+}
+
+/** Downloads each mirror and requires the SHA-256 the primary gave. Throws "mirror <host> differs" or "... failed: <reason>". */
+async function checkMirrors(url, mirrors, sha256) {
+  if (!mirrors.length) {
+    if (needsMirror(url)) throw new Error('third-party host needs a second copy (mirrors)');
+    return;
+  }
+  for (const mirror of mirrors) {
+    const host = hostOf(mirror);
+    let actual;
+    try {
+      actual = await withDownload(mirror, describePdf);
+    } catch (err) {
+      throw new Error(`mirror ${host} failed: ${err.message}`);
+    }
+    if (actual.sha256 !== sha256) throw new Error(`mirror ${host} differs`);
+  }
 }
 
 function validateMeasured(measured, layer) {
@@ -192,8 +236,15 @@ async function withDownload(url, fn) {
   }
 }
 
-function checkCandidate(candidate, categoryIds) {
+async function checkCandidate(candidate, categoryIds) {
   validateCandidate(candidate, categoryIds);
+  if (!candidate.mirrors?.length && needsMirror(candidate.url)) throw new Error('third-party host needs a second copy (mirrors)');
+  const entry = await measureCandidate(candidate);
+  await checkMirrors(candidate.url, candidate.mirrors || [], entry.sha256);
+  return entry;
+}
+
+function measureCandidate(candidate) {
   return withDownload(candidate.url, async file => {
     const measured = await describePdf(file);
     const layer = readTextLayer(file);
@@ -237,31 +288,44 @@ async function addCandidates() {
   return 0;
 }
 
-async function verifyGuide(guide) {
+async function verifyPrimary(guide) {
   const actual = await withDownload(guide.url, describePdf);
   if (actual.bytes !== guide.bytes) throw new Error(`size changed (${guide.bytes} -> ${actual.bytes})`);
   if (actual.sha256 !== guide.sha256) throw new Error('sha256 changed');
 }
 
-async function verifyCatalogue() {
+/** Mirrors come from the guide's record in candidates.json; a guide that needs one and has none fails. */
+function verifyMirrors(guide, candidates) {
+  const record = candidates.find(c => c.id === guide.id);
+  if (!record && needsMirror(guide.url)) return Promise.reject(new Error('third-party host needs a second copy (no candidate record)'));
+  const problem = record && mirrorProblem({ ...record, url: guide.url });
+  if (problem) return Promise.reject(new Error(problem));
+  return checkMirrors(guide.url, (record && record.mirrors) || [], guide.sha256);
+}
+
+async function verifyCatalogue(mirrorsOnly) {
   const { guides } = readJson(GUIDES_FILE);
+  const candidates = readJson(CANDIDATES_FILE);
+  const checked = mirrorsOnly ? guides.filter(g => needsMirror(g.url) || candidates.some(c => c.id === g.id && c.mirrors?.length)) : guides;
   let failures = 0;
-  for (const guide of guides) {
+  for (const guide of checked) {
     try {
-      await verifyGuide(guide);
+      if (!mirrorsOnly) await verifyPrimary(guide);
+      await verifyMirrors(guide, candidates);
       console.log(`ok ${guide.id}`);
     } catch (err) {
       failures++;
       console.log(`FAILED ${guide.id}: ${err.message}`);
     }
   }
-  console.log(`${guides.length - failures} ok, ${failures} failed`);
+  console.log(`${checked.length - failures} ok, ${failures} failed`);
   return failures ? 1 : 0;
 }
 
 if (require.main === module) {
-  const run = process.argv.includes('--verify') ? verifyCatalogue : addCandidates;
+  const run = process.argv.includes('--verify-mirrors') ? () => verifyCatalogue(true)
+    : process.argv.includes('--verify') ? () => verifyCatalogue(false) : addCandidates;
   run().then(code => process.exit(code), err => { console.error(err.message); process.exit(2); });
 }
 
-module.exports = { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop };
+module.exports = { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem };

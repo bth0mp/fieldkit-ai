@@ -2,7 +2,50 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
-const { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop } = require('../../../scripts/check-guides.js');
+const { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem } = require('../../../scripts/check-guides.js');
+
+describe('needsMirror', () => {
+  it.each([
+    'https://armypubs.army.mil/x.pdf',
+    'https://www.fema.gov/x.pdf',
+    'https://fs-prod-nwcg.s3.us-gov-west-1.amazonaws.com/x.pdf',
+    'https://digital.library.unt.edu/ark:/67531/x/x.pdf',
+    'https://webarchive.library.unt.edu/x.pdf',
+    'https://web.archive.org/web/20200101123456id_/https://example.com/x.pdf',
+  ])('trusts %s', url => {
+    expect(needsMirror(url)).toBe(false);
+  });
+
+  it.each([
+    'https://web.archive.org/web/20200101123456/https://example.com/x.pdf',
+    'https://web.archive.org/web/2020id_/https://example.com/x.pdf',
+    'https://archive.org/download/item/x.pdf',
+    'https://legacy.maritime.org/x.pdf',
+    'https://evil-gov.example/x.pdf',
+    'https://army.mil.example.com/x.pdf',
+  ])('wants a second copy for %s', url => {
+    expect(needsMirror(url)).toBe(true);
+  });
+});
+
+describe('mirror validation', () => {
+  const base = { url: 'https://legacy.maritime.org/x.pdf' };
+
+  it('accepts a strict https mirror on another host, or none', () => {
+    expect(mirrorProblem(base)).toBeNull();
+    expect(mirrorProblem({ ...base, mirrors: ['https://archive.org/download/a/x.pdf'] })).toBeNull();
+  });
+
+  it('refuses a mirror on the same host as url', () => {
+    expect(mirrorProblem({ ...base, mirrors: ['https://legacy.maritime.org/y.pdf'] })).toMatch('same host');
+  });
+
+  it('refuses a non-https or malformed mirror', () => {
+    expect(mirrorProblem({ ...base, mirrors: ['http://archive.org/x.pdf'] })).toMatch('must be https');
+    expect(mirrorProblem({ ...base, mirrors: ['https://localhost/x.pdf'] })).toMatch('must be https');
+    expect(mirrorProblem({ ...base, mirrors: 'https://archive.org/x.pdf' })).toMatch('array');
+  });
+});
 
 const CLAIM = 'Approved for public release; distribution is unlimited.';
 const WITH_STATEMENT = 'DISTRIBUTION RESTRICTION: Approved for public\nrelease; distribution is unlimited.';
@@ -53,7 +96,7 @@ describe('redirect hops', () => {
 describe('shapeEntries', () => {
   const entry = (id: string, category: string, title: string) => ({
     id, title, category, publisher: 'p', year: 2020, licence: 'l', licenceNote: 'n', url: 'https://a.gov/x.pdf',
-    bytes: 1, sha256: 'a'.repeat(64), pages: 1, hasText: true, statementSeen: true, evidence: 'e', approxBytes: 5,
+    bytes: 1, sha256: 'a'.repeat(64), pages: 1, hasText: true, statementSeen: true, evidence: 'e', approxBytes: 5, mirrors: ['https://b.org/x.pdf'],
   });
 
   it('strips helper fields and sorts by category order, then title', () => {
@@ -63,6 +106,7 @@ describe('shapeEntries', () => {
       expect(g).not.toHaveProperty('statementSeen');
       expect(g).not.toHaveProperty('evidence');
       expect(g).not.toHaveProperty('approxBytes');
+      expect(g).not.toHaveProperty('mirrors');
       expect(Object.keys(g)).toHaveLength(12);
     }
   });
