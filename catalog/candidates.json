@@ -8,7 +8,9 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). TM 3-34.47, page 1: distribution statement printed in the document: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN35831-TM_3-34.47-000-WEB-1.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)"
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)",
+    "creditsNote": "Picture audit, 18 November 2026: every page with a picture (196 pages) was looked at by eye. A second reader then looked at each flagged picture and cleared it: Figure B-1 is a plain list of drafting symbols with dotted leaders, scanned in an older serif face; the text beside it refers the reader to the Army's own TM 5-704 for symbols. No outside body is named.",
+    "creditsReviewed": true
   },
   {
     "id": "army-tm-3-34-70",
@@ -19,7 +21,9 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). TM 3-34.70, page 1: distribution statement printed in the document: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tm3_34x70.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)"
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)",
+    "creditsNote": "Picture audit, 18 November 2026: every page with a picture (157 pages) was looked at by eye. No picture carries an outside credit, and none is evidently an outside owner's.",
+    "creditsReviewed": true
   },
   {
     "id": "army-tm-3-34-86",
@@ -30,7 +34,9 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). TM 3-34.86, page 1: distribution statement printed in the document: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tm3_34x86.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)"
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)",
+    "creditsNote": "Picture audit, 18 November 2026: every page with a picture (118 pages) was looked at by eye. A second reader then looked at each flagged picture and cleared it: The blocks are worn, scuffed working equipment, photocopied, with the manual's own numbered-circle callouts as in the drawing above them. There is no maker name and nothing catalogue-like.",
+    "creditsReviewed": true
   },
   {
     "id": "army-atp-3-34-45",
@@ -41,7 +47,9 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). ATP 3-34.45, page 1: distribution statement printed in the document: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN40205-ATP_3-34.45-000-WEB-1.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)"
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)",
+    "creditsNote": "Picture audit, 18 November 2026: every page with a picture (27 pages) was looked at by eye. A second reader then looked at each flagged picture and cleared it: The two equipment photos sit in the Marine Corps' own TAMCN data sheets for fielded, stock-numbered items; one is a kit layout with no legible branding and the other shows a generator on camouflage netting, a service-style setting, with its maker's label merely on the unit. The wiring chart has no source and carries the manual's own legend box.",
+    "creditsReviewed": true
   },
   {
     "id": "army-tc-21-3",
@@ -54,29 +62,7 @@
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN45217-TC_21-3-000-WEB-1.pdf",
     "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)",
     "creditsReviewed": true,
-    "creditsNote": "Hits are 'Standard aircraft acknowledgements', a signalling topic. No outside-owner credit found."
-  },
-  {
-    "id": "army-tc-3-97-61",
-    "title": "Military Mountaineering",
-    "category": "fieldcraft",
-    "publisher": "US Army",
-    "year": 2025,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). TC 3-97.61, page 1: distribution statement printed in the document: approved for public release; distribution is unlimited.",
-    "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN45366-TC_3-97.61-000-WEB-1.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)"
-  },
-  {
-    "id": "army-atp-4-25-12",
-    "title": "Unit Field Sanitation Teams",
-    "category": "water",
-    "publisher": "US Army",
-    "year": 2014,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). ATP 4-25.12, page 1: distribution statement printed in the document: approved for public release; distribution is unlimited. Edition including Change 2 (August 2025).",
-    "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN44577-ATP_4-25.12-002-WEB-3.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)"
+    "creditsNote": "Hits are 'Standard aircraft acknowledgements', a signalling topic. No outside-owner credit found. Picture audit, 18 November 2026: every page with a picture (63 pages) was looked at by eye. A second reader then looked at each flagged picture and cleared it: Both pictures show Army-issue cold-weather items (mittens with a UCP camouflage cuff, ICW gloves, the Modular Sleep System with a UCP bivy cover) with no maker's branding or catalogue styling."
   },
   {
     "id": "army-tc-9-62",
@@ -87,7 +73,9 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). TC 9-62, page 1: distribution statement printed in the document: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tc9_62.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)"
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)",
+    "creditsNote": "Picture audit, 18 November 2026: every page with a picture (225 pages) was looked at by eye. A second reader then looked at each flagged picture and cleared it: The photo shows a whole circuit board, not cut out; the DATEL logo and part number are printed on one module on the board, a maker's marking on a component and not the subject of the picture.",
+    "creditsReviewed": true
   },
   {
     "id": "army-tc-9-64",
@@ -98,7 +86,9 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). TC 9-64, page 1: distribution statement printed in the document: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tc9_64.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)"
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)",
+    "creditsNote": "Picture audit, 18 November 2026: every page with a picture (146 pages) was looked at by eye. No picture carries an outside credit, and none is evidently an outside owner's.",
+    "creditsReviewed": true
   },
   {
     "id": "army-tc-55-509",
@@ -111,20 +101,7 @@
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tc55_509.pdf",
     "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)",
     "creditsReviewed": true,
-    "creditsNote": "All 5 hits are permission from the chief engineer or supervisor in shipboard procedures. No outside-owner credit found."
-  },
-  {
-    "id": "army-tc-21-305-20",
-    "title": "Manual for the Wheeled Vehicle Operator",
-    "category": "mechanical",
-    "publisher": "US Army",
-    "year": 2016,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). TC 21-305-20, page 1: distribution statement printed in the document: approved for public release; distribution is unlimited.",
-    "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tc21_305_20.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)",
-    "creditsReviewed": true,
-    "creditsNote": "All 9 hits read: 'courtesy' (driving courtesy) and 'permission' (from supervisors, to pass or enter) in the operational sense. No outside-owner credit found."
+    "creditsNote": "All 5 hits are permission from the chief engineer or supervisor in shipboard procedures. No outside-owner credit found. Picture audit, 18 November 2026: every page with a picture (227 pages) was looked at by eye. A second reader then looked at each flagged picture and cleared it: All four flagged figures are line drawings in the manual's own stippled style and lettering. The maker names on them (an AC Spark Plug nameplate, an example 'APEX IRON WORKS' data plate that the text uses to show what any data plate must carry) are markings on equipment, not maker's pictures."
   },
   {
     "id": "army-atp-4-31",
@@ -135,18 +112,9 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). ATP 4-31, page 3: distribution statement printed in the document: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN45184-ATP_4-31-001-WEB-2.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 3)"
-  },
-  {
-    "id": "army-atp-4-02-13",
-    "title": "Casualty Evacuation",
-    "category": "medical",
-    "publisher": "US Army",
-    "year": 2021,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). ATP 4-02.13, page 1: distribution statement printed in the document: approved for public release; distribution is unlimited.",
-    "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN32888-ATP_4-02.13-000-WEB-1.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)"
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 3)",
+    "creditsNote": "Picture audit, 18 November 2026: every page with a picture (76 pages) was looked at by eye. A second reader then looked at each flagged picture and cleared it: The hooks and shackles are shaded line drawings labelled in the manual's own Arial, using the federal specification's class names (Class 1 round pin, Class 2 screw pin, Class 3 safety). The winch photos are field photos of drums installed on vehicles; the small mark in their corners cannot be identified as anyone's.",
+    "creditsReviewed": true
   },
   {
     "id": "usgs-gip-topographic-map-symbols",
@@ -157,7 +125,9 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). Published by the U.S. Department of the Interior / U.S. Geological Survey alone, no outside author or copyright notice; USGS policy at https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits says USGS-authored information is in the U.S. public domain.",
     "url": "https://pubs.usgs.gov/gip/TopographicMapSymbols/topomapsymbols.pdf",
-    "evidence": "Page 1 masthead: 'U.S. Department of the Interior U.S. Geological Survey'; no copyright notice or third-party credit anywhere in the 4 pages. USGS copyrights page: 'USGS-authored or produced data and information are considered to be in the U.S. Public Domain.' Year 2005 from the USGS catalog record (doi 10.3133/70039164)."
+    "evidence": "Page 1 masthead: 'U.S. Department of the Interior U.S. Geological Survey'; no copyright notice or third-party credit anywhere in the 4 pages. USGS copyrights page: 'USGS-authored or produced data and information are considered to be in the U.S. Public Domain.' Year 2005 from the USGS catalog record (doi 10.3133/70039164).",
+    "creditsNote": "Picture audit, 18 November 2026: every page with a picture (1 pages) was looked at by eye. No picture carries an outside credit, and none is evidently an outside owner's.",
+    "creditsReviewed": true
   },
   {
     "id": "usgs-fs-035-01-map-and-compass",
@@ -168,7 +138,9 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). USGS Fact Sheet 035-01, published by the U.S. Department of the Interior / U.S. Geological Survey alone, no outside author or copyright notice; USGS policy at https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits says USGS-authored information is in the U.S. public domain.",
     "url": "https://pubs.usgs.gov/fs/2001/0035/report.pdf",
-    "evidence": "Page 2: 'U.S. Department of the Interior U.S. Geological Survey / USGS Fact Sheet 035-01 March 2001'; no copyright notice or third-party credit. USGS copyrights page: 'USGS-authored or produced data and information are considered to be in the U.S. Public Domain.'"
+    "evidence": "Page 2: 'U.S. Department of the Interior U.S. Geological Survey / USGS Fact Sheet 035-01 March 2001'; no copyright notice or third-party credit. USGS copyrights page: 'USGS-authored or produced data and information are considered to be in the U.S. Public Domain.'",
+    "creditsNote": "Picture audit, 18 November 2026: every page with a picture (2 pages) was looked at by eye. No picture carries an outside credit, and none is evidently an outside owner's.",
+    "creditsReviewed": true
   },
   {
     "id": "army-tb-med-505",
@@ -181,7 +153,8 @@
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN43605-TB_MED_505-001-WEB-2.pdf",
     "evidence": "APPROVED FOR PUBLIC RELEASE; DISTRIBUTION UNLIMITED. (page 1)",
     "approxBytes": 1168235,
-    "creditsNote": "Appendix F reproduces the Lake Louise acute mountain sickness questionnaire without a credit; it is a widely used consensus scoring form, kept for the owner to confirm."
+    "creditsNote": "Appendix F reproduces the Lake Louise acute mountain sickness questionnaire without a credit; it is a widely used consensus scoring form, kept for the owner to confirm. Picture audit, 18 November 2026: every page with a picture (6 pages) was looked at by eye. No picture carries an outside credit, and none is evidently an outside owner's.",
+    "creditsReviewed": true
   },
   {
     "id": "army-tb-med-507",
@@ -193,19 +166,9 @@
     "licenceNote": "US government work (17 U.S.C. 105). TB MED 507, page 1: distribution statement printed in the document. Statement: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN43608-TB_MED_507-001-WEB-2.pdf",
     "evidence": "APPROVED FOR PUBLIC RELEASE; DISTRIBUTION IS UNLIMITED (page 1)",
-    "approxBytes": 2596231
-  },
-  {
-    "id": "army-tb-med-593",
-    "title": "Guidelines for Field Waste Management",
-    "category": "water",
-    "publisher": "US Army",
-    "year": 2006,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). TB MED 593, page 1: distribution statement printed in the document. Statement: approved for public release; distribution is unlimited.",
-    "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tbmed593.pdf",
-    "evidence": "APPROVED FOR PUBLIC RELEASE; DISTRIBUTION UNLIMITED. (page 1)",
-    "approxBytes": 996456
+    "approxBytes": 2596231,
+    "creditsNote": "Picture audit, 18 November 2026: every page with a picture (11 pages) was looked at by eye. No picture carries an outside credit, and none is evidently an outside owner's.",
+    "creditsReviewed": true
   },
   {
     "id": "army-stp-9-91d13-sm-tg",
@@ -217,7 +180,9 @@
     "licenceNote": "US government work (17 U.S.C. 105). STP 9-91D13-SM-TG, page 1: distribution statement printed in the document. Statement: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/ARN13520_STP%209-91D13-SM-TG%20FINAL%20WEB.pdf",
     "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)",
-    "approxBytes": 2871010
+    "approxBytes": 2871010,
+    "creditsNote": "Picture audit, 18 November 2026: every page with a picture (8 pages) was looked at by eye. No picture carries an outside credit, and none is evidently an outside owner's.",
+    "creditsReviewed": true
   },
   {
     "id": "army-stp-9-91c13-sm-tg",
@@ -231,19 +196,7 @@
     "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)",
     "approxBytes": 1539380,
     "creditsReviewed": true,
-    "creditsNote": "Hits are 'DA Form 5891 Acknowledgment of Counseling', an Army form. No outside-owner credit found."
-  },
-  {
-    "id": "army-tm-3-34-51",
-    "title": "Construction Drafting",
-    "category": "building",
-    "publisher": "US Army",
-    "year": 2012,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). TM 3-34.51, page 1: distribution statement printed in the document. Statement: approved for public release; distribution is unlimited.",
-    "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tm3_34x51.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)",
-    "approxBytes": 35603355
+    "creditsNote": "Hits are 'DA Form 5891 Acknowledgment of Counseling', an Army form. No outside-owner credit found. Picture audit, 18 November 2026: every page with a picture (3 pages) was looked at by eye. A second reader then looked at each flagged picture and cleared it: The cover photo shows a tan Army shelter with a trailer-mounted environmental control unit on gravel, with the sky vignetted. It is military equipment with no maker's branding; editing the background does not make it someone else's picture."
   },
   {
     "id": "army-tm-3-34-61",
@@ -255,7 +208,9 @@
     "licenceNote": "US government work (17 U.S.C. 105). TM 3-34.61, page 1: distribution statement printed in the document. Statement: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/ARN6987_TM%203-34x61%20FINAL%20WEB.pdf",
     "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)",
-    "approxBytes": 10876924
+    "approxBytes": 10876924,
+    "creditsNote": "Picture audit, 18 November 2026: every page with a picture (42 pages) was looked at by eye. A second reader then looked at each flagged picture and cleared it: The stereo-pair figure is an old scan with old serif sub-captions, the same carried-over character as the many earlier-edition Army halftones in this manual. Nothing on it names another body.",
+    "creditsReviewed": true
   },
   {
     "id": "usgs-fs-077-01-utm-grid",
@@ -267,7 +222,9 @@
     "licenceNote": "US government work (17 U.S.C. 105). USGS Fact Sheet 077-01, published by the U.S. Department of the Interior / U.S. Geological Survey alone, no outside author, photo credit or copyright notice; USGS policy at https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits says USGS-authored information is in the U.S. public domain.",
     "url": "https://pubs.usgs.gov/fs/2001/0077/report.pdf",
     "evidence": "Page 2: 'U.S. Department of the Interior U.S. Geological Survey / USGS Fact Sheet 077-01 August 2001'; no copyright notice or third-party credit. USGS copyrights page: 'USGS-authored or produced data and information are considered to be in the U.S. Public Domain.'",
-    "approxBytes": 29253
+    "approxBytes": 29253,
+    "creditsNote": "Picture audit, 18 November 2026: every page with a picture (2 pages) was looked at by eye. No picture carries an outside credit, and none is evidently an outside owner's.",
+    "creditsReviewed": true
   },
   {
     "id": "usgs-fs-015-02-map-scales",
@@ -279,47 +236,9 @@
     "licenceNote": "US government work (17 U.S.C. 105). USGS Fact Sheet 015-02, published by the U.S. Department of the Interior / U.S. Geological Survey alone, no outside author, photo credit or copyright notice; USGS policy at https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits says USGS-authored information is in the U.S. public domain.",
     "url": "https://pubs.usgs.gov/fs/2002/0015/report.pdf",
     "evidence": "Page 2: 'U.S. Department of the Interior U.S. Geological Survey / USGS Fact Sheet 015-02 February 2002'; no copyright notice or third-party credit. USGS copyrights page: 'USGS-authored or produced data and information are considered to be in the U.S. Public Domain.'",
-    "approxBytes": 365302
-  },
-  {
-    "id": "fda-bad-bug-book-2nd-edition",
-    "title": "Bad Bug Book: Handbook of Foodborne Pathogenic Microorganisms and Natural Toxins",
-    "category": "food",
-    "publisher": "FDA",
-    "year": 2012,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). Second edition, written and edited by FDA scientists (Authorship page), no outside author or copyright notice; FDA website policy at https://www.fda.gov/about-fda/about-website/website-policies says FDA website contents are not copyrighted and are in the public domain.",
-    "url": "https://www.fda.gov/media/83271/download",
-    "evidence": "Authorship page: 'The second edition of the Bad Bug Book would not have been possible without the contributions of the many FDA scientists ...'; suggested citation 'Food and Drug Administration. Bad Bug Book ... Second Edition ... 2012.' Photo credits, all FDA staff: escolar and oilfish photos by Warren Savary and D. Mellen (FDA/ORA), Dianne Millazo and Amber Chung (FDA); venomous fish photos by Jonathan Deeds, Ph.D., FDA; escolar and oilfish images introduced as 'Images and other information from the Regulatory Fish Encyclopedia' (an FDA resource). CDC figures, federal: 'Figure 1. Centers for Disease Control and Prevention. Accessed May 2011.' (hepatitis A chapter); a chart of norovirus outbreaks 'adapted from Centers for Disease Control and Prevention, 2008'; two tularemia charts credited to 'Centers for Disease Control and Prevention'. FDA policy: 'Unless otherwise noted, the contents of the FDA website (www.fda.gov) — both text and graphics — are not copyrighted. They are in the public domain and may be republished, reprinted and otherwise used freely by anyone without the need to obtain permission from FDA.'",
-    "approxBytes": 5252559,
-    "creditsReviewed": true,
-    "creditsNote": "Acknowledgments thank FDA scientists and reviewers; photo credits name FDA staff (Savary, Mellen, Millazo, Chung, Deeds); escolar and oilfish images are introduced as 'from the Regulatory Fish Encyclopedia', an FDA resource. The CDC items are figures, not tables: 'Figure 1. Centers for Disease Control and Prevention', a norovirus chart 'adapted from Centers for Disease Control and Prevention', and two tularemia charts credited to the CDC, all federal. No outside-owner credit found."
-  },
-  {
-    "id": "fda-food-water-safety-power-outages-floods",
-    "title": "Food and Water Safety During Power Outages and Floods",
-    "category": "food",
-    "publisher": "FDA",
-    "year": 2023,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). FDA consumer guide (January 2023), FDA as sole publisher, no outside author or copyright notice; FDA website policy at https://www.fda.gov/about-fda/about-website/website-policies says FDA website contents are not copyrighted and are in the public domain.",
-    "url": "https://www.fda.gov/media/72124/download",
-    "evidence": "Page footer 'January 2023'; page 4: 'For more information, contact the U.S. Food and Drug Administration, Center for Food Safety and Applied Nutrition ...'. No copyright notice or outside credit in the 4 pages. FDA policy: 'Unless otherwise noted, the contents of the FDA website (www.fda.gov) — both text and graphics — are not copyrighted. They are in the public domain ...'",
-    "approxBytes": 833411
-  },
-  {
-    "id": "nwcg-pms-475-basic-land-navigation",
-    "title": "Basic Land Navigation",
-    "category": "navigation",
-    "publisher": "NWCG",
-    "year": 2016,
-    "licence": "Public domain",
-    "licenceNote": "Public-domain statement printed on the document's title-page verso and on NWCG's notices page (https://www.nwcg.gov/notices#copyrights). Hosted on NWCG's official file store linked from https://www.nwcg.gov/publications/pms475.",
-    "url": "https://fs-prod-nwcg.s3.us-gov-west-1.amazonaws.com/s3fs-public/publication/pms475.pdf",
-    "evidence": "Title-page verso (page 3): 'NWCG's intent is to specifically identify all copyrighted content used in NWCG publications. All other NWCG information is in the public domain. Use of public domain information, including copying, is permitted.' Cover: 'PMS 475 NFES 002865 MAY 2016'. No content in the 172 pages is marked as copyrighted.",
-    "approxBytes": 30650584,
-    "creditsReviewed": true,
-    "creditsNote": "Only hit is NWCG's own public-domain and copyrighted-content statement (page 3), which identifies no copyrighted content. No outside-owner credit found."
+    "approxBytes": 365302,
+    "creditsNote": "Picture audit, 18 November 2026: every page with a picture (2 pages) was looked at by eye. No picture carries an outside credit, and none is evidently an outside owner's.",
+    "creditsReviewed": true
   },
   {
     "id": "nwcg-pms-551-clinical-treatment-guidelines",
@@ -333,21 +252,7 @@
     "evidence": "Title-page verso: 'It is NWCG's intent to specifically identify all copyrighted content used in NWCG products. All other NWCG information is in the public domain. Use of public domain information, including copying, is permitted.' Cover: 'PMS 551 ... July 2012'. No content marked as copyrighted.",
     "approxBytes": 402383,
     "creditsReviewed": true,
-    "creditsNote": "Hits are NWCG's own public-domain and copyrighted-content statement, which identifies no copyrighted content, and 'permission granted by a state' in the definition of licensure. No outside-owner credit found."
-  },
-  {
-    "id": "nwcg-pms-212-chainsaw-operations",
-    "title": "Wildland Fire Chainsaw Operations Standards",
-    "category": "mechanical",
-    "publisher": "NWCG",
-    "year": 2026,
-    "licence": "Public domain",
-    "licenceNote": "Public-domain statement printed in the document and on NWCG's notices page (https://www.nwcg.gov/notices#copyrights). Hosted on NWCG's official file store linked from https://www.nwcg.gov/publications/pms212. Covers chainsaw safety, felling, bucking and crosscut saws.",
-    "url": "https://fs-prod-nwcg.s3.us-gov-west-1.amazonaws.com/s3fs-public/publication/pms212.pdf",
-    "evidence": "Back matter: 'Publications and training materials produced by NWCG are in the public domain. Use of public domain information, including copying, is permitted.' Cover: 'PMS 212 JANUARY 2026'. No content marked as copyrighted.",
-    "approxBytes": 7098674,
-    "creditsReviewed": true,
-    "creditsNote": "The only scan hit is 'Never approach a cutting operation from below until the sawyer has granted permission' (an operational rule); the NWCG public-domain statement in the back matter is not a scan hit. OSHA 1910.266 rules are cited and paraphrased (federal). ANSI Z87.1, ANSI Z89.1 and NFPA 1977 are named only as standards that equipment must meet, not reproduced."
+    "creditsNote": "Hits are NWCG's own public-domain and copyrighted-content statement, which identifies no copyrighted content, and 'permission granted by a state' in the definition of licensure. No outside-owner credit found. Picture audit, 18 November 2026: every page with a picture (39 pages) was looked at by eye. No picture carries an outside credit, and none is evidently an outside owner's."
   },
   {
     "id": "nwcg-pms-560-wildland-fire-first-aid",
@@ -360,7 +265,8 @@
     "url": "https://fs-prod-nwcg.s3.us-gov-west-1.amazonaws.com/s3fs-public/publication/pms560.pdf",
     "evidence": "Page 17 (back matter): 'Publications and training materials produced by NWCG are in the public domain. Use of public domain information, including copying, is permitted.' Cover (page 1): 'A publication of the National Wildfire Coordinating Group ... PMS 560 March 2023'. No content marked as copyrighted in the 17 pages.",
     "approxBytes": 297132,
-    "creditsNote": "Wider search (permission, courtesy, copyright, reprinted, reproduced, adapted from, source:, collected from, credits, acknowledgements, standards bodies, hyphen-split forms): no hits. The only outside material is OSHA's 29 CFR 1910.151 and 1910.266 first aid requirements, quoted (federal). No references section; no figures or photos."
+    "creditsNote": "Wider search (permission, courtesy, copyright, reprinted, reproduced, adapted from, source:, collected from, credits, acknowledgements, standards bodies, hyphen-split forms): no hits. The only outside material is OSHA's 29 CFR 1910.151 and 1910.266 first aid requirements, quoted (federal). No references section; no figures or photos. Picture audit, 18 November 2026: every page with a picture (1 pages) was looked at by eye. No picture carries an outside credit, and none is evidently an outside owner's.",
+    "creditsReviewed": true
   },
   {
     "id": "usgs-fs-071-00-landslide-hazards",
@@ -373,23 +279,7 @@
     "url": "https://pubs.usgs.gov/fs/fs-0071-00/fs-0071-00.pdf",
     "evidence": "Page 1: 'This Fact Sheet is published in English and Spanish and can be reproduced in any form for further distribution.' Page 1 footer: 'U.S. Department of the Interior U.S. Geological Survey ... USGS Fact Sheet FS-071-00 May 2000'. Photo credits (pages 1 and 2): '(Photo: United States Southern Command)', '(Photo: USGS, Ed Harp)', '(Photo: USGS/CVO)'. Contact: Lynn Highland, National Landslide Information Center, U.S. Geological Survey. No copyright notice. USGS copyrights page: 'USGS-authored or produced data and information are considered to be in the U.S. Public Domain.'",
     "approxBytes": 553380,
-    "creditsNote": "Wider search: one hit, the reproduction statement itself ('can be reproduced in any form'). Every photo credit is federal (USGS; United States Southern Command, part of the Department of Defense); the four captioned illustrations (A to D) of debris-flow sites carry no credit and the sheet is USGS's alone. 'University departments of geology' appears only as advice on whom to ask about local landslide history; 'Layout & Design by Pamela Svendsen Detra' is a design credit, not a content owner."
-  },
-  {
-    "id": "navy-neets-module-03",
-    "title": "NEETS Module 03: Introduction to Circuit Protection, Control, and Measurement",
-    "category": "power",
-    "publisher": "US Navy",
-    "year": 1998,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14175 (NEETS Module 3), September 1998, cover and title page: Distribution Statement A, approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; an identical copy is at lifeboat.com. No official or institutional copy was found. The licence rests on the release statement printed in the document.",
-    "url": "https://legacy.maritime.org/doc/neets/mod03.pdf",
-    "mirrors": [
-      "https://lifeboat.com/InfoPreserver/images/0/0d/NEETS-v03-Circuits.pdf"
-    ],
-    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (cover, title page; repeated on the following page)",
-    "approxBytes": 2475490,
-    "creditsNote": "Whole text searched and every hit read in context (permission, courtesy, copyright, reprint, reproduce, credits, acknowledgements, trademark, hyphen-split forms). There is no credits or acknowledgements page. The only hit is the word 'preprinted' in the Navy answer-sheet instructions. No figure or passage is credited to an outside owner.",
+    "creditsNote": "Wider search: one hit, the reproduction statement itself ('can be reproduced in any form'). Every photo credit is federal (USGS; United States Southern Command, part of the Department of Defense); the four captioned illustrations (A to D) of debris-flow sites carry no credit and the sheet is USGS's alone. 'University departments of geology' appears only as advice on whom to ask about local landslide history; 'Layout & Design by Pamela Svendsen Detra' is a design credit, not a content owner. Picture audit, 18 November 2026: every page with a picture (2 pages) was looked at by eye. No picture carries an outside credit, and none is evidently an outside owner's.",
     "creditsReviewed": true
   },
   {
@@ -406,7 +296,7 @@
     ],
     "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (cover, title page; repeated on the following page)",
     "approxBytes": 1342518,
-    "creditsNote": "Whole text searched and every hit read in context (permission, courtesy, copyright, reprint, reproduce, credits, acknowledgements, trademark, hyphen-split forms). There is no credits or acknowledgements page. The only hit is the word 'preprinted' in the Navy answer-sheet instructions. No figure or passage is credited to an outside owner.",
+    "creditsNote": "Whole text searched and every hit read in context (permission, courtesy, copyright, reprint, reproduce, credits, acknowledgements, trademark, hyphen-split forms). There is no credits or acknowledgements page. The only hit is the word 'preprinted' in the Navy answer-sheet instructions. No figure or passage is credited to an outside owner. Picture audit, 18 November 2026: every page with a picture (73 pages) was looked at by eye. No picture carries an outside credit, and none is evidently an outside owner's.",
     "creditsReviewed": true
   },
   {
@@ -423,7 +313,7 @@
     ],
     "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (cover, title page; repeated on the following page)",
     "approxBytes": 1250067,
-    "creditsNote": "Whole text searched and every hit read in context (permission, courtesy, copyright, reprint, reproduce, credits, acknowledgements, trademark, hyphen-split forms). There is no credits or acknowledgements page. Two hits: 'preprinted' in the Navy answer-sheet instructions, and 'reproduced' once, in the technical sense of a signal in an amplifier output. No figure or passage is credited to an outside owner.",
+    "creditsNote": "Whole text searched and every hit read in context (permission, courtesy, copyright, reprint, reproduce, credits, acknowledgements, trademark, hyphen-split forms). There is no credits or acknowledgements page. Two hits: 'preprinted' in the Navy answer-sheet instructions, and 'reproduced' once, in the technical sense of a signal in an amplifier output. No figure or passage is credited to an outside owner. Picture audit, 18 November 2026: every page with a picture (143 pages) was looked at by eye. No picture carries an outside credit, and none is evidently an outside owner's.",
     "creditsReviewed": true
   },
   {
@@ -440,7 +330,7 @@
     ],
     "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (cover, title page; repeated on the following page)",
     "approxBytes": 1901495,
-    "creditsNote": "Whole text searched and every hit read in context (permission, courtesy, copyright, reprint, reproduce, credits, acknowledgements, trademark, hyphen-split forms). There is no credits or acknowledgements page. The only hit is the word 'preprinted' in the Navy answer-sheet instructions. No figure or passage is credited to an outside owner.",
+    "creditsNote": "Whole text searched and every hit read in context (permission, courtesy, copyright, reprint, reproduce, credits, acknowledgements, trademark, hyphen-split forms). There is no credits or acknowledgements page. The only hit is the word 'preprinted' in the Navy answer-sheet instructions. No figure or passage is credited to an outside owner. Picture audit, 18 November 2026: every page with a picture (220 pages) was looked at by eye. No picture carries an outside credit, and none is evidently an outside owner's.",
     "creditsReviewed": true
   },
   {
@@ -457,7 +347,7 @@
     ],
     "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (cover, title page; repeated on the following page)",
     "approxBytes": 2525381,
-    "creditsNote": "Whole text searched and every hit read in context (permission, courtesy, copyright, reprint, reproduce, credits, acknowledgements, trademark, hyphen-split forms). There is no credits or acknowledgements page. The only hit is the word 'preprinted' in the Navy answer-sheet instructions. No figure or passage is credited to an outside owner. About 2 lines in the transmission-line chapter are in a shifted character encoding.",
+    "creditsNote": "Whole text searched and every hit read in context (permission, courtesy, copyright, reprint, reproduce, credits, acknowledgements, trademark, hyphen-split forms). There is no credits or acknowledgements page. The only hit is the word 'preprinted' in the Navy answer-sheet instructions. No figure or passage is credited to an outside owner. About 2 lines in the transmission-line chapter are in a shifted character encoding. Picture audit, 18 November 2026: every page with a picture (162 pages) was looked at by eye. No picture carries an outside credit, and none is evidently an outside owner's.",
     "creditsReviewed": true
   },
   {
@@ -632,7 +522,7 @@
     "approxBytes": 1568011,
     "readOnly": true,
     "readOnlyNote": "About 19% of its text lines are stored in a font encoding that some PDF text tools read as nonsense, so the assistant is not taught this guide. It reads normally in a PDF viewer.",
-    "creditsNote": "Whole text searched, read with two different PDF text tools, and every hit read in context; there is no credits or acknowledgements page. The 49 pages whose text is in the shifted encoding (PDF pages 13-38 and 95-117) and the pages with no text (149 'this page left blank', 150 figure 2B) were looked at by eye: no credit line, no courtesy line, no copyright notice. 'Credit' and 'reproductions' occur only in the Navy course-completion and answer-sheet boilerplate. Page 24 (1-12) says the National Board of Fire Underwriters prepares tables of safe current ratings, and Table 1-3 that follows gives ampacities with no credit: an uncredited table of plain data. Page 27 names National Electrical Code and Underwriters' Laboratories wire designators, and the reference list on page 127 cites the NEC by name; both name a standard without reproducing it.",
+    "creditsNote": "Whole text searched, read with two different PDF text tools, and every hit read in context; there is no credits or acknowledgements page. The 49 pages whose text is in the shifted encoding (PDF pages 13-38 and 95-117) and the pages with no text (149 'this page left blank', 150 figure 2B) were looked at by eye: no credit line, no courtesy line, no copyright notice. 'Credit' and 'reproductions' occur only in the Navy course-completion and answer-sheet boilerplate. Page 24 (1-12) says the National Board of Fire Underwriters prepares tables of safe current ratings, and Table 1-3 that follows gives ampacities with no credit: an uncredited table of plain data. Page 27 names National Electrical Code and Underwriters' Laboratories wire designators, and the reference list on page 127 cites the NEC by name; both name a standard without reproducing it. Picture audit, 18 November 2026: every page with a picture (83 pages) was looked at by eye. No picture carries an outside credit, and none is evidently an outside owner's.",
     "creditsReviewed": true
   },
   {
@@ -651,7 +541,7 @@
     "approxBytes": 2530628,
     "readOnly": true,
     "readOnlyNote": "About 11% of its text lines are stored in a font encoding that some PDF text tools read as nonsense, so the assistant is not taught this guide. It reads normally in a PDF viewer.",
-    "creditsNote": "Whole text searched, read with two different PDF text tools, and every hit read in context; there is no credits or acknowledgements page. The 53 pages whose text is in the shifted encoding (PDF pages 61-97, 99-113 and 237) were looked at by eye, along with the pages that have no text (all blank): no credit line, no courtesy line, no copyright notice. 'Credit' and 'reproductions' occur only in the Navy course-completion and answer-sheet boilerplate. Figure 2-21 (PDF page 99) photographs a circuit board whose chip carries a maker's part marking; that is a product shown in a Navy photograph, not a credit to an outside owner.",
+    "creditsNote": "Whole text searched, read with two different PDF text tools, and every hit read in context; there is no credits or acknowledgements page. The 53 pages whose text is in the shifted encoding (PDF pages 61-97, 99-113 and 237) were looked at by eye, along with the pages that have no text (all blank): no credit line, no courtesy line, no copyright notice. 'Credit' and 'reproductions' occur only in the Navy course-completion and answer-sheet boilerplate. Figure 2-21 (PDF page 99) photographs a circuit board whose chip carries a maker's part marking; that is a product shown in a Navy photograph, not a credit to an outside owner. Picture audit, 18 November 2026: every page with a picture (200 pages) was looked at by eye. No picture carries an outside credit, and none is evidently an outside owner's.",
     "creditsReviewed": true
   },
   {
@@ -670,7 +560,7 @@
     "approxBytes": 4493836,
     "readOnly": true,
     "readOnlyNote": "About 13% of its text lines are stored in a font encoding that some PDF text tools read as nonsense, so the assistant is not taught this guide. It reads normally in a PDF viewer.",
-    "creditsNote": "Whole text searched, read with two different PDF text tools, and every hit read in context; there is no credits or acknowledgements page. The 64 pages whose text is in the shifted encoding (PDF pages 13-33 and 35-77) were looked at by eye, as were the drawings of the Amplitron (pages 120-121) and the parametric amplifier (pages 129-130): no credit line, no courtesy line, no copyright notice. 'Credit' and 'reproductions' occur only in the Navy course-completion and answer-sheet boilerplate. Page 120 remarks that Amplitron is a trademark of the Raytheon Manufacturing Company; that names a product and reproduces nothing.",
+    "creditsNote": "Whole text searched, read with two different PDF text tools, and every hit read in context; there is no credits or acknowledgements page. The 64 pages whose text is in the shifted encoding (PDF pages 13-33 and 35-77) were looked at by eye, as were the drawings of the Amplitron (pages 120-121) and the parametric amplifier (pages 129-130): no credit line, no courtesy line, no copyright notice. 'Credit' and 'reproductions' occur only in the Navy course-completion and answer-sheet boilerplate. Page 120 remarks that Amplitron is a trademark of the Raytheon Manufacturing Company; that names a product and reproduces nothing. Picture audit, 18 November 2026: every page with a picture (134 pages) was looked at by eye. No picture carries an outside credit, and none is evidently an outside owner's.",
     "creditsReviewed": true
   },
   {
@@ -689,23 +579,7 @@
     "approxBytes": 1739811,
     "readOnly": true,
     "readOnlyNote": "About 2% of its text lines (the chapter 1 review questions and their answers) are stored in a font encoding that some PDF text tools read as nonsense, so the assistant is not taught this guide. It reads normally in a PDF viewer.",
-    "creditsNote": "Whole text searched, read with two different PDF text tools, and every hit read in context; there is no credits or acknowledgements page. The 15 pages that carry lines in the shifted encoding (PDF pages 14, 18-19, 21-22, 38, 45, 48, 53, 57, 66, 70, 74 and 86-87, all review questions or answers) were looked at by eye, and the pages with no text are blank: no credit line, no courtesy line, no copyright notice. 'Credit' and 'reproductions' occur only in the Navy course-completion and answer-sheet boilerplate.",
-    "creditsReviewed": true
-  },
-  {
-    "id": "army-tc-9-524",
-    "title": "Fundamentals of Machine Tools",
-    "category": "mechanical",
-    "publisher": "US Army",
-    "year": 1996,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). TC 9-524, October 1996, front cover (page 1): distribution statement printed in the document: approved for public release; distribution is unlimited.",
-    "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tc9_524.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)",
-    "approxBytes": 7006162,
-    "readOnly": true,
-    "readOnlyNote": "About 19% of its pages (60 of 312, mostly the appendix tables and the index) are page images with no text layer, so the assistant cannot learn them. It reads normally in a PDF viewer.",
-    "creditsNote": "Text layer searched and every hit read in context; all 60 pages with no text layer (PDF pages 2, 24, 36, 79, 233-240, 242-271, 273-275, 278-279, 299-310 and 312) were looked at by eye, with close-ups of the densest tables: no credit line, no courtesy line, no copyright notice. SAE and Aluminum Association numbers are used only as the names of material grades. 'EZY OUT' appears in the glossary as a trademark name for a screw extractor. Table 7-4 notes that its taper dimensions 'agree essentially' with the American Standard on machine tapers: a comparison, not a credit. Table 7-10 and the other appendix tables (screw-thread limits, drill sizes, conversion data) carry no source line and are plain data. The reference list (page 298) cites Machinery's Handbook (Industrial Press, 1981) among its sources; nothing in the body credits a table or figure to it.",
+    "creditsNote": "Whole text searched, read with two different PDF text tools, and every hit read in context; there is no credits or acknowledgements page. The 15 pages that carry lines in the shifted encoding (PDF pages 14, 18-19, 21-22, 38, 45, 48, 53, 57, 66, 70, 74 and 86-87, all review questions or answers) were looked at by eye, and the pages with no text are blank: no credit line, no courtesy line, no copyright notice. 'Credit' and 'reproductions' occur only in the Navy course-completion and answer-sheet boilerplate. Picture audit, 18 November 2026: every page with a picture (174 pages) was looked at by eye. No picture carries an outside credit, and none is evidently an outside owner's.",
     "creditsReviewed": true
   },
   {
@@ -721,7 +595,7 @@
     "approxBytes": 14371965,
     "readOnly": true,
     "readOnlyNote": "About 22% of its pages (173 of 782: the front lists and warnings, many rotated tables, and most of the appendixes, glossary and index) are page images with no text layer, so the assistant cannot learn them. It reads normally in a PDF viewer.",
-    "creditsNote": "Text layer searched and every hit read in context; all 173 pages with no text layer were looked at by eye (contents, lists and warnings 2-20, the scattered table and figure pages through chapter 13, appendixes B to E at 664-692 and 711-740, glossary, index and the blank DA Form 2028 pages): no credit line, no courtesy line, no copyright notice. Chapter 2 safety text cites OSHA 29 CFR 1910.252, ANSI Z49.1 and NFPA standards by number. Page 32 quotes a short precautionary flux-label wording 'recommended by the American Welding Society'; the same wording, with the same lead-in naming the American Welding Society, is the text of the federal regulation 29 CFR 1910.252(c)(1)(iv)(C) (read on ecfr.gov, 18 November 2026), so the manual is quoting the regulation. Table 8-2 lists AWS filler-metal specification numbers and titles, its footnote only spelling out A.W.S.; tables 10-13 to 10-18 give flux-cored electrode classification requirements with no source line; both are uncredited data. The appendix D supply tables name makers' products (for example Eutectic Co. and Ideal Industries) as stock identifiers, not as credits. Page 46 gives a Castolin Institute contact for one machine, a contact note only.",
+    "creditsNote": "Text layer searched and every hit read in context; all 173 pages with no text layer were looked at by eye (contents, lists and warnings 2-20, the scattered table and figure pages through chapter 13, appendixes B to E at 664-692 and 711-740, glossary, index and the blank DA Form 2028 pages): no credit line, no courtesy line, no copyright notice. Chapter 2 safety text cites OSHA 29 CFR 1910.252, ANSI Z49.1 and NFPA standards by number. Page 32 quotes a short precautionary flux-label wording 'recommended by the American Welding Society'; the same wording, with the same lead-in naming the American Welding Society, is the text of the federal regulation 29 CFR 1910.252(c)(1)(iv)(C) (read on ecfr.gov, 18 November 2026), so the manual is quoting the regulation. Table 8-2 lists AWS filler-metal specification numbers and titles, its footnote only spelling out A.W.S.; tables 10-13 to 10-18 give flux-cored electrode classification requirements with no source line; both are uncredited data. The appendix D supply tables name makers' products (for example Eutectic Co. and Ideal Industries) as stock identifiers, not as credits. Page 46 gives a Castolin Institute contact for one machine, a contact note only. Picture audit, 18 November 2026: every page with a picture (480 pages) was looked at by eye. No picture carries an outside credit, and none is evidently an outside owner's.",
     "creditsReviewed": true
   },
   {
