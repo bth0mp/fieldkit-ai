@@ -63,9 +63,23 @@ describe('thirdPartyMentions', () => {
     expect(thirdPartyMentions('You may permit the copy to dry. The credits of the course are listed in a table; do not copy it.')).toEqual([]);
   });
 
+  it('flags any permission, however worded, but not permit or permitted', () => {
+    expect(thirdPartyMentions('with the permission of the commanding officer')).toHaveLength(1);
+    expect(thirdPartyMentions('Permissions are listed here')).toHaveLength(1);
+    expect(thirdPartyMentions('Copyrighted material')).toHaveLength(1);
+    expect(thirdPartyMentions('Some copyrights apply')).toHaveLength(1);
+    expect(thirdPartyMentions('Entry is permitted. You may permit it. Make a copy.')).toEqual([]);
+  });
+
+  const many = Array.from({ length: 12 }, (_, i) => `${'x'.repeat(200)} courtesy of party ${i}`).join('\n');
+
   it('returns at most five snippets', () => {
-    const text = Array.from({ length: 9 }, (_, i) => `${'x'.repeat(200)} courtesy of party ${i}`).join('\n');
-    expect(thirdPartyMentions(text)).toHaveLength(5);
+    expect(thirdPartyMentions(many)).toHaveLength(5);
+  });
+
+  it('reports the total in the failure text when there are more than five mentions', () => {
+    expect(thirdPartyProblem({}, { text: many, hasText: true })).toMatch('(12 mentions in all');
+    expect(thirdPartyProblem({}, { text: 'Courtesy of Acme', hasText: true })).not.toMatch('mentions in all');
   });
 });
 

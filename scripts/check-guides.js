@@ -155,19 +155,19 @@ function releaseStatementProblem(candidate, headText, hasText) {
   return hasReleaseStatement(headText) ? null : 'release statement not found in the document';
 }
 
-// pdftotext wraps lines mid-phrase, so words are joined with \s+ (any run of spaces and line breaks).
-const wordsOf = phrase => phrase.split(' ').join('\\s+');
+// A tripwire for review by eye: wide on purpose, since a miss is worse than a false alarm. Whole words only;
+// pdftotext wraps lines mid-phrase, so words inside a phrase are joined with \s+.
 const THIRD_PARTY_PATTERN = new RegExp([
-  'copyright', '©', 'all rights reserved', 'courtesy of', 'by permission', 'permission to reproduce', 'permission of',
-  'permission to use', 'gratefully acknowledged',
-].map(wordsOf).concat([
-  '\\breprinted\\s+(?:from|with)', '\\breproduced\\s+(?:from|with|by)', '^[ \\t\\r]*credits[ \\t\\r]*$', 'acknowledg(?:e)?ments?',
-]).join('|'), 'gim');
+  '\\bpermissions?\\b', '\\bcourtesy\\b', '\\bcopyright(?:s|ed)?\\b', '©', '\\ball\\s+rights\\s+reserved\\b',
+  '\\b(?:reprinted|reproduced)\\s+(?:from|with|by)\\b', '^[ \\t\\r]*credits[ \\t\\r]*$',
+  '\\backnowledg(?:e)?ments?\\b', '\\bgratefully\\s+acknowledged\\b',
+].join('|'), 'gim');
 const SNIPPET_RADIUS = 60;
 const MAX_SNIPPETS = 5;
 
-/** Up to five short snippets around wording that suggests third-party material, searched in the whole text. */
-function thirdPartyMentions(text) {
+/** Up to five short snippets around wording that suggests third-party material, plus the total number of matches. */
+function scanThirdParty(text) {
+  const total = [...text.matchAll(new RegExp(THIRD_PARTY_PATTERN.source, THIRD_PARTY_PATTERN.flags))].length;
   const pattern = new RegExp(THIRD_PARTY_PATTERN.source, THIRD_PARTY_PATTERN.flags);
   const snippets = [];
   let match;
@@ -176,8 +176,10 @@ function thirdPartyMentions(text) {
     snippets.push(raw.replace(/\s+/g, ' ').trim());
     pattern.lastIndex = match.index + match[0].length + SNIPPET_RADIUS;
   }
-  return snippets;
+  return { snippets, total };
 }
+
+const thirdPartyMentions = text => scanThirdParty(text).snippets;
 
 const quoted = s => `"${s}"`;
 
@@ -185,9 +187,10 @@ const quoted = s => `"${s}"`;
 function thirdPartyProblem(record, { text, hasText }) {
   if (record && record.creditsReviewed === true) return null;
   if (!hasText) return 'scanned, third-party credits must be confirmed by eye';
-  const snippets = thirdPartyMentions(text);
+  const { snippets, total } = scanThirdParty(text);
   if (!snippets.length) return null;
-  return `third-party material mentioned, review needed: ${snippets.map(quoted).join(' | ')}`;
+  const more = total > snippets.length ? ` (${total} mentions in all, read the whole document)` : '';
+  return `third-party material mentioned, review needed: ${snippets.map(quoted).join(' | ')}${more}`;
 }
 
 /** Strips helper fields, sorts by category order then title. */
