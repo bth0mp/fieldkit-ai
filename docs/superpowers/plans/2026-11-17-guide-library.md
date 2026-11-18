@@ -364,4 +364,16 @@ The owner ruled on the five open catalogue questions the morning after the build
 - [x] **Step 5: Exact page counts.** The checker subtracts form feeds that are text, not page breaks.
 - [x] **Step 6: Final checks**: tsc, eslint, depcruise, knip, the whole Jest suite, and `--verify` of every guide.
 
-Still open, for the owner: a by-eye audit of about 2,750 pages with scanned figures in the guides whose pictures were not all looked at (a credit can sit inside a picture, and a maker's catalogue photograph carries none); a phone test of teaching a Navy module, which the checker's PDF tool misreads and the app's does not; the close calls listed in the shared notes.
+---
+
+### Task 12: The picture-page audit (added 18 November 2026)
+
+A credit can sit inside a picture, where a text search cannot see it. The owner asked for every picture page to be looked at.
+
+- [x] **Step 1: Six readers look at every page with a picture** in the 42 guides whose pictures had not all been looked at. 4,340 pages, none unreadable.
+- [x] **Step 2: One adjudicator looks at every flagged picture** (87 in 21 guides) and rules on each guide against one standard: 9 out, 9 cleared, 3 held for the owner.
+- [x] **Step 3: Apply.** Twelve guides come out (the three held ones on the stricter reading), each with its reason in `catalog/REJECTED.md`. Thirty cleared guides get the audit recorded in their `creditsNote`. Result: 54 to 42 guides.
+- [x] **Step 4: Record the standard** in the design doc, section "The pictures are part of the proof".
+- [x] **Step 5: Verify** every remaining guide and run the catalogue and library screen tests.
+
+Still open, for the owner: the three held guides (field sanitation teams, military mountaineering, field waste management); a phone test of teaching a Navy module, which the checker's PDF tool misreads and the app's does not; the close calls listed in the shared notes.

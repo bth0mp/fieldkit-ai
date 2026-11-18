@@ -116,6 +116,32 @@ What counts as proof (designer's call, deliberately strict):
 This makes the first catalogue mostly military manuals (Army, Navy, Marine Corps, Coast Guard), which is where
 100 or more provable guides are. Civilian guides join as their statements are found.
 
+### The pictures are part of the proof (picture audit, 18 November 2026)
+
+A text search cannot see a credit printed inside a picture, a copyright notice held only in an image's embedded
+metadata, or a maker's catalogue photograph, which carries no credit at all. So no guide is listed until
+someone has looked by eye at every page that carries a picture, and its `creditsNote` says so. The audit that
+established this looked at 4,340 pages of 42 listed guides and removed twelve. What it settled:
+
+- **A credit in a picture or in image metadata counts like a printed one.** "Reproduced by courtesy of", "Courtesy
+  of", a photographer's copyright notice in the image's metadata: out.
+- **A labelled extract of another body's document is reproduced.** Pages a manual labels as an extract of a NATO
+  agreement, or scanned pages that are visibly a standards body's own (its typeface, section heads and
+  markers): out. NATO, ISO, IEC, ANSI, IEEE and NFPA are outside owners; a body of the United States government
+  is not, and a state agency named as the cooperating agency on a federal map does not own the map.
+- **Issue equipment against commercial products.** The services photograph their own issue items as cut-outs on
+  blank backgrounds; with no maker's branding or catalogue styling these are the service's own. A cut-out of a
+  commercial product that shows the maker's branding, model naming, sales callouts or a rating plate as its
+  subject is the maker's picture: out. A cut-out of a commercial product with nothing in the picture to settle
+  whose it is goes to the owner, and stays out until the owner rules.
+- **A maker's name on a thing is not a maker's picture of the thing.** A nameplate or logo on equipment in the
+  manual's own drawing or photograph is fine. A drawing whose lettering, callouts or style show it was lifted
+  from the maker's literature is out.
+- **A redrawn scale or chart is the manual's own; another body's artwork carried over unchanged is not.**
+
+Newer guides are where this bites: recent agency layouts drop in web product shots and stock renders with no
+credit. Older line art and field photographs were clean every time.
+
 ### Owner's rulings, 18 November 2026
 
 The overnight build drew five lines strictly because the owner could not be asked. The owner ruled on each the
