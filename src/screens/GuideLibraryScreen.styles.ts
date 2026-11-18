@@ -57,6 +57,7 @@ export const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
     marginTop: SPACING.md,
   },
   teachLabel: { ...TYPOGRAPHY.bodySmall, color: colors.textSecondary },
+  scanned: { marginTop: SPACING.sm },
   actions: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, marginTop: SPACING.md },
   error: { ...TYPOGRAPHY.bodySmall, color: colors.error, marginTop: SPACING.sm },
   details: { ...TYPOGRAPHY.metaSmall, color: colors.textSecondary, marginTop: SPACING.md },

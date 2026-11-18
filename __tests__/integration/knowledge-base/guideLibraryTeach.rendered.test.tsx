@@ -10,6 +10,8 @@
  * op-sqlite on node:sqlite.
  */
 import { createHash } from 'crypto';
+import { readdirSync } from 'fs';
+import { join } from 'path';
 import { setupChatScreen } from '../../harness/chatHarness';
 import { CATALOGUE_URL } from '../../../src/features/guideLibrary/catalogue';
 import { SLOW_SEARCH_TAUGHT_GUIDES } from '../../../src/features/guideLibrary/guideLibraryService';
@@ -157,10 +159,12 @@ describe('Guide library teaching (rendered)', () => {
   }, 40000);
 
   it('a guide marked scanned cannot be taught', async () => {
-    const h = await openLibrary([SCANNED]);
+    const h = await openLibrary([SCANNED, KNOTS]);
     const { view } = h;
+    // Said before downloading, and only for the scanned guide.
+    expect(view.getAllByText('Scanned, read only')).toHaveLength(1);
     await downloadGuide(h, view, SCANNED, 'scanned pages');
-    expect(view.getByText('Scanned, read only')).toBeTruthy();
+    expect(view.getAllByText('Scanned, read only')).toHaveLength(1);
     expect(view.queryByTestId('guide-teach-test-scanned')).toBeNull();
     expect(view.queryByText('Assistant knows this')).toBeNull();
   }, 40000);
@@ -176,6 +180,55 @@ describe('Guide library teaching (rendered)', () => {
     expect(switchOf(view, 'test-blank').props.value).toBe(false);
     expect(view.getByTestId('guide-open-test-blank')).toBeTruthy();
     expect(await exists(fs, `${dir}/test-blank.pdf`)).toBe(true);
+    expect(await docsInFieldGuides()).toEqual([]);
+  }, 40000);
+
+  it('a teach that fails inside the app shows the fixed message, not the internal error', async () => {
+    const h = await openLibrary([KNOTS]);
+    const { rtl, view, boundary } = h;
+    await downloadGuide(h, view, KNOTS, BOWLINE);
+    boundary.llama!.scriptEmbedding(() => { throw new Error('Embedding failed (native error) at ggml_compute'); });
+
+    rtl.fireEvent(switchOf(view, 'test-knots'), 'valueChange', true);
+    await rtl.waitFor(() => { expect(view.getByText("Couldn't teach this guide to the assistant. Try again.")).toBeTruthy(); }, { timeout: 6000 });
+    expect(view.queryByText(/native error|ggml/)).toBeNull();
+    expect(switchOf(view, 'test-knots').props.value).toBe(false);
+    expect(await docsInFieldGuides()).toEqual([]);
+  }, 40000);
+
+  it('a guide whose name is taken by another document in Field guides is not counted as taught', async () => {
+    const h = await openLibrary([KNOTS], async fs => {
+      // The user added their own file under the same name to the Field guides knowledge base.
+      const other = `${fs.DocumentDirectoryPath}/picked/knots.pdf`;
+      await (fs.module.writeFile as (p: string, c: string) => Promise<void>)(other, 'My own notes on the bowline.');
+      await rag().indexDocument({ projectId: 'field-guides', filePath: other, fileName: 'Test knots (Test publisher).pdf', fileSize: 28, bundled: true });
+    });
+    const { rtl, view } = h;
+    await downloadGuide(h, view, KNOTS, BOWLINE);
+
+    rtl.fireEvent(switchOf(view, 'test-knots'), 'valueChange', true);
+    await rtl.waitFor(() => { expect(view.getByText('A document with this name is already in Field guides. Remove it there first.')).toBeTruthy(); }, { timeout: 6000 });
+    expect(switchOf(view, 'test-knots').props.value).toBe(false);
+    expect(view.getByText('1 guides · 1 downloaded · 0 taught')).toBeTruthy();
+  }, 40000);
+
+  it('removing a guide while it is being switched off leaves it removed', async () => {
+    const h = await openLibrary([KNOTS]);
+    const { rtl, view, fs, dir } = h;
+    await downloadGuide(h, view, KNOTS, BOWLINE);
+    await setTaught(h, view, 'test-knots', true);
+
+    await rtl.act(async () => {
+      rtl.fireEvent(switchOf(view, 'test-knots'), 'valueChange', false);
+      rtl.fireEvent.press(view.getByTestId('guide-remove-test-knots'));
+    });
+    await rtl.waitFor(() => { expect(view.getByTestId('guide-download-test-knots')).toBeTruthy(); }, { timeout: 4000 });
+    // Let anything still running finish: the row must not come back as downloaded with no file.
+    await rtl.act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
+    expect(view.getByTestId('guide-download-test-knots')).toBeTruthy();
+    expect(view.queryByTestId('guide-open-test-knots')).toBeNull();
+    expect(view.getByText('1 guides · 0 downloaded · 0 taught')).toBeTruthy();
+    expect(await exists(fs, `${dir}/test-knots.pdf`)).toBe(false);
     expect(await docsInFieldGuides()).toEqual([]);
   }, 40000);
 
@@ -237,6 +290,27 @@ describe('Guide library teaching (rendered)', () => {
     const { seedFieldGuides } = require('../../../src/features/fieldGuides/fieldGuides');
     await seedFieldGuides();
     expect((await docsInFieldGuides()).map(d => d.name)).toEqual(['Test knots (Test publisher).pdf']);
+  }, 40000);
+
+  it('teaching before the first-launch seed made the project leaves the bundled guides for the seed to add', async () => {
+    // A launch whose seed never got as far as creating the project (nothing saved).
+    const h = await openLibrary([KNOTS]);
+    const { view, boundary } = h;
+    await downloadGuide(h, view, KNOTS, BOWLINE);
+    await setTaught(h, view, 'test-knots', true);
+    const { useProjectStore } = require('../../../src/stores/projectStore');
+    expect(useProjectStore.getState().projects.filter((p: { id: string }) => p.id === 'field-guides')).toHaveLength(1);
+
+    // The next launch's seed adds every shipped guide to the project the teach created, and no second project.
+    const shipped = readdirSync(join(__dirname, '../../../android/app/src/main/assets/guides'));
+    for (const file of shipped) boundary.fs!.seedAsset(`guides/${file}`, `Shipped guide ${file}.`);
+    const { seedFieldGuides } = require('../../../src/features/fieldGuides/fieldGuides');
+    await seedFieldGuides();
+    const names = (await docsInFieldGuides()).map(d => d.name);
+    expect(names).toContain('Test knots (Test publisher).pdf');
+    expect(names).toContain('Survival (US Army ATP 3-50.21).pdf');
+    expect(names).toHaveLength(shipped.length + 1);
+    expect(useProjectStore.getState().projects.filter((p: { id: string }) => p.id === 'field-guides')).toHaveLength(1);
   }, 40000);
 
   it('the slow-search note appears at the threshold', async () => {

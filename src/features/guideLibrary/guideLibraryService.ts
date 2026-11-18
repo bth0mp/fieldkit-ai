@@ -21,6 +21,12 @@ const OPEN_FAILED = "Couldn't open this guide.";
 const REMOVE_FAILED = "Couldn't remove this guide. Try again.";
 const TEACH_FAILED = "Couldn't teach this guide to the assistant. Try again.";
 const UNTEACH_FAILED = "Couldn't take this guide out of the assistant's knowledge. Try again.";
+const NAME_CLASH = 'A document with this name is already in Field guides. Remove it there first.';
+/** What ragService.indexDocument says, for the user, when a file has no text it can index. Shown as is. */
+const EXPLAINED_RAG_ERRORS = new Set([
+  'This looks like a scanned PDF with no text layer, so there was no text to extract (OCR is not available).',
+  'Document produced no indexable content',
+]);
 
 /** Taught guides at which the screen warns that answers get slower. Tune after measuring on the phone. */
 export const SLOW_SEARCH_TAUGHT_GUIDES = 10;
@@ -120,17 +126,25 @@ async function runInit(): Promise<boolean> {
   return true;
 }
 
+/** Paths of the documents in the Field guides knowledge base. */
+async function taughtPaths(): Promise<Set<string>> {
+  return new Set((await ragService.getDocumentsByProject(FIELD_GUIDES_PROJECT_ID)).map(d => d.path));
+}
+
 /** Mark each downloaded guide taught or not by whether the knowledge base holds a document with its path. */
 async function applyKnowledgeBase(): Promise<void> {
+  // A teach, un-teach or remove that ends while the knowledge base is read is newer than what was read.
+  const before = store.getState().guides;
   let paths: Set<string>;
   try {
-    paths = new Set((await ragService.getDocumentsByProject(FIELD_GUIDES_PROJECT_ID)).map(d => d.path));
+    paths = await taughtPaths();
   } catch (error) {
     logger.warn('[GuideLibrary] knowledge base unreadable, keeping what is shown', error);
     return;
   }
   for (const id of Object.keys(downloaded)) {
     const now = store.getState().guides[id];
+    if (now !== before[id]) continue;
     // A guide waiting to be taught (or still downloading) is settled by that work, not here.
     if (now?.phase !== 'downloaded' && now?.phase !== 'taught') continue;
     const phase: GuidePhase = paths.has(guidePath(id)) ? 'taught' : 'downloaded';
@@ -295,14 +309,26 @@ async function teachNow(id: string, entry: GuideEntry): Promise<void> {
     });
     setGuide(id, { phase: 'taught' });
   } catch (e) {
-    const message = e instanceof Error ? e.message : '';
-    if (message.includes('is already in the knowledge base')) {
-      setGuide(id, { phase: 'taught' });
-      return;
-    }
     logger.warn('[GuideLibrary] teach failed', id, e);
-    // The knowledge base's own message says why (a scanned PDF, no indexable text).
-    setGuide(id, { phase: 'downloaded', error: message || TEACH_FAILED });
+    const error = await teachFailure(id, e);
+    setGuide(id, error ? { phase: 'downloaded', error } : { phase: 'taught' });
+  }
+}
+
+/**
+ * The words for the user when indexing a guide threw, or null when the guide is in fact taught. Only messages
+ * written for the user reach the row; anything else is the fixed failure text (the raw error is logged).
+ */
+async function teachFailure(id: string, e: unknown): Promise<string | null> {
+  const message = e instanceof Error ? e.message : '';
+  if (EXPLAINED_RAG_ERRORS.has(message)) return message;
+  if (!message.endsWith('is already in the knowledge base')) return TEACH_FAILED;
+  // indexDocument refuses a clash on path or on name: only this guide's own path means it is taught.
+  try {
+    return (await taughtPaths()).has(guidePath(id)) ? null : NAME_CLASH;
+  } catch (error) {
+    logger.warn('[GuideLibrary] knowledge base unreadable after a teach', id, error);
+    return TEACH_FAILED;
   }
 }
 
@@ -332,6 +358,8 @@ async function deleteFromKnowledgeBase(id: string): Promise<boolean> {
 async function unteach(id: string): Promise<void> {
   if (phaseOf(id) !== 'taught') return;
   const ok = await deleteFromKnowledgeBase(id);
+  // A remove may have run meanwhile: a guide whose file is gone must not come back as downloaded.
+  if (phaseOf(id) !== 'taught' || !downloaded[id]) return;
   setGuide(id, ok ? { phase: 'downloaded' } : { phase: 'taught', error: UNTEACH_FAILED });
 }
 

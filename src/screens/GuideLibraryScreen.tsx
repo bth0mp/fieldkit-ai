@@ -25,20 +25,21 @@ function sectionsFor(catalogue: Catalogue, query: string): GuideSection[] {
     .filter(s => s.data.length > 0);
 }
 
-/** The "Assistant knows this" switch for a downloaded guide, or why a scanned guide cannot be taught. */
+/** The "Assistant knows this" switch for a downloaded guide that has a text layer. */
 const TeachControl: React.FC<{ entry: GuideEntry; state: GuideState; styles: Styles }> = ({ entry, state, styles }) => {
   const { colors } = useTheme();
   const teaching = state.phase === 'teaching';
   return (
     <View style={styles.teach}>
-      <Text style={styles.teachLabel}>{entry.hasText ? 'Assistant knows this' : 'Scanned, read only'}</Text>
-      {entry.hasText && <Switch
+      <Text style={styles.teachLabel}>Assistant knows this</Text>
+      <Switch
         testID={`guide-teach-${entry.id}`}
+        accessibilityLabel="Assistant knows this"
         value={teaching || state.phase === 'taught'}
         disabled={teaching}
         onValueChange={on => { if (on) guideLibraryService.teach(entry.id); else guideLibraryService.unteach(entry.id); }}
         trackColor={{ false: colors.border, true: colors.primary }}
-      />}
+      />
     </View>
   );
 };
@@ -63,7 +64,9 @@ const GuideRow: React.FC<RowProps> = ({ entry, state, expanded, onToggle, styles
         {state.phase === 'downloading' && <Text style={styles.progress}>{`${Math.round((state.progress ?? 0) * 100)}%`}</Text>}
         <Icon name={expanded ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textMuted} />
       </View>
-      {hasFile && <TeachControl entry={entry} state={state} styles={styles} />}
+      {/* Said before downloading too, so the user knows a scanned guide can be read but not taught. */}
+      {!entry.hasText && <Text style={[styles.teachLabel, styles.scanned]}>Scanned, read only</Text>}
+      {hasFile && entry.hasText && <TeachControl entry={entry} state={state} styles={styles} />}
       {hasFile && (
         <View style={styles.actions}>
           <Button title="Open" size="small" variant="outline" testID={`guide-open-${id}`}

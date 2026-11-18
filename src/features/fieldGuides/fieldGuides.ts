@@ -46,8 +46,11 @@ async function projectStoreHydrated(): Promise<void> {
   });
 }
 
+/** Creates the Field guides project unless it exists (createProject would add a second one with the same id). */
 function createFieldGuidesProject(): void {
-  useProjectStore.getState().createProject({
+  const projects = useProjectStore.getState();
+  if (projects.getProject(FIELD_GUIDES_PROJECT_ID)) return;
+  projects.createProject({
     id: FIELD_GUIDES_PROJECT_ID,
     name: 'Field guides',
     description: 'Public-domain survival, first aid, sanitation and solar power guides',
@@ -57,14 +60,17 @@ function createFieldGuidesProject(): void {
 }
 
 /**
- * If the Field guides project is missing, creates it and marks every bundled guide as handled in the seed's
- * saved state, so the first-launch seed does not re-add guides to a project the user had deleted.
+ * If the Field guides project is missing, creates it. When the user had deleted it, every bundled guide is
+ * marked as handled in the seed's saved state, so the first-launch seed does not re-add guides they removed;
+ * when the seed never got as far as creating it, the seed adds the bundled guides on a later launch.
  */
 export async function ensureFieldGuidesProject(): Promise<void> {
   await projectStoreHydrated();
   if (useProjectStore.getState().getProject(FIELD_GUIDES_PROJECT_ID)) return;
+  const state = await readState();
   createFieldGuidesProject();
-  await saveState({ projectCreated: true, done: FIELD_GUIDES.map(g => g.asset) });
+  const done = state.projectCreated ? FIELD_GUIDES.map(g => g.asset) : state.done;
+  await saveState({ projectCreated: true, done });
 }
 
 /** Copy one guide out of the app bundle. A partial copy (app killed mid-copy) never reaches `dest`. */
@@ -93,6 +99,7 @@ export async function seedFieldGuides(): Promise<void> {
     if (state.projectCreated) return; // the user deleted the project
     // Throws before any project exists when this build ships no guides (iOS has none bundled).
     await copyGuide(todo[0].asset, `${dir}/${todo[0].asset}`);
+    // Teaching a library guide may have created it while the copy ran; then this does nothing.
     createFieldGuidesProject();
     state.projectCreated = true;
     await saveState(state);
