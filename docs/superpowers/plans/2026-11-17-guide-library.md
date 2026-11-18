@@ -165,11 +165,11 @@ it('describes a file by size and sha256 and refuses a non-PDF', async () => {
 
 This is research, not code. Its test is the checker and the Task 1 unit test.
 
-- [ ] **Step 1: Collect candidates**, at least three per category where they exist. Start where proof is printed in the document: Army ATP, TC, TM and FM publications on armypubs.army.mil marked "approved for public release; distribution is unlimited" (medical, field sanitation, map reading and land navigation, engineering, carpentry, plumbing, electrical, vehicle recovery, cold-weather and mountain operations), the remaining Navy NEETS modules and NAVEDTRA rate training manuals (Builder, Construction Electrician, Utilitiesman, Hospital Corpsman), Marine Corps and Coast Guard manuals. Then civilian agencies whose document or site states public domain (FEMA, CDC, USDA, NOAA/NWS, USGS, NPS, EPA). Skip the six guides already bundled (`scripts/gen-notices.js` lists them).
-- [ ] **Step 2: For each candidate, read the document's front matter** and write the `licenceNote` from what it says, following the spec's proof and source rules. Anything that fails goes to `catalog/REJECTED.md` with its reason.
-- [ ] **Step 3: Run `node scripts/check-guides.js`.** Expected: every candidate prints `added` or a `FAILED` reason. Fix or reject each failure.
-- [ ] **Step 4: Run the Task 1 test file.** Expected: PASS with at least 30 guides.
-- [ ] **Step 5: Commit** in batches of about ten guides: `feat(guides): add <n> checked <category> guides to the catalogue`
+- [x] **Step 1: Collect candidates**, at least three per category where they exist. Start where proof is printed in the document: Army ATP, TC, TM and FM publications on armypubs.army.mil marked "approved for public release; distribution is unlimited" (medical, field sanitation, map reading and land navigation, engineering, carpentry, plumbing, electrical, vehicle recovery, cold-weather and mountain operations), the remaining Navy NEETS modules and NAVEDTRA rate training manuals (Builder, Construction Electrician, Utilitiesman, Hospital Corpsman), Marine Corps and Coast Guard manuals. Then civilian agencies whose document or site states public domain (FEMA, CDC, USDA, NOAA/NWS, USGS, NPS, EPA). Skip the six guides already bundled (`scripts/gen-notices.js` lists them).
+- [x] **Step 2: For each candidate, read the document's front matter** and write the `licenceNote` from what it says, following the spec's proof and source rules. Anything that fails goes to `catalog/REJECTED.md` with its reason.
+- [x] **Step 3: Run `node scripts/check-guides.js`.** Expected: every candidate prints `added` or a `FAILED` reason. Fix or reject each failure.
+- [x] **Step 4: Run the Task 1 test file.** Expected: PASS with at least 30 guides.
+- [x] **Step 5: Commit** in batches of about ten guides: `feat(guides): add <n> checked <category> guides to the catalogue`
 
 ---
 
@@ -232,7 +232,7 @@ This is research, not code. Its test is the checker and the Task 1 unit test.
 - Exact copy: header `Guide library`; search placeholder `Search guides`; summary `{n} guides · {d} downloaded · {t} taught`; buttons `Download`, `Open`, `Remove`; errors `This file doesn't match the checked copy`, `Couldn't download this guide. Try again.`, `No connection. Try again when you're online.`
 - Test ids: `guide-library-search`, `guide-library-refresh`, `guide-row-<id>`, `guide-download-<id>`, `guide-open-<id>`, `guide-remove-<id>`.
 
-- [ ] **Step 1: Write the failing rendered tests.** Use `setupChatScreen({ engine: 'llama', pdf: true, sqlite: true })` for the boundary, the navigation mock and `openRoute` pattern from `fieldGuidesAnswer.rendered.test.tsx`, and render `GuideLibraryScreen`. A helper builds a catalogue of two test guides (`test-knots` titled `Test knots`, `test-water` titled `Test water`, both with publisher `Test publisher`) whose `bytes` and `sha256` are computed from their fake bodies, and seeds it at `CATALOGUE_URL`.
+- [x] **Step 1: Write the failing rendered tests.** Use `setupChatScreen({ engine: 'llama', pdf: true, sqlite: true })` for the boundary, the navigation mock and `openRoute` pattern from `fieldGuidesAnswer.rendered.test.tsx`, and render `GuideLibraryScreen`. A helper builds a catalogue of two test guides (`test-knots` titled `Test knots`, `test-water` titled `Test water`, both with publisher `Test publisher`) whose `bytes` and `sha256` are computed from their fake bodies, and seeds it at `CATALOGUE_URL`.
   - `shows the bundled catalogue when there is no connection`: nothing seeded; before the screen is rendered, expect `boundary.fs.module.downloadFile` not to have been called (the app fetches nothing until the library opens); after rendering, expect the summary to start with `${bundledCatalogue.guides.length} guides` and a category heading to be visible.
   - `a refreshed catalogue adds guides, and a malformed one changes nothing`: seed the two-guide catalogue, open the screen, expect `test-knots`'s title; seed `'{ not json'` at `CATALOGUE_URL`, press `guide-library-refresh`, expect the title still shown.
   - `downloads a guide, opens it and removes it`: press `guide-download-test-knots`; expect `guide-open-test-knots`; press it and expect the viewer mock (`@react-native-documents/viewer`, mocked in `jest.setup.ts`) called with `{ uri: 'file:///docs/guide-library/test-knots.pdf', mimeType: 'application/pdf', grantPermissions: 'read' }`; press `guide-remove-test-knots`; expect the Download button back and the file gone.
@@ -240,15 +240,15 @@ This is research, not code. Its test is the checker and the Task 1 unit test.
   - `a download cut off part-way leaves nothing behind and can be retried`: serve `{ failAfter: 'partial' }`; expect `No connection. Try again when you're online.` and no `.part` file; re-seed the full body, press Download, expect Open. Also: a `test-water.pdf.part` file seeded into `/docs/guide-library` before the screen mounts is gone after `init`.
   - `a second tap while downloading does not start a second download`: press Download twice; expect `boundary.fs.module.downloadFile` called once for that URL.
   - `search filters by title and publisher`.
-- [ ] **Step 2: Run.** Expected: FAIL, screen not found.
-- [ ] **Step 3: Implement the store and service.** Decisions:
+- [x] **Step 2: Run.** Expected: FAIL, screen not found.
+- [x] **Step 3: Implement the store and service.** Decisions:
   - `init` loads the saved catalogue file if it parses, else `bundledCatalogue`; loads `downloaded`; deletes every `*.part` in `GUIDE_LIBRARY_DIR`; drops saved entries whose file is missing; sets each remaining guide to `downloaded`.
   - `refresh` downloads `CATALOGUE_URL` to `catalogue.json.part` with `RNFS.downloadFile`, reads and parses it with `parseCatalogue`; on success renames it over `catalogue.json` and publishes it; on any failure deletes the part file and changes nothing. It never throws.
   - `download` ignores a guide that is not in phase `none`; verifies status 200, then `bytes` (`RNFS.stat`) and `RNFS.hash(path, 'sha256')` against the entry; renames on success; deletes the part file on every failure. A rejected download promise maps to the no-connection message.
   - Progress comes from `downloadFile`'s `progress` callback with `progressDivider: 5`.
-- [ ] **Step 4: Implement the screen** as a `SectionList` grouped by category, modelled on `src/screens/OpenSourceLicensesScreen.tsx` (header, expandable rows). It calls `guideLibraryService.init()` then `refresh()` on mount and reads everything from the store. A row shows title, then `publisher · size · licence`; expanded, it adds year, pages, `licenceNote` and the URL as selectable text. Empty categories are hidden.
-- [ ] **Step 5: Run the test file.** Expected: PASS.
-- [ ] **Step 6: Checks and commit.** `feat(guides): guide library screen with checked downloads`
+- [x] **Step 4: Implement the screen** as a `SectionList` grouped by category, modelled on `src/screens/OpenSourceLicensesScreen.tsx` (header, expandable rows). It calls `guideLibraryService.init()` then `refresh()` on mount and reads everything from the store. A row shows title, then `publisher · size · licence`; expanded, it adds year, pages, `licenceNote` and the URL as selectable text. Empty categories are hidden.
+- [x] **Step 5: Run the test file.** Expected: PASS.
+- [x] **Step 6: Checks and commit.** `feat(guides): guide library screen with checked downloads`
 
 ---
 
