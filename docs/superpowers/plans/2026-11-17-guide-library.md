@@ -338,14 +338,15 @@ This is research, not code. Its test is the checker and the Task 1 unit test.
 - Modify: `catalog/candidates.json`, `catalog/guides.json`, `catalog/REJECTED.md`
 
 - [ ] **Step 1: Repeat Task 3's steps** in batches of about ten until the catalogue has at least 100 guides, then keep going while time allows. Fill thin categories first. Commit each batch.
-- [ ] **Step 2: Run `node scripts/check-guides.js --verify`.** Expected: exit 0. Remove or fix any guide that fails.
-- [ ] **Step 3: Set `updated`** in `catalog/guides.json` to the date of the last batch and commit.
+  - **Not reached (2026-11-18): 36 guides.** Five batches, a cleanup and two text checks ran. About 400 documents were examined and 121 proposed; licence reviews, the third-party scan, the second-copy rule and the readability check removed the rest. Every removal has its reason in `catalog/REJECTED.md`; candidates held for the owner's decisions are in `catalog/pending/`. Growing the list depends on those decisions (see the morning report in the shared notes).
+- [x] **Step 2: Run `node scripts/check-guides.js --verify`.** Expected: exit 0. Remove or fix any guide that fails.
+- [x] **Step 3: Set `updated`** in `catalog/guides.json` to the date of the last batch and commit.
 
 ---
 
 ### Task 10: Final checks and hand-over
 
-- [ ] **Step 1: Run** `npx tsc --noEmit`, `npx eslint src __tests__ scripts/check-guides.js`, `npm run depcruise`, `npm run knip`. Expected: clean, apart from the one existing `App.tsx` warning.
-- [ ] **Step 2: Run** `npx jest --findRelatedTests $(git diff --name-only 8ac90f404 -- '*.ts' '*.tsx' '*.js')`. Expected: PASS. Rerun a timed-out heavy suite alone with `--runInBand --testTimeout=40000` before treating it as real.
-- [ ] **Step 3: Update the shared notes file** `C:\Users\bth0m\AppData\Roaming\Claude\side-session-notes\local_6f40378b-e99c-44e6-abbf-796c9a64ce81\field-guides.md`: commits, guide count per category, what was skipped, and what still needs the owner (phone check, merge and push so the catalogue URL goes live, release).
-- [ ] **Step 4: Stop.** Do not push or merge.
+- [x] **Step 1: Run** `npx tsc --noEmit`, `npx eslint src __tests__ scripts/check-guides.js`, `npm run depcruise`, `npm run knip`. Expected: clean, apart from the one existing `App.tsx` warning.
+- [x] **Step 2: Run** `npx jest --findRelatedTests $(git diff --name-only 8ac90f404 -- '*.ts' '*.tsx' '*.js')`. Expected: PASS. Rerun a timed-out heavy suite alone with `--runInBand --testTimeout=40000` before treating it as real.
+- [x] **Step 3: Update the shared notes file** `C:\Users\bth0m\AppData\Roaming\Claude\side-session-notes\local_6f40378b-e99c-44e6-abbf-796c9a64ce81\field-guides.md`: commits, guide count per category, what was skipped, and what still needs the owner (phone check, merge and push so the catalogue URL goes live, release).
+- [x] **Step 4: Stop.** Do not push or merge.
