@@ -99,17 +99,6 @@
     "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
   },
   {
-    "id": "army-atp-4-44",
-    "title": "Water Support Operations",
-    "category": "water",
-    "publisher": "US Army",
-    "year": 2026,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). ATP 4-44, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited.",
-    "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN47037-ATP_4-44-001-WEB-1.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
-  },
-  {
     "id": "army-tc-9-60",
     "title": "Communications-Electronics Fundamentals: Basic Principles of Alternating Current and Direct Current",
     "category": "power",
@@ -144,7 +133,7 @@
   },
   {
     "id": "army-tc-9-237",
-    "title": "Operator's Circular Welding Theory and Application",
+    "title": "Welding Theory and Application",
     "category": "mechanical",
     "publisher": "US Army",
     "year": 1993,
@@ -198,24 +187,13 @@
     "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
   },
   {
-    "id": "army-tc-4-13-17",
-    "title": "Cargo Specialist's Handbook",
-    "category": "mechanical",
-    "publisher": "US Army",
-    "year": 2011,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). TC 4-13.17, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited.",
-    "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tc4_13x17.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
-  },
-  {
     "id": "navy-neets-module-02",
     "title": "NEETS Module 02: Introduction to Alternating Current and Transformers",
     "category": "power",
     "publisher": "US Navy",
     "year": 1998,
     "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14174 (NEETS Module 2), front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited. Copy hosted at legacy.maritime.org (Historic Naval Ships Association), same size as the copy at tscm.com; no official Navy-hosted copy was found. The statement is on the cover and the next page.",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14174 (NEETS Module 2): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
     "url": "https://legacy.maritime.org/doc/neets/mod02.pdf",
     "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
   },
@@ -226,7 +204,7 @@
     "publisher": "US Navy",
     "year": 1998,
     "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14175 (NEETS Module 3), front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited. Copy hosted at legacy.maritime.org (Historic Naval Ships Association), same size as the copy at tscm.com; no official Navy-hosted copy was found. The statement is on the cover and the next page.",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14175 (NEETS Module 3): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
     "url": "https://legacy.maritime.org/doc/neets/mod03.pdf",
     "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
   },
@@ -237,7 +215,7 @@
     "publisher": "US Navy",
     "year": 1998,
     "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14176 (NEETS Module 4), front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited. Copy hosted at legacy.maritime.org (Historic Naval Ships Association), same size as the copy at tscm.com; no official Navy-hosted copy was found. The statement is on the cover and the next page.",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14176 (NEETS Module 4): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
     "url": "https://legacy.maritime.org/doc/neets/mod04.pdf",
     "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
   },
@@ -248,7 +226,7 @@
     "publisher": "US Navy",
     "year": 1998,
     "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14177 (NEETS Module 5), front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited. Copy hosted at legacy.maritime.org (Historic Naval Ships Association), same size as the copy at tscm.com; no official Navy-hosted copy was found. The statement is on the cover and the next page.",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14177 (NEETS Module 5): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
     "url": "https://legacy.maritime.org/doc/neets/mod05.pdf",
     "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
   },
@@ -259,7 +237,7 @@
     "publisher": "US Navy",
     "year": 1998,
     "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14178 (NEETS Module 6), front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited. Copy hosted at legacy.maritime.org (Historic Naval Ships Association), same size as the copy at tscm.com; no official Navy-hosted copy was found. The statement is on the cover and the next page.",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14178 (NEETS Module 6): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
     "url": "https://legacy.maritime.org/doc/neets/mod06.pdf",
     "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
   },
@@ -270,7 +248,7 @@
     "publisher": "US Navy",
     "year": 1998,
     "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14179 (NEETS Module 7), front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited. Copy hosted at legacy.maritime.org (Historic Naval Ships Association), same size as the copy at tscm.com; no official Navy-hosted copy was found. The statement is on the cover and the next page.",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14179 (NEETS Module 7): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
     "url": "https://legacy.maritime.org/doc/neets/mod07.pdf",
     "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
   },
@@ -281,7 +259,7 @@
     "publisher": "US Navy",
     "year": 1998,
     "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14180 (NEETS Module 8), front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited. Copy hosted at legacy.maritime.org (Historic Naval Ships Association), same size as the copy at tscm.com; no official Navy-hosted copy was found. The statement is on the cover and the next page.",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14180 (NEETS Module 8): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
     "url": "https://legacy.maritime.org/doc/neets/mod08.pdf",
     "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
   },
@@ -292,7 +270,7 @@
     "publisher": "US Navy",
     "year": 1998,
     "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14181 (NEETS Module 9), front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited. Copy hosted at legacy.maritime.org (Historic Naval Ships Association), same size as the copy at tscm.com; no official Navy-hosted copy was found. The statement is on the cover and the next page.",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14181 (NEETS Module 9): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
     "url": "https://legacy.maritime.org/doc/neets/mod09.pdf",
     "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
   },
@@ -303,7 +281,7 @@
     "publisher": "US Navy",
     "year": 1998,
     "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14182 (NEETS Module 10), front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited. Copy hosted at legacy.maritime.org (Historic Naval Ships Association), same size as the copy at tscm.com; no official Navy-hosted copy was found. The statement is on the cover and the next page.",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14182 (NEETS Module 10): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
     "url": "https://legacy.maritime.org/doc/neets/mod10.pdf",
     "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
   },
@@ -314,7 +292,7 @@
     "publisher": "US Navy",
     "year": 1998,
     "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14183 (NEETS Module 11), front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited. Copy hosted at legacy.maritime.org (Historic Naval Ships Association), same size as the copy at tscm.com; no official Navy-hosted copy was found. The statement is on the cover and the next page.",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14183 (NEETS Module 11): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
     "url": "https://legacy.maritime.org/doc/neets/mod11.pdf",
     "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
   },
@@ -325,64 +303,9 @@
     "publisher": "US Navy",
     "year": 1998,
     "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14184 (NEETS Module 12), front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited. Copy hosted at legacy.maritime.org (Historic Naval Ships Association), same size as the copy at tscm.com; no official Navy-hosted copy was found. The statement is on the cover and the next page.",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14184 (NEETS Module 12): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
     "url": "https://legacy.maritime.org/doc/neets/mod12.pdf",
     "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
-  },
-  {
-    "id": "navy-neets-module-16",
-    "title": "NEETS Module 16: Introduction to Test Equipment",
-    "category": "power",
-    "publisher": "US Navy",
-    "year": 1998,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14188 (NEETS Module 16), front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited. Copy hosted at legacy.maritime.org (Historic Naval Ships Association), same size as the copy at tscm.com; no official Navy-hosted copy was found. The statement is on the cover and the next page.",
-    "url": "https://legacy.maritime.org/doc/neets/mod16.pdf",
-    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
-  },
-  {
-    "id": "navy-neets-module-17",
-    "title": "NEETS Module 17: Radio-Frequency Communications Principles",
-    "category": "radio",
-    "publisher": "US Navy",
-    "year": 1998,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14189 (NEETS Module 17), front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited. Copy hosted at legacy.maritime.org (Historic Naval Ships Association), same size as the copy at tscm.com; no official Navy-hosted copy was found. The statement is on the cover and the next page.",
-    "url": "https://legacy.maritime.org/doc/neets/mod17.pdf",
-    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
-  },
-  {
-    "id": "navy-neets-module-19",
-    "title": "NEETS Module 19: The Technician's Handbook",
-    "category": "power",
-    "publisher": "US Navy",
-    "year": 1998,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14191 (NEETS Module 19), front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited. Copy hosted at legacy.maritime.org (Historic Naval Ships Association), same size as the copy at tscm.com; no official Navy-hosted copy was found. The statement is on the cover and the next page.",
-    "url": "https://legacy.maritime.org/doc/neets/mod19.pdf",
-    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
-  },
-  {
-    "id": "navy-neets-module-21",
-    "title": "NEETS Module 21: Test Methods and Practices",
-    "category": "power",
-    "publisher": "US Navy",
-    "year": 1998,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14193 (NEETS Module 21), front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited. Copy hosted at legacy.maritime.org (Historic Naval Ships Association), same size as the copy at tscm.com; no official Navy-hosted copy was found. The statement is on the cover and the next page.",
-    "url": "https://legacy.maritime.org/doc/neets/mod21.pdf",
-    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
-  },
-  {
-    "id": "army-atp-4-02-5",
-    "title": "Casualty Care",
-    "category": "medical",
-    "publisher": "US Army",
-    "year": 2013,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). ATP 4-02.5, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited. Edition including Change 1.",
-    "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN30121-ATP_4-02.5-001-WEB-3.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
   },
   {
     "id": "army-atp-4-02-13",
@@ -396,35 +319,13 @@
     "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
   },
   {
-    "id": "army-atp-4-02-8",
-    "title": "Force Health Protection",
-    "category": "medical",
-    "publisher": "US Army",
-    "year": 2016,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). ATP 4-02.8, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited. Edition including Change 1 (reissued with Change 2, August 2025).",
-    "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN44589-ATP_4-02.8-002-WEB-4.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
-  },
-  {
-    "id": "army-atp-4-02-85",
-    "title": "Multi-Service Tactics, Techniques, and Procedures for Treatment of Chemical Warfare Agent Casualties and Conventional Military Chemical Injuries",
-    "category": "medical",
-    "publisher": "US Army",
-    "year": 2016,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). ATP 4-02.85, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited. Edition including Change 1.",
-    "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN16674-ATP_4-02.85-001-WEB-3.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
-  },
-  {
     "id": "army-tc-3-37-51",
     "title": "Urban Search and Rescue",
     "category": "disasters",
     "publisher": "US Army",
     "year": 2020,
     "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). TC 3-37.51, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited.",
+    "licenceNote": "US government work (17 U.S.C. 105). TC 3-37.51, front matter: distribution statement printed in the document: \"Approved for public release; distribution unlimited.\"",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN30224-TC_3-37.51-000-WEB-1.pdf",
     "evidence": "Approved for public release; distribution unlimited. (front matter)"
   },
@@ -457,43 +358,19 @@
     "publisher": "US Army",
     "year": 2001,
     "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). FM 3-25.26 (FM 21-26), front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited. The official source now serves only the 2013 successor TC 3-25.26, whose distribution is restricted to U.S. Government agencies and contractors. The statement is printed on the cover page of this copy. Copy hosted at archive.org; the official source no longer offers it.",
+    "licenceNote": "US government work (17 U.S.C. 105). FM 3-25.26 (FM 21-26): distribution statement printed on the cover page: approved for public release; distribution is unlimited. The Wayback capture of the old official address is only a stub. Copy uploaded to archive.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
     "url": "https://archive.org/download/milmanual-fm-3-25.26-map-reading-and-land-navigation/fm_3-25.26_map_reading_and_land_navigation.pdf",
     "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)",
     "approxBytes": 23583528
   },
   {
-    "id": "navy-navedtra-14234",
-    "title": "Seabee Combat Handbook, Volume 1",
-    "category": "fieldcraft",
-    "publisher": "US Navy",
-    "year": 1993,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14234, front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited. The statement is printed on the cover page and repeated on the next page. Edition includes errata dated 7 May 2001. Copy hosted at militarynewbie.com; the official source no longer offers it.",
-    "url": "https://www.militarynewbie.com/manuals/pdfs/NAVEDTRA-14234-Seabee-Combat-Handbook-Volume-1.pdf",
-    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)",
-    "approxBytes": 26383302
-  },
-  {
-    "id": "army-tm-5-682",
-    "title": "Facilities Engineering: Electrical Facilities Safety",
-    "category": "power",
-    "publisher": "US Army",
-    "year": 1999,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). TM 5-682, front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited. The reproduction page also says the manual is public property and not subject to copyright.",
-    "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tm5_682.pdf",
-    "evidence": "APPROVED FOR PUBLIC RELEASE: DISTRIBUTION IS UNLIMITED (front matter)",
-    "approxBytes": 873153
-  },
-  {
     "id": "navy-navedtra-14312",
     "title": "Aerographer's Mate Module 5: Basic Meteorology",
-    "category": "fieldcraft",
+    "category": "navigation",
     "publisher": "US Navy",
     "year": 2001,
     "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14312, front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited. The statement is printed on the cover page and repeated on the next page. Copy hosted at militarynewbie.com; the official source no longer offers it.",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14312: distribution statement printed on the cover page and repeated on the next page: approved for public release; distribution is unlimited. Copy uploaded to militarynewbie.com by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
     "url": "https://www.militarynewbie.com/manuals/pdfs/NAVEDTRA-14312-Aerographers-Mate-Module-5-Basic-Meteorology.pdf",
     "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)",
     "approxBytes": 3166360
@@ -501,38 +378,14 @@
   {
     "id": "navy-navedtra-14269",
     "title": "Aerographer's Mate Module 1: Surface Weather Observations",
-    "category": "fieldcraft",
+    "category": "navigation",
     "publisher": "US Navy",
     "year": 1999,
     "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14269, front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited. The statement is printed on the cover page and repeated on the next page. Copy hosted at militarynewbie.com; the official source no longer offers it.",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14269: distribution statement printed on the cover page and repeated on the next page: approved for public release; distribution is unlimited. Copy uploaded to militarynewbie.com by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
     "url": "https://www.militarynewbie.com/manuals/pdfs/NAVEDTRA-14269-Aerographers-Mate-Module-1-Surface-Weather-Observations.pdf",
     "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)",
     "approxBytes": 7171097
-  },
-  {
-    "id": "navy-navedtra-14163",
-    "title": "Mess Management Specialist 1 & C",
-    "category": "food",
-    "publisher": "US Navy",
-    "year": 1994,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14163, front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited. The statement is printed on the cover page and repeated on the next page. Copy hosted at militarynewbie.com; the official source no longer offers it.",
-    "url": "https://www.militarynewbie.com/manuals/pdfs/1994-US-Navy-Mess-food-Management-Specialist-357p.pdf",
-    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)",
-    "approxBytes": 6024478
-  },
-  {
-    "id": "navy-navedtra-14323",
-    "title": "Aviation Electricity and Electronics: Power Generation and Distribution",
-    "category": "power",
-    "publisher": "US Navy",
-    "year": 2002,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14323, front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited. The statement is printed on the cover page. Copy hosted at militarynewbie.com; the official source no longer offers it.",
-    "url": "https://www.militarynewbie.com/manuals/pdfs/NAVEDTRA-14323-Aviation-Electricity-Electronics-Power-Generation-Distribution.pdf",
-    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)",
-    "approxBytes": 1850023
   },
   {
     "id": "army-tb-med-505",
@@ -596,7 +449,7 @@
   },
   {
     "id": "army-stp-9-91d13-sm-tg",
-    "title": "Soldier's Manual and Trainer's Guide, Tactical Power Generation Specialist, MOS 91D, Skill Levels 1, 2 and 3",
+    "title": "Tactical Power Generation Specialist: Soldier's Manual",
     "category": "power",
     "publisher": "US Army",
     "year": 2018,
@@ -608,7 +461,7 @@
   },
   {
     "id": "army-stp-9-91c13-sm-tg",
-    "title": "Soldier's Manual and Trainer's Guide, Utilities Equipment Repairer MOS 91C, Skill Levels 1/3",
+    "title": "Utilities Equipment Repairer: Soldier's Manual",
     "category": "mechanical",
     "publisher": "US Army",
     "year": 2018,
@@ -617,42 +470,6 @@
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/ARN12780_STP%209-91C13-SM-TG%20FINAL%20WEB.pdf",
     "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)",
     "approxBytes": 1539380
-  },
-  {
-    "id": "army-gta-05-02-013",
-    "title": "How to Avoid Getting Lost",
-    "category": "navigation",
-    "publisher": "US Army",
-    "year": 1981,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). GTA 05-02-013, front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited. The statement is printed on the cover page. Copy hosted at militarynewbie.com; the official source no longer offers it.",
-    "url": "https://www.militarynewbie.com/manuals/pdfs/1981-US-Army-ORIENTEERING-HOW-TO-AVOID-GETTING-LOST-23p.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)",
-    "approxBytes": 1118676
-  },
-  {
-    "id": "army-fm-21-76-1",
-    "title": "Survival, Evasion, and Recovery: Multiservice Procedures for Survival, Evasion, and Recovery",
-    "category": "fieldcraft",
-    "publisher": "US Army",
-    "year": 1999,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). FM 21-76-1 (MCRP 3-02H, NWP 3-50.3, AFTTP(I) 3-2.26), front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited. Multiservice publication (Army, Marine Corps, Navy, Air Force). The statement is printed on the cover page. Copy hosted at militarynewbie.com; the official source no longer offers it.",
-    "url": "https://www.militarynewbie.com/manuals/pdfs/1999-US-Marine-Corps-Survival-Evasion-and-Recovery-107p.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)",
-    "approxBytes": 2337404
-  },
-  {
-    "id": "army-tm-3-34-62",
-    "title": "Earthmoving Operations",
-    "category": "building",
-    "publisher": "US Army",
-    "year": 2025,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). TM 3-34.62, front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited. Edition including Change 1.",
-    "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN47203-TM_3-34.62-001-WEB-2.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)",
-    "approxBytes": 18776125
   },
   {
     "id": "army-tm-3-34-56",
@@ -691,18 +508,6 @@
     "approxBytes": 10876924
   },
   {
-    "id": "army-tm-3-34-63",
-    "title": "Paving and Surfacing Operations",
-    "category": "building",
-    "publisher": "US Army",
-    "year": 2013,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). TM 3-34.63, front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited.",
-    "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/TM%203-34x63%20FINAL.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)",
-    "approxBytes": 19507806
-  },
-  {
     "id": "army-tm-5-685",
     "title": "Operation, Maintenance and Repair of Auxiliary Generators",
     "category": "power",
@@ -713,18 +518,6 @@
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tm5_685.pdf",
     "evidence": "Approved for public release. Distribution is unlimited. (front matter)",
     "approxBytes": 3944788
-  },
-  {
-    "id": "army-tm-5-683",
-    "title": "Facilities Engineering: Electrical Interior Facilities",
-    "category": "power",
-    "publisher": "US Army",
-    "year": 1995,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). TM 5-683, front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited. Joint Army, Navy and Air Force publication (NAVFAC MO-116, AFJMAN 32-1083); the statement is printed with this typographical error, and the reproduction page also says the manual is public property and not subject to copyright.",
-    "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tm5_683.pdf",
-    "evidence": "APPROVED FOR PUBLIC RELEASE: Distributionis unlimited (front matter)",
-    "approxBytes": 3193837
   },
   {
     "id": "usgs-fs-077-01-utm-grid",
@@ -751,18 +544,6 @@
     "approxBytes": 4233522
   },
   {
-    "id": "fema-p-2057-cert-basic-training-participant-manual",
-    "title": "CERT Basic Training Participant Manual",
-    "category": "disasters",
-    "publisher": "FEMA",
-    "year": 2019,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). FEMA publication P-2057 (2019 Update) by the National CERT Program Office, with no named outside author, contractor credit, photo credit or copyright notice; FEMA's policy at https://www.fema.gov/about/website-information (Reuse and Copyright) says most FEMA material is free of copyright. Hosted on ready.gov, FEMA's preparedness site.",
-    "url": "https://www.ready.gov/sites/default/files/2019.CERT_.Basic_.PM_FINAL_508c.pdf",
-    "evidence": "Page 1: 'CERT Basic Training Participant Manual 2019 Update ... The National CERT Program Office would like to thank the regional, state, and local partners and subject matter experts who contributed to the 2019 CERT Basic Training update. August 2019.' No copyright notice in the 268 pages. FEMA policy page: 'Most material on FEMA.gov is free of copyright and may be copied and distributed without permission.' Covers preparedness, fire safety, disaster medical operations, light search and rescue.",
-    "approxBytes": 5509166
-  },
-  {
     "id": "usgs-fs-015-02-map-scales",
     "title": "Map Scales",
     "category": "navigation",
@@ -783,7 +564,7 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). Second edition, written and edited by FDA scientists (Authorship page), no outside author or copyright notice; FDA website policy at https://www.fda.gov/about-fda/about-website/website-policies says FDA website contents are not copyrighted and are in the public domain.",
     "url": "https://www.fda.gov/media/83271/download",
-    "evidence": "Authorship page: 'The second edition of the Bad Bug Book would not have been possible without the contributions of the many FDA scientists ...'; suggested citation 'Food and Drug Administration. Bad Bug Book ... Second Edition ... 2012.' Only photo credit: 'Photo by Jonathan Deeds, Ph.D., FDA'. FDA policy: 'Unless otherwise noted, the contents of the FDA website (www.fda.gov) — both text and graphics — are not copyrighted. They are in the public domain and may be republished, reprinted and otherwise used freely by anyone without the need to obtain permission from FDA.'",
+    "evidence": "Authorship page: 'The second edition of the Bad Bug Book would not have been possible without the contributions of the many FDA scientists ...'; suggested citation 'Food and Drug Administration. Bad Bug Book ... Second Edition ... 2012.' Photo credits, all FDA staff: escolar and oilfish photos by Warren Savary and D. Mellen (FDA/ORA), Dianne Millazo and Amber Chung (FDA); venomous fish photos by Jonathan Deeds, Ph.D., FDA; fish images from FDA's Regulatory Fish Encyclopedia. FDA policy: 'Unless otherwise noted, the contents of the FDA website (www.fda.gov) — both text and graphics — are not copyrighted. They are in the public domain and may be republished, reprinted and otherwise used freely by anyone without the need to obtain permission from FDA.'",
     "approxBytes": 5252559
   },
   {
@@ -829,14 +610,14 @@
     "publisher": "NWCG",
     "year": 2012,
     "licence": "Public domain",
-    "licenceNote": "Public-domain statement printed on the document's title-page verso and on NWCG's notices page (https://www.nwcg.gov/notices#copyrights). Hosted on NWCG's official file store linked from https://www.nwcg.gov/publications/pms551.",
+    "licenceNote": "Public-domain statement printed on the document's title-page verso and on NWCG's notices page (https://www.nwcg.gov/notices#copyrights). Hosted on NWCG's official file store linked from https://www.nwcg.gov/publications/pms551. Written for trained emergency medical providers.",
     "url": "https://fs-prod-nwcg.s3.us-gov-west-1.amazonaws.com/s3fs-public/publication/pms551_0.pdf",
     "evidence": "Title-page verso: 'It is NWCG's intent to specifically identify all copyrighted content used in NWCG products. All other NWCG information is in the public domain. Use of public domain information, including copying, is permitted.' Cover: 'PMS 551 ... July 2012'. No content marked as copyrighted.",
     "approxBytes": 402383
   },
   {
     "id": "nwcg-pms-212-chainsaw-operations",
-    "title": "NWCG Standards for Wildland Fire Chainsaw Operations",
+    "title": "Wildland Fire Chainsaw Operations Standards",
     "category": "mechanical",
     "publisher": "NWCG",
     "year": 2026,
