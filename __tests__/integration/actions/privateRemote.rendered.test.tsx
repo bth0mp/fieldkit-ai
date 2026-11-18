@@ -123,8 +123,9 @@ describe('a private chat stays off remote models', () => {
     // The new chat holds no calendar data, so it talks to the remote model.
     await h.tapSend('hello');
     await h.rtl.waitFor(() => { expect(h.view!.queryByText(/Remote reply\./)).not.toBeNull(); }, { timeout: 6000 });
-    expect(sendSpy).toHaveBeenCalledTimes(1);
-    expect(String((sendSpy.mock.calls[0] as unknown[])[0])).not.toContain('dentist');
+    const chats = chatCompletionBodies(sendSpy);
+    expect(chats).toHaveLength(1);
+    expect(chats[0]).not.toContain('dentist');
   });
 
   it('private tool hidden on remote', async () => {
@@ -139,7 +140,8 @@ describe('a private chat stays off remote models', () => {
 
     await h.tapSend('hello');
     await h.rtl.waitFor(() => { expect(h.view!.queryByText(/Remote reply\./)).not.toBeNull(); }, { timeout: 6000 });
-    const names = (JSON.parse(String((sendSpy.mock.calls[0] as unknown[])[0])).tools ?? []).map((t: { function: { name: string } }) => t.function.name);
+    const [chat] = chatCompletionBodies(sendSpy);
+    const names = (JSON.parse(chat).tools ?? []).map((t: { function: { name: string } }) => t.function.name);
     expect(names).toContain('calculator');
     expect(names).not.toContain('read_calendar_events');
   });
