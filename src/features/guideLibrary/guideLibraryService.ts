@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import RNFS from 'react-native-fs';
 import { viewDocument } from '@react-native-documents/viewer';
 import logger from '../../utils/logger';
-import { ragService } from '../../services/rag';
+import { ragService, type RagDocument } from '../../services/rag';
 import { ensureFieldGuidesProject, FIELD_GUIDES_PROJECT_ID } from '../fieldGuides/fieldGuides';
 import { bundledCatalogue, CATALOGUE_URL, isCatalogueId, parseCatalogue, type Catalogue, type GuideEntry } from './catalogue';
 import { useGuideLibraryStore, type GuidePhase, type GuideState } from './guideLibraryStore';
@@ -145,18 +145,31 @@ async function runInit(): Promise<boolean> {
   return true;
 }
 
-/** Paths of the documents in the Field guides knowledge base. */
-async function taughtPaths(): Promise<Set<string>> {
-  return new Set((await ragService.getDocumentsByProject(FIELD_GUIDES_PROJECT_ID)).map(d => d.path));
+/**
+ * The library guides' documents in the Field guides knowledge base, by path. `usable` paths have embeddings, so
+ * the assistant can find them; `unusable` documents have none (indexing was cut off, say by the app being killed
+ * while embedding), so the assistant cannot use them and nothing ever fills them in.
+ */
+async function libraryDocuments(): Promise<{ usable: Set<string>; unusable: RagDocument[] }> {
+  const usable = new Set<string>();
+  const unusable: RagDocument[] = [];
+  for (const doc of await ragService.getDocumentsByProject(FIELD_GUIDES_PROJECT_ID)) {
+    if (!doc.path.startsWith(`${GUIDE_LIBRARY_DIR}/`)) continue;
+    if (await ragService.hasEmbeddings(doc.id)) usable.add(doc.path); else unusable.push(doc);
+  }
+  return { usable, unusable };
 }
 
-/** Mark each downloaded guide taught or not by whether the knowledge base holds a document with its path. */
+/**
+ * Mark each downloaded guide taught or not by whether the knowledge base holds a document with its path that the
+ * assistant can use. A document at its path with no embeddings is deleted, so the guide can be taught again.
+ */
 async function applyKnowledgeBase(): Promise<void> {
   // A teach, un-teach or remove that ends while the knowledge base is read is newer than what was read.
   const before = store.getState().guides;
-  let paths: Set<string>;
+  let docs: Awaited<ReturnType<typeof libraryDocuments>>;
   try {
-    paths = await taughtPaths();
+    docs = await libraryDocuments();
   } catch (error) {
     logger.warn('[GuideLibrary] knowledge base unreadable, keeping what is shown', error);
     return;
@@ -166,8 +179,11 @@ async function applyKnowledgeBase(): Promise<void> {
     if (now !== before[id]) continue;
     // A guide waiting to be taught (or still downloading) is settled by that work, not here.
     if (now?.phase !== 'downloaded' && now?.phase !== 'taught') continue;
-    const phase: GuidePhase = paths.has(guidePath(id)) ? 'taught' : 'downloaded';
-    if (phase !== now.phase) setGuide(id, { phase });
+    const path = guidePath(id);
+    if (!docs.usable.has(path) && docs.unusable.some(d => d.path === path) && !(await deleteFromKnowledgeBase(id))) continue;
+    const phase: GuidePhase = docs.usable.has(path) ? 'taught' : 'downloaded';
+    // The delete above may have waited: only settle a guide nothing else changed meanwhile.
+    if (phase !== now.phase && store.getState().guides[id] === now) setGuide(id, { phase });
   }
 }
 
@@ -328,16 +344,17 @@ async function open(id: string): Promise<void> {
 async function teachNow(id: string, entry: GuideEntry): Promise<void> {
   // The guide may have been removed while it waited its turn.
   if (phaseOf(id) !== 'teaching') return;
+  store.setState({ learning: id });
   try {
     await ensureFieldGuidesProject();
     await ragService.indexDocument({
       projectId: FIELD_GUIDES_PROJECT_ID, filePath: guidePath(id), fileName: documentName(entry), fileSize: entry.bytes, bundled: true,
     });
-    setGuide(id, { phase: 'taught' });
+    store.setState(s => ({ guides: withGuide(s.guides, id, { phase: 'taught' }), learning: null }));
   } catch (e) {
     logger.warn('[GuideLibrary] teach failed', id, e);
     const error = await teachFailure(id, e);
-    setGuide(id, error ? { phase: 'downloaded', error } : { phase: 'taught' });
+    store.setState(s => ({ guides: withGuide(s.guides, id, error ? { phase: 'downloaded', error } : { phase: 'taught' }), learning: null }));
   }
 }
 
@@ -349,9 +366,11 @@ async function teachFailure(id: string, e: unknown): Promise<string | null> {
   const message = e instanceof Error ? e.message : '';
   if (EXPLAINED_RAG_ERRORS.has(message)) return message;
   if (!message.endsWith('is already in the knowledge base')) return TEACH_FAILED;
-  // indexDocument refuses a clash on path or on name: only this guide's own path means it is taught.
+  // indexDocument refuses a clash on path or on name: only this guide's own path, searchable, means it is taught.
   try {
-    return (await taughtPaths()).has(guidePath(id)) ? null : NAME_CLASH;
+    const { usable, unusable } = await libraryDocuments();
+    if (usable.has(guidePath(id))) return null;
+    return unusable.some(d => d.path === guidePath(id)) ? TEACH_FAILED : NAME_CLASH;
   } catch (error) {
     logger.warn('[GuideLibrary] knowledge base unreadable after a teach', id, error);
     return TEACH_FAILED;
@@ -392,12 +411,15 @@ async function unteach(id: string): Promise<void> {
   setGuide(id, ok ? { phase: 'downloaded' } : { phase: 'taught', error: UNTEACH_FAILED });
 }
 
-/** Delete a downloaded guide's file and forget it. A taught guide leaves the knowledge base first. */
+/**
+ * Delete a downloaded guide's file and forget it. Its knowledge-base documents go first, whatever the row shows:
+ * a guide shown as downloaded may still be taught if the knowledge base could not be read at the last reconcile.
+ */
 async function remove(id: string): Promise<void> {
   const phase = phaseOf(id);
   if (phase !== 'downloaded' && phase !== 'taught') return;
-  if (phase === 'taught' && !(await deleteFromKnowledgeBase(id))) {
-    setGuide(id, { phase: 'taught', error: REMOVE_FAILED });
+  if (!(await deleteFromKnowledgeBase(id))) {
+    setGuide(id, { phase, error: REMOVE_FAILED });
     return;
   }
   try {

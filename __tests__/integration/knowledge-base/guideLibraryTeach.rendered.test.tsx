@@ -278,15 +278,63 @@ describe('Guide library teaching (rendered)', () => {
       rtl.fireEvent(switchOf(view, 'test-blank'), 'valueChange', true);
       rtl.fireEvent(switchOf(view, 'test-knots'), 'valueChange', true);
     });
-    // Both show as being taught until their turn ends.
-    expect(switchOf(view, 'test-knots').props.value).toBe(true);
-    expect(switchOf(view, 'test-knots').props.disabled).toBe(true);
+    // The second waits until the first's turn ends.
+    expect(view.queryByTestId('guide-teach-test-knots')).toBeNull();
+    expect(view.getByTestId('guide-teaching-test-knots')).toBeTruthy();
     await rtl.waitFor(() => {
       expect(view.getByText('Document produced no indexable content')).toBeTruthy();
-      expect(switchOf(view, 'test-knots').props.disabled).toBeFalsy();
+      expect(view.queryByTestId('guide-teaching-test-knots')).toBeNull();
     }, { timeout: 6000 });
     expect(switchOf(view, 'test-blank').props.value).toBe(false);
     expect(switchOf(view, 'test-knots').props.value).toBe(true);
+    expect((await docsInFieldGuides()).map(d => d.name)).toEqual(['Test knots (Test publisher).pdf']);
+  }, 40000);
+
+  it('while guides are taught, the row says which one is being learned and which is waiting', async () => {
+    const OTHER = guide('test-other', 'Test other', WATER_TEXT);
+    const h = await openLibrary([KNOTS, OTHER]);
+    const { rtl, view, boundary } = h;
+    await downloadGuide(h, view, KNOTS, BOWLINE);
+    await downloadGuide(h, view, OTHER, WATER_TEXT);
+    let release = () => {};
+    const held = new Promise<void>(resolve => { release = resolve; });
+    boundary.llama!.scriptEmbedding(async text => { await held; return keywordVector(text); });
+
+    rtl.fireEvent(switchOf(view, 'test-knots'), 'valueChange', true);
+    rtl.fireEvent(switchOf(view, 'test-other'), 'valueChange', true);
+    await rtl.waitFor(() => {
+      expect(view.getByText('Learning this guide…')).toBeTruthy();
+      expect(view.getByText('Waiting to learn')).toBeTruthy();
+    }, { timeout: 6000 });
+    expect(rtl.within(view.getByTestId('guide-teaching-test-knots')).getByText('Learning this guide…')).toBeTruthy();
+    expect(rtl.within(view.getByTestId('guide-teaching-test-other')).getByText('Waiting to learn')).toBeTruthy();
+    expect(view.queryByTestId('guide-teach-test-knots')).toBeNull();
+
+    await rtl.act(async () => { release(); });
+    await rtl.waitFor(() => {
+      expect(switchOf(view, 'test-knots').props.value).toBe(true);
+      expect(switchOf(view, 'test-other').props.value).toBe(true);
+    }, { timeout: 6000 });
+    expect(view.queryByText('Learning this guide…')).toBeNull();
+    expect(view.queryByText('Waiting to learn')).toBeNull();
+  }, 40000);
+
+  it('a guide whose knowledge-base document has no embeddings shows as not taught, and the document goes', async () => {
+    const h = await openLibrary([KNOTS], async (fs, dir) => {
+      await seedDownloaded(fs, dir, [KNOTS], () => BOWLINE);
+      // An earlier run was killed while embedding: the document and its chunks were written, no embeddings.
+      await rag().ensureReady();
+      const { ragDatabase } = require('../../../src/services/rag/database');
+      const docId = ragDatabase.insertDocument({ projectId: 'field-guides', name: 'Test knots (Test publisher).pdf', path: `${dir}/test-knots.pdf`, size: KNOTS.bytes });
+      ragDatabase.insertChunks(docId, [{ content: BOWLINE, position: 0 }]);
+    });
+    const { rtl, view } = h;
+    await rtl.waitFor(() => { expect(view.getByText('1 guides · 1 downloaded · 0 taught')).toBeTruthy(); }, { timeout: 4000 });
+    expect(switchOf(view, 'test-knots').props.value).toBe(false);
+    await rtl.waitFor(async () => { expect(await docsInFieldGuides()).toEqual([]); }, { timeout: 4000 });
+
+    // It can be taught again.
+    await setTaught(h, view, 'test-knots', true);
     expect((await docsInFieldGuides()).map(d => d.name)).toEqual(['Test knots (Test publisher).pdf']);
   }, 40000);
 

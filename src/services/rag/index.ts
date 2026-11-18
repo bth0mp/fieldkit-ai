@@ -139,6 +139,12 @@ class RagService {
     return ragDatabase.getDocumentsByProject(projectId);
   }
 
+  /** True when the document has embeddings, so search can find it. An index cut off mid-way leaves none. */
+  async hasEmbeddings(docId: number): Promise<boolean> {
+    await this.ensureReady();
+    return ragDatabase.hasEmbeddingsForDocument(docId);
+  }
+
   async toggleDocument(docId: number, enabled: boolean): Promise<void> {
     await this.ensureReady();
     ragDatabase.toggleEnabled(docId, enabled);

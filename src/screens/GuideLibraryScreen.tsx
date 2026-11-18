@@ -32,18 +32,28 @@ function sectionsFor(catalogue: Catalogue, delisted: GuideEntry[], query: string
   return [...listed, gone].filter(s => s.data.length > 0);
 }
 
-/** The "Assistant knows this" switch for a downloaded guide that has a text layer. */
+/**
+ * The "Assistant knows this" switch for a downloaded guide that has a text layer. While the guide is being taught
+ * the switch gives way to the work: this guide being learned, or waiting behind the one that is.
+ */
 const TeachControl: React.FC<{ entry: GuideEntry; state: GuideState; styles: Styles }> = ({ entry, state, styles }) => {
   const { colors } = useTheme();
-  const teaching = state.phase === 'teaching';
+  const learning = useGuideLibraryStore(s => s.learning === entry.id);
+  if (state.phase === 'teaching') {
+    return (
+      <View style={styles.teach} testID={`guide-teaching-${entry.id}`}>
+        <Text style={styles.teachLabel}>{learning ? 'Learning this guide…' : 'Waiting to learn'}</Text>
+        <ActivityIndicator size="small" color={colors.textMuted} />
+      </View>
+    );
+  }
   return (
     <View style={styles.teach}>
       <Text style={styles.teachLabel}>Assistant knows this</Text>
       <Switch
         testID={`guide-teach-${entry.id}`}
         accessibilityLabel="Assistant knows this"
-        value={teaching || state.phase === 'taught'}
-        disabled={teaching}
+        value={state.phase === 'taught'}
         onValueChange={on => { if (on) guideLibraryService.teach(entry.id); else guideLibraryService.unteach(entry.id); }}
         trackColor={{ false: colors.border, true: colors.primary }}
       />

@@ -13,6 +13,8 @@ export interface GuideLibraryState {
   /** Downloaded (or downloading) guides the catalogue no longer lists. */
   delisted: GuideEntry[];
   refreshing: boolean;
+  /** The guide being indexed right now. Other guides in phase 'teaching' are waiting their turn. */
+  learning: string | null;
 }
 
 const ON_PHONE: readonly GuidePhase[] = ['downloaded', 'teaching', 'taught'];
@@ -38,4 +40,5 @@ export const useGuideLibraryStore = create<GuideLibraryState>(() => ({
   guides: {},
   delisted: [],
   refreshing: false,
+  learning: null,
 }));

@@ -245,8 +245,9 @@ export interface LlamaFake {
   releaseInit(): void;
   /** True while an init is held via holdNextInit(). */
   initHoldActive(): boolean;
-  /** Make the embedding model return `vectorFor(text)` (e.g. keyword vectors, so RAG ranking is predictable). */
-  scriptEmbedding(vectorFor: (text: string) => number[]): void;
+  /** Make the embedding model return `vectorFor(text)` (e.g. keyword vectors, so RAG ranking is predictable).
+   *  A promise holds that embedding open until it settles. */
+  scriptEmbedding(vectorFor: (text: string) => number[] | Promise<number[]>): void;
   /** HOLD the next post-init multimodal-support check (context.getMultimodalSupport) open until
    *  releaseMultimodalHold() — the device-shaped load window between context init and capability
    *  detection (the 2026-07-13 18:50 device log shows ~3.4s there for gemma-4-E2B: init succeeded
@@ -447,7 +448,7 @@ function makeLlamaFake(onRelease?: () => void, chatTemplate?: string): LlamaFake
     holdNextInit: () => { initHoldPending = true; },
     releaseInit: () => { const f = initHoldRelease; initHoldRelease = null; f?.(); },
     initHoldActive: () => initHoldRelease !== null,
-    scriptEmbedding: (vectorFor) => { context.embedding.mockImplementation(async (text: string) => ({ embedding: vectorFor(String(text)) })); },
+    scriptEmbedding: (vectorFor) => { context.embedding.mockImplementation(async (text: string) => ({ embedding: await vectorFor(String(text)) })); },
     scriptMultimodalHold: () => { mmHoldPending = true; },
     releaseMultimodalHold: () => { const f = mmHoldRelease; mmHoldRelease = null; f?.(); },
     multimodalHoldActive: () => mmHoldEngaged,

@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useIsFocused, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Feather';
 import { pick, isErrorWithCode, errorCodes } from '@react-native-documents/picker';
@@ -61,9 +61,11 @@ export const KnowledgeBaseScreen: React.FC = () => {
     }
   }, [projectId]);
 
+  // Load on every focus: the Guide library, opened from here, adds and removes documents.
+  const isFocused = useIsFocused();
   useEffect(() => {
-    loadKbDocs();
-  }, [loadKbDocs]);
+    if (isFocused) loadKbDocs();
+  }, [isFocused, loadKbDocs]);
 
   const handleAddDocument = async () => {
     if (isPickingRef.current) {

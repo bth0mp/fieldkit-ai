@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, TouchableOpacity, Switch, ActivityIndicator, ScrollView, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
+import { useIsFocused } from '@react-navigation/native';
 import { pick, isErrorWithCode, errorCodes } from '@react-native-documents/picker';
 
 import { resolvePickedFileUri } from '../utils/resolvePickedFileUri';
@@ -35,7 +36,9 @@ export const KnowledgeBaseSection: React.FC<KBSectionProps> = ({ projectId, colo
     catch (err: any) { setAlertState(showAlert('Error', err?.message || 'Failed to load documents')); }
   }, [projectId, setAlertState]);
 
-  useEffect(() => { loadKbDocs(); }, [loadKbDocs]);
+  // Load on every focus: the knowledge base screen and the Guide library, opened from here, change documents.
+  const isFocused = useIsFocused();
+  useEffect(() => { if (isFocused) loadKbDocs(); }, [isFocused, loadKbDocs]);
 
   const handleAddDocument = async () => {
     if (isPickingRef.current) return;

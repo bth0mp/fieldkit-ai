@@ -9,10 +9,16 @@
 import { setupChatScreen } from '../../harness/chatHarness';
 
 const mockNavigate = jest.fn();
+// Whether the screen is focused, as the navigator reports it. Tests blur and focus it like a push and a back.
+const mockFocus = { focused: true, listeners: new Set<() => void>() };
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: mockNavigate, goBack: () => {}, setOptions: () => {}, addListener: () => () => {} }),
   useRoute: () => require('../../harness/chatHarness').routeHolder,
-  useFocusEffect: () => {}, useIsFocused: () => true,
+  useFocusEffect: () => {},
+  useIsFocused: () => require('react').useSyncExternalStore(
+    (onChange: () => void) => { mockFocus.listeners.add(onChange); return () => { mockFocus.listeners.delete(onChange); }; },
+    () => mockFocus.focused,
+  ),
 }));
 jest.mock('../../../src/hooks/useFocusTrigger', () => ({ useFocusTrigger: () => 0 }));
 jest.mock('../../../src/components/AnimatedListItem', () => ({
@@ -24,9 +30,10 @@ jest.mock('../../../src/components/AnimatedListItem', () => ({
 }));
 
 const openRoute = (params: Record<string, unknown>) => { require('../../harness/chatHarness').routeHolder.params = params; };
+const setFocused = (focused: boolean) => { mockFocus.focused = focused; mockFocus.listeners.forEach(l => l()); };
 
 describe('Guide library entry points (rendered)', () => {
-  beforeEach(() => { mockNavigate.mockClear(); });
+  beforeEach(() => { mockNavigate.mockClear(); mockFocus.focused = true; });
 
   it('the Field guides knowledge base offers the Guide library and opens it without downloading anything', async () => {
     const h = await setupChatScreen({ engine: 'llama', pdf: true, sqlite: true });
@@ -46,6 +53,38 @@ describe('Guide library entry points (rendered)', () => {
 
     // Opening the screen and pressing the row fetched nothing.
     expect(boundary.fs!.module.downloadFile).not.toHaveBeenCalled();
+  }, 30000);
+
+  it('back on the Field guides knowledge base, it lists a guide taught meanwhile', async () => {
+    const h = await setupChatScreen({ engine: 'llama', pdf: true, sqlite: true });
+    const { React, rtl, boundary } = h;
+    const fs = boundary.fs!;
+    fs.seedAsset('models/all-MiniLM-L6-v2-Q8_0.gguf', 'GGUF');
+    boundary.llama!.scriptEmbedding(() => [0.1, 1]);
+    const { ragService } = require('../../../src/services/rag');
+    const { FIELD_GUIDES_PROJECT_ID } = require('../../../src/features/fieldGuides/fieldGuides');
+    const index = async (name: string, text: string) => {
+      const path = `${fs.DocumentDirectoryPath}/guide-library/${name}`;
+      await (fs.module.writeFile as (p: string, c: string) => Promise<void>)(path, text);
+      await ragService.indexDocument({ projectId: FIELD_GUIDES_PROJECT_ID, filePath: path, fileName: name, fileSize: text.length, bundled: true });
+    };
+    await index('First guide.pdf', 'How to tie a bowline.');
+    const { KnowledgeBaseScreen } = require('../../../src/screens/KnowledgeBaseScreen');
+    openRoute({ projectId: FIELD_GUIDES_PROJECT_ID });
+    const kb = rtl.render(React.createElement(KnowledgeBaseScreen, {}));
+    await rtl.waitFor(() => { expect(kb.getByText('First guide.pdf')).toBeTruthy(); });
+    expect(kb.getByText('Guide library')).toBeTruthy();
+
+    // The user opens the Guide library, a guide is taught there, and they come back.
+    rtl.fireEvent.press(kb.getByTestId('kb-open-guide-library'));
+    rtl.act(() => { setFocused(false); });
+    await index('Second guide.pdf', 'Boil water for one minute.');
+    rtl.act(() => { setFocused(true); });
+    await rtl.waitFor(() => {
+      expect(kb.getByText('First guide.pdf')).toBeTruthy();
+      expect(kb.getByText('Second guide.pdf')).toBeTruthy();
+    });
+    expect(kb.getByText('Guide library')).toBeTruthy();
   }, 30000);
 
   it('a knowledge base for any other project does not offer the Guide library', async () => {
