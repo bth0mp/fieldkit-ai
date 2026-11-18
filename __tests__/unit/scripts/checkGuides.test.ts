@@ -2,7 +2,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
-const { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem, thirdPartyMentions, thirdPartyProblem } = require('../../../scripts/check-guides.js');
+const { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem, thirdPartyMentions, thirdPartyProblem, textFieldProblem } = require('../../../scripts/check-guides.js');
 
 describe('thirdPartyMentions across wrapped lines', () => {
   it.each([
@@ -12,6 +12,31 @@ describe('thirdPartyMentions across wrapped lines', () => {
     ['  CREDITS  '], ['Permission to\nuse these illustrations'], ['is gratefully\nacknowledged'],
   ])('finds %j', phrase => {
     expect(thirdPartyMentions(`some text before\n${phrase}\nafter`)).toHaveLength(1);
+  });
+});
+
+describe('textFieldProblem', () => {
+  const ok = { title: 'T', publisher: 'P', licence: 'L', licenceNote: 'N' };
+
+  it('names the code point of a character outside the allowed set', () => {
+    expect(textFieldProblem({ ...ok, title: 'Field guide' })).toBe('title has a character outside the allowed set: U+00A0');
+    expect(textFieldProblem({ ...ok, publisher: 'Acme™' })).toBe('publisher has a character outside the allowed set: U+2122');
+  });
+
+  it('accepts ampersand, apostrophe, accented letters and an en dash', () => {
+    expect(textFieldProblem({ ...ok, title: "Smith & Wesson's café guide – part 1" })).toBeNull();
+  });
+
+  it('enforces the length caps', () => {
+    expect(textFieldProblem({ ...ok, title: 'a'.repeat(200) })).toBeNull();
+    expect(textFieldProblem({ ...ok, title: 'a'.repeat(201) })).toBe('title is longer than 200 characters');
+    expect(textFieldProblem({ ...ok, licenceNote: 'a'.repeat(2001) })).toBe('licenceNote is longer than 2000 characters');
+  });
+
+  it('refuses line breaks, surrounding whitespace and empty text', () => {
+    expect(textFieldProblem({ ...ok, licenceNote: 'line one\nline two' })).toBe('licenceNote has a character outside the allowed set: U+000A');
+    expect(textFieldProblem({ ...ok, title: ' padded' })).toBe('title has leading or trailing whitespace');
+    expect(textFieldProblem({ ...ok, licence: '' })).toBe('licence must be non-empty text');
   });
 });
 

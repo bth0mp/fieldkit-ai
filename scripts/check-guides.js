@@ -200,14 +200,47 @@ function shapeEntries(guides, categoryIds) {
     .sort((a, b) => categoryIds.indexOf(a.category) - categoryIds.indexOf(b.category) || a.title.localeCompare(b.title));
 }
 
+// Mirrors LATIN_TEXT_CODE_POINTS, the caps and isLine in src/features/guideLibrary/catalogue.ts, the source of truth.
+// One entry the app rejects blocks every phone from updating, so keep these in step with that file.
+const LATIN_TEXT_CODE_POINTS = [
+  [0x0020, 0x007e],
+  [0x00a1, 0x00ac], [0x00ae, 0x00ff],
+  [0x0100, 0x017f],
+  [0x2013, 0x2014],
+  [0x2018, 0x2019], [0x201c, 0x201d],
+  [0x2022, 0x2022], [0x2026, 0x2026],
+];
+const TEXT_FIELD_MAX = { title: 200, publisher: 80, licence: 80, licenceNote: 2000 };
 const isText = v => typeof v === 'string' && v.length > 0;
+
+/** The first character outside the allowlist, as "U+00A0", or null. A code-point loop, no \p escapes. */
+function firstDisallowedChar(s) {
+  for (const ch of s) {
+    const cp = ch.codePointAt(0);
+    if (!LATIN_TEXT_CODE_POINTS.some(([lo, hi]) => cp >= lo && cp <= hi)) return `U+${cp.toString(16).toUpperCase().padStart(4, '0')}`;
+  }
+  return null;
+}
+
+/** Why title, publisher, licence or licenceNote would be rejected by the app's validator, or null. */
+function textFieldProblem(entry) {
+  for (const [field, max] of Object.entries(TEXT_FIELD_MAX)) {
+    const v = entry[field];
+    if (!isText(v)) return `${field} must be non-empty text`;
+    if (v.length > max) return `${field} is longer than ${max} characters`;
+    if (v.trim() !== v) return `${field} has leading or trailing whitespace`;
+    const bad = firstDisallowedChar(v);
+    if (bad) return `${field} has a character outside the allowed set: ${bad}`;
+  }
+  return null;
+}
 
 function validateCandidate(candidate, categoryIds) {
   const missing = REQUIRED_CANDIDATE_FIELDS.filter(f => candidate[f] === undefined || candidate[f] === '');
   if (missing.length) throw new Error(`missing ${missing.join(', ')}`);
   if (typeof candidate.id !== 'string' || !ID_PATTERN.test(candidate.id)) throw new Error('bad id');
-  const notText = ['title', 'publisher', 'licence', 'licenceNote'].filter(f => !isText(candidate[f]));
-  if (notText.length) throw new Error(`${notText.join(', ')} must be non-empty text`);
+  const textProblem = textFieldProblem(candidate);
+  if (textProblem) throw new Error(textProblem);
   if (!categoryIds.includes(candidate.category)) throw new Error(`unknown category ${candidate.category}`);
   if (!Number.isInteger(candidate.year)) throw new Error('year must be an integer');
   if (typeof candidate.url !== 'string' || !HTTPS_DNS_HOST_URL_PATTERN.test(candidate.url)) {
@@ -369,7 +402,9 @@ function verifyMirrors(guide, candidates) {
 
 async function verifyGuide(guide, candidates, mirrorsOnly) {
   const record = candidates.find(c => c.id === guide.id);
+  const textProblem = mirrorsOnly ? null : textFieldProblem(guide);
   const problems = mirrorsOnly ? [] : await verifyPrimary(guide, record);
+  if (textProblem) problems.unshift(textProblem);
   try {
     await verifyMirrors(guide, candidates);
   } catch (err) {
@@ -406,4 +441,4 @@ if (require.main === module) {
   run().then(code => process.exit(code), err => { console.error(err.message); process.exit(2); });
 }
 
-module.exports = { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem, thirdPartyMentions, thirdPartyProblem };
+module.exports = { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem, thirdPartyMentions, thirdPartyProblem, textFieldProblem };
