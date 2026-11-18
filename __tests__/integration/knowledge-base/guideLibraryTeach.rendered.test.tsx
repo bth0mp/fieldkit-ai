@@ -111,6 +111,17 @@ async function seedDownloaded(fs: Fs, dir: string, entries: { id: string }[], bo
 
 const NOTE = 'The assistant searches every guide it has learned. More guides make answers slower.';
 
+/** Tap a guide's Remove button, then answer the confirmation sheet. Returns the sheet's message. */
+async function removeGuide(h: Opened, view: View, id: string, answer: 'Remove' | 'Cancel' = 'Remove'): Promise<string> {
+  h.rtl.fireEvent.press(view.getByTestId(`guide-remove-${id}`));
+  await h.rtl.waitFor(() => { expect(view.getByText('Remove guide?')).toBeTruthy(); });
+  const message = String(view.getByText(/will be deleted from your phone\./).props.children);
+  // The sheet is drawn after the list, so its button is the last one with this text (the row's Remove is first).
+  const buttons = view.getAllByText(answer);
+  h.rtl.fireEvent.press(buttons[buttons.length - 1]);
+  return message;
+}
+
 describe('Guide library teaching (rendered)', () => {
   it('a taught guide answers in a Field guides chat', async () => {
     const h = await openLibrary([KNOTS]);
@@ -120,7 +131,7 @@ describe('Guide library teaching (rendered)', () => {
     expect(switchOf(view, 'test-knots').props.value).toBe(false);
 
     await setTaught(h, view, 'test-knots', true);
-    expect(view.getByText('1 guides · 1 downloaded · 1 taught')).toBeTruthy();
+    expect(view.getByText('1 guide · 1 downloaded · 1 taught')).toBeTruthy();
     view.unmount();
 
     openRoute({ projectId: 'field-guides' });
@@ -179,7 +190,7 @@ describe('Guide library teaching (rendered)', () => {
     expect(await docsInFieldGuides()).toEqual([]);
     expect(await exists(fs, `${dir}/test-knots.pdf`)).toBe(true);
     expect(view.getByTestId('guide-open-test-knots')).toBeTruthy();
-    expect(view.getByText('1 guides · 1 downloaded · 0 taught')).toBeTruthy();
+    expect(view.getByText('1 guide · 1 downloaded · 0 taught')).toBeTruthy();
   }, 40000);
 
   it('removing a taught guide takes it out of the knowledge base and deletes the file', async () => {
@@ -188,7 +199,8 @@ describe('Guide library teaching (rendered)', () => {
     await downloadGuide(h, view, KNOTS, BOWLINE);
     await setTaught(h, view, 'test-knots', true);
 
-    rtl.fireEvent.press(view.getByTestId('guide-remove-test-knots'));
+    const message = await removeGuide(h, view, 'test-knots');
+    expect(message).toBe('"Test knots" will be deleted from your phone. The assistant will stop using it.');
     await rtl.waitFor(() => { expect(view.getByTestId('guide-download-test-knots')).toBeTruthy(); }, { timeout: 4000 });
     expect(await docsInFieldGuides()).toEqual([]);
     expect(await exists(fs, `${dir}/test-knots.pdf`)).toBe(false);
@@ -245,7 +257,7 @@ describe('Guide library teaching (rendered)', () => {
     rtl.fireEvent(switchOf(view, 'test-knots'), 'valueChange', true);
     await rtl.waitFor(() => { expect(view.getByText('A document with this name is already in Field guides. Remove it there first.')).toBeTruthy(); }, { timeout: 6000 });
     expect(switchOf(view, 'test-knots').props.value).toBe(false);
-    expect(view.getByText('1 guides · 1 downloaded · 0 taught')).toBeTruthy();
+    expect(view.getByText('1 guide · 1 downloaded · 0 taught')).toBeTruthy();
   }, 40000);
 
   it('removing a guide while it is being switched off leaves it removed', async () => {
@@ -254,16 +266,20 @@ describe('Guide library teaching (rendered)', () => {
     await downloadGuide(h, view, KNOTS, BOWLINE);
     await setTaught(h, view, 'test-knots', true);
 
+    // The user asks to remove it, then switches it off while the question is up, then confirms.
+    rtl.fireEvent.press(view.getByTestId('guide-remove-test-knots'));
+    await rtl.waitFor(() => { expect(view.getByText('Remove guide?')).toBeTruthy(); });
     await rtl.act(async () => {
       rtl.fireEvent(switchOf(view, 'test-knots'), 'valueChange', false);
-      rtl.fireEvent.press(view.getByTestId('guide-remove-test-knots'));
+      const buttons = view.getAllByText('Remove');
+      rtl.fireEvent.press(buttons[buttons.length - 1]);
     });
     await rtl.waitFor(() => { expect(view.getByTestId('guide-download-test-knots')).toBeTruthy(); }, { timeout: 4000 });
     // Let anything still running finish: the row must not come back as downloaded with no file.
     await rtl.act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
     expect(view.getByTestId('guide-download-test-knots')).toBeTruthy();
     expect(view.queryByTestId('guide-open-test-knots')).toBeNull();
-    expect(view.getByText('1 guides · 0 downloaded · 0 taught')).toBeTruthy();
+    expect(view.getByText('1 guide · 0 downloaded · 0 taught')).toBeTruthy();
     expect(await exists(fs, `${dir}/test-knots.pdf`)).toBe(false);
     expect(await docsInFieldGuides()).toEqual([]);
   }, 40000);
@@ -329,7 +345,7 @@ describe('Guide library teaching (rendered)', () => {
       ragDatabase.insertChunks(docId, [{ content: BOWLINE, position: 0 }]);
     });
     const { rtl, view } = h;
-    await rtl.waitFor(() => { expect(view.getByText('1 guides · 1 downloaded · 0 taught')).toBeTruthy(); }, { timeout: 4000 });
+    await rtl.waitFor(() => { expect(view.getByText('1 guide · 1 downloaded · 0 taught')).toBeTruthy(); }, { timeout: 4000 });
     expect(switchOf(view, 'test-knots').props.value).toBe(false);
     await rtl.waitFor(async () => { expect(await docsInFieldGuides()).toEqual([]); }, { timeout: 4000 });
 
@@ -352,7 +368,7 @@ describe('Guide library teaching (rendered)', () => {
     const again = await mountLibrary(h);
     await h.rtl.waitFor(() => { expect(switchOf(again, 'test-knots').props.value).toBe(false); }, { timeout: 4000 });
     expect(again.getByTestId('guide-open-test-knots')).toBeTruthy();
-    expect(again.getByText('1 guides · 1 downloaded · 0 taught')).toBeTruthy();
+    expect(again.getByText('1 guide · 1 downloaded · 0 taught')).toBeTruthy();
   }, 40000);
 
   it('teaching recreates the Field guides project if it was deleted', async () => {

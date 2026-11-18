@@ -16,7 +16,8 @@ export const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
     ...shadows.small,
     zIndex: 1,
   },
-  headerButton: { width: 36, padding: SPACING.xs, alignItems: 'center' as const },
+  // At least 44 by 44, the smallest comfortable touch target.
+  headerButton: { minWidth: 44, minHeight: 44, alignItems: 'center' as const, justifyContent: 'center' as const },
   headerTitle: { ...TYPOGRAPHY.h2, color: colors.text },
   content: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
   search: {
@@ -50,6 +51,7 @@ export const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
   rowMeta: { ...TYPOGRAPHY.meta, color: colors.textMuted, marginTop: 2 },
   progress: { ...TYPOGRAPHY.bodySmall, color: colors.textSecondary },
   note: { ...TYPOGRAPHY.bodySmall, color: colors.textSecondary, paddingTop: SPACING.sm },
+  empty: { ...TYPOGRAPHY.body, color: colors.textMuted, textAlign: 'center' as const, paddingTop: SPACING.xl },
   teach: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,

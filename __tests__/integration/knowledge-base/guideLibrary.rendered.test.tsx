@@ -56,6 +56,17 @@ const AsyncStorageOf = () => {
 };
 const unlinked = (fs: Fs, path: string) => (fs.module.unlink as jest.Mock).mock.calls.some(([p]) => p === path);
 
+/** Tap a guide's Remove button, then answer the confirmation sheet. Returns the sheet's message. */
+async function removeGuide(h: Opened, view: View, id: string, answer: 'Remove' | 'Cancel' = 'Remove'): Promise<string> {
+  h.rtl.fireEvent.press(view.getByTestId(`guide-remove-${id}`));
+  await h.rtl.waitFor(() => { expect(view.getByText('Remove guide?')).toBeTruthy(); });
+  const message = String(view.getByText(/will be deleted from your phone\./).props.children);
+  // The sheet is drawn after the list, so its button is the last one with this text (the row's Remove is first).
+  const buttons = view.getAllByText(answer);
+  h.rtl.fireEvent.press(buttons[buttons.length - 1]);
+  return message;
+}
+
 /** Boot the app, let `seed` set up the device, then open the Guide library and wait for its refresh to end. */
 async function openLibrary(seed: (fs: Fs) => void | Promise<void> = () => {}) {
   const h = await setupChatScreen({ engine: 'llama', pdf: true, sqlite: true });
@@ -123,11 +134,12 @@ describe('Guide library (rendered)', () => {
     expect(view.getByTestId('guide-open-test-knots')).toBeTruthy();
   }, 30000);
 
-  it('downloads a guide, opens it and removes it', async () => {
-    const { rtl, fs, view } = await openLibrary(f => {
+  it('downloads a guide, opens it and removes it once the user confirms', async () => {
+    const h = await openLibrary(f => {
       f.seedDownload(CATALOGUE_URL, TEST_CATALOGUE);
       f.seedDownload(KNOTS.url, KNOTS_BODY);
     });
+    const { rtl, fs, view } = h;
     const { viewDocument } = require('@react-native-documents/viewer');
 
     rtl.fireEvent.press(view.getByTestId('guide-download-test-knots'));
@@ -142,7 +154,14 @@ describe('Guide library (rendered)', () => {
       expect(viewDocument).toHaveBeenCalledWith({ uri: 'file:///docs/guide-library/test-knots.pdf', mimeType: 'application/pdf', grantPermissions: 'read' });
     });
 
-    rtl.fireEvent.press(view.getByTestId('guide-remove-test-knots'));
+    // Cancel keeps it.
+    const message = await removeGuide(h, view, 'test-knots', 'Cancel');
+    expect(message).toBe('"Test knots" will be deleted from your phone.');
+    await rtl.act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
+    expect(view.getByTestId('guide-open-test-knots')).toBeTruthy();
+    expect(await exists(fs, `${DIR}/test-knots.pdf`)).toBe(true);
+
+    await removeGuide(h, view, 'test-knots');
     await rtl.waitFor(() => { expect(view.getByTestId('guide-download-test-knots')).toBeTruthy(); }, { timeout: 4000 });
     expect(await exists(fs, `${DIR}/test-knots.pdf`)).toBe(false);
   }, 30000);
@@ -346,7 +365,7 @@ describe('Guide library (rendered)', () => {
     expect(view.getAllByText('Scanned, read only')).toHaveLength(1);
 
     // Once removed, the row is the catalogue's entry again.
-    rtl.fireEvent.press(view.getByTestId('guide-remove-test-knots'));
+    await removeGuide(h, view, 'test-knots');
     await rtl.waitFor(() => { expect(view.getByText('Test knots, revised')).toBeTruthy(); }, { timeout: 4000 });
     expect(view.queryByTestId('guide-teach-test-knots')).toBeNull();
   }, 30000);
@@ -505,10 +524,12 @@ describe('Guide library (rendered)', () => {
       });
       expect(view.queryByText("Couldn't open this guide.")).toBeNull();
 
-      rtl.fireEvent.press(view.getByTestId('guide-remove-test-knots'));
+      // Removing it is for good, and the question says so.
+      const message = await removeGuide(h, view, 'test-knots');
+      expect(message).toBe('"Test knots" will be deleted from your phone. It is no longer in the library, so you won\'t be able to download it again.');
       await rtl.waitFor(() => { expect(view.queryByTestId('guide-row-test-knots')).toBeNull(); }, { timeout: 4000 });
       expect(view.queryByText(DELISTED_HEADING)).toBeNull();
-      expect(view.getByText('1 guides · 0 downloaded · 0 taught')).toBeTruthy();
+      expect(view.getByText('1 guide · 0 downloaded · 0 taught')).toBeTruthy();
       expect(await exists(fs, `${DIR}/test-knots.pdf`)).toBe(false);
     }, 40000);
 
@@ -572,7 +593,7 @@ describe('Guide library (rendered)', () => {
       await rtl.act(async () => { release(); });
       await rtl.waitFor(() => { expect(view.queryByTestId('guide-row-test-knots')).toBeNull(); }, { timeout: 4000 });
       expect(view.queryByText(DELISTED_HEADING)).toBeNull();
-      expect(view.getByText('1 guides · 0 downloaded · 0 taught')).toBeTruthy();
+      expect(view.getByText('1 guide · 0 downloaded · 0 taught')).toBeTruthy();
       expect(await exists(fs, `${DIR}/test-knots.pdf`)).toBe(false);
       expect(await exists(fs, `${DIR}/test-knots.pdf.part`)).toBe(false);
     }, 40000);
@@ -613,7 +634,7 @@ describe('Guide library (rendered)', () => {
     }, 30000);
   });
 
-  it('search filters by title and publisher', async () => {
+  it('search filters by title, publisher and id', async () => {
     const { rtl, view } = await openLibrary(f => f.seedDownload(CATALOGUE_URL, TEST_CATALOGUE));
     const search = view.getByTestId('guide-library-search');
     expect(search.props.placeholder).toBe('Search guides');
@@ -630,12 +651,40 @@ describe('Guide library (rendered)', () => {
     rtl.fireEvent.changeText(search, 'nothing like this');
     expect(view.queryByText('Test knots')).toBeNull();
     expect(view.queryByText('Test water')).toBeNull();
+    expect(view.getByText('No guides match your search.')).toBeTruthy();
+
+    // A publication number is part of the id.
+    rtl.fireEvent.changeText(search, 'TEST-WAT');
+    expect(view.getByText('Test water')).toBeTruthy();
+    expect(view.queryByText('Test knots')).toBeNull();
+    expect(view.queryByText('No guides match your search.')).toBeNull();
 
     // Tapping a row shows where the guide comes from.
     rtl.fireEvent.changeText(search, '');
     expect(view.queryByText(KNOTS.url)).toBeNull();
+    expect(view.getByTestId('guide-row-test-knots').props.accessibilityState).toEqual({ expanded: false });
     rtl.fireEvent.press(view.getByTestId('guide-row-test-knots'));
     expect(view.getByText(KNOTS.url)).toBeTruthy();
     expect(view.getByText(KNOTS.licenceNote)).toBeTruthy();
+    expect(view.getByTestId('guide-row-test-knots').props.accessibilityState).toEqual({ expanded: true });
+  }, 30000);
+
+  it('a screen reader hears what each control is for', async () => {
+    const h = await openLibrary(f => {
+      f.seedDownload(CATALOGUE_URL, TEST_CATALOGUE);
+      f.seedDownload(KNOTS.url, KNOTS_BODY);
+    });
+    const { rtl, view } = h;
+    expect(view.getByRole('button', { name: 'Back' })).toBeTruthy();
+    expect(view.getByRole('button', { name: 'Refresh guide list' })).toBeTruthy();
+    expect(view.getByTestId('guide-row-test-knots').props.accessibilityRole).toBe('button');
+    expect(view.getByLabelText('Download Test knots')).toBeTruthy();
+    rtl.fireEvent.press(view.getByLabelText('Download Test knots'));
+    await rtl.waitFor(() => { expect(view.getByLabelText('Open Test knots')).toBeTruthy(); }, { timeout: 4000 });
+    expect(view.getByLabelText('Remove Test knots')).toBeTruthy();
+    expect(view.getByLabelText('Assistant knows Test knots')).toBeTruthy();
+    // The visible words are unchanged.
+    expect(view.getByText('Open')).toBeTruthy();
+    expect(view.getByText('Assistant knows this')).toBeTruthy();
   }, 30000);
 });
