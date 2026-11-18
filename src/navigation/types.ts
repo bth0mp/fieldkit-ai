@@ -11,6 +11,7 @@ export type RootStackParamList = {
   ProjectEdit: { projectId?: string };
   ProjectChats: { projectId: string };
   KnowledgeBase: { projectId: string };
+  GuideLibrary: undefined;
   DocumentPreview: { filePath: string; fileName: string; fileSize: number };
   // Former SettingsStack
   ModelSettings: undefined;
