@@ -137,6 +137,12 @@ that is stricter or looser.
    reproduces or adapts a table, figure, photo, form or passage credited to an outside owner (a standards body,
    company, publisher, university) stays out, with or without "by permission". The `creditsNote` records each
    mention and why it is a citation and not a reproduction.
+   "Reproduced" means the document itself says so: a credit line, caption, footnote or in-picture credit on the
+   item, or a statement that a named passage, table or figure is taken, adapted, condensed or reprinted from a
+   named outside owner's work. A table of plain data with no such attribution is taken to be the publisher's own
+   compilation, even when the reference list cites a handbook, standard or company sheet that prints similar
+   data; a reference-list entry is a citation. Wording that a federal regulation itself prints is the
+   regulation's, whoever it names. This one test applies to every guide.
 3. **The second-copy rule stays.** A guide whose only copy is on a site that is not the publisher's own or an
    institutional archive needs a byte-identical copy on a second, independent site. Guides without one stay in
    `catalog/pending/third-party-host-class.json` until a second copy is found.
@@ -150,7 +156,9 @@ that is stricter or looser.
 5. **Scope removals stand.** Doctrine, tactics, weapons, administration and specialist military plant stay out.
 
 Not changed by the rulings: outdated safety advice still rejects a guide; a download the app's own request cannot
-fetch still cannot be listed; when in doubt, leave it out.
+fetch still cannot be listed; when in doubt, leave it out. An image that is evidently an outside owner's (stock
+imagery, a manufacturer's catalogue photograph, another organisation's logo or chart) rejects any guide,
+military or civilian, whatever statement the guide prints about itself.
 
 Where the file comes from (designer's call): the publisher's own host first. If that host is unreliable or the
 file has moved, a byte-exact institutional copy is allowed: govinfo.gov, DTIC, the UNT digital library and web
