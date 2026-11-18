@@ -2,7 +2,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
-const { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem, scanThirdParty, thirdPartyMentions, thirdPartyProblem, textFieldProblem } = require('../../../scripts/check-guides.js');
+const { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem, scanThirdParty, thirdPartyMentions, thirdPartyProblem, textFieldProblem, validateCandidate, teachable, readOnlyMismatch } = require('../../../scripts/check-guides.js');
 
 describe('thirdPartyMentions across wrapped lines', () => {
   it.each([
@@ -221,7 +221,7 @@ describe('redirect hops', () => {
 describe('shapeEntries', () => {
   const entry = (id: string, category: string, title: string) => ({
     id, title, category, publisher: 'p', year: 2020, licence: 'l', licenceNote: 'n', url: 'https://a.gov/x.pdf',
-    bytes: 1, sha256: 'a'.repeat(64), pages: 1, hasText: true, statementSeen: true, evidence: 'e', approxBytes: 5, mirrors: ['https://b.org/x.pdf'], creditsReviewed: true, creditsNote: 'n',
+    bytes: 1, sha256: 'a'.repeat(64), pages: 1, hasText: true, statementSeen: true, evidence: 'e', approxBytes: 5, mirrors: ['https://b.org/x.pdf'], creditsReviewed: true, creditsNote: 'n', readOnly: true, readOnlyNote: 'n',
   });
 
   it('strips helper fields and sorts by category order, then title', () => {
@@ -234,8 +234,45 @@ describe('shapeEntries', () => {
       expect(g).not.toHaveProperty('mirrors');
       expect(g).not.toHaveProperty('creditsReviewed');
       expect(g).not.toHaveProperty('creditsNote');
+      expect(g).not.toHaveProperty('readOnly');
+      expect(g).not.toHaveProperty('readOnlyNote');
       expect(Object.keys(g)).toHaveLength(12);
     }
+  });
+});
+
+describe('read only candidates', () => {
+  const base = {
+    id: 'a', title: 'T', category: 'water', publisher: 'P', year: 2020, licence: 'L', licenceNote: 'N',
+    url: 'https://a.gov/x.pdf',
+  };
+  const check = (extra: object) => () => validateCandidate({ ...base, ...extra }, ['water']);
+
+  it('accepts a candidate marked read only with a note, or not marked at all', () => {
+    expect(check({})).not.toThrow();
+    expect(check({ readOnly: true, readOnlyNote: 'maps are images' })).not.toThrow();
+  });
+
+  it('rejects a readOnly that is not true, a missing note and a note without readOnly', () => {
+    expect(check({ readOnly: false, readOnlyNote: 'x' })).toThrow('readOnly must be true when present');
+    expect(check({ readOnly: 'yes', readOnlyNote: 'x' })).toThrow('readOnly must be true when present');
+    expect(check({ readOnly: true })).toThrow('readOnly needs a readOnlyNote');
+    expect(check({ readOnly: true, readOnlyNote: '' })).toThrow('readOnly needs a readOnlyNote');
+    expect(check({ readOnlyNote: 'x' })).toThrow('readOnlyNote needs readOnly');
+  });
+
+  it('ships hasText only for a guide with a text layer that is not read only', () => {
+    expect(teachable({}, true)).toBe(true);
+    expect(teachable({ readOnly: true }, true)).toBe(false);
+    expect(teachable({}, false)).toBe(false);
+    expect(teachable({ readOnly: true }, false)).toBe(false);
+  });
+
+  it('reports a guide marked read only that still says hasText', () => {
+    expect(readOnlyMismatch({ hasText: true }, { readOnly: true })).toBe('marked read only in candidates.json but hasText is true');
+    expect(readOnlyMismatch({ hasText: false }, { readOnly: true })).toBeNull();
+    expect(readOnlyMismatch({ hasText: true }, {})).toBeNull();
+    expect(readOnlyMismatch({ hasText: true }, undefined)).toBeNull();
   });
 });
 

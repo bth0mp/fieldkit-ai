@@ -2,6 +2,7 @@
 // Turns hand-written candidates (catalog/candidates.json) into measured entries in catalog/guides.json.
 //   node scripts/check-guides.js           check candidates not yet in guides.json and add the ones that pass
 //   node scripts/check-guides.js --verify  re-download every guide; exit 1 if a link is dead or size/hash differ
+//   A candidate may carry "readOnly": true and a "readOnlyNote" (what is unreadable): it ships with hasText false.
 // Needs pdftotext on the PATH (Git Bash: /mingw64/bin). Downloads are untrusted: each goes in its own temp dir.
 const { createHash } = require('node:crypto');
 const { execFileSync } = require('node:child_process');
@@ -267,6 +268,24 @@ function textFieldProblem(entry) {
   return null;
 }
 
+/** Why a candidate's readOnly / readOnlyNote helper fields are unusable, or null. */
+function readOnlyFieldProblem(candidate) {
+  const { readOnly, readOnlyNote } = candidate;
+  if (readOnly === undefined) return readOnlyNote === undefined ? null : 'readOnlyNote needs readOnly';
+  if (readOnly !== true) return 'readOnly must be true when present';
+  return isText(readOnlyNote) ? null : 'readOnly needs a readOnlyNote';
+}
+
+/** The hasText a guide ships with: the measured text layer, unless the candidate is marked read only. */
+function teachable(candidate, layerHasText) {
+  return layerHasText && candidate.readOnly !== true;
+}
+
+/** A guide listed with hasText true although its candidate record says read only, or null. */
+function readOnlyMismatch(guide, record) {
+  return record && record.readOnly === true && guide.hasText === true ? 'marked read only in candidates.json but hasText is true' : null;
+}
+
 function validateCandidate(candidate, categoryIds) {
   const missing = REQUIRED_CANDIDATE_FIELDS.filter(f => candidate[f] === undefined || candidate[f] === '');
   if (missing.length) throw new Error(`missing ${missing.join(', ')}`);
@@ -278,6 +297,8 @@ function validateCandidate(candidate, categoryIds) {
   if (typeof candidate.url !== 'string' || !HTTPS_DNS_HOST_URL_PATTERN.test(candidate.url)) {
     throw new Error('url must be https with a plain DNS host (no credentials, port, IP address or localhost)');
   }
+  const readOnlyProblem = readOnlyFieldProblem(candidate);
+  if (readOnlyProblem) throw new Error(readOnlyProblem);
   const problem = mirrorProblem(candidate);
   if (problem) throw new Error(problem);
 }
@@ -358,7 +379,7 @@ function measureCandidate(candidate) {
     if (problem) throw new Error(problem);
     const creditsProblem = thirdPartyProblem(candidate, layer);
     if (creditsProblem) throw new Error(creditsProblem);
-    return { ...candidate, ...measured, pages: layer.pages, hasText: layer.hasText };
+    return { ...candidate, ...measured, pages: layer.pages, hasText: teachable(candidate, layer.hasText) };
   });
 }
 
@@ -436,6 +457,8 @@ async function verifyGuide(guide, candidates, mirrorsOnly) {
   const record = candidates.find(c => c.id === guide.id);
   const textProblem = mirrorsOnly ? null : textFieldProblem(guide);
   const problems = mirrorsOnly ? [] : await verifyPrimary(guide, record);
+  const readOnlyProblem = mirrorsOnly ? null : readOnlyMismatch(guide, record);
+  if (readOnlyProblem) problems.unshift(readOnlyProblem);
   if (textProblem) problems.unshift(textProblem);
   try {
     await verifyMirrors(guide, candidates);
@@ -473,4 +496,4 @@ if (require.main === module) {
   run().then(code => process.exit(code), err => { console.error(err.message); process.exit(2); });
 }
 
-module.exports = { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem, scanThirdParty, thirdPartyMentions, thirdPartyProblem, textFieldProblem };
+module.exports = { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem, scanThirdParty, thirdPartyMentions, thirdPartyProblem, textFieldProblem, validateCandidate, teachable, readOnlyMismatch };
