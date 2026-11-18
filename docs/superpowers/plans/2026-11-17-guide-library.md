@@ -324,11 +324,11 @@ This is research, not code. Its test is the checker and the Task 1 unit test.
 - Exact copy: knowledge base row `Guide library` with description `Download more free guides`; Settings item `Guide library` with description `Free guides to download and use offline`; licences intro gains the sentence `Guides you download from the Guide library are listed there with their licences.`
 - Test ids: `kb-open-guide-library`, `settings-guide-library`.
 
-- [ ] **Step 1: Write the failing rendered tests:** the Field guides knowledge base screen shows `kb-open-guide-library` and pressing it navigates to `GuideLibrary` (capture `navigate` in the navigation mock); a knowledge base for any other project does not show it; the licences screen shows the new sentence.
-- [ ] **Step 2: Run.** Expected: FAIL.
-- [ ] **Step 3: Implement.** The knowledge base row renders only when `projectId === FIELD_GUIDES_PROJECT_ID`, above the document list and also in the empty state.
-- [ ] **Step 4: Run.** Expected: PASS.
-- [ ] **Step 5: Checks and commit.** `feat(guides): reach the guide library from the knowledge base and Settings`
+- [x] **Step 1: Write the failing rendered tests:** the Field guides knowledge base screen shows `kb-open-guide-library` and pressing it navigates to `GuideLibrary` (capture `navigate` in the navigation mock); a knowledge base for any other project does not show it; the licences screen shows the new sentence.
+- [x] **Step 2: Run.** Expected: FAIL.
+- [x] **Step 3: Implement.** The knowledge base row renders only when `projectId === FIELD_GUIDES_PROJECT_ID`, above the document list and also in the empty state.
+- [x] **Step 4: Run.** Expected: PASS.
+- [x] **Step 5: Checks and commit.** `feat(guides): reach the guide library from the knowledge base and Settings`
 
 ---
 
