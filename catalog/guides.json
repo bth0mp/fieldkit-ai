@@ -422,20 +422,6 @@
       "hasText": true
     },
     {
-      "id": "army-tc-9-524",
-      "title": "Fundamentals of Machine Tools",
-      "category": "mechanical",
-      "publisher": "US Army",
-      "year": 1996,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). TC 9-524, page 1: distribution statement printed in the document: approved for public release; distribution is unlimited.",
-      "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tc9_524.pdf",
-      "bytes": 7006162,
-      "sha256": "d157c2709df54bc600dc03bb9379a2da3deb8e9d94e5d28a88a73ae6fa204ef9",
-      "pages": 312,
-      "hasText": true
-    },
-    {
       "id": "army-atp-4-31",
       "title": "Ground Equipment Battle Damage Assessment, Repair, and Recovery",
       "category": "mechanical",
@@ -503,20 +489,6 @@
       "bytes": 1539380,
       "sha256": "fa60248d66e05f314726518d89028d9eb4fe3f2bc6d3cf1576abf2e16713fa6c",
       "pages": 128,
-      "hasText": true
-    },
-    {
-      "id": "army-tc-9-237",
-      "title": "Welding Theory and Application",
-      "category": "mechanical",
-      "publisher": "US Army",
-      "year": 1993,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). TC 9-237, page 1: distribution statement printed in the document: approved for public release; distribution is unlimited.",
-      "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tc9_237.pdf",
-      "bytes": 14371965,
-      "sha256": "065fdf7f0b4439f3da7985bd3a18af0ca8ad8e7d4a26d426e0fd535c951ebf88",
-      "pages": 782,
       "hasText": true
     },
     {
