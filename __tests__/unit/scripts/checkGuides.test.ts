@@ -2,7 +2,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
-const { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem, thirdPartyMentions, thirdPartyProblem, textFieldProblem } = require('../../../scripts/check-guides.js');
+const { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem, scanThirdParty, thirdPartyMentions, thirdPartyProblem, textFieldProblem } = require('../../../scripts/check-guides.js');
 
 describe('thirdPartyMentions across wrapped lines', () => {
   it.each([
@@ -100,6 +100,17 @@ describe('thirdPartyMentions', () => {
     expect(thirdPartyMentions('Figures 2-1 to 2-4 are used by per-\nmission to reproduce them here.')).toHaveLength(1);
     expect(thirdPartyMentions('This chart is copy-\nright 1998 by a private firm.')).toHaveLength(1);
     expect(thirdPartyMentions('Photographs cour-  \r\n  tesy of the maker.')).toHaveLength(1);
+  });
+
+  it('a flagged word that joining would glue to the word before it is still found', () => {
+    expect(thirdPartyMentions('This is non-\ncopyrighted material.')).toHaveLength(1);
+    expect(thirdPartyMentions('Free of copyright-\nfree claims.')).toHaveLength(1);
+  });
+
+  it('a hit outside any split is counted once, though it is in both the printed and the joined text', () => {
+    expect(thirdPartyMentions('Used by permission of the owner. A water-\nproof bag.')).toHaveLength(1);
+    const { total } = scanThirdParty('Used by permission. Later, per-\nmission again, and non-\ncopyrighted too.');
+    expect(total).toBe(3);
   });
 
   it('an ordinary compound split at a line end matches nothing', () => {

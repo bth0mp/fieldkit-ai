@@ -166,25 +166,48 @@ const THIRD_PARTY_PATTERN = new RegExp([
 const SNIPPET_RADIUS = 60;
 const MAX_SNIPPETS = 5;
 
-// pdftotext splits a word with a hyphen at a line end ("per-\nmission"), which the whole-word pattern would miss.
-// Joining every such split also glues real compounds ("first-\naid" -> "firstaid"); none of the flagged words
-// is the second half of a common compound, so that costs nothing that matters.
+// pdftotext splits a word with a hyphen at a line end ("per-\nmission"), which the whole-word pattern misses in the
+// text as printed. Joining the splits finds those, but glues real compounds too ("non-\ncopyrighted" ->
+// "noncopyrighted"), which hides a hit the printed text has. So the scan reads both: every hit in the joined text,
+// plus each hit in the printed text that sits against a split (the ones joining glued away). A hit away from any
+// split is in both texts and is counted once.
 const LINE_END_HYPHEN = /(\p{L})-[ \t]*\r?\n[ \t]*(\p{L})/gu;
 const joinHyphenatedLineBreaks = text => text.replace(LINE_END_HYPHEN, '$1$2');
+const SPLIT_BEFORE = /\p{L}-[ \t]*\r?\n[ \t]*$/u;
+const SPLIT_AFTER = /^-[ \t]*\r?\n[ \t]*\p{L}/u;
+const SPLIT_REACH = 40;
 
-/** Up to five short snippets around wording that suggests third-party material, plus the total number of matches. */
-function scanThirdParty(rawText) {
-  const text = joinHyphenatedLineBreaks(rawText);
-  const total = [...text.matchAll(new RegExp(THIRD_PARTY_PATTERN.source, THIRD_PARTY_PATTERN.flags))].length;
-  const pattern = new RegExp(THIRD_PARTY_PATTERN.source, THIRD_PARTY_PATTERN.flags);
+const matchesIn = text => [...text.matchAll(new RegExp(THIRD_PARTY_PATTERN.source, THIRD_PARTY_PATTERN.flags))];
+
+/** True when joining split words glues `match` to its neighbour, so only the printed text shows it. */
+function gluedByJoin(text, match) {
+  const end = match.index + match[0].length;
+  return SPLIT_BEFORE.test(text.slice(Math.max(0, match.index - SPLIT_REACH), match.index))
+    || SPLIT_AFTER.test(text.slice(end, end + SPLIT_REACH));
+}
+
+/** Snippets for `matches` (in order) of `text`, skipping hits within a snippet's reach of the one before. */
+function snippetsOf(text, matches, room) {
   const snippets = [];
-  let match;
-  while (snippets.length < MAX_SNIPPETS && (match = pattern.exec(text)) !== null) {
+  let next = 0;
+  for (const match of matches) {
+    if (snippets.length >= room) break;
+    if (match.index < next) continue;
     const raw = text.slice(Math.max(0, match.index - SNIPPET_RADIUS), match.index + match[0].length + SNIPPET_RADIUS);
     snippets.push(raw.replace(/\s+/g, ' ').trim());
-    pattern.lastIndex = match.index + match[0].length + SNIPPET_RADIUS;
+    next = match.index + match[0].length + SNIPPET_RADIUS;
   }
-  return { snippets, total };
+  return snippets;
+}
+
+/** Up to five short snippets around wording that suggests third-party material, plus the total number of matches. */
+function scanThirdParty(printed) {
+  const joined = joinHyphenatedLineBreaks(printed);
+  const joinedHits = matchesIn(joined);
+  const printedOnly = matchesIn(printed).filter(match => gluedByJoin(printed, match));
+  const snippets = snippetsOf(joined, joinedHits, MAX_SNIPPETS);
+  snippets.push(...snippetsOf(printed, printedOnly, MAX_SNIPPETS - snippets.length));
+  return { snippets, total: joinedHits.length + printedOnly.length };
 }
 
 const thirdPartyMentions = text => scanThirdParty(text).snippets;
@@ -450,4 +473,4 @@ if (require.main === module) {
   run().then(code => process.exit(code), err => { console.error(err.message); process.exit(2); });
 }
 
-module.exports = { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem, thirdPartyMentions, thirdPartyProblem, textFieldProblem };
+module.exports = { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem, scanThirdParty, thirdPartyMentions, thirdPartyProblem, textFieldProblem };
