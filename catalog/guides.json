@@ -72,20 +72,6 @@
       "hasText": true
     },
     {
-      "id": "army-tb-med-508",
-      "title": "Prevention and Management of Cold-Weather Injuries",
-      "category": "medical",
-      "publisher": "US Army",
-      "year": 2026,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). TB MED 508, front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited.",
-      "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN45918-TB_MED_508-000-WEB-1.pdf",
-      "bytes": 7202752,
-      "sha256": "7135b4e4824e4c0bd7da2eb5b5dc86586d09e744ddf1982b14f50d2d140e2b05",
-      "pages": 144,
-      "hasText": true
-    },
-    {
       "id": "army-tb-med-593",
       "title": "Guidelines for Field Waste Management",
       "category": "water",
@@ -100,20 +86,6 @@
       "hasText": true
     },
     {
-      "id": "army-tb-med-577",
-      "title": "Sanitary Control and Surveillance of Field Water Supplies",
-      "category": "water",
-      "publisher": "US Army",
-      "year": 2010,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). TB MED 577, front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited.",
-      "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tbmed577.pdf",
-      "bytes": 1890594,
-      "sha256": "c6545d275891af9b1204bcc4c6e924250e03579578fd29acc847bd0a66986df7",
-      "pages": 202,
-      "hasText": true
-    },
-    {
       "id": "army-atp-4-25-12",
       "title": "Unit Field Sanitation Teams",
       "category": "water",
@@ -125,20 +97,6 @@
       "bytes": 5049825,
       "sha256": "2f51ec9f16984bd9a780cf14abd4d304d3e7f220f1f8e2a148eb360dff0b3f04",
       "pages": 174,
-      "hasText": true
-    },
-    {
-      "id": "army-tm-3-34-56",
-      "title": "Waste Management for Deployed Forces",
-      "category": "water",
-      "publisher": "US Army",
-      "year": 2013,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). TM 3-34.56, front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited. Edition including Change 1 (September 2021).",
-      "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN33490-TM_3-34.56-001-WEB-2.pdf",
-      "bytes": 12046242,
-      "sha256": "dbaeb7b59e05c5e8cf01302d766d7cddcc09ed12f0b3bdafc67848b7a99924fd",
-      "pages": 192,
       "hasText": true
     },
     {
@@ -184,20 +142,6 @@
       "hasText": true
     },
     {
-      "id": "army-tm-3-34-44",
-      "title": "Concrete and Masonry",
-      "category": "building",
-      "publisher": "US Army",
-      "year": 2012,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). TM 3-34.44, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited. Edition with Change 1 (Army listing date 23 July 2012).",
-      "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN33491-TM_3-34.44-001-WEB-3.pdf",
-      "bytes": 9278980,
-      "sha256": "a407242c4ca3bf06ede95a3de9581f064ba328cc8d62b9f4fb5052bad54d5107",
-      "pages": 302,
-      "hasText": true
-    },
-    {
       "id": "army-tm-3-34-51",
       "title": "Construction Drafting",
       "category": "building",
@@ -226,20 +170,6 @@
       "hasText": true
     },
     {
-      "id": "army-tm-3-34-64",
-      "title": "Military Soils Engineering",
-      "category": "building",
-      "publisher": "US Army",
-      "year": 2012,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). TM 3-34.64, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited.",
-      "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tm3_34x64.pdf",
-      "bytes": 42386597,
-      "sha256": "c6de692903da7eccb8b863c4c66b5040d6ff3ee57c5140b0bc086910886d94b9",
-      "pages": 456,
-      "hasText": true
-    },
-    {
       "id": "army-tm-3-34-70",
       "title": "Plumbing, Pipe Fitting, and Sewerage",
       "category": "building",
@@ -251,20 +181,6 @@
       "bytes": 16362037,
       "sha256": "639796ba364d248dcaf7ff37564c8e392b1d37948d550cf32c43b3d0f9dbc4cf",
       "pages": 268,
-      "hasText": true
-    },
-    {
-      "id": "army-tc-9-60",
-      "title": "Communications-Electronics Fundamentals: Basic Principles of Alternating Current and Direct Current",
-      "category": "power",
-      "publisher": "US Army",
-      "year": 2004,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). TC 9-60, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited.",
-      "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tc9_60.pdf",
-      "bytes": 6004528,
-      "sha256": "2b5783159f6057a361ddc30db88dd7ec92d17609380f825635da90ab9f2be3be",
-      "pages": 266,
       "hasText": true
     },
     {
@@ -293,76 +209,6 @@
       "bytes": 5457021,
       "sha256": "d18ca012a3387f8347d46e6e5d0a78bb8f8623da723a7eb76807cf7bb487c92b",
       "pages": 100,
-      "hasText": true
-    },
-    {
-      "id": "navy-neets-module-02",
-      "title": "NEETS Module 02: Introduction to Alternating Current and Transformers",
-      "category": "power",
-      "publisher": "US Navy",
-      "year": 1998,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14174 (NEETS Module 2): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-      "url": "https://legacy.maritime.org/doc/neets/mod02.pdf",
-      "bytes": 4060970,
-      "sha256": "c592ec9f684644d7ddb45b1f0c1842920afcac1bcf377d5f68cf8397659c79e1",
-      "pages": 414,
-      "hasText": true
-    },
-    {
-      "id": "navy-neets-module-03",
-      "title": "NEETS Module 03: Introduction to Circuit Protection, Control, and Measurement",
-      "category": "power",
-      "publisher": "US Navy",
-      "year": 1998,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14175 (NEETS Module 3): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-      "url": "https://legacy.maritime.org/doc/neets/mod03.pdf",
-      "bytes": 2475490,
-      "sha256": "652fca0d555a667d8afe76ed455d5e008d4ddd41a6614414128e47a2b33bd96a",
-      "pages": 215,
-      "hasText": true
-    },
-    {
-      "id": "navy-neets-module-04",
-      "title": "NEETS Module 04: Introduction to Electrical Conductors, Wiring Techniques, and Schematic Reading",
-      "category": "power",
-      "publisher": "US Navy",
-      "year": 1998,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14176 (NEETS Module 4): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-      "url": "https://legacy.maritime.org/doc/neets/mod04.pdf",
-      "bytes": 1568011,
-      "sha256": "dd39eb37233c1a4048feff49f08b31f8e4c30c10be22b04c92163bb4c7ca4c6b",
-      "pages": 316,
-      "hasText": true
-    },
-    {
-      "id": "navy-neets-module-05",
-      "title": "NEETS Module 05: Introduction to Generators and Motors",
-      "category": "power",
-      "publisher": "US Navy",
-      "year": 1998,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14177 (NEETS Module 5): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-      "url": "https://legacy.maritime.org/doc/neets/mod05.pdf",
-      "bytes": 1342518,
-      "sha256": "4d1b5ac216fc8b32140e7d1bfb7ee875f0045c9e09a9fdd0cff7f8e5edcf09ba",
-      "pages": 120,
-      "hasText": true
-    },
-    {
-      "id": "navy-neets-module-07",
-      "title": "NEETS Module 07: Introduction to Solid-State Devices and Power Supplies",
-      "category": "power",
-      "publisher": "US Navy",
-      "year": 1998,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14179 (NEETS Module 7): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-      "url": "https://legacy.maritime.org/doc/neets/mod07.pdf",
-      "bytes": 2530628,
-      "sha256": "0d8d27c4d11c526912f9fb936257203728f459f7eda0da7b98b3cbaba02438a0",
-      "pages": 502,
       "hasText": true
     },
     {
@@ -422,34 +268,6 @@
       "hasText": true
     },
     {
-      "id": "navy-navedtra-14269",
-      "title": "Aerographer's Mate Module 1: Surface Weather Observations",
-      "category": "navigation",
-      "publisher": "US Navy",
-      "year": 1999,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14269: distribution statement printed on the cover page and repeated on the next page: approved for public release; distribution is unlimited. Copy uploaded to militarynewbie.com by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-      "url": "https://www.militarynewbie.com/manuals/pdfs/NAVEDTRA-14269-Aerographers-Mate-Module-1-Surface-Weather-Observations.pdf",
-      "bytes": 7171097,
-      "sha256": "5333ab66e1c4bb170af316a959e36e6725f705373afd8e7a2de0038733679e29",
-      "pages": 298,
-      "hasText": true
-    },
-    {
-      "id": "navy-navedtra-14312",
-      "title": "Aerographer's Mate Module 5: Basic Meteorology",
-      "category": "navigation",
-      "publisher": "US Navy",
-      "year": 2001,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14312: distribution statement printed on the cover page and repeated on the next page: approved for public release; distribution is unlimited. Copy uploaded to militarynewbie.com by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-      "url": "https://www.militarynewbie.com/manuals/pdfs/NAVEDTRA-14312-Aerographers-Mate-Module-5-Basic-Meteorology.pdf",
-      "bytes": 3166360,
-      "sha256": "687526520ffa9c02a9e1ea90ae9406e6a84549251ef50163400ad31ac118df3c",
-      "pages": 214,
-      "hasText": true
-    },
-    {
       "id": "nwcg-pms-475-basic-land-navigation",
       "title": "Basic Land Navigation",
       "category": "navigation",
@@ -475,20 +293,6 @@
       "bytes": 204850,
       "sha256": "bc476fdc38e0949f18941cf361242bce8f0c18583111ce7e10b06eb3fc569922",
       "pages": 2,
-      "hasText": true
-    },
-    {
-      "id": "army-fm-3-25-26",
-      "title": "Map Reading and Land Navigation",
-      "category": "navigation",
-      "publisher": "US Army",
-      "year": 2001,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). FM 3-25.26 (FM 21-26): distribution statement printed on the cover page: approved for public release; distribution is unlimited. The Wayback capture of the old official address is only a stub. Copy uploaded to archive.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-      "url": "https://archive.org/download/milmanual-fm-3-25.26-map-reading-and-land-navigation/fm_3-25.26_map_reading_and_land_navigation.pdf",
-      "bytes": 23583528,
-      "sha256": "e86dadb55f03d0cddb8b6c9a20458514743ce67ed7e29eef106b53211716d9f1",
-      "pages": 245,
       "hasText": true
     },
     {
@@ -545,90 +349,6 @@
       "bytes": 4403604,
       "sha256": "508c8be5abf4e9ac31b6281f4c655001ac46820f03a004548f14910b95099737",
       "pages": 269,
-      "hasText": true
-    },
-    {
-      "id": "navy-neets-module-06",
-      "title": "NEETS Module 06: Introduction to Electronic Emission, Tubes, and Power Supplies",
-      "category": "radio",
-      "publisher": "US Navy",
-      "year": 1998,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14178 (NEETS Module 6): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-      "url": "https://legacy.maritime.org/doc/neets/mod06.pdf",
-      "bytes": 1610543,
-      "sha256": "7b8b3247bf2fb6863ef0a2a3e07b9608d276561f989849fcf2711cb3a2086ca4",
-      "pages": 435,
-      "hasText": true
-    },
-    {
-      "id": "navy-neets-module-08",
-      "title": "NEETS Module 08: Introduction to Amplifiers",
-      "category": "radio",
-      "publisher": "US Navy",
-      "year": 1998,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14180 (NEETS Module 8): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-      "url": "https://legacy.maritime.org/doc/neets/mod08.pdf",
-      "bytes": 1250067,
-      "sha256": "88fa53de332a56ac64947a262ebea1a45624ec4e3e5524ab9860645cc38c854c",
-      "pages": 187,
-      "hasText": true
-    },
-    {
-      "id": "navy-neets-module-09",
-      "title": "NEETS Module 09: Introduction to Wave-Generation and Wave-Shaping Circuits",
-      "category": "radio",
-      "publisher": "US Navy",
-      "year": 1998,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14181 (NEETS Module 9): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-      "url": "https://legacy.maritime.org/doc/neets/mod09.pdf",
-      "bytes": 1901495,
-      "sha256": "2c01c392b934ea5b23a9e24fd3798b430820b732e092a6c1910440e12ec0bbb2",
-      "pages": 275,
-      "hasText": true
-    },
-    {
-      "id": "navy-neets-module-10",
-      "title": "NEETS Module 10: Introduction to Wave Propagation, Transmission Lines, and Antennas",
-      "category": "radio",
-      "publisher": "US Navy",
-      "year": 1998,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14182 (NEETS Module 10): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-      "url": "https://legacy.maritime.org/doc/neets/mod10.pdf",
-      "bytes": 2525381,
-      "sha256": "2d80c2d8f312748dd1454ae40ef47fa6c17ceb695e3a171aea3507cad298adc0",
-      "pages": 289,
-      "hasText": true
-    },
-    {
-      "id": "navy-neets-module-11",
-      "title": "NEETS Module 11: Microwave Principles",
-      "category": "radio",
-      "publisher": "US Navy",
-      "year": 1998,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14183 (NEETS Module 11): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-      "url": "https://legacy.maritime.org/doc/neets/mod11.pdf",
-      "bytes": 4493836,
-      "sha256": "32d079d372cc14a778c03436e3536c73e0bf3228829e5acfa691115bc62cef63",
-      "pages": 275,
-      "hasText": true
-    },
-    {
-      "id": "navy-neets-module-12",
-      "title": "NEETS Module 12: Modulation Principles",
-      "category": "radio",
-      "publisher": "US Navy",
-      "year": 1998,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14184 (NEETS Module 12): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-      "url": "https://legacy.maritime.org/doc/neets/mod12.pdf",
-      "bytes": 1739811,
-      "sha256": "3cbefc20da81f3cfd6283fff5fc205535ad3939a9598733486a2823034eb1421",
-      "pages": 232,
       "hasText": true
     },
     {
@@ -716,20 +436,6 @@
       "hasText": true
     },
     {
-      "id": "nwcg-pms-447-1-water-handling-equipment-guide",
-      "title": "Water Handling Equipment Guide",
-      "category": "mechanical",
-      "publisher": "NWCG",
-      "year": 2013,
-      "licence": "Public domain",
-      "licenceNote": "Public-domain statement printed on the document's title-page verso and on NWCG's notices page (https://www.nwcg.gov/notices#copyrights). Committee members include state forestry staff, covered by the document's own public-domain statement. Hosted on NWCG's official file store linked from https://www.nwcg.gov/publications/pms447-1. Covers portable pumps, hose, fittings and hydraulics.",
-      "url": "https://fs-prod-nwcg.s3.us-gov-west-1.amazonaws.com/s3fs-public/publication/pms447-1.pdf",
-      "bytes": 3130278,
-      "sha256": "00cfd3f4bb115416def8b5db1496130c347b78bbcb0d44a60b6256530de40e72",
-      "pages": 154,
-      "hasText": true
-    },
-    {
       "id": "army-tc-9-237",
       "title": "Welding Theory and Application",
       "category": "mechanical",
@@ -769,20 +475,6 @@
       "bytes": 4233522,
       "sha256": "3873f8ae7528389adacab72259c37b9ae3c507bd3ae23783122e06586560040c",
       "pages": 36,
-      "hasText": true
-    },
-    {
-      "id": "nwcg-pms-461-incident-response-pocket-guide",
-      "title": "Incident Response Pocket Guide (IRPG)",
-      "category": "disasters",
-      "publisher": "NWCG",
-      "year": 2025,
-      "licence": "Public domain",
-      "licenceNote": "Public-domain statement printed in the document and on NWCG's notices page (https://www.nwcg.gov/notices#copyrights). NWCG is the US interagency wildland fire group; hosted on NWCG's official file store linked from https://www.nwcg.gov/publications/pms461.",
-      "url": "https://fs-prod-nwcg.s3.us-gov-west-1.amazonaws.com/s3fs-public/publication/pms461.pdf",
-      "bytes": 3045707,
-      "sha256": "fe37094a3a7ceb8722cfe49f340757951a76d1122a316892608da2de74f3a92a",
-      "pages": 140,
       "hasText": true
     },
     {

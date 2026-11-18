@@ -1,16 +1,5 @@
 [
   {
-    "id": "army-tm-3-34-44",
-    "title": "Concrete and Masonry",
-    "category": "building",
-    "publisher": "US Army",
-    "year": 2012,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). TM 3-34.44, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited. Edition with Change 1 (Army listing date 23 July 2012).",
-    "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN33491-TM_3-34.44-001-WEB-3.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
-  },
-  {
     "id": "army-tm-3-34-47",
     "title": "Carpentry",
     "category": "building",
@@ -19,7 +8,7 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). TM 3-34.47, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN35831-TM_3-34.47-000-WEB-1.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)"
   },
   {
     "id": "army-tm-3-34-70",
@@ -30,7 +19,7 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). TM 3-34.70, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tm3_34x70.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)"
   },
   {
     "id": "army-tm-3-34-86",
@@ -41,7 +30,7 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). TM 3-34.86, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tm3_34x86.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)"
   },
   {
     "id": "army-atp-3-34-45",
@@ -52,18 +41,7 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). ATP 3-34.45, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN40205-ATP_3-34.45-000-WEB-1.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
-  },
-  {
-    "id": "army-tm-3-34-64",
-    "title": "Military Soils Engineering",
-    "category": "building",
-    "publisher": "US Army",
-    "year": 2012,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). TM 3-34.64, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited.",
-    "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tm3_34x64.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)"
   },
   {
     "id": "army-tc-21-3",
@@ -74,7 +52,9 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). TC 21-3, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN45217-TC_21-3-000-WEB-1.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)",
+    "creditsReviewed": true,
+    "creditsNote": "Hits are 'Standard aircraft acknowledgements', a signalling topic. No outside-owner credit found."
   },
   {
     "id": "army-tc-3-97-61",
@@ -85,7 +65,7 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). TC 3-97.61, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN45366-TC_3-97.61-000-WEB-1.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)"
   },
   {
     "id": "army-atp-4-25-12",
@@ -96,18 +76,7 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). ATP 4-25.12, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited. Edition including Change 2 (August 2025).",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN44577-ATP_4-25.12-002-WEB-3.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
-  },
-  {
-    "id": "army-tc-9-60",
-    "title": "Communications-Electronics Fundamentals: Basic Principles of Alternating Current and Direct Current",
-    "category": "power",
-    "publisher": "US Army",
-    "year": 2004,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). TC 9-60, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited.",
-    "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tc9_60.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)"
   },
   {
     "id": "army-tc-9-62",
@@ -118,7 +87,7 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). TC 9-62, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tc9_62.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)"
   },
   {
     "id": "army-tc-9-64",
@@ -129,7 +98,7 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). TC 9-64, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tc9_64.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)"
   },
   {
     "id": "army-tc-9-237",
@@ -140,7 +109,7 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). TC 9-237, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tc9_237.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)"
   },
   {
     "id": "army-tc-9-524",
@@ -151,7 +120,7 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). TC 9-524, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tc9_524.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)"
   },
   {
     "id": "army-tc-55-509",
@@ -162,7 +131,9 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). TC 55-509, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tc55_509.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)",
+    "creditsReviewed": true,
+    "creditsNote": "All 5 hits are permission from the chief engineer or supervisor in shipboard procedures. No outside-owner credit found."
   },
   {
     "id": "army-tc-21-305-20",
@@ -173,7 +144,9 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). TC 21-305-20, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tc21_305_20.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)",
+    "creditsReviewed": true,
+    "creditsNote": "All 9 hits read: 'courtesy' (driving courtesy) and 'permission' (from supervisors, to pass or enter) in the operational sense. No outside-owner credit found."
   },
   {
     "id": "army-atp-4-31",
@@ -184,128 +157,7 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). ATP 4-31, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN45184-ATP_4-31-001-WEB-2.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
-  },
-  {
-    "id": "navy-neets-module-02",
-    "title": "NEETS Module 02: Introduction to Alternating Current and Transformers",
-    "category": "power",
-    "publisher": "US Navy",
-    "year": 1998,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14174 (NEETS Module 2): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-    "url": "https://legacy.maritime.org/doc/neets/mod02.pdf",
-    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
-  },
-  {
-    "id": "navy-neets-module-03",
-    "title": "NEETS Module 03: Introduction to Circuit Protection, Control, and Measurement",
-    "category": "power",
-    "publisher": "US Navy",
-    "year": 1998,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14175 (NEETS Module 3): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-    "url": "https://legacy.maritime.org/doc/neets/mod03.pdf",
-    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
-  },
-  {
-    "id": "navy-neets-module-04",
-    "title": "NEETS Module 04: Introduction to Electrical Conductors, Wiring Techniques, and Schematic Reading",
-    "category": "power",
-    "publisher": "US Navy",
-    "year": 1998,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14176 (NEETS Module 4): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-    "url": "https://legacy.maritime.org/doc/neets/mod04.pdf",
-    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
-  },
-  {
-    "id": "navy-neets-module-05",
-    "title": "NEETS Module 05: Introduction to Generators and Motors",
-    "category": "power",
-    "publisher": "US Navy",
-    "year": 1998,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14177 (NEETS Module 5): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-    "url": "https://legacy.maritime.org/doc/neets/mod05.pdf",
-    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
-  },
-  {
-    "id": "navy-neets-module-06",
-    "title": "NEETS Module 06: Introduction to Electronic Emission, Tubes, and Power Supplies",
-    "category": "radio",
-    "publisher": "US Navy",
-    "year": 1998,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14178 (NEETS Module 6): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-    "url": "https://legacy.maritime.org/doc/neets/mod06.pdf",
-    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
-  },
-  {
-    "id": "navy-neets-module-07",
-    "title": "NEETS Module 07: Introduction to Solid-State Devices and Power Supplies",
-    "category": "power",
-    "publisher": "US Navy",
-    "year": 1998,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14179 (NEETS Module 7): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-    "url": "https://legacy.maritime.org/doc/neets/mod07.pdf",
-    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
-  },
-  {
-    "id": "navy-neets-module-08",
-    "title": "NEETS Module 08: Introduction to Amplifiers",
-    "category": "radio",
-    "publisher": "US Navy",
-    "year": 1998,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14180 (NEETS Module 8): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-    "url": "https://legacy.maritime.org/doc/neets/mod08.pdf",
-    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
-  },
-  {
-    "id": "navy-neets-module-09",
-    "title": "NEETS Module 09: Introduction to Wave-Generation and Wave-Shaping Circuits",
-    "category": "radio",
-    "publisher": "US Navy",
-    "year": 1998,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14181 (NEETS Module 9): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-    "url": "https://legacy.maritime.org/doc/neets/mod09.pdf",
-    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
-  },
-  {
-    "id": "navy-neets-module-10",
-    "title": "NEETS Module 10: Introduction to Wave Propagation, Transmission Lines, and Antennas",
-    "category": "radio",
-    "publisher": "US Navy",
-    "year": 1998,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14182 (NEETS Module 10): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-    "url": "https://legacy.maritime.org/doc/neets/mod10.pdf",
-    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
-  },
-  {
-    "id": "navy-neets-module-11",
-    "title": "NEETS Module 11: Microwave Principles",
-    "category": "radio",
-    "publisher": "US Navy",
-    "year": 1998,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14183 (NEETS Module 11): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-    "url": "https://legacy.maritime.org/doc/neets/mod11.pdf",
-    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
-  },
-  {
-    "id": "navy-neets-module-12",
-    "title": "NEETS Module 12: Modulation Principles",
-    "category": "radio",
-    "publisher": "US Navy",
-    "year": 1998,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14184 (NEETS Module 12): distribution statement printed on the cover and the next page: approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-    "url": "https://legacy.maritime.org/doc/neets/mod12.pdf",
-    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)"
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 3)"
   },
   {
     "id": "army-atp-4-02-13",
@@ -316,7 +168,7 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). ATP 4-02.13, front matter (title page, first pages of the PDF): distribution statement printed in the document: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN32888-ATP_4-02.13-000-WEB-1.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)"
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)"
   },
   {
     "id": "army-tc-3-37-51",
@@ -327,7 +179,7 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). TC 3-37.51, front matter: distribution statement printed in the document: \"Approved for public release; distribution unlimited.\"",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN30224-TC_3-37.51-000-WEB-1.pdf",
-    "evidence": "Approved for public release; distribution unlimited. (front matter)"
+    "evidence": "Approved for public release; distribution unlimited. (page 1)"
   },
   {
     "id": "usgs-gip-topographic-map-symbols",
@@ -352,42 +204,6 @@
     "evidence": "Page 2: 'U.S. Department of the Interior U.S. Geological Survey / USGS Fact Sheet 035-01 March 2001'; no copyright notice or third-party credit. USGS copyrights page: 'USGS-authored or produced data and information are considered to be in the U.S. Public Domain.'"
   },
   {
-    "id": "army-fm-3-25-26",
-    "title": "Map Reading and Land Navigation",
-    "category": "navigation",
-    "publisher": "US Army",
-    "year": 2001,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). FM 3-25.26 (FM 21-26): distribution statement printed on the cover page: approved for public release; distribution is unlimited. The Wayback capture of the old official address is only a stub. Copy uploaded to archive.org by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-    "url": "https://archive.org/download/milmanual-fm-3-25.26-map-reading-and-land-navigation/fm_3-25.26_map_reading_and_land_navigation.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)",
-    "approxBytes": 23583528
-  },
-  {
-    "id": "navy-navedtra-14312",
-    "title": "Aerographer's Mate Module 5: Basic Meteorology",
-    "category": "navigation",
-    "publisher": "US Navy",
-    "year": 2001,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14312: distribution statement printed on the cover page and repeated on the next page: approved for public release; distribution is unlimited. Copy uploaded to militarynewbie.com by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-    "url": "https://www.militarynewbie.com/manuals/pdfs/NAVEDTRA-14312-Aerographers-Mate-Module-5-Basic-Meteorology.pdf",
-    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)",
-    "approxBytes": 3166360
-  },
-  {
-    "id": "navy-navedtra-14269",
-    "title": "Aerographer's Mate Module 1: Surface Weather Observations",
-    "category": "navigation",
-    "publisher": "US Navy",
-    "year": 1999,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14269: distribution statement printed on the cover page and repeated on the next page: approved for public release; distribution is unlimited. Copy uploaded to militarynewbie.com by a member of the public; no official or institutional copy was found. The licence rests on the release statement printed in the document.",
-    "url": "https://www.militarynewbie.com/manuals/pdfs/NAVEDTRA-14269-Aerographers-Mate-Module-1-Surface-Weather-Observations.pdf",
-    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (front matter)",
-    "approxBytes": 7171097
-  },
-  {
     "id": "army-tb-med-505",
     "title": "Altitude Acclimatization and Illness Management",
     "category": "medical",
@@ -396,7 +212,7 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). TB MED 505, front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN43605-TB_MED_505-001-WEB-2.pdf",
-    "evidence": "APPROVED FOR PUBLIC RELEASE; DISTRIBUTION UNLIMITED. (front matter)",
+    "evidence": "APPROVED FOR PUBLIC RELEASE; DISTRIBUTION UNLIMITED. (page 1)",
     "approxBytes": 1168235
   },
   {
@@ -408,32 +224,8 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). TB MED 507, front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN43608-TB_MED_507-001-WEB-2.pdf",
-    "evidence": "APPROVED FOR PUBLIC RELEASE; DISTRIBUTION IS UNLIMITED (front matter)",
+    "evidence": "APPROVED FOR PUBLIC RELEASE; DISTRIBUTION IS UNLIMITED (page 1)",
     "approxBytes": 2596231
-  },
-  {
-    "id": "army-tb-med-508",
-    "title": "Prevention and Management of Cold-Weather Injuries",
-    "category": "medical",
-    "publisher": "US Army",
-    "year": 2026,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). TB MED 508, front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited.",
-    "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN45918-TB_MED_508-000-WEB-1.pdf",
-    "evidence": "APPROVED FOR PUBLIC RELEASE; DISTRIBUTION IS UNLIMITED (front matter)",
-    "approxBytes": 7202752
-  },
-  {
-    "id": "army-tb-med-577",
-    "title": "Sanitary Control and Surveillance of Field Water Supplies",
-    "category": "water",
-    "publisher": "US Army",
-    "year": 2010,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). TB MED 577, front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited.",
-    "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tbmed577.pdf",
-    "evidence": "APPROVED FOR PUBLIC RELEASE; DISTRIBUTION IS UNLIMITED (front matter)",
-    "approxBytes": 1890594
   },
   {
     "id": "army-tb-med-593",
@@ -444,7 +236,7 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). TB MED 593, front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tbmed593.pdf",
-    "evidence": "APPROVED FOR PUBLIC RELEASE; DISTRIBUTION UNLIMITED. (front matter)",
+    "evidence": "APPROVED FOR PUBLIC RELEASE; DISTRIBUTION UNLIMITED. (page 1)",
     "approxBytes": 996456
   },
   {
@@ -456,7 +248,7 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). STP 9-91D13-SM-TG, front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/ARN13520_STP%209-91D13-SM-TG%20FINAL%20WEB.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)",
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)",
     "approxBytes": 2871010
   },
   {
@@ -468,20 +260,10 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). STP 9-91C13-SM-TG, front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/ARN12780_STP%209-91C13-SM-TG%20FINAL%20WEB.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)",
-    "approxBytes": 1539380
-  },
-  {
-    "id": "army-tm-3-34-56",
-    "title": "Waste Management for Deployed Forces",
-    "category": "water",
-    "publisher": "US Army",
-    "year": 2013,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). TM 3-34.56, front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited. Edition including Change 1 (September 2021).",
-    "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN33490-TM_3-34.56-001-WEB-2.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)",
-    "approxBytes": 12046242
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)",
+    "approxBytes": 1539380,
+    "creditsReviewed": true,
+    "creditsNote": "Hits are 'DA Form 5891 Acknowledgment of Counseling', an Army form. No outside-owner credit found."
   },
   {
     "id": "army-tm-3-34-51",
@@ -492,7 +274,7 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). TM 3-34.51, front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tm3_34x51.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)",
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)",
     "approxBytes": 35603355
   },
   {
@@ -504,7 +286,7 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). TM 3-34.61, front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/ARN6987_TM%203-34x61%20FINAL%20WEB.pdf",
-    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (front matter)",
+    "evidence": "DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited. (page 1)",
     "approxBytes": 10876924
   },
   {
@@ -516,8 +298,10 @@
     "licence": "Public domain",
     "licenceNote": "US government work (17 U.S.C. 105). TM 5-685, front matter (title page, first pages of the PDF): distribution statement printed in the document. Statement: approved for public release; distribution is unlimited. Joint Army and Navy publication (NAVFAC MO-912); the reproduction page also says the manual is public property and not subject to copyright.",
     "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tm5_685.pdf",
-    "evidence": "Approved for public release. Distribution is unlimited. (front matter)",
-    "approxBytes": 3944788
+    "evidence": "Approved for public release. Distribution is unlimited. (page 3)",
+    "approxBytes": 3944788,
+    "creditsReviewed": true,
+    "creditsNote": "Only scan hit is the reproduction page (page 2): 'prepared by and for the Government and is public property and not subject to copyright', asking reprints to credit the joint Army and Navy manual; no exception clause. NEC, NFPA and ASTM are cited by name as references, not reproduced."
   },
   {
     "id": "usgs-fs-077-01-utm-grid",
@@ -565,7 +349,9 @@
     "licenceNote": "US government work (17 U.S.C. 105). Second edition, written and edited by FDA scientists (Authorship page), no outside author or copyright notice; FDA website policy at https://www.fda.gov/about-fda/about-website/website-policies says FDA website contents are not copyrighted and are in the public domain.",
     "url": "https://www.fda.gov/media/83271/download",
     "evidence": "Authorship page: 'The second edition of the Bad Bug Book would not have been possible without the contributions of the many FDA scientists ...'; suggested citation 'Food and Drug Administration. Bad Bug Book ... Second Edition ... 2012.' Photo credits, all FDA staff: escolar and oilfish photos by Warren Savary and D. Mellen (FDA/ORA), Dianne Millazo and Amber Chung (FDA); venomous fish photos by Jonathan Deeds, Ph.D., FDA; fish images from FDA's Regulatory Fish Encyclopedia. FDA policy: 'Unless otherwise noted, the contents of the FDA website (www.fda.gov) — both text and graphics — are not copyrighted. They are in the public domain and may be republished, reprinted and otherwise used freely by anyone without the need to obtain permission from FDA.'",
-    "approxBytes": 5252559
+    "approxBytes": 5252559,
+    "creditsReviewed": true,
+    "creditsNote": "Acknowledgments thank FDA scientists and reviewers; photo credits name FDA staff (Savary, Mellen, Millazo, Chung, Deeds) and the FDA Regulatory Fish Encyclopedia; one table is 'adapted from CDC', also federal. No outside-owner credit found."
   },
   {
     "id": "fda-food-water-safety-power-outages-floods",
@@ -580,18 +366,6 @@
     "approxBytes": 833411
   },
   {
-    "id": "nwcg-pms-461-incident-response-pocket-guide",
-    "title": "Incident Response Pocket Guide (IRPG)",
-    "category": "disasters",
-    "publisher": "NWCG",
-    "year": 2025,
-    "licence": "Public domain",
-    "licenceNote": "Public-domain statement printed in the document and on NWCG's notices page (https://www.nwcg.gov/notices#copyrights). NWCG is the US interagency wildland fire group; hosted on NWCG's official file store linked from https://www.nwcg.gov/publications/pms461.",
-    "url": "https://fs-prod-nwcg.s3.us-gov-west-1.amazonaws.com/s3fs-public/publication/pms461.pdf",
-    "evidence": "Inside back matter: 'Publications and training materials produced by the National Wildfire Coordinating Group (NWCG) are in the public domain. Use of public domain information, including copying, is permitted.' Cover: 'PMS 461 NFES 001077 JANUARY 2025'. No content marked as copyrighted.",
-    "approxBytes": 3045707
-  },
-  {
     "id": "nwcg-pms-475-basic-land-navigation",
     "title": "Basic Land Navigation",
     "category": "navigation",
@@ -601,7 +375,9 @@
     "licenceNote": "Public-domain statement printed on the document's title-page verso and on NWCG's notices page (https://www.nwcg.gov/notices#copyrights). Hosted on NWCG's official file store linked from https://www.nwcg.gov/publications/pms475.",
     "url": "https://fs-prod-nwcg.s3.us-gov-west-1.amazonaws.com/s3fs-public/publication/pms475.pdf",
     "evidence": "Title-page verso (page 3): 'NWCG's intent is to specifically identify all copyrighted content used in NWCG publications. All other NWCG information is in the public domain. Use of public domain information, including copying, is permitted.' Cover: 'PMS 475 NFES 002865 MAY 2016'. No content in the 172 pages is marked as copyrighted.",
-    "approxBytes": 30650584
+    "approxBytes": 30650584,
+    "creditsReviewed": true,
+    "creditsNote": "Only hit is NWCG's own public-domain and copyrighted-content statement (page 3), which identifies no copyrighted content. No outside-owner credit found."
   },
   {
     "id": "nwcg-pms-551-clinical-treatment-guidelines",
@@ -613,7 +389,9 @@
     "licenceNote": "Public-domain statement printed on the document's title-page verso and on NWCG's notices page (https://www.nwcg.gov/notices#copyrights). Hosted on NWCG's official file store linked from https://www.nwcg.gov/publications/pms551. Written for trained emergency medical providers.",
     "url": "https://fs-prod-nwcg.s3.us-gov-west-1.amazonaws.com/s3fs-public/publication/pms551_0.pdf",
     "evidence": "Title-page verso: 'It is NWCG's intent to specifically identify all copyrighted content used in NWCG products. All other NWCG information is in the public domain. Use of public domain information, including copying, is permitted.' Cover: 'PMS 551 ... July 2012'. No content marked as copyrighted.",
-    "approxBytes": 402383
+    "approxBytes": 402383,
+    "creditsReviewed": true,
+    "creditsNote": "Hits are NWCG's own public-domain and copyrighted-content statement, which identifies no copyrighted content, and 'permission granted by a state' in the definition of licensure. No outside-owner credit found."
   },
   {
     "id": "nwcg-pms-212-chainsaw-operations",
@@ -625,18 +403,8 @@
     "licenceNote": "Public-domain statement printed in the document and on NWCG's notices page (https://www.nwcg.gov/notices#copyrights). Hosted on NWCG's official file store linked from https://www.nwcg.gov/publications/pms212. Covers chainsaw safety, felling, bucking and crosscut saws.",
     "url": "https://fs-prod-nwcg.s3.us-gov-west-1.amazonaws.com/s3fs-public/publication/pms212.pdf",
     "evidence": "Back matter: 'Publications and training materials produced by NWCG are in the public domain. Use of public domain information, including copying, is permitted.' Cover: 'PMS 212 JANUARY 2026'. No content marked as copyrighted.",
-    "approxBytes": 7098674
-  },
-  {
-    "id": "nwcg-pms-447-1-water-handling-equipment-guide",
-    "title": "Water Handling Equipment Guide",
-    "category": "mechanical",
-    "publisher": "NWCG",
-    "year": 2013,
-    "licence": "Public domain",
-    "licenceNote": "Public-domain statement printed on the document's title-page verso and on NWCG's notices page (https://www.nwcg.gov/notices#copyrights). Committee members include state forestry staff, covered by the document's own public-domain statement. Hosted on NWCG's official file store linked from https://www.nwcg.gov/publications/pms447-1. Covers portable pumps, hose, fittings and hydraulics.",
-    "url": "https://fs-prod-nwcg.s3.us-gov-west-1.amazonaws.com/s3fs-public/publication/pms447-1.pdf",
-    "evidence": "Title-page verso: 'NWCG's intent is to specifically identify all copyrighted content used in NWCG products. All other NWCG information is in the public domain. Use of public domain information, including copying, is permitted.' Cover: 'PMS 447-1 NFES 001275 Water Handling Equipment Guide June 2013 Sixth Edition'. No content marked as copyrighted.",
-    "approxBytes": 3130278
+    "approxBytes": 7098674,
+    "creditsReviewed": true,
+    "creditsNote": "Hits are 'until the sawyer has granted permission' (operational), the NWCG public-domain statement and quoted OSHA rules (federal). ANSI and NFPA are named as references only, not reproduced."
   }
 ]
