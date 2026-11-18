@@ -36,12 +36,20 @@ type Obj = Record<string, unknown>;
 
 const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !Array.isArray(v);
 const isText = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
+// eslint-disable-next-line no-control-regex
+const CONTROL_CHAR = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/;
+/**
+ * A single line of at most `max` characters with no surrounding whitespace. Titles and publishers end up in the
+ * knowledge-base document name that is quoted to the model, so a fetched catalogue must not smuggle lines in.
+ */
+const isLine = (v: unknown, max: number): v is string =>
+  isText(v) && v.length <= max && v.trim() === v && !CONTROL_CHAR.test(v);
 /** True for a catalogue id: lowercase letters, digits and dashes, so it is safe as part of a file name. */
 export const isCatalogueId = (v: unknown): v is string => typeof v === 'string' && ID_PATTERN.test(v);
 const isPositiveInt = (v: unknown): v is number => Number.isInteger(v) && (v as number) > 0;
 
 function parseCategory(raw: unknown): GuideCategory | null {
-  if (!isObj(raw) || !isCatalogueId(raw.id) || !isText(raw.name)) return null;
+  if (!isObj(raw) || !isCatalogueId(raw.id) || !isLine(raw.name, 80)) return null;
   return { id: raw.id, name: raw.name };
 }
 
@@ -50,7 +58,7 @@ function parseGuide(raw: unknown, categoryIds: Set<string>): GuideEntry | null {
   const { id, title, category, publisher, year, licence, licenceNote, url, bytes, sha256, pages, hasText } = raw;
   const valid =
     isCatalogueId(id) &&
-    isText(title) && isText(publisher) && isText(licence) && isText(licenceNote) &&
+    isLine(title, 200) && isLine(publisher, 80) && isLine(licence, 80) && isLine(licenceNote, 2000) &&
     typeof category === 'string' && categoryIds.has(category) &&
     Number.isInteger(year) &&
     typeof url === 'string' && HTTPS_DNS_HOST_URL_PATTERN.test(url) &&
