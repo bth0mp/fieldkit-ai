@@ -170,20 +170,6 @@
       "hasText": true
     },
     {
-      "id": "army-tb-med-577",
-      "title": "Sanitary Control and Surveillance of Field Water Supplies",
-      "category": "water",
-      "publisher": "US Army",
-      "year": 2010,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). TB MED 577 / NAVMED P-5010-10 / AFMAN 48-138_IP, cover (page 1): 'APPROVED FOR PUBLIC RELEASE; DISTRIBUTION IS UNLIMITED.' Headquarters, Departments of the Army, Navy, and Air Force, 1 May 2010.",
-      "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tbmed577.pdf",
-      "bytes": 1890594,
-      "sha256": "c6545d275891af9b1204bcc4c6e924250e03579578fd29acc847bd0a66986df7",
-      "pages": 202,
-      "hasText": true
-    },
-    {
       "id": "army-atp-4-25-12",
       "title": "Unit Field Sanitation Teams",
       "category": "water",
