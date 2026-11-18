@@ -36,14 +36,32 @@ type Obj = Record<string, unknown>;
 
 const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !Array.isArray(v);
 const isText = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
-// eslint-disable-next-line no-control-regex
-const CONTROL_CHAR = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/;
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 /**
- * A single line of at most `max` characters with no surrounding whitespace. Titles and publishers end up in the
- * knowledge-base document name that is quoted to the model, so a fetched catalogue must not smuggle lines in.
+ * Code points a catalogue text field may not hold: C0 and C1 controls, the soft hyphen, zero-width and
+ * directional marks, line and paragraph separators, bidirectional embeddings and overrides, invisible
+ * operators and isolates, the byte-order mark, interlinear annotation marks, the tag block and lone surrogates.
+ * Checked by code point, not with Unicode property escapes, which Hermes does not support.
+ */
+const FORBIDDEN_RANGES: readonly (readonly [number, number])[] = [
+  [0x0000, 0x001f], [0x007f, 0x009f], [0x00ad, 0x00ad], [0x200b, 0x200f], [0x2028, 0x202e], [0x2060, 0x206f],
+  [0xd800, 0xdfff], [0xfeff, 0xfeff], [0xfff9, 0xfffb], [0xe0000, 0xe007f],
+];
+function hasForbiddenCodePoint(s: string): boolean {
+  // for...of walks code points; a lone surrogate comes out on its own, in the 0xd800-0xdfff range.
+  for (const ch of s) {
+    const cp = ch.codePointAt(0)!;
+    if (FORBIDDEN_RANGES.some(([lo, hi]) => cp >= lo && cp <= hi)) return true;
+  }
+  return false;
+}
+/**
+ * A single line of at most `max` characters with no surrounding whitespace and nothing invisible. Titles and
+ * publishers end up in the knowledge-base document name that is quoted to the model, so a fetched catalogue
+ * must not smuggle lines or hidden text in.
  */
 const isLine = (v: unknown, max: number): v is string =>
-  isText(v) && v.length <= max && v.trim() === v && !CONTROL_CHAR.test(v);
+  isText(v) && v.length <= max && v.trim() === v && !hasForbiddenCodePoint(v);
 /** True for a catalogue id: lowercase letters, digits and dashes, so it is safe as part of a file name. */
 export const isCatalogueId = (v: unknown): v is string => typeof v === 'string' && ID_PATTERN.test(v);
 const isPositiveInt = (v: unknown): v is number => Number.isInteger(v) && (v as number) > 0;
@@ -84,7 +102,7 @@ const hasUniqueIds = (items: { id: string }[]) => new Set(items.map(i => i.id)).
 
 /** Validates an untrusted catalogue. Returns it (unknown fields dropped) only if every check passes, else null. */
 export function parseCatalogue(raw: unknown): Catalogue | null {
-  if (!isObj(raw) || raw.version !== 1 || !isText(raw.updated)) return null;
+  if (!isObj(raw) || raw.version !== 1 || typeof raw.updated !== 'string' || !DATE_PATTERN.test(raw.updated)) return null;
   const categories = parseList(raw.categories, parseCategory);
   if (!categories || !hasUniqueIds(categories)) return null;
   const categoryIds = new Set(categories.map(c => c.id));
