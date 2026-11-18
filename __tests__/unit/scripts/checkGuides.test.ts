@@ -96,6 +96,16 @@ describe('thirdPartyMentions', () => {
     expect(thirdPartyMentions('Entry is permitted. You may permit it. Make a copy.')).toEqual([]);
   });
 
+  it('finds a flagged word that pdftotext split with a hyphen at a line end', () => {
+    expect(thirdPartyMentions('Figures 2-1 to 2-4 are used by per-\nmission to reproduce them here.')).toHaveLength(1);
+    expect(thirdPartyMentions('This chart is copy-\nright 1998 by a private firm.')).toHaveLength(1);
+    expect(thirdPartyMentions('Photographs cour-  \r\n  tesy of the maker.')).toHaveLength(1);
+  });
+
+  it('an ordinary compound split at a line end matches nothing', () => {
+    expect(thirdPartyMentions('Keep a first-\naid kit and a water-\nproof bag; check the self-\npermitted route.')).toEqual([]);
+  });
+
   const many = Array.from({ length: 12 }, (_, i) => `${'x'.repeat(200)} courtesy of party ${i}`).join('\n');
 
   it('returns at most five snippets', () => {

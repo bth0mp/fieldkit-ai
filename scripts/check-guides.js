@@ -21,7 +21,8 @@ const TRUSTED_HOSTS = ['digital.library.unt.edu', 'webarchive.library.unt.edu', 
 const PDFTOTEXT_TIMEOUT_MS = 60000;
 const PDFTOTEXT_MAX_BUFFER = 64 * 1024 * 1024;
 // Mirrors ID_PATTERN and HTTPS_DNS_HOST_URL_PATTERN in src/features/guideLibrary/catalogue.ts, the source of truth.
-// If that validator changes, change these; the shipped-catalogue unit test catches drift.
+// If that validator changes, change these. Drift shows when the app's unit test of the shipped catalogue fails,
+// which the pre-push hook runs whenever catalog/ changes.
 const HTTPS_DNS_HOST_URL_PATTERN = /^https:\/\/(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z]{2,}(?:\/\S*)?$/;
 const HOST_GAP_MS = 2000;
 const TRIES = 3;
@@ -165,8 +166,15 @@ const THIRD_PARTY_PATTERN = new RegExp([
 const SNIPPET_RADIUS = 60;
 const MAX_SNIPPETS = 5;
 
+// pdftotext splits a word with a hyphen at a line end ("per-\nmission"), which the whole-word pattern would miss.
+// Joining every such split also glues real compounds ("first-\naid" -> "firstaid"); none of the flagged words
+// is the second half of a common compound, so that costs nothing that matters.
+const LINE_END_HYPHEN = /(\p{L})-[ \t]*\r?\n[ \t]*(\p{L})/gu;
+const joinHyphenatedLineBreaks = text => text.replace(LINE_END_HYPHEN, '$1$2');
+
 /** Up to five short snippets around wording that suggests third-party material, plus the total number of matches. */
-function scanThirdParty(text) {
+function scanThirdParty(rawText) {
+  const text = joinHyphenatedLineBreaks(rawText);
   const total = [...text.matchAll(new RegExp(THIRD_PARTY_PATTERN.source, THIRD_PARTY_PATTERN.flags))].length;
   const pattern = new RegExp(THIRD_PARTY_PATTERN.source, THIRD_PARTY_PATTERN.flags);
   const snippets = [];
@@ -201,7 +209,8 @@ function shapeEntries(guides, categoryIds) {
 }
 
 // Mirrors LATIN_TEXT_CODE_POINTS, the caps and isLine in src/features/guideLibrary/catalogue.ts, the source of truth.
-// One entry the app rejects blocks every phone from updating, so keep these in step with that file.
+// One entry the app rejects blocks every phone from updating, so keep these in step with that file. The app's
+// unit test of the shipped catalogue, run by the pre-push hook whenever catalog/ changes, fails on such an entry.
 const LATIN_TEXT_CODE_POINTS = [
   [0x0020, 0x007e],
   [0x00a1, 0x00ac], [0x00ae, 0x00ff],

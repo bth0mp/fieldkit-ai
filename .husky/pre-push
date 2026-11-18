@@ -39,6 +39,7 @@ CHANGED_FILES=$(collect_changed_files)
 PUSHED_JS=$(printf '%s\n' "$CHANGED_FILES" | grep -E '\.(ts|tsx|js|jsx)$' || true)
 PUSHED_SWIFT=$(printf '%s\n' "$CHANGED_FILES" | grep '\.swift$' | grep -v 'Pods/' | grep -v 'build/' || true)
 PUSHED_KOTLIN=$(printf '%s\n' "$CHANGED_FILES" | grep -E '\.(kt|kts)$' || true)
+PUSHED_CATALOG=$(printf '%s\n' "$CHANGED_FILES" | grep '^catalog/' || true)
 
 if [ -n "$PUSHED_JS" ]; then
   echo "▶ JS/TS lint (push range)..."
@@ -58,6 +59,13 @@ if [ -n "$PUSHED_JS" ]; then
   # analyses the whole project (not just the push range), so keep it in the JS block.
   echo "▶ Dead-code gate (knip)..."
   npm run knip
+fi
+
+# The guide catalogue ships inside the app and is fetched by it, but a data-only push changes no JS/TS, so the
+# block above skips it. Check the shipped catalogue parses and passes the checker's rules whenever it changes.
+if [ -n "$PUSHED_CATALOG" ]; then
+  echo "▶ Guide catalogue tests (catalog/ changed)..."
+  npx jest __tests__/unit/features/guideLibrary/catalogue.test.ts __tests__/unit/scripts/checkGuides.test.ts
 fi
 
 if [ -n "$PUSHED_SWIFT" ]; then
