@@ -75,9 +75,9 @@
   export const bundledCatalogue: Catalogue; // parseCatalogue(require('../../../catalog/guides.json')), throws at import if invalid
   ```
 
-- [ ] **Step 1: Create `catalog/guides.json`** with `version: 1`, `updated: "2026-11-17"`, an empty `guides` array and these categories (ids in brackets): First aid and medical (`medical`), Water and sanitation (`water`), Food growing, preserving and foraging (`food`), Shelter and building (`building`), Power and electrical (`power`), Fieldcraft, knots and survival (`fieldcraft`), Navigation and weather (`navigation`), Radio and communications (`radio`), Vehicles, engines and tools (`mechanical`), Disasters and emergencies (`disasters`), Animals and farming (`farming`).
+- [x] **Step 1: Create `catalog/guides.json`** with `version: 1`, `updated: "2026-11-17"`, an empty `guides` array and these categories (ids in brackets): First aid and medical (`medical`), Water and sanitation (`water`), Food growing, preserving and foraging (`food`), Shelter and building (`building`), Power and electrical (`power`), Fieldcraft, knots and survival (`fieldcraft`), Navigation and weather (`navigation`), Radio and communications (`radio`), Vehicles, engines and tools (`mechanical`), Disasters and emergencies (`disasters`), Animals and farming (`farming`).
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 ```ts
 const good = { version: 1, updated: '2026-11-17', categories: [{ id: 'medical', name: 'First aid and medical' }],
@@ -104,13 +104,13 @@ it('the shipped catalogue is valid and has no duplicate urls', () => {
 });
 ```
 
-- [ ] **Step 3: Run it.** `npx jest --runInBand __tests__/unit/features/guideLibrary/catalogue.test.ts`. Expected: FAIL, module not found.
+- [x] **Step 3: Run it.** `npx jest --runInBand __tests__/unit/features/guideLibrary/catalogue.test.ts`. Expected: FAIL, module not found.
 
-- [ ] **Step 4: Implement `catalogue.ts`.** `parseCatalogue` returns the catalogue only if every check passes, else `null`: `version === 1`; non-empty string `title`, `publisher`, `licence`, `licenceNote`; `id` matches `/^[a-z0-9][a-z0-9-]{0,63}$/` and is unique; `url` starts with `https://`; `sha256` matches `/^[0-9a-f]{64}$/`; `bytes` and `pages` are positive integers; `year` is an integer; `hasText` is a boolean; `category` is one of the catalogue's category ids. Unknown extra fields are dropped.
+- [x] **Step 4: Implement `catalogue.ts`.** `parseCatalogue` returns the catalogue only if every check passes, else `null`: `version === 1`; non-empty string `title`, `publisher`, `licence`, `licenceNote`; `id` matches `/^[a-z0-9][a-z0-9-]{0,63}$/` and is unique; `url` starts with `https://`; `sha256` matches `/^[0-9a-f]{64}$/`; `bytes` and `pages` are positive integers; `year` is an integer; `hasText` is a boolean; `category` is one of the catalogue's category ids. Unknown extra fields are dropped.
 
-- [ ] **Step 5: Run the test.** Expected: PASS.
+- [x] **Step 5: Run the test.** Expected: PASS.
 
-- [ ] **Step 6: Checks and commit.** `feat(guides): catalogue format and validator for the guide library`
+- [x] **Step 6: Checks and commit.** `feat(guides): catalogue format and validator for the guide library`
 
 ---
 
