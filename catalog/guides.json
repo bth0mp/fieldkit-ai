@@ -348,7 +348,7 @@
       "url": "https://legacy.maritime.org/doc/neets/mod04.pdf",
       "bytes": 1568011,
       "sha256": "dd39eb37233c1a4048feff49f08b31f8e4c30c10be22b04c92163bb4c7ca4c6b",
-      "pages": 316,
+      "pages": 152,
       "hasText": false
     },
     {
@@ -376,7 +376,7 @@
       "url": "https://legacy.maritime.org/doc/neets/mod07.pdf",
       "bytes": 2530628,
       "sha256": "0d8d27c4d11c526912f9fb936257203728f459f7eda0da7b98b3cbaba02438a0",
-      "pages": 502,
+      "pages": 287,
       "hasText": false
     },
     {
@@ -558,7 +558,7 @@
       "url": "https://legacy.maritime.org/doc/neets/mod11.pdf",
       "bytes": 4493836,
       "sha256": "32d079d372cc14a778c03436e3536c73e0bf3228829e5acfa691115bc62cef63",
-      "pages": 275,
+      "pages": 192,
       "hasText": false
     },
     {
@@ -572,7 +572,7 @@
       "url": "https://legacy.maritime.org/doc/neets/mod12.pdf",
       "bytes": 1739811,
       "sha256": "3cbefc20da81f3cfd6283fff5fc205535ad3939a9598733486a2823034eb1421",
-      "pages": 232,
+      "pages": 230,
       "hasText": false
     },
     {
