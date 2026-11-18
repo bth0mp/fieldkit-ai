@@ -247,6 +247,78 @@ describe('Guide library (rendered)', () => {
     expect(downloadsOf(fs, KNOTS.url)).toBe(1);
   }, 30000);
 
+  describe('when the library cannot start (its folder cannot be made)', () => {
+    // The first listed guide of the shipped catalogue: the only one shown while no catalogue can be loaded.
+    const firstListed = () => bundledCatalogue.categories
+      .map(c => bundledCatalogue.guides.find(g => g.category === c.id))
+      .find(g => g !== undefined)!;
+    const storage = () => {
+      const m = require('@react-native-async-storage/async-storage');
+      return m.default ?? m;
+    };
+
+    /** Open the library with mkdir of the library folder failing until `allow()` is called. */
+    async function openBroken(seed: (fs: Fs) => void | Promise<void> = () => {}) {
+      const h = await setupChatScreen({ engine: 'llama', pdf: true, sqlite: true });
+      const fs = h.boundary.fs!;
+      DIR = require('../../../src/features/guideLibrary/guideLibraryService').GUIDE_LIBRARY_DIR;
+      let failing = true;
+      const mkdir = fs.module.mkdir as jest.Mock;
+      const real = mkdir.getMockImplementation()!;
+      mkdir.mockImplementation(async (p: string) => {
+        if (failing && p === DIR) throw new Error('EACCES: permission denied');
+        return real(p);
+      });
+      await seed(fs);
+      const { GuideLibraryScreen } = require('../../../src/screens/GuideLibraryScreen');
+      const view = h.rtl.render(h.React.createElement(GuideLibraryScreen, {}));
+      // The screen's start and its refresh each tried, and failed, to start the library.
+      await h.rtl.waitFor(() => {
+        expect(mkdir.mock.calls.filter(([p]) => p === DIR).length).toBeGreaterThanOrEqual(2);
+        expect(view.getByTestId('guide-library-refresh')).not.toBeBusy();
+      }, { timeout: 4000 });
+      return { ...h, fs, view, allow: () => { failing = false; } };
+    }
+
+    it('a download fails and saves nothing, and refresh changes nothing', async () => {
+      const target = firstListed();
+      const { rtl, fs, view } = await openBroken(f => {
+        f.seedDownload(CATALOGUE_URL, TEST_CATALOGUE);
+        f.seedDownload(target.url, 'any body');
+      });
+      expect(downloadsOf(fs, CATALOGUE_URL)).toBe(0);
+
+      rtl.fireEvent.press(view.getByTestId(`guide-download-${target.id}`));
+      await rtl.waitFor(() => { expect(view.getByText("Couldn't download this guide. Try again.")).toBeTruthy(); }, { timeout: 4000 });
+      expect(downloadsOf(fs, target.url)).toBe(0);
+      expect(await storage().getItem('@fieldkit/guide_library')).toBeNull();
+      expect(await exists(fs, `${DIR}/${target.id}.pdf`)).toBe(false);
+
+      rtl.fireEvent.press(view.getByTestId('guide-library-refresh'));
+      await rtl.waitFor(() => { expect(view.getByTestId('guide-library-refresh')).not.toBeBusy(); }, { timeout: 4000 });
+      expect(downloadsOf(fs, CATALOGUE_URL)).toBe(0);
+      expect(view.queryByText('Test knots')).toBeNull();
+      expect(view.getByText(new RegExp(`^${bundledCatalogue.guides.length} guides`))).toBeTruthy();
+    }, 30000);
+
+    it('once it starts, a guide whose file and record are fine shows as downloaded, not as the failed download', async () => {
+      const target = firstListed();
+      const { rtl, view, allow } = await openBroken(async f => {
+        f.seedFile(`${DIR}/${target.id}.pdf`, target.bytes);
+        await storage().setItem('@fieldkit/guide_library', JSON.stringify({ downloaded: { [target.id]: target } }));
+      });
+      // Nothing is known about the saved guide yet, so it offers a download, which fails.
+      rtl.fireEvent.press(view.getByTestId(`guide-download-${target.id}`));
+      await rtl.waitFor(() => { expect(view.getByText("Couldn't download this guide. Try again.")).toBeTruthy(); }, { timeout: 4000 });
+
+      allow();
+      rtl.fireEvent.press(view.getByTestId('guide-library-refresh'));
+      await rtl.waitFor(() => { expect(view.getByTestId(`guide-open-${target.id}`)).toBeTruthy(); }, { timeout: 4000 });
+      expect(view.queryByTestId(`guide-download-${target.id}`)).toBeNull();
+      expect(view.queryByText("Couldn't download this guide. Try again.")).toBeNull();
+    }, 30000);
+  });
+
   it('search filters by title and publisher', async () => {
     const { rtl, view } = await openLibrary(f => f.seedDownload(CATALOGUE_URL, TEST_CATALOGUE));
     const search = view.getByTestId('guide-library-search');

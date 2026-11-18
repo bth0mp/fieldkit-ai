@@ -1,14 +1,14 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, SectionList, ActivityIndicator } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, SectionList, ActivityIndicator, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
 import { useTheme, useThemedStyles } from '../theme';
 import { Button } from '../components/Button';
 import { formatBytes } from '../utils/formatBytes';
 import type { Catalogue, GuideCategory, GuideEntry } from '../features/guideLibrary/catalogue';
 import { isOnPhone, libraryCounts, useGuideLibraryStore, type GuideState } from '../features/guideLibrary/guideLibraryStore';
-import { guideLibraryService } from '../features/guideLibrary/guideLibraryService';
+import { guideLibraryService, SLOW_SEARCH_TAUGHT_GUIDES } from '../features/guideLibrary/guideLibraryService';
 import { createStyles } from './GuideLibraryScreen.styles';
 
 type Styles = ReturnType<typeof createStyles>;
@@ -24,6 +24,24 @@ function sectionsFor(catalogue: Catalogue, query: string): GuideSection[] {
     .map(category => ({ key: category.id, category, data: catalogue.guides.filter(g => g.category === category.id && matches(g)) }))
     .filter(s => s.data.length > 0);
 }
+
+/** The "Assistant knows this" switch for a downloaded guide, or why a scanned guide cannot be taught. */
+const TeachControl: React.FC<{ entry: GuideEntry; state: GuideState; styles: Styles }> = ({ entry, state, styles }) => {
+  const { colors } = useTheme();
+  const teaching = state.phase === 'teaching';
+  return (
+    <View style={styles.teach}>
+      <Text style={styles.teachLabel}>{entry.hasText ? 'Assistant knows this' : 'Scanned, read only'}</Text>
+      {entry.hasText && <Switch
+        testID={`guide-teach-${entry.id}`}
+        value={teaching || state.phase === 'taught'}
+        disabled={teaching}
+        onValueChange={on => { if (on) guideLibraryService.teach(entry.id); else guideLibraryService.unteach(entry.id); }}
+        trackColor={{ false: colors.border, true: colors.primary }}
+      />}
+    </View>
+  );
+};
 
 interface RowProps { entry: GuideEntry; state: GuideState; expanded: boolean; onToggle: () => void; styles: Styles }
 
@@ -45,11 +63,12 @@ const GuideRow: React.FC<RowProps> = ({ entry, state, expanded, onToggle, styles
         {state.phase === 'downloading' && <Text style={styles.progress}>{`${Math.round((state.progress ?? 0) * 100)}%`}</Text>}
         <Icon name={expanded ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textMuted} />
       </View>
+      {hasFile && <TeachControl entry={entry} state={state} styles={styles} />}
       {hasFile && (
         <View style={styles.actions}>
           <Button title="Open" size="small" variant="outline" testID={`guide-open-${id}`}
             onPress={() => { guideLibraryService.open(id); }} />
-          {state.phase === 'downloaded' && (
+          {(state.phase === 'downloaded' || state.phase === 'taught') && (
             <Button title="Remove" size="small" variant="ghost" testID={`guide-remove-${id}`}
               onPress={() => { guideLibraryService.remove(id); }} />
           )}
@@ -81,6 +100,8 @@ export const GuideLibraryScreen: React.FC = () => {
   useEffect(() => {
     guideLibraryService.init().then(() => guideLibraryService.refresh());
   }, []);
+  // Back from another screen: the user may have deleted a taught guide's document or the project there.
+  useFocusEffect(useCallback(() => { guideLibraryService.reconcile(); }, []));
 
   const sections = useMemo(() => sectionsFor(catalogue, query), [catalogue, query]);
   const { onPhone, taught } = useMemo(() => libraryCounts(guides), [guides]);
@@ -120,6 +141,9 @@ export const GuideLibraryScreen: React.FC = () => {
               autoCorrect={false}
             />
             <Text style={styles.summary}>{`${catalogue.guides.length} guides · ${onPhone} downloaded · ${taught} taught`}</Text>
+            {taught >= SLOW_SEARCH_TAUGHT_GUIDES && (
+              <Text style={styles.note}>The assistant searches every guide it has learned. More guides make answers slower.</Text>
+            )}
           </>
         }
         renderSectionHeader={({ section }) => <Text style={styles.sectionTitle}>{`${section.category.name} (${section.data.length})`}</Text>}

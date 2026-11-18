@@ -46,6 +46,27 @@ async function projectStoreHydrated(): Promise<void> {
   });
 }
 
+function createFieldGuidesProject(): void {
+  useProjectStore.getState().createProject({
+    id: FIELD_GUIDES_PROJECT_ID,
+    name: 'Field guides',
+    description: 'Public-domain survival, first aid, sanitation and solar power guides',
+    systemPrompt: SYSTEM_PROMPT,
+    icon: '#84CC16', // Lime
+  });
+}
+
+/**
+ * If the Field guides project is missing, creates it and marks every bundled guide as handled in the seed's
+ * saved state, so the first-launch seed does not re-add guides to a project the user had deleted.
+ */
+export async function ensureFieldGuidesProject(): Promise<void> {
+  await projectStoreHydrated();
+  if (useProjectStore.getState().getProject(FIELD_GUIDES_PROJECT_ID)) return;
+  createFieldGuidesProject();
+  await saveState({ projectCreated: true, done: FIELD_GUIDES.map(g => g.asset) });
+}
+
 /** Copy one guide out of the app bundle. A partial copy (app killed mid-copy) never reaches `dest`. */
 async function copyGuide(asset: string, dest: string): Promise<void> {
   if (await RNFS.exists(dest)) return;
@@ -72,13 +93,7 @@ export async function seedFieldGuides(): Promise<void> {
     if (state.projectCreated) return; // the user deleted the project
     // Throws before any project exists when this build ships no guides (iOS has none bundled).
     await copyGuide(todo[0].asset, `${dir}/${todo[0].asset}`);
-    projects.createProject({
-      id: FIELD_GUIDES_PROJECT_ID,
-      name: 'Field guides',
-      description: 'Public-domain survival, first aid, sanitation and solar power guides',
-      systemPrompt: SYSTEM_PROMPT,
-      icon: '#84CC16', // Lime
-    });
+    createFieldGuidesProject();
     state.projectCreated = true;
     await saveState(state);
   }

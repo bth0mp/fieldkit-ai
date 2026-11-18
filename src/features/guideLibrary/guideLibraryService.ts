@@ -2,6 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import RNFS from 'react-native-fs';
 import { viewDocument } from '@react-native-documents/viewer';
 import logger from '../../utils/logger';
+import { ragService } from '../../services/rag';
+import { ensureFieldGuidesProject, FIELD_GUIDES_PROJECT_ID } from '../fieldGuides/fieldGuides';
 import { bundledCatalogue, CATALOGUE_URL, isCatalogueId, parseCatalogue, type Catalogue, type GuideEntry } from './catalogue';
 import { useGuideLibraryStore, type GuidePhase, type GuideState } from './guideLibraryStore';
 
@@ -17,13 +19,22 @@ const FAILED = "Couldn't download this guide. Try again.";
 const OFFLINE = "No connection. Try again when you're online.";
 const OPEN_FAILED = "Couldn't open this guide.";
 const REMOVE_FAILED = "Couldn't remove this guide. Try again.";
+const TEACH_FAILED = "Couldn't teach this guide to the assistant. Try again.";
+const UNTEACH_FAILED = "Couldn't take this guide out of the assistant's knowledge. Try again.";
+
+/** Taught guides at which the screen warns that answers get slower. Tune after measuring on the phone. */
+export const SLOW_SEARCH_TAUGHT_GUIDES = 10;
 
 /** The id is the only thing that names a file: catalogue ids never hold a path separator or dot. */
 const guidePath = (id: string) => `${GUIDE_LIBRARY_DIR}/${id}.pdf`;
+/** The knowledge-base name of a taught guide, which answers cite. */
+const documentName = (entry: GuideEntry) => `${entry.title} (${entry.publisher}).pdf`;
 
 /** The catalogue entry each downloaded file was checked against, by id. */
 let downloaded: Record<string, GuideEntry> = {};
 let initPromise: Promise<boolean> | null = null;
+/** Guides are taught one at a time: each teach waits for the one before it. */
+let teachQueue: Promise<void> = Promise.resolve();
 /** Names of .part files being written right now. init's sweep leaves these alone. */
 const inFlightParts = new Set<string>();
 
@@ -95,11 +106,36 @@ async function runInit(): Promise<boolean> {
   }
   downloaded = kept;
   if (Object.keys(kept).length !== Object.keys(saved).length) await saveDownloaded();
-  const guides: Record<string, GuideState> = {};
-  for (const id of Object.keys(kept)) guides[id] = { phase: 'downloaded' };
-  // Anything already in the store was started this session and is newer than what was saved.
-  store.setState(s => ({ catalogue, guides: { ...guides, ...s.guides } }));
+  store.setState(s => {
+    const guides: Record<string, GuideState> = {};
+    for (const id of Object.keys(kept)) guides[id] = { phase: 'downloaded' };
+    // A download running now, or a failure for a guide with no file, is newer than the disk. Anything else in
+    // the store (such as a download that failed only because an earlier init did) gives way to the disk.
+    for (const [id, g] of Object.entries(s.guides)) {
+      if (g.phase === 'downloading' || (g.phase === 'none' && !kept[id])) guides[id] = g;
+    }
+    return { catalogue, guides };
+  });
+  await applyKnowledgeBase();
   return true;
+}
+
+/** Mark each downloaded guide taught or not by whether the knowledge base holds a document with its path. */
+async function applyKnowledgeBase(): Promise<void> {
+  let paths: Set<string>;
+  try {
+    paths = new Set((await ragService.getDocumentsByProject(FIELD_GUIDES_PROJECT_ID)).map(d => d.path));
+  } catch (error) {
+    logger.warn('[GuideLibrary] knowledge base unreadable, keeping what is shown', error);
+    return;
+  }
+  for (const id of Object.keys(downloaded)) {
+    const now = store.getState().guides[id];
+    // A guide waiting to be taught (or still downloading) is settled by that work, not here.
+    if (now?.phase !== 'downloaded' && now?.phase !== 'taught') continue;
+    const phase: GuidePhase = paths.has(guidePath(id)) ? 'taught' : 'downloaded';
+    if (phase !== now.phase) setGuide(id, { phase });
+  }
 }
 
 /**
@@ -115,6 +151,11 @@ function init(): Promise<boolean> {
     });
   }
   return initPromise;
+}
+
+/** Re-read which guides are taught: the user may have deleted a document or the project elsewhere. No network. */
+async function reconcile(): Promise<void> {
+  if (await init()) await applyKnowledgeBase();
 }
 
 type GuardedResult = { statusCode: number } | 'too-big' | 'failed';
@@ -244,15 +285,71 @@ async function open(id: string): Promise<void> {
   if (now && now.phase !== 'none' && now.error !== error) setGuide(id, { phase: now.phase, error });
 }
 
-/** Delete a downloaded guide's file and forget it. */
+async function teachNow(id: string, entry: GuideEntry): Promise<void> {
+  // The guide may have been removed while it waited its turn.
+  if (phaseOf(id) !== 'teaching') return;
+  try {
+    await ensureFieldGuidesProject();
+    await ragService.indexDocument({
+      projectId: FIELD_GUIDES_PROJECT_ID, filePath: guidePath(id), fileName: documentName(entry), fileSize: entry.bytes, bundled: true,
+    });
+    setGuide(id, { phase: 'taught' });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : '';
+    if (message.includes('is already in the knowledge base')) {
+      setGuide(id, { phase: 'taught' });
+      return;
+    }
+    logger.warn('[GuideLibrary] teach failed', id, e);
+    // The knowledge base's own message says why (a scanned PDF, no indexable text).
+    setGuide(id, { phase: 'downloaded', error: message || TEACH_FAILED });
+  }
+}
+
+/** Index a downloaded guide into the Field guides knowledge base, after any guide already being taught. */
+function teach(id: string): Promise<void> {
+  const entry = downloaded[id];
+  if (phaseOf(id) !== 'downloaded' || !entry?.hasText) return Promise.resolve();
+  setGuide(id, { phase: 'teaching' });
+  // teachNow never rejects, so one failure cannot stop the guides queued after it.
+  teachQueue = teachQueue.then(() => teachNow(id, entry));
+  return teachQueue;
+}
+
+/** Delete every knowledge-base document for this guide. Returns false when that failed. */
+async function deleteFromKnowledgeBase(id: string): Promise<boolean> {
+  try {
+    const docs = await ragService.getDocumentsByProject(FIELD_GUIDES_PROJECT_ID);
+    for (const doc of docs.filter(d => d.path === guidePath(id))) await ragService.deleteDocument(doc.id);
+    return true;
+  } catch (error) {
+    logger.error('[GuideLibrary] could not delete from the knowledge base', id, error);
+    return false;
+  }
+}
+
+/** Take a taught guide out of the knowledge base. The file stays. */
+async function unteach(id: string): Promise<void> {
+  if (phaseOf(id) !== 'taught') return;
+  const ok = await deleteFromKnowledgeBase(id);
+  setGuide(id, ok ? { phase: 'downloaded' } : { phase: 'taught', error: UNTEACH_FAILED });
+}
+
+/** Delete a downloaded guide's file and forget it. A taught guide leaves the knowledge base first. */
 async function remove(id: string): Promise<void> {
-  if (phaseOf(id) !== 'downloaded') return;
+  const phase = phaseOf(id);
+  if (phase !== 'downloaded' && phase !== 'taught') return;
+  if (phase === 'taught' && !(await deleteFromKnowledgeBase(id))) {
+    setGuide(id, { phase: 'taught', error: REMOVE_FAILED });
+    return;
+  }
   try {
     await RNFS.unlink(guidePath(id));
   } catch (error) {
     // A file that is already gone is what removing wanted.
     if (await RNFS.exists(guidePath(id)).catch(() => true)) {
       logger.error('[GuideLibrary] remove failed', id, error);
+      // It is out of the knowledge base by now, so it shows as downloaded.
       setGuide(id, { phase: 'downloaded', error: REMOVE_FAILED });
       return;
     }
@@ -264,4 +361,4 @@ async function remove(id: string): Promise<void> {
 }
 
 /** Owns the guide library: the catalogue, each guide's file on disk and its state in the store. */
-export const guideLibraryService = { init, refresh, download, open, remove };
+export const guideLibraryService = { init, reconcile, refresh, download, open, remove, teach, unteach };
