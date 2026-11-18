@@ -116,6 +116,38 @@ What counts as proof (designer's call, deliberately strict):
 This makes the first catalogue mostly military manuals (Army, Navy, Marine Corps, Coast Guard), which is where
 100 or more provable guides are. Civilian guides join as their statements are found.
 
+### Owner's rulings, 18 November 2026
+
+The overnight build drew five lines strictly because the owner could not be asked. The owner ruled on each the
+next morning. These rulings override anything in this document, the research brief or the batch instructions
+that is stricter or looser.
+
+1. **Staff-written agency guides are proved by authorship.** A civilian-agency publication counts as public
+   domain when it is written by the agency's own staff and published under the agency's name alone, credits no
+   outside author, contractor, university, photographer, illustrator or other outside owner anywhere in the
+   document, and carries no copyright notice. The agency's site does not have to say more than a hedged notice
+   ("most information presented on the USDA Web site is considered public domain"). The `licenceNote` says the
+   proof rests on 17 U.S.C. 105 and staff authorship, and quotes the agency notice where there is one. It must not
+   claim a public-domain statement the document does not print. Thanks to outside partners or contributors, or
+   images whose source cannot be shown to be the agency, still reject the guide.
+2. **Citing an outside standard is fine; reproducing it is not.** A guide may name, cite, summarise or paraphrase
+   an outside standard, study or book, and may list such sources as "quoted or paraphrased". A guide that
+   reproduces or adapts a table, figure, photo, form or passage credited to an outside owner (a standards body,
+   company, publisher, university) stays out, with or without "by permission". The `creditsNote` records each
+   mention and why it is a citation and not a reproduction.
+3. **The second-copy rule stays.** A guide whose only copy is on a site that is not the publisher's own or an
+   institutional archive needs a byte-identical copy on a second, independent site. Guides without one stay in
+   `catalog/pending/third-party-host-class.json` until a second copy is found.
+4. **Partly unreadable guides are listed read only.** A guide a person can read but a program cannot, in part
+   (more than 2% of its text lines in a scrambled encoding, or page images with no text layer), is listed with
+   `"hasText": false`, so the app offers Download and Open and no teach switch. Its candidate carries
+   `"readOnly": true` and a `"readOnlyNote"` saying what is unreadable. The licence checks are not relaxed: every
+   page without a text layer is looked at by eye for third-party credits before the guide is listed.
+5. **Scope removals stand.** Doctrine, tactics, weapons, administration and specialist military plant stay out.
+
+Not changed by the rulings: outdated safety advice still rejects a guide; a download the app's own request cannot
+fetch still cannot be listed; when in doubt, leave it out.
+
 Where the file comes from (designer's call): the publisher's own host first. If that host is unreliable or the
 file has moved, a byte-exact institutional copy is allowed: govinfo.gov, DTIC, the UNT digital library and web
 archive, and Wayback Machine raw captures (`id_` form) of the official URL. A copy uploaded by a member of the
@@ -196,7 +228,8 @@ left alone; removing and downloading again fetches the new file.
 title as the document name, one guide at a time. Un-teaching deletes the document from the knowledge base and
 keeps the file. If the Field guides project no longer exists, teaching a guide recreates it (same name, prompt
 and colour as `src/features/fieldGuides/fieldGuides.ts`), without re-adding the six bundled guides the user
-removed. A guide with `hasText: false` cannot be taught and says "Scanned, read only".
+removed. A guide with `hasText: false` (scanned, or listed read only under the owner's ruling 4) cannot be taught
+and says "Read only. The assistant can't learn this guide."
 
 **Scale limit.** The screen shows how many guides are taught. Past a threshold (the builder picks a
 conservative one, as a named constant to tune after a phone measurement) the teach control explains that the
