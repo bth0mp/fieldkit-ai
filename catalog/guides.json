@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "updated": "2026-11-17",
+  "categories": [
+    { "id": "medical", "name": "First aid and medical" },
+    { "id": "water", "name": "Water and sanitation" },
+    { "id": "food", "name": "Food growing, preserving and foraging" },
+    { "id": "building", "name": "Shelter and building" },
+    { "id": "power", "name": "Power and electrical" },
+    { "id": "fieldcraft", "name": "Fieldcraft, knots and survival" },
+    { "id": "navigation", "name": "Navigation and weather" },
+    { "id": "radio", "name": "Radio and communications" },
+    { "id": "mechanical", "name": "Vehicles, engines and tools" },
+    { "id": "disasters", "name": "Disasters and emergencies" },
+    { "id": "farming", "name": "Animals and farming" }
+  ],
+  "guides": []
+}
