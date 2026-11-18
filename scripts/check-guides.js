@@ -14,7 +14,13 @@ const GUIDES_FILE = path.join(ROOT, 'catalog/guides.json');
 const CANDIDATES_FILE = path.join(ROOT, 'catalog/candidates.json');
 
 const USER_AGENT = 'Dalvik/2.1.0 (Linux; U; Android 14)';
-const MAX_BYTES = 60 * 1024 * 1024;
+const MAX_GUIDE_BYTES = 60 * 1024 * 1024;
+const MAX_REDIRECTS = 5;
+const PDFTOTEXT_TIMEOUT_MS = 60000;
+const PDFTOTEXT_MAX_BUFFER = 64 * 1024 * 1024;
+// Mirrors ID_PATTERN and HTTPS_DNS_HOST_URL_PATTERN in src/features/guideLibrary/catalogue.ts, the source of truth.
+// If that validator changes, change these; the shipped-catalogue unit test catches drift.
+const HTTPS_DNS_HOST_URL_PATTERN = /^https:\/\/(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z]{2,}(?:\/\S*)?$/;
 const HOST_GAP_MS = 2000;
 const TRIES = 3;
 const REQUEST_TIMEOUT_MS = 120000;
@@ -54,16 +60,44 @@ async function waitForHost(host) {
   lastRequestByHost.set(host, Date.now());
 }
 
+/** The next URL for a redirect response, or null if the response is not a redirect. Refuses anything but https. */
+function nextHop({ status, location }, currentUrl, hopsDone) {
+  if (![301, 302, 303, 307, 308].includes(status) || !location) return null;
+  if (hopsDone >= MAX_REDIRECTS) throw new Error('too many redirects');
+  let next;
+  try {
+    next = new URL(location, currentUrl);
+  } catch {
+    throw new Error('redirected to an invalid address');
+  }
+  if (next.protocol !== 'https:') throw new Error('redirected to a non-https address');
+  return next.href;
+}
+
+/** Fetches by hand so every redirect hop can be checked: the recorded hash must come from https content only. */
+async function fetchFollowingHttps(url) {
+  const seen = new Set();
+  for (let hops = 0; ; hops++) {
+    if (seen.has(url)) throw new Error('too many redirects');
+    seen.add(url);
+    await waitForHost(new URL(url).host);
+    const res = await fetch(url, { redirect: 'manual', headers: { 'User-Agent': USER_AGENT }, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+    const next = nextHop({ status: res.status, location: res.headers.get('location') }, url, hops);
+    if (!next) return res;
+    await res.body?.cancel();
+    url = next;
+  }
+}
+
 async function downloadOnce(url, file) {
-  await waitForHost(new URL(url).host);
-  const res = await fetch(url, { redirect: 'follow', headers: { 'User-Agent': USER_AGENT }, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+  const res = await fetchFollowingHttps(url);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  if (Number(res.headers.get('content-length')) > MAX_BYTES) throw new Error('over the 60 MB limit');
+  if (Number(res.headers.get('content-length')) > MAX_GUIDE_BYTES) throw new Error('over the 60 MB limit');
   const chunks = [];
   let total = 0;
   for await (const chunk of res.body) {
     total += chunk.length;
-    if (total > MAX_BYTES) throw new Error('over the 60 MB limit');
+    if (total > MAX_GUIDE_BYTES) throw new Error('over the 60 MB limit');
     chunks.push(chunk);
   }
   await fs.promises.writeFile(file, Buffer.concat(chunks));
@@ -93,35 +127,57 @@ function checkPdftotext() {
   }
 }
 
-function pdfText(file, lastPage) {
-  const args = lastPage ? ['-l', String(lastPage), file, '-'] : [file, '-'];
-  return execFileSync('pdftotext', args, { encoding: 'utf8', maxBuffer: 1024 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'] });
-}
-
-/** Page count (form feeds in the full text) and whether the first pages carry a real text layer. */
-function readTextLayer(file) {
-  const pages = pdfText(file).split('\f').length - 1;
-  const head = pdfText(file, TEXT_PAGES);
-  const hasText = head.replace(/\s/g, '').length >= MIN_TEXT_CHARS;
-  return { pages, hasText, head };
-}
-
-function checkReleaseStatement(candidate, layer) {
-  if (!/approved for public release/i.test(candidate.licenceNote)) return;
-  if (!layer.hasText) {
-    if (candidate.statementSeen === true) return;
-    throw new Error('scanned, statement must be confirmed by eye');
+/** One pdftotext pass over the whole file, with a timeout; a failure becomes a clear reason for this candidate. */
+function pdfText(file) {
+  try {
+    return execFileSync('pdftotext', [file, '-'], { encoding: 'utf8', maxBuffer: PDFTOTEXT_MAX_BUFFER, timeout: PDFTOTEXT_TIMEOUT_MS, stdio: ['ignore', 'pipe', 'ignore'] });
+  } catch (err) {
+    if (err.code === 'ETIMEDOUT') throw new Error('pdftotext timed out');
+    if (err.code === 'ENOBUFS') throw new Error('pdftotext output too large');
+    throw new Error(`pdftotext failed: ${err.message.split('\n')[0]}`);
   }
-  if (!hasReleaseStatement(layer.head)) throw new Error('release statement not found in the document');
 }
+
+/** Page count (form feeds in the text) and whether the first pages carry a real text layer. */
+function readTextLayer(file) {
+  const parts = pdfText(file).split('\f');
+  const head = parts.slice(0, TEXT_PAGES).join('\f');
+  const hasText = head.replace(/\s/g, '').length >= MIN_TEXT_CHARS;
+  return { pages: parts.length - 1, hasText, head };
+}
+
+/** Why a candidate's "approved for public release" claim cannot be accepted, or null if it can (or none is made). */
+function releaseStatementProblem(candidate, headText, hasText) {
+  if (!hasReleaseStatement(candidate.licenceNote)) return null;
+  if (!hasText) return candidate.statementSeen === true ? null : 'scanned, statement must be confirmed by eye';
+  return hasReleaseStatement(headText) ? null : 'release statement not found in the document';
+}
+
+/** Strips helper fields, sorts by category order then title. */
+function shapeEntries(guides, categoryIds) {
+  return guides
+    .map(g => Object.fromEntries(ENTRY_FIELDS.map(f => [f, g[f]])))
+    .sort((a, b) => categoryIds.indexOf(a.category) - categoryIds.indexOf(b.category) || a.title.localeCompare(b.title));
+}
+
+const isText = v => typeof v === 'string' && v.length > 0;
 
 function validateCandidate(candidate, categoryIds) {
   const missing = REQUIRED_CANDIDATE_FIELDS.filter(f => candidate[f] === undefined || candidate[f] === '');
   if (missing.length) throw new Error(`missing ${missing.join(', ')}`);
-  if (!ID_PATTERN.test(candidate.id)) throw new Error('bad id');
+  if (typeof candidate.id !== 'string' || !ID_PATTERN.test(candidate.id)) throw new Error('bad id');
+  const notText = ['title', 'publisher', 'licence', 'licenceNote'].filter(f => !isText(candidate[f]));
+  if (notText.length) throw new Error(`${notText.join(', ')} must be non-empty text`);
   if (!categoryIds.includes(candidate.category)) throw new Error(`unknown category ${candidate.category}`);
   if (!Number.isInteger(candidate.year)) throw new Error('year must be an integer');
-  if (!candidate.url.startsWith('https://')) throw new Error('url must be https');
+  if (typeof candidate.url !== 'string' || !HTTPS_DNS_HOST_URL_PATTERN.test(candidate.url)) {
+    throw new Error('url must be https with a plain DNS host (no credentials, port, IP address or localhost)');
+  }
+}
+
+function validateMeasured(measured, layer) {
+  if (measured.bytes > MAX_GUIDE_BYTES) throw new Error('over the 60 MB limit');
+  if (layer.pages < 1) throw new Error('no pages found in the document');
 }
 
 /** Downloads into a fresh temp directory, runs fn(file), and always removes the directory. */
@@ -141,14 +197,11 @@ function checkCandidate(candidate, categoryIds) {
   return withDownload(candidate.url, async file => {
     const measured = await describePdf(file);
     const layer = readTextLayer(file);
-    checkReleaseStatement(candidate, layer);
-    const entry = { ...candidate, ...measured, pages: layer.pages, hasText: layer.hasText };
-    return Object.fromEntries(ENTRY_FIELDS.map(f => [f, entry[f]]));
+    validateMeasured(measured, layer);
+    const problem = releaseStatementProblem(candidate, layer.head, layer.hasText);
+    if (problem) throw new Error(problem);
+    return { ...candidate, ...measured, pages: layer.pages, hasText: layer.hasText };
   });
-}
-
-function sortGuides(guides, categoryIds) {
-  return [...guides].sort((a, b) => categoryIds.indexOf(a.category) - categoryIds.indexOf(b.category) || a.title.localeCompare(b.title));
 }
 
 /** Two-space JSON, with each category kept on one line as in the committed file. */
@@ -164,23 +217,23 @@ async function addCandidates() {
   if (!pending.length) return 0;
   checkPdftotext();
   const categoryIds = catalogue.categories.map(c => c.id);
-  const added = [];
+  let added = 0;
   for (const candidate of pending) {
     try {
       if (known.has(candidate.id)) throw new Error('duplicate id in candidates');
-      added.push(await checkCandidate(candidate, categoryIds));
+      const entry = await checkCandidate(candidate, categoryIds);
+      // Saved after every candidate so a crash later in a long run loses nothing.
+      catalogue.guides = shapeEntries([...catalogue.guides, entry], categoryIds);
+      catalogue.updated = new Date().toISOString().slice(0, 10);
+      fs.writeFileSync(GUIDES_FILE, `${serialise(catalogue)}\n`);
       known.add(candidate.id);
+      added++;
       console.log(`added ${candidate.id}`);
     } catch (err) {
       console.log(`FAILED ${candidate.id}: ${err.message}`);
     }
   }
-  if (added.length) {
-    catalogue.guides = sortGuides([...catalogue.guides, ...added], categoryIds);
-    catalogue.updated = new Date().toISOString().slice(0, 10);
-    fs.writeFileSync(GUIDES_FILE, `${serialise(catalogue)}\n`);
-  }
-  console.log(`${added.length} added, ${pending.length - added.length} failed`);
+  console.log(`${added} added, ${pending.length - added} failed`);
   return 0;
 }
 
@@ -211,4 +264,4 @@ if (require.main === module) {
   run().then(code => process.exit(code), err => { console.error(err.message); process.exit(2); });
 }
 
-module.exports = { hasReleaseStatement, describePdf };
+module.exports = { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop };
