@@ -148,9 +148,14 @@ class DocumentService {
   }
 
   /**
-   * Process a document from a file path
+   * Process a document from a file path. `bundled` marks a file shipped with the app: it may exceed the
+   * size limit that guards user-picked files, and it already lives in app storage, so no copy is made.
    */
-  async processDocumentFromPath(filePath: string, fileName?: string, maxCharsOverride?: number): Promise<MediaAttachment | null> {
+  async processDocumentFromPath(
+    filePath: string,
+    fileName?: string,
+    opts: { maxChars?: number; bundled?: boolean } = {},
+  ): Promise<MediaAttachment | null> {
     try {
       console.log(`[DocumentService] Processing document - filePath: ${filePath}, fileName: ${fileName}`);
       const name = fileName || filePath.split('/').pop() || 'document';
@@ -179,13 +184,15 @@ class DocumentService {
 
       const stat = await RNFS.stat(resolvedPath);
       console.log(`[DocumentService] File size: ${stat.size} bytes`);
-      if (stat.size > MAX_FILE_SIZE) {
+      if (!opts.bundled && stat.size > MAX_FILE_SIZE) {
         throw new Error(`File is too large. Maximum size is ${MAX_FILE_SIZE / (1024 * 1024)}MB`);
       }
 
-      const maxChars = maxCharsOverride ?? Math.floor((useAppStore.getState().settings.contextLength || APP_CONFIG.maxContextLength) * 4 * 0.5);
+      const maxChars = opts.maxChars ?? Math.floor((useAppStore.getState().settings.contextLength || APP_CONFIG.maxContextLength) * 4 * 0.5);
       const textContent = await this.readContent(resolvedPath, isPdf, maxChars);
-      const { id, uri } = await this.savePersistentCopy(resolvedPath, filePath, name);
+      const { id, uri } = opts.bundled
+        ? { id: Date.now().toString(), uri: resolvedPath }
+        : await this.savePersistentCopy(resolvedPath, filePath, name);
 
       return { id, type: 'document', uri, fileName: name, textContent, fileSize: stat.size };
     } catch (error: any) {

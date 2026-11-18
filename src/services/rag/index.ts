@@ -23,6 +23,8 @@ interface IndexDocumentParams {
   fileName: string;
   fileSize: number;
   onProgress?: (progress: IndexProgress) => void;
+  /** A file shipped with the app (a field guide): known size, indexed in full, already in app storage. */
+  bundled?: boolean;
 }
 
 class RagService {
@@ -31,7 +33,7 @@ class RagService {
   }
 
   async indexDocument(params: IndexDocumentParams): Promise<number> {
-    const { projectId, filePath, fileName, fileSize, onProgress } = params;
+    const { projectId, filePath, fileName, fileSize, onProgress, bundled } = params;
     await this.ensureReady();
 
     // Prevent duplicate indexing of the same file
@@ -43,7 +45,12 @@ class RagService {
     onProgress?.({ stage: 'extracting', message: `Extracting text from ${fileName}...` });
     // Extract full document text for RAG — don't truncate based on context window
     const RAG_MAX_CHARS = 500_000;
-    const attachment = await documentService.processDocumentFromPath(filePath, fileName, RAG_MAX_CHARS);
+    // The largest bundled guide (the ship's medical guide) extracts to ~820k characters.
+    const BUNDLED_MAX_CHARS = 2_000_000;
+    const attachment = await documentService.processDocumentFromPath(filePath, fileName, {
+      maxChars: bundled ? BUNDLED_MAX_CHARS : RAG_MAX_CHARS,
+      bundled,
+    });
     if (!attachment?.textContent) {
       // A PDF that extracts to zero text is a scanned / image-only PDF (no text layer);
       // there is no on-device OCR, so name that cause instead of a generic failure (B-KB).
