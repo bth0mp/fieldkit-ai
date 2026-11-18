@@ -119,7 +119,7 @@ export const GuideLibraryScreen: React.FC = () => {
   useFocusEffect(useCallback(() => { guideLibraryService.reconcile(); }, []));
 
   const sections = useMemo(() => sectionsFor(catalogue, delisted, query), [catalogue, delisted, query]);
-  const { onPhone, taught } = useMemo(() => libraryCounts(guides), [guides]);
+  const { total, onPhone, taught } = useMemo(() => libraryCounts({ catalogue, guides, delisted }), [catalogue, guides, delisted]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -155,7 +155,7 @@ export const GuideLibraryScreen: React.FC = () => {
               onChangeText={setQuery}
               autoCorrect={false}
             />
-            <Text style={styles.summary}>{`${catalogue.guides.length} guides · ${onPhone} downloaded · ${taught} taught`}</Text>
+            <Text style={styles.summary}>{`${total} guides · ${onPhone} downloaded · ${taught} taught`}</Text>
             {taught >= SLOW_SEARCH_TAUGHT_GUIDES && (
               <Text style={styles.note}>The assistant searches every guide it has learned. More guides make answers slower.</Text>
             )}

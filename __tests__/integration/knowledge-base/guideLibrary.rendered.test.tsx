@@ -346,8 +346,8 @@ describe('Guide library (rendered)', () => {
       expect(view.getByText('Test knots')).toBeTruthy();
       expect(view.queryByText('Fieldcraft and knots (1)')).toBeNull();
       expect(view.queryByTestId('guide-download-test-knots')).toBeNull();
-      // It still counts as on the phone.
-      expect(view.getByText('1 guides · 1 downloaded · 0 taught')).toBeTruthy();
+      // It still counts, as a guide shown and as on the phone.
+      expect(view.getByText('2 guides · 1 downloaded · 0 taught')).toBeTruthy();
 
       // Search filters the rows that are no longer listed too.
       const search = view.getByTestId('guide-library-search');
@@ -377,6 +377,71 @@ describe('Guide library (rendered)', () => {
       expect(view.queryByText(DELISTED_HEADING)).toBeNull();
       expect(view.getByText('1 guides · 0 downloaded · 0 taught')).toBeTruthy();
       expect(await exists(fs, `${DIR}/test-knots.pdf`)).toBe(false);
+    }, 40000);
+
+    /** Downloads of `url` write their file and report progress, but do not finish until `release()`. */
+    function holdDownloads(fs: Fs, url: string) {
+      let release = () => {};
+      const gate = new Promise<void>(resolve => { release = resolve; });
+      const downloadFile = fs.module.downloadFile as jest.Mock;
+      const real = downloadFile.getMockImplementation()!;
+      downloadFile.mockImplementation((opts: { fromUrl: string }) => {
+        const job = real(opts);
+        if (opts.fromUrl !== url) return job;
+        job.promise.catch(() => {});
+        return { jobId: job.jobId, promise: gate.then(() => job.promise) };
+      });
+      return () => release();
+    }
+
+    it('a guide dropped by a refresh while it downloads stays under "No longer listed" and finishes there', async () => {
+      const h = await openLibrary(f => {
+        f.seedDownload(CATALOGUE_URL, TEST_CATALOGUE);
+        f.seedDownload(KNOTS.url, KNOTS_BODY);
+      });
+      const { rtl, fs, view } = h;
+      const release = holdDownloads(fs, KNOTS.url);
+      rtl.fireEvent.press(view.getByTestId('guide-download-test-knots'));
+      await rtl.waitFor(() => { expect(view.getByText('100%')).toBeTruthy(); }, { timeout: 4000 });
+
+      await refreshWith(h, catalogueOf([WATER]), 2);
+      expect(view.getByText(DELISTED_HEADING)).toBeTruthy();
+      expect(view.getByText('Test knots')).toBeTruthy();
+      expect(view.getByText('100%')).toBeTruthy();
+      expect(view.queryByTestId('guide-download-test-knots')).toBeNull();
+      expect(view.getByText('2 guides · 0 downloaded · 0 taught')).toBeTruthy();
+
+      await rtl.act(async () => { release(); });
+      await rtl.waitFor(() => { expect(view.getByTestId('guide-open-test-knots')).toBeTruthy(); }, { timeout: 4000 });
+      expect(view.getByText(DELISTED_HEADING)).toBeTruthy();
+      expect(view.getByText('2 guides · 1 downloaded · 0 taught')).toBeTruthy();
+      // The refreshed catalogue has no entry for it: the file was checked against the one the download started with.
+      expect((fs.module.hash as jest.Mock).mock.calls.some(([p]) => p === `${DIR}/test-knots.pdf.part`)).toBe(true);
+      const m = require('@react-native-async-storage/async-storage');
+      const saved = JSON.parse(await (m.default ?? m).getItem('@fieldkit/guide_library'));
+      expect(saved.downloaded['test-knots']).toEqual(KNOTS);
+      expect(await exists(fs, `${DIR}/test-knots.pdf`)).toBe(true);
+    }, 40000);
+
+    it('a guide dropped by a refresh while it downloads is gone when the download fails', async () => {
+      const h = await openLibrary(f => {
+        f.seedDownload(CATALOGUE_URL, TEST_CATALOGUE);
+        f.seedDownload(KNOTS.url, { status: 404 });
+      });
+      const { rtl, fs, view } = h;
+      const release = holdDownloads(fs, KNOTS.url);
+      rtl.fireEvent.press(view.getByTestId('guide-download-test-knots'));
+      await rtl.waitFor(() => { expect(view.queryByTestId('guide-download-test-knots')).toBeNull(); }, { timeout: 4000 });
+
+      await refreshWith(h, catalogueOf([WATER]), 2);
+      expect(view.getByText(DELISTED_HEADING)).toBeTruthy();
+
+      await rtl.act(async () => { release(); });
+      await rtl.waitFor(() => { expect(view.queryByTestId('guide-row-test-knots')).toBeNull(); }, { timeout: 4000 });
+      expect(view.queryByText(DELISTED_HEADING)).toBeNull();
+      expect(view.getByText('1 guides · 0 downloaded · 0 taught')).toBeTruthy();
+      expect(await exists(fs, `${DIR}/test-knots.pdf`)).toBe(false);
+      expect(await exists(fs, `${DIR}/test-knots.pdf.part`)).toBe(false);
     }, 40000);
 
     it('a changed hash in a refreshed catalogue leaves the downloaded copy alone', async () => {

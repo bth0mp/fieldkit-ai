@@ -38,6 +38,8 @@ const documentName = (entry: GuideEntry) => `${entry.title} (${entry.publisher})
 
 /** The catalogue entry each downloaded file was checked against, by id. */
 let downloaded: Record<string, GuideEntry> = {};
+/** The catalogue entry each download in flight is checked against, by id. */
+let downloading: Record<string, GuideEntry> = {};
 let initPromise: Promise<boolean> | null = null;
 /** Guides are taught one at a time: each teach waits for the one before it. */
 let teachQueue: Promise<void> = Promise.resolve();
@@ -53,12 +55,19 @@ const withGuide = (guides: Record<string, GuideState>, id: string, state: GuideS
 const setGuide = (id: string, state: GuideState | null) => store.setState(s => ({ guides: withGuide(s.guides, id, state) }));
 const phaseOf = (id: string): GuidePhase => store.getState().guides[id]?.phase ?? 'none';
 
-/** Downloaded guides `catalogue` does not list, by title. Their saved entries keep them usable. */
+/**
+ * Downloaded guides, and guides being downloaded, that `catalogue` does not list, by title. Their saved (or
+ * in-flight) entries keep them usable.
+ */
 function delistedFrom(catalogue: Catalogue): GuideEntry[] {
   const listed = new Set(catalogue.guides.map(g => g.id));
-  return Object.values(downloaded).filter(e => !listed.has(e.id)).sort((a, b) => a.title.localeCompare(b.title));
+  const known = { ...downloading, ...downloaded };
+  return Object.values(known).filter(e => !listed.has(e.id)).sort((a, b) => a.title.localeCompare(b.title));
 }
-/** Set one guide's state after `downloaded` changed, and in the same update which guides are no longer listed. */
+/**
+ * Set one guide's state after `downloaded` or `downloading` changed, and in the same update which guides are no
+ * longer listed.
+ */
 const setGuideAndDelisted = (id: string, state: GuideState | null) =>
   store.setState(s => ({ guides: withGuide(s.guides, id, state), delisted: delistedFrom(s.catalogue) }));
 const isListed = (id: string) => store.getState().catalogue.guides.some(g => g.id === id);
@@ -265,6 +274,8 @@ async function download(id: string): Promise<void> {
   if (phaseOf(id) !== 'none') return;
   const entry = store.getState().catalogue.guides.find(g => g.id === id);
   if (!entry) return;
+  // Kept while in flight, so a refresh that drops the guide shows it as no longer listed instead of hiding it.
+  downloading = { ...downloading, [id]: entry };
   setGuide(id, { phase: 'downloading', progress: 0 });
   const partName = `${id}.pdf.part`;
   const part = `${GUIDE_LIBRARY_DIR}/${partName}`;
@@ -290,7 +301,11 @@ async function download(id: string): Promise<void> {
       inFlightParts.delete(partName);
     }
   }
-  // A refresh while downloading may have dropped the guide from the catalogue.
+  // By now `downloaded` holds the guide only if it was kept. A refresh while downloading may have dropped it from
+  // the catalogue: kept, it stays no longer listed; failed, it is on neither list and its row goes.
+  const stillDownloading = { ...downloading };
+  delete stillDownloading[id];
+  downloading = stillDownloading;
   setGuideAndDelisted(id, error ? { phase: 'none', error } : { phase: 'downloaded' });
 }
 

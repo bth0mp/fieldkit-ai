@@ -146,7 +146,7 @@ describe('Guide library teaching (rendered)', () => {
       expect(view.getByText('No longer listed')).toBeTruthy();
     }, { timeout: 4000 });
     expect(switchOf(view, 'test-knots').props.value).toBe(true);
-    expect(view.getByText('1 guides · 1 downloaded · 1 taught')).toBeTruthy();
+    expect(view.getByText('2 guides · 1 downloaded · 1 taught')).toBeTruthy();
     view.unmount();
 
     openRoute({ projectId: 'field-guides' });
