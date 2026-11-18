@@ -14,6 +14,7 @@ export interface GuideEntry {
   bytes: number;
   sha256: string;
   pages: number;
+  /** False means the assistant must not learn the guide: it is scanned, or its text is unreadable in part and the checker listed it read only. */
   hasText: boolean;
 }
 

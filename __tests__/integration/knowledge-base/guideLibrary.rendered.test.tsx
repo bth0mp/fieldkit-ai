@@ -406,7 +406,7 @@ describe('Guide library (rendered)', () => {
     expect(view.getByText('Test knots')).toBeTruthy();
     expect(view.queryByText('Test knots, revised')).toBeNull();
     expect(view.getByTestId('guide-teach-test-knots')).toBeTruthy();
-    expect(view.getAllByText('Scanned, read only')).toHaveLength(1);
+    expect(view.getAllByText("Read only. The assistant can't learn this guide.")).toHaveLength(1);
 
     // Once removed, the row is the catalogue's entry again.
     await removeGuide(h, view, 'test-knots');

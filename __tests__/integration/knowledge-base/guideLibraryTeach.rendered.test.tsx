@@ -209,10 +209,10 @@ describe('Guide library teaching (rendered)', () => {
   it('a guide marked scanned cannot be taught', async () => {
     const h = await openLibrary([SCANNED, KNOTS]);
     const { view } = h;
-    // Said before downloading, and only for the scanned guide.
-    expect(view.getAllByText('Scanned, read only')).toHaveLength(1);
+    // Said before downloading, and only for the guide marked read only.
+    expect(view.getAllByText("Read only. The assistant can't learn this guide.")).toHaveLength(1);
     await downloadGuide(h, view, SCANNED, 'scanned pages');
-    expect(view.getAllByText('Scanned, read only')).toHaveLength(1);
+    expect(view.getAllByText("Read only. The assistant can't learn this guide.")).toHaveLength(1);
     expect(view.queryByTestId('guide-teach-test-scanned')).toBeNull();
     expect(view.queryByText('Assistant knows this')).toBeNull();
   }, 40000);

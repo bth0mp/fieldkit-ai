@@ -100,8 +100,9 @@ const GuideRow: React.FC<RowProps> = ({ entry, state, delisted, expanded, onTogg
         <Icon name={expanded ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textMuted} />
       </View>
       {delisted && <Text style={[styles.teachLabel, styles.scanned]}>Removed from the library. Your copy still works.</Text>}
-      {/* Said before downloading too, so the user knows a scanned guide can be read but not taught. */}
-      {!entry.hasText && <Text style={[styles.teachLabel, styles.scanned]}>Scanned, read only</Text>}
+      {/* Said before downloading too, so the user knows a guide that is scanned, or listed read only because part of
+          its text is unreadable, can be read but not taught. */}
+      {!entry.hasText && <Text style={[styles.teachLabel, styles.scanned]}>Read only. The assistant can't learn this guide.</Text>}
       {showTeach && <TeachControl entry={entry} state={state} styles={styles} />}
       {hasFile && (
         <View style={styles.actions}>
