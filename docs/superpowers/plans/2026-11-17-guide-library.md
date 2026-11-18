@@ -350,3 +350,18 @@ This is research, not code. Its test is the checker and the Task 1 unit test.
 - [x] **Step 2: Run** `npx jest --findRelatedTests $(git diff --name-only 8ac90f404 -- '*.ts' '*.tsx' '*.js')`. Expected: PASS. Rerun a timed-out heavy suite alone with `--runInBand --testTimeout=40000` before treating it as real.
 - [x] **Step 3: Update the shared notes file** `C:\Users\bth0m\AppData\Roaming\Claude\side-session-notes\local_6f40378b-e99c-44e6-abbf-796c9a64ce81\field-guides.md`: commits, guide count per category, what was skipped, and what still needs the owner (phone check, merge and push so the catalogue URL goes live, release).
 - [x] **Step 4: Stop.** Do not push or merge.
+
+---
+
+### Task 11: The owner's rulings (added 18 November 2026)
+
+The owner ruled on the five open catalogue questions the morning after the build. The rulings and the one test for reproduced material are in the design doc, section "Owner's rulings, 18 November 2026".
+
+- [x] **Step 1: Record the rulings** in the design doc.
+- [x] **Step 2: Read only.** The library row for a guide with `hasText: false` says "Read only. The assistant can't learn this guide." The checker ships `hasText: false` for a candidate with `readOnly: true` and a `readOnlyNote`, and `--verify` reports a mismatch.
+- [x] **Step 3: Read every document the rulings affect** (ruling 1: eight; ruling 2: ten; ruling 4: eight), including every page a program cannot read, by eye.
+- [x] **Step 4: Add the cleared guides** and have the batch reviewed by a licence reviewer who opens the documents. Result: 36 to 54 guides, seven of them read only, after three review rounds.
+- [x] **Step 5: Exact page counts.** The checker subtracts form feeds that are text, not page breaks.
+- [x] **Step 6: Final checks**: tsc, eslint, depcruise, knip, the whole Jest suite, and `--verify` of every guide.
+
+Still open, for the owner: a by-eye audit of about 2,750 pages with scanned figures in the guides whose pictures were not all looked at (a credit can sit inside a picture, and a maker's catalogue photograph carries none); a phone test of teaching a Navy module, which the checker's PDF tool misreads and the app's does not; the close calls listed in the shared notes.

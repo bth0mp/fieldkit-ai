@@ -144,7 +144,7 @@ that is stricter or looser.
    data; a reference-list entry is a citation. Wording that a federal regulation itself prints is the
    regulation's, whoever it names. This one test applies to every guide. Three cases it settles:
    - "Based on", "according to" or "in accordance with" a named standard or statement is a citation when the
-     item is in the publisher's own words or drawing, and the `creditsNote` says what was compared. "Adapted
+     item is in the publisher's own words or drawing, and the `creditsNote` says how that was judged. "Adapted
      from", "reprinted from", "courtesy of" and "by permission" mean the item itself was carried over.
    - A statement that a whole document or chapter condenses, or is drawn from, a named outside work counts as a
      credit on everything it covers.
