@@ -10,6 +10,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-11-17-guide-library-design.md`. Read it first; this plan argues from it.
 
+**Execution:** subagent-driven (the owner's choice, 2026-11-17): a fresh agent implements each task and a fresh reviewer checks it before the next starts, then a whole-branch review at the end. Use superpowers:subagent-driven-development. The two research tasks (3 and 9) have no code to review; their gate is the checker and the Task 1 test.
+
 ## Global Constraints
 
 - Work in this worktree on branch `feat/field-guides`. Commit each green step. Do not push, merge, tag or release. Do not install anything on the phone. Never stash, reset or switch branches.
