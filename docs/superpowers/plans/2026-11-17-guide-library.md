@@ -304,13 +304,13 @@ This is research, not code. Its test is the checker and the Task 1 unit test.
 - Consumes: the saved `downloaded` entries from Task 5.
 - Exact copy: section heading `No longer listed`; row line `Removed from the library. Your copy still works.`
 
-- [ ] **Step 1: Write the failing rendered tests:**
+- [x] **Step 1: Write the failing rendered tests:**
   - `a downloaded guide dropped by a refresh stays usable under "No longer listed"`: download `test-knots`, refresh with a catalogue that only has `test-water`; expect the heading, the row line, and `guide-open-test-knots` still working; `guide-remove-test-knots` removes the row entirely.
   - `a changed hash in a refreshed catalogue leaves the downloaded copy alone`: refresh with a different `sha256` for `test-knots`; expect Open still shown and no error.
-- [ ] **Step 2: Run.** Expected: FAIL.
-- [ ] **Step 3: Implement.** After every catalogue change, `delisted` = saved entries whose id is not in the catalogue. The section renders last and its rows have no Download button.
-- [ ] **Step 4: Run.** Expected: PASS.
-- [ ] **Step 5: Checks and commit.** `feat(guides): keep downloaded guides usable after they leave the catalogue`
+- [x] **Step 2: Run.** Expected: FAIL.
+- [x] **Step 3: Implement.** After every catalogue change, `delisted` = saved entries whose id is not in the catalogue. The section renders last and its rows have no Download button.
+- [x] **Step 4: Run.** Expected: PASS.
+- [x] **Step 5: Checks and commit.** `feat(guides): keep downloaded guides usable after they leave the catalogue`
 
 ---
 
