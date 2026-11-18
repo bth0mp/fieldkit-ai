@@ -2,7 +2,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
-const { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem, scanThirdParty, thirdPartyMentions, thirdPartyProblem, textFieldProblem, validateCandidate, teachable, readOnlyMismatch } = require('../../../scripts/check-guides.js');
+const { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem, scanThirdParty, thirdPartyMentions, thirdPartyProblem, textFieldProblem, validateCandidate, teachable, readOnlyMismatch, exactPages } = require('../../../scripts/check-guides.js');
 
 describe('thirdPartyMentions across wrapped lines', () => {
   it.each([
@@ -273,6 +273,18 @@ describe('read only candidates', () => {
     expect(readOnlyMismatch({ hasText: false }, { readOnly: true })).toBeNull();
     expect(readOnlyMismatch({ hasText: true }, {})).toBeNull();
     expect(readOnlyMismatch({ hasText: true }, undefined)).toBeNull();
+  });
+});
+
+describe('exactPages', () => {
+  it('takes the stray form feeds off the count', () => {
+    expect(exactPages(316, 164)).toBe(152);
+    expect(exactPages(12, 0)).toBe(12);
+  });
+
+  it('refuses a result below one page', () => {
+    expect(() => exactPages(3, 3)).toThrow('no pages found in the document');
+    expect(() => exactPages(0, 0)).toThrow('no pages found in the document');
   });
 });
 

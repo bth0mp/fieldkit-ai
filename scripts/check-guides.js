@@ -132,9 +132,9 @@ function checkPdftotext() {
 }
 
 /** One pdftotext pass over the whole file, with a timeout; a failure becomes a clear reason for this candidate. */
-function pdfText(file) {
+function pdfText(file, flags = []) {
   try {
-    return execFileSync('pdftotext', [file, '-'], { encoding: 'utf8', maxBuffer: PDFTOTEXT_MAX_BUFFER, timeout: PDFTOTEXT_TIMEOUT_MS, stdio: ['ignore', 'pipe', 'ignore'] });
+    return execFileSync('pdftotext', [...flags, file, '-'], { encoding: 'utf8', maxBuffer: PDFTOTEXT_MAX_BUFFER, timeout: PDFTOTEXT_TIMEOUT_MS, stdio: ['ignore', 'pipe', 'ignore'] });
   } catch (err) {
     if (err.code === 'ETIMEDOUT') throw new Error('pdftotext timed out');
     if (err.code === 'ENOBUFS') throw new Error('pdftotext output too large');
@@ -142,7 +142,7 @@ function pdfText(file) {
   }
 }
 
-/** Page count (form feeds in the text) and whether the first pages carry a real text layer. */
+/** Page count (form feeds in the text, so inflated when a font's encoding emits stray ones: see measureCandidate) and whether the first pages carry a real text layer. */
 function readTextLayer(file) {
   const parts = pdfText(file).split('\f');
   const head = parts.slice(0, TEXT_PAGES).join('\f');
@@ -170,8 +170,7 @@ const MAX_SNIPPETS = 5;
 // pdftotext splits a word with a hyphen at a line end ("per-\nmission"), which the whole-word pattern misses in the
 // text as printed. Joining the splits finds those, but glues real compounds too ("non-\ncopyrighted" ->
 // "noncopyrighted"), which hides a hit the printed text has. So the scan reads both: every hit in the joined text,
-// plus each hit in the printed text that sits against a split (the ones joining glued away). A hit away from any
-// split is in both texts and is counted once.
+// plus each hit in the printed text that sits against a split (the ones joining glued away).
 const LINE_END_HYPHEN = /(\p{L})-[ \t]*\r?\n[ \t]*(\p{L})/gu;
 const joinHyphenatedLineBreaks = text => text.replace(LINE_END_HYPHEN, '$1$2');
 const SPLIT_BEFORE = /\p{L}-[ \t]*\r?\n[ \t]*$/u;
@@ -234,7 +233,7 @@ function shapeEntries(guides, categoryIds) {
 
 // Mirrors LATIN_TEXT_CODE_POINTS, the caps and isLine in src/features/guideLibrary/catalogue.ts, the source of truth.
 // One entry the app rejects blocks every phone from updating, so keep these in step with that file. The app's
-// unit test of the shipped catalogue, run by the pre-push hook whenever catalog/ changes, fails on such an entry.
+// unit test of the shipped catalogue fails on such an entry.
 const LATIN_TEXT_CODE_POINTS = [
   [0x0020, 0x007e],
   [0x00a1, 0x00ac], [0x00ae, 0x00ff],
@@ -277,9 +276,7 @@ function readOnlyFieldProblem(candidate) {
 }
 
 /** The hasText a guide ships with: the measured text layer, unless the candidate is marked read only. */
-function teachable(candidate, layerHasText) {
-  return layerHasText && candidate.readOnly !== true;
-}
+const teachable = (candidate, layerHasText) => layerHasText && candidate.readOnly !== true;
 
 /** A guide listed with hasText true although its candidate record says read only, or null. */
 function readOnlyMismatch(guide, record) {
@@ -297,9 +294,7 @@ function validateCandidate(candidate, categoryIds) {
   if (typeof candidate.url !== 'string' || !HTTPS_DNS_HOST_URL_PATTERN.test(candidate.url)) {
     throw new Error('url must be https with a plain DNS host (no credentials, port, IP address or localhost)');
   }
-  const readOnlyProblem = readOnlyFieldProblem(candidate);
-  if (readOnlyProblem) throw new Error(readOnlyProblem);
-  const problem = mirrorProblem(candidate);
+  const problem = readOnlyFieldProblem(candidate) || mirrorProblem(candidate);
   if (problem) throw new Error(problem);
 }
 
@@ -345,9 +340,14 @@ async function checkMirrors(url, mirrors, sha256) {
   }
 }
 
-function validateMeasured(measured, layer) {
+/** Real page count: the form feeds of the normal output (one per page) less the stray ones, which are those pdftotext still emits with -nopgbrk. Refuses below 1. */
+function exactPages(formFeeds, stray) {
+  if (formFeeds - stray < 1) throw new Error('no pages found in the document');
+  return formFeeds - stray;
+}
+
+function validateMeasured(measured) {
   if (measured.bytes > MAX_GUIDE_BYTES) throw new Error('over the 60 MB limit');
-  if (layer.pages < 1) throw new Error('no pages found in the document');
 }
 
 /** Downloads into a fresh temp directory, runs fn(file), and always removes the directory. */
@@ -374,12 +374,13 @@ function measureCandidate(candidate) {
   return withDownload(candidate.url, async file => {
     const measured = await describePdf(file);
     const layer = readTextLayer(file);
-    validateMeasured(measured, layer);
+    validateMeasured(measured);
     const problem = releaseStatementProblem(candidate, layer.head, layer.hasText);
     if (problem) throw new Error(problem);
     const creditsProblem = thirdPartyProblem(candidate, layer);
     if (creditsProblem) throw new Error(creditsProblem);
-    return { ...candidate, ...measured, pages: layer.pages, hasText: teachable(candidate, layer.hasText) };
+    const stray = pdfText(file, ['-nopgbrk']).split('').length - 1;
+    return { ...candidate, ...measured, pages: exactPages(layer.pages, stray), hasText: teachable(candidate, layer.hasText) };
   });
 }
 
@@ -423,6 +424,8 @@ function verifyPrimary(guide, record) {
     const actual = await describePdf(file);
     if (actual.bytes !== guide.bytes) problems.push(`size changed (${guide.bytes} -> ${actual.bytes})`);
     if (actual.sha256 !== guide.sha256) problems.push('sha256 changed');
+    const mismatch = readOnlyMismatch(guide, record);
+    if (mismatch) problems.push(mismatch);
     try {
       const problem = thirdPartyProblem(record, readTextLayer(file));
       if (problem) problems.push(problem);
@@ -457,8 +460,6 @@ async function verifyGuide(guide, candidates, mirrorsOnly) {
   const record = candidates.find(c => c.id === guide.id);
   const textProblem = mirrorsOnly ? null : textFieldProblem(guide);
   const problems = mirrorsOnly ? [] : await verifyPrimary(guide, record);
-  const readOnlyProblem = mirrorsOnly ? null : readOnlyMismatch(guide, record);
-  if (readOnlyProblem) problems.unshift(readOnlyProblem);
   if (textProblem) problems.unshift(textProblem);
   try {
     await verifyMirrors(guide, candidates);
@@ -496,4 +497,4 @@ if (require.main === module) {
   run().then(code => process.exit(code), err => { console.error(err.message); process.exit(2); });
 }
 
-module.exports = { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem, scanThirdParty, thirdPartyMentions, thirdPartyProblem, textFieldProblem, validateCandidate, teachable, readOnlyMismatch };
+module.exports = { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem, scanThirdParty, thirdPartyMentions, thirdPartyProblem, textFieldProblem, validateCandidate, teachable, readOnlyMismatch, exactPages };
