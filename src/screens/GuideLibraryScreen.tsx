@@ -7,7 +7,9 @@ import { useTheme, useThemedStyles } from '../theme';
 import { Button } from '../components/Button';
 import { formatBytes } from '../utils/formatBytes';
 import type { Catalogue, GuideCategory, GuideEntry } from '../features/guideLibrary/catalogue';
-import { isOnPhone, libraryCounts, useGuideLibraryStore, type GuideState } from '../features/guideLibrary/guideLibraryStore';
+import {
+  isOnPhone, libraryCounts, offersTeach, rowEntry, stateOf, useGuideLibraryStore, type GuideState,
+} from '../features/guideLibrary/guideLibraryStore';
 import { guideLibraryService, SLOW_SEARCH_TAUGHT_GUIDES } from '../features/guideLibrary/guideLibraryService';
 import { createStyles } from './GuideLibraryScreen.styles';
 
@@ -68,8 +70,7 @@ const GuideRow: React.FC<RowProps> = ({ entry, state, delisted, expanded, onTogg
   const { colors } = useTheme();
   const { id } = entry;
   const hasFile = isOnPhone(state);
-  // A guide no longer listed keeps its switch only while taught, so the user can switch it off.
-  const showTeach = hasFile && entry.hasText && (!delisted || state.phase === 'taught' || state.phase === 'teaching');
+  const showTeach = offersTeach(entry, state, !delisted);
   return (
     <TouchableOpacity style={styles.row} onPress={onToggle} testID={`guide-row-${id}`}>
       <View style={styles.rowHeader}>
@@ -118,6 +119,7 @@ export const GuideLibraryScreen: React.FC = () => {
   const catalogue = useGuideLibraryStore(s => s.catalogue);
   const guides = useGuideLibraryStore(s => s.guides);
   const delisted = useGuideLibraryStore(s => s.delisted);
+  const saved = useGuideLibraryStore(s => s.saved);
   const refreshing = useGuideLibraryStore(s => s.refreshing);
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState<string | null>(null);
@@ -172,10 +174,13 @@ export const GuideLibraryScreen: React.FC = () => {
           </>
         }
         renderSectionHeader={({ section }) => <Text style={styles.sectionTitle}>{section.title}</Text>}
-        renderItem={({ item, section }) => (
-          <GuideRow entry={item} state={guides[item.id] ?? NONE} delisted={section.delisted} expanded={open === item.id} styles={styles}
-            onToggle={() => setOpen(open === item.id ? null : item.id)} />
-        )}
+        renderItem={({ item, section }) => {
+          const state = stateOf(guides, item.id) ?? NONE;
+          return (
+            <GuideRow entry={rowEntry(saved, item, state)} state={state} delisted={section.delisted} expanded={open === item.id}
+              styles={styles} onToggle={() => setOpen(open === item.id ? null : item.id)} />
+          );
+        }}
       />
     </SafeAreaView>
   );

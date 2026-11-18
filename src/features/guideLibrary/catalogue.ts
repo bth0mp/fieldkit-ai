@@ -63,7 +63,7 @@ function isLatinText(s: string): boolean {
 const isLine = (v: unknown, max: number): v is string =>
   isText(v) && v.length <= max && v.trim() === v && isLatinText(v);
 /** True for a catalogue id: lowercase letters, digits and dashes, so it is safe as part of a file name. */
-export const isCatalogueId = (v: unknown): v is string => typeof v === 'string' && ID_PATTERN.test(v);
+const isCatalogueId =(v: unknown): v is string => typeof v === 'string' && ID_PATTERN.test(v);
 const isPositiveInt = (v: unknown): v is number => Number.isInteger(v) && (v as number) > 0;
 
 function parseCategory(raw: unknown): GuideCategory | null {
@@ -71,13 +71,14 @@ function parseCategory(raw: unknown): GuideCategory | null {
   return { id: raw.id, name: raw.name };
 }
 
-function parseGuide(raw: unknown, categoryIds: Set<string>): GuideEntry | null {
+/** `categoryIds` null skips the known-category check (a saved entry's category may have left the catalogue). */
+function parseGuide(raw: unknown, categoryIds: Set<string> | null): GuideEntry | null {
   if (!isObj(raw)) return null;
   const { id, title, category, publisher, year, licence, licenceNote, url, bytes, sha256, pages, hasText } = raw;
   const valid =
     isCatalogueId(id) &&
     isLine(title, 200) && isLine(publisher, 80) && isLine(licence, 80) && isLine(licenceNote, 2000) &&
-    typeof category === 'string' && categoryIds.has(category) &&
+    typeof category === 'string' && (!categoryIds || categoryIds.has(category)) &&
     Number.isInteger(year) &&
     typeof url === 'string' && HTTPS_DNS_HOST_URL_PATTERN.test(url) &&
     isPositiveInt(bytes) && bytes <= MAX_GUIDE_BYTES && isPositiveInt(pages) &&
@@ -86,6 +87,12 @@ function parseGuide(raw: unknown, categoryIds: Set<string>): GuideEntry | null {
   if (!valid) return null;
   return { id, title, category, publisher, year: year as number, licence, licenceNote, url, bytes, sha256, pages, hasText };
 }
+
+/**
+ * Validates a saved catalogue entry (the one a downloaded file was checked against) by the catalogue's own
+ * per-guide rules, except that its category need not still exist. Returns it, unknown fields dropped, or null.
+ */
+export const parseSavedEntry = (raw: unknown): GuideEntry | null => parseGuide(raw, null);
 
 function parseList<T>(raw: unknown, parseItem: (item: unknown) => T | null): T[] | null {
   if (!Array.isArray(raw)) return null;

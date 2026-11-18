@@ -50,6 +50,10 @@ const jobIdOf = (fs: Fs, url: string) => {
   const i = mock.mock.calls.map(([opts]) => opts.fromUrl).lastIndexOf(url);
   return mock.mock.results[i].value.jobId as number;
 };
+const AsyncStorageOf = () => {
+  const m = require('@react-native-async-storage/async-storage');
+  return m.default ?? m;
+};
 const unlinked = (fs: Fs, path: string) => (fs.module.unlink as jest.Mock).mock.calls.some(([p]) => p === path);
 
 /** Boot the app, let `seed` set up the device, then open the Guide library and wait for its refresh to end. */
@@ -269,6 +273,82 @@ describe('Guide library (rendered)', () => {
     const saved = JSON.parse(await AsyncStorage().getItem('@fieldkit/guide_library'));
     expect(Object.keys(saved.downloaded)).toEqual(['test-knots']);
     expect((fs.module.exists as jest.Mock).mock.calls.some(([p]) => String(p).includes('escape'))).toBe(false);
+  }, 30000);
+
+  it('on launch, a saved record that fails the catalogue checks is dropped and its file deleted', async () => {
+    const { fs, view } = await openLibrary(async f => {
+      f.seedDownload(CATALOGUE_URL, TEST_CATALOGUE);
+      f.seedFile(`${DIR}/test-knots.pdf`, KNOTS.bytes);
+      f.seedFile(`${DIR}/test-water.pdf`, WATER.bytes);
+      // test-knots' record lost its title; its category is gone from the catalogue, which is fine for a saved one.
+      const { title: _title, ...untitled } = KNOTS;
+      await AsyncStorageOf().setItem('@fieldkit/guide_library', JSON.stringify({
+        downloaded: { 'test-knots': untitled, 'test-water': { ...WATER, category: 'gone' } },
+      }));
+    });
+
+    expect(view.getByTestId('guide-download-test-knots')).toBeTruthy();
+    expect(view.getByTestId('guide-open-test-water')).toBeTruthy();
+    expect(view.getByText('2 guides · 1 downloaded · 0 taught')).toBeTruthy();
+    const saved = JSON.parse(await AsyncStorageOf().getItem('@fieldkit/guide_library'));
+    expect(Object.keys(saved.downloaded)).toEqual(['test-water']);
+    expect(await exists(fs, `${DIR}/test-knots.pdf`)).toBe(false);
+    expect(await exists(fs, `${DIR}/test-water.pdf`)).toBe(true);
+  }, 30000);
+
+  it('on launch, a guide file with no saved record is deleted', async () => {
+    const { fs, view } = await openLibrary(async f => {
+      f.seedDownload(CATALOGUE_URL, TEST_CATALOGUE);
+      // An earlier run moved the checked file in and was killed before it saved the record.
+      f.seedFile(`${DIR}/test-knots.pdf`, KNOTS.bytes);
+      f.seedFile(`${DIR}/test-water.pdf`, WATER.bytes);
+      await AsyncStorageOf().setItem('@fieldkit/guide_library', JSON.stringify({ downloaded: { 'test-water': WATER } }));
+    });
+
+    expect(await exists(fs, `${DIR}/test-knots.pdf`)).toBe(false);
+    expect(await exists(fs, `${DIR}/test-water.pdf`)).toBe(true);
+    expect(await exists(fs, `${DIR}/catalogue.json`)).toBe(true);
+    expect(view.getByTestId('guide-download-test-knots')).toBeTruthy();
+    expect(view.getByTestId('guide-open-test-water')).toBeTruthy();
+  }, 30000);
+
+  it('a guide whose id is also an object property name shows as not downloaded and downloads', async () => {
+    const body = '%PDF-1.4 a guide with an awkward id';
+    const odd = guide('constructor', 'Test awkward id', 'fieldcraft', body);
+    const { rtl, fs, view } = await openLibrary(f => {
+      f.seedDownload(CATALOGUE_URL, catalogueOf([odd, WATER]));
+      f.seedDownload(odd.url, body);
+    });
+    expect(view.getByText('Test awkward id')).toBeTruthy();
+    rtl.fireEvent.press(view.getByTestId('guide-download-constructor'));
+    await rtl.waitFor(() => { expect(view.getByTestId('guide-open-constructor')).toBeTruthy(); }, { timeout: 4000 });
+    expect(view.getByText('2 guides · 1 downloaded · 0 taught')).toBeTruthy();
+    expect(await exists(fs, `${DIR}/constructor.pdf`)).toBe(true);
+  }, 30000);
+
+  it('a downloaded guide shows the entry it was checked against after the catalogue corrects it', async () => {
+    const h = await openLibrary(f => {
+      f.seedDownload(CATALOGUE_URL, TEST_CATALOGUE);
+      f.seedDownload(KNOTS.url, KNOTS_BODY);
+    });
+    const { rtl, fs, view } = h;
+    rtl.fireEvent.press(view.getByTestId('guide-download-test-knots'));
+    await rtl.waitFor(() => { expect(view.getByTestId('guide-teach-test-knots')).toBeTruthy(); }, { timeout: 4000 });
+
+    fs.seedDownload(CATALOGUE_URL, catalogueOf([{ ...KNOTS, title: 'Test knots, revised', hasText: false }, WATER, { ...WATER, id: 'test-rope', title: 'Test rope', hasText: false }]));
+    rtl.fireEvent.press(view.getByTestId('guide-library-refresh'));
+    await waitForRefresh(h, view, 2);
+    // The new catalogue is in (a new guide is listed), but the downloaded row is the copy on the phone.
+    expect(view.getByText('Test rope')).toBeTruthy();
+    expect(view.getByText('Test knots')).toBeTruthy();
+    expect(view.queryByText('Test knots, revised')).toBeNull();
+    expect(view.getByTestId('guide-teach-test-knots')).toBeTruthy();
+    expect(view.getAllByText('Scanned, read only')).toHaveLength(1);
+
+    // Once removed, the row is the catalogue's entry again.
+    rtl.fireEvent.press(view.getByTestId('guide-remove-test-knots'));
+    await rtl.waitFor(() => { expect(view.getByText('Test knots, revised')).toBeTruthy(); }, { timeout: 4000 });
+    expect(view.queryByTestId('guide-teach-test-knots')).toBeNull();
   }, 30000);
 
   it('a download cut off part-way leaves nothing behind and can be retried', async () => {

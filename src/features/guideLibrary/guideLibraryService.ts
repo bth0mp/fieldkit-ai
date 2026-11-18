@@ -4,8 +4,8 @@ import { viewDocument } from '@react-native-documents/viewer';
 import logger from '../../utils/logger';
 import { ragService, type RagDocument } from '../../services/rag';
 import { ensureFieldGuidesProject, FIELD_GUIDES_PROJECT_ID } from '../fieldGuides/fieldGuides';
-import { bundledCatalogue, CATALOGUE_URL, isCatalogueId, parseCatalogue, type Catalogue, type GuideEntry } from './catalogue';
-import { useGuideLibraryStore, type GuidePhase, type GuideState } from './guideLibraryStore';
+import { bundledCatalogue, CATALOGUE_URL, parseCatalogue, parseSavedEntry, type Catalogue, type GuideEntry } from './catalogue';
+import { offersTeach, ownEntry, stateOf, useGuideLibraryStore, type GuidePhase, type GuideState } from './guideLibraryStore';
 
 export const GUIDE_LIBRARY_DIR = `${RNFS.DocumentDirectoryPath}/guide-library`;
 
@@ -52,8 +52,6 @@ let downloading: Record<string, GuideEntry> = {};
 let initPromise: Promise<boolean> | null = null;
 /** Guides are taught one at a time: each teach waits for the one before it. */
 let teachQueue: Promise<void> = Promise.resolve();
-/** Names of .part files being written right now. init's sweep leaves these alone. */
-const inFlightParts = new Set<string>();
 
 const store = useGuideLibraryStore;
 const withGuide = (guides: Record<string, GuideState>, id: string, state: GuideState | null) => {
@@ -62,7 +60,7 @@ const withGuide = (guides: Record<string, GuideState>, id: string, state: GuideS
   return next;
 };
 const setGuide = (id: string, state: GuideState | null) => store.setState(s => ({ guides: withGuide(s.guides, id, state) }));
-const phaseOf = (id: string): GuidePhase => store.getState().guides[id]?.phase ?? 'none';
+const phaseOf = (id: string): GuidePhase => stateOf(store.getState().guides, id)?.phase ?? 'none';
 
 /**
  * Downloaded guides, and guides being downloaded, that `catalogue` does not list, by title. Their saved (or
@@ -74,11 +72,11 @@ function delistedFrom(catalogue: Catalogue): GuideEntry[] {
   return Object.values(known).filter(e => !listed.has(e.id)).sort((a, b) => a.title.localeCompare(b.title));
 }
 /**
- * Set one guide's state after `downloaded` or `downloading` changed, and in the same update which guides are no
- * longer listed.
+ * Set one guide's state after `downloaded` or `downloading` changed, and in the same update the saved entries and
+ * which guides are no longer listed.
  */
 const setGuideAndDelisted = (id: string, state: GuideState | null) =>
-  store.setState(s => ({ guides: withGuide(s.guides, id, state), delisted: delistedFrom(s.catalogue) }));
+  store.setState(s => ({ guides: withGuide(s.guides, id, state), saved: downloaded, delisted: delistedFrom(s.catalogue) }));
 const isListed = (id: string) => store.getState().catalogue.guides.some(g => g.id === id);
 
 const saveDownloaded = () => AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ downloaded }));
@@ -130,18 +128,25 @@ async function loadDownloaded(): Promise<Record<string, GuideEntry>> {
   }
 }
 
+/**
+ * Runs until it first succeeds, and nothing writes into the library folder before then (downloads and refreshes
+ * wait for it), so every .part file it finds is from an earlier run and every file it deletes is unclaimed.
+ */
 async function runInit(): Promise<boolean> {
   await RNFS.mkdir(GUIDE_LIBRARY_DIR);
   const catalogue = await loadSavedCatalogue();
   const saved = await loadDownloaded();
-  // A .part file is an unfinished download (or catalogue fetch) from an earlier run.
-  for (const file of await RNFS.readDir(GUIDE_LIBRARY_DIR)) {
-    if (file.isFile() && file.name.endsWith('.part') && !inFlightParts.has(file.name)) await removeQuietly(file.path);
-  }
   const kept: Record<string, GuideEntry> = {};
-  for (const [id, entry] of Object.entries(saved)) {
-    // The id names a file, so a saved record must pass the same id check as the catalogue.
-    if (isCatalogueId(id) && entry?.id === id && (await RNFS.exists(guidePath(id)))) kept[id] = entry;
+  for (const [id, raw] of Object.entries(saved)) {
+    // A saved record must pass the catalogue's own checks (its id names a file); one that fails is dropped.
+    const entry = parseSavedEntry(raw);
+    if (entry?.id === id && (await RNFS.exists(guidePath(id)))) kept[id] = entry;
+  }
+  // A .part file is an unfinished download (or catalogue fetch). A guide file with no record was moved in by a
+  // run killed before it saved, or its record was dropped above: nothing would ever show or delete it.
+  for (const file of await RNFS.readDir(GUIDE_LIBRARY_DIR)) {
+    const unrecorded = file.name.endsWith('.pdf') && !ownEntry(kept, file.name.slice(0, -'.pdf'.length));
+    if (file.isFile() && (file.name.endsWith('.part') || unrecorded)) await removeQuietly(file.path);
   }
   downloaded = kept;
   if (Object.keys(kept).length !== Object.keys(saved).length) await saveDownloaded();
@@ -151,9 +156,9 @@ async function runInit(): Promise<boolean> {
     // A download running now, or a failure for a guide with no file, is newer than the disk. Anything else in
     // the store (such as a download that failed only because an earlier init did) gives way to the disk.
     for (const [id, g] of Object.entries(s.guides)) {
-      if (g.phase === 'downloading' || (g.phase === 'none' && !kept[id])) guides[id] = g;
+      if (g.phase === 'downloading' || (g.phase === 'none' && !ownEntry(kept, id))) guides[id] = g;
     }
-    return { catalogue, guides, delisted: delistedFrom(catalogue) };
+    return { catalogue, guides, saved: kept, delisted: delistedFrom(catalogue) };
   });
   await applyKnowledgeBase();
   return true;
@@ -189,15 +194,15 @@ async function applyKnowledgeBase(): Promise<void> {
     return;
   }
   for (const id of Object.keys(downloaded)) {
-    const now = store.getState().guides[id];
-    if (now !== before[id]) continue;
+    const now = stateOf(store.getState().guides, id);
+    if (now !== stateOf(before, id)) continue;
     // A guide waiting to be taught (or still downloading) is settled by that work, not here.
     if (now?.phase !== 'downloaded' && now?.phase !== 'taught') continue;
     const path = guidePath(id);
     if (!docs.usable.has(path) && docs.unusable.some(d => d.path === path) && !(await deleteFromKnowledgeBase(id))) continue;
     const phase: GuidePhase = docs.usable.has(path) ? 'taught' : 'downloaded';
     // The delete above may have waited: only settle a guide nothing else changed meanwhile.
-    if (phase !== now.phase && store.getState().guides[id] === now) setGuide(id, { phase });
+    if (phase !== now.phase && stateOf(store.getState().guides, id) === now) setGuide(id, { phase });
   }
 }
 
@@ -270,7 +275,6 @@ async function refresh(): Promise<void> {
   const part = `${GUIDE_LIBRARY_DIR}/${CATALOGUE_PART}`;
   try {
     if (!(await init())) return;
-    inFlightParts.add(CATALOGUE_PART);
     const result = await guardedDownload({ fromUrl: CATALOGUE_URL, toFile: part, maxBytes: MAX_CATALOGUE_BYTES });
     if (typeof result === 'string') throw new Error(`catalogue fetch ${result}`);
     if (result.statusCode !== 200) throw new Error(`catalogue fetch returned ${result.statusCode}`);
@@ -285,7 +289,6 @@ async function refresh(): Promise<void> {
     logger.warn('[GuideLibrary] catalogue refresh failed, keeping the current one', error);
   } finally {
     await removeQuietly(part);
-    inFlightParts.delete(CATALOGUE_PART);
     store.setState({ refreshing: false });
   }
 }
@@ -324,12 +327,10 @@ async function download(id: string): Promise<void> {
   // Kept while in flight, so a refresh that drops the guide shows it as no longer listed instead of hiding it.
   downloading = { ...downloading, [id]: entry };
   setGuide(id, { phase: 'downloading', progress: 0 });
-  const partName = `${id}.pdf.part`;
-  const part = `${GUIDE_LIBRARY_DIR}/${partName}`;
+  const part = `${GUIDE_LIBRARY_DIR}/${id}.pdf.part`;
   let error: string | null = FAILED;
   // Without a finished init the saved records are not loaded, and saving now would overwrite them.
   if (await init()) {
-    inFlightParts.add(partName);
     try {
       error = await fetchChecked(entry, part);
       if (!error) {
@@ -345,7 +346,6 @@ async function download(id: string): Promise<void> {
       await removeQuietly(guidePath(id));
     } finally {
       if (error) await removeQuietly(part);
-      inFlightParts.delete(partName);
     }
   }
   // By now `downloaded` holds the guide only if it was kept. A refresh while downloading may have dropped it from
@@ -368,7 +368,7 @@ async function open(id: string): Promise<void> {
     error = OPEN_FAILED;
   }
   // The guide may have been removed while the viewer was open.
-  const now = store.getState().guides[id];
+  const now = stateOf(store.getState().guides, id);
   if (now && now.phase !== 'none' && now.error !== error) setGuide(id, { phase: now.phase, error });
 }
 
@@ -413,8 +413,9 @@ async function teachFailure(id: string, e: unknown): Promise<string | null> {
  * the catalogue no longer lists is not taught anew (one already taught stays taught until switched off).
  */
 function teach(id: string): Promise<void> {
-  const entry = downloaded[id];
-  if (phaseOf(id) !== 'downloaded' || !entry?.hasText || !isListed(id)) return Promise.resolve();
+  const entry = ownEntry(downloaded, id);
+  const state = stateOf(store.getState().guides, id);
+  if (state?.phase !== 'downloaded' || !entry || !offersTeach(entry, state, isListed(id))) return Promise.resolve();
   setGuide(id, { phase: 'teaching' });
   // teachNow never rejects, so one failure cannot stop the guides queued after it.
   teachQueue = teachQueue.then(() => teachNow(id, entry));
@@ -438,7 +439,7 @@ async function unteach(id: string): Promise<void> {
   if (phaseOf(id) !== 'taught') return;
   const ok = await deleteFromKnowledgeBase(id);
   // A remove may have run meanwhile: a guide whose file is gone must not come back as downloaded.
-  if (phaseOf(id) !== 'taught' || !downloaded[id]) return;
+  if (phaseOf(id) !== 'taught' || !ownEntry(downloaded, id)) return;
   setGuide(id, ok ? { phase: 'downloaded' } : { phase: 'taught', error: UNTEACH_FAILED });
 }
 
