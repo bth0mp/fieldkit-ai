@@ -27,6 +27,10 @@ export const CATALOGUE_URL = 'https://raw.githubusercontent.com/bth0mp/fieldkit-
 // The id becomes part of a file name on the phone, so it must never contain a path separator or dot.
 const ID_PATTERN = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const SHA256_PATTERN = /^[0-9a-f]{64}$/;
+// https only, host is a dotted DNS name ending in an alphabetic TLD (no credentials, port, IP literal or localhost),
+// then nothing or a "/" followed by non-whitespace. A regex, not URL: its getters are unreliable on Hermes.
+const HTTPS_DNS_HOST_URL_PATTERN = /^https:\/\/(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z]{2,}(?:\/\S*)?$/;
+const MAX_GUIDE_BYTES = 60 * 1024 * 1024;
 
 type Obj = Record<string, unknown>;
 
@@ -47,8 +51,8 @@ function parseGuide(raw: unknown, categoryIds: Set<string>): GuideEntry | null {
     isText(title) && isText(publisher) && isText(licence) && isText(licenceNote) &&
     typeof category === 'string' && categoryIds.has(category) &&
     Number.isInteger(year) &&
-    typeof url === 'string' && url.startsWith('https://') &&
-    isPositiveInt(bytes) && isPositiveInt(pages) &&
+    typeof url === 'string' && HTTPS_DNS_HOST_URL_PATTERN.test(url) &&
+    isPositiveInt(bytes) && bytes <= MAX_GUIDE_BYTES && isPositiveInt(pages) &&
     typeof sha256 === 'string' && SHA256_PATTERN.test(sha256) &&
     typeof hasText === 'boolean';
   if (!valid) return null;

@@ -7,6 +7,13 @@ const withGuide = (patch: object) => ({ ...good, guides: [{ ...good.guides[0], .
 
 describe('parseCatalogue', () => {
   it('accepts a well-formed catalogue', () => expect(parseCatalogue(good)).toEqual(good));
+  it('accepts a url with percent-escapes in the path', () => {
+    const url = 'https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/ARN12086_ATP%203-50x21%20FINAL%20WEB%202.pdf?v=1';
+    expect(parseCatalogue(withGuide({ url }))?.guides[0].url).toBe(url);
+  });
+  it('accepts a guide at exactly the size limit', () => {
+    expect(parseCatalogue(withGuide({ bytes: 60 * 1024 * 1024 }))).not.toBeNull();
+  });
   it('drops unknown extra fields', () => {
     const parsed = parseCatalogue(withGuide({ extra: 'x' }));
     expect(parsed?.guides[0]).toEqual(good.guides[0]);
@@ -21,6 +28,17 @@ describe('parseCatalogue', () => {
     ['unknown category', withGuide({ category: 'nope' })],
     ['duplicate id', { ...good, guides: [good.guides[0], good.guides[0]] }],
     ['missing title', withGuide({ title: '' })],
+    ['credentials in url', withGuide({ url: 'https://example.mil@evil.example/x.pdf' })],
+    ['port in url', withGuide({ url: 'https://example.mil:8443/x.pdf' })],
+    ['ip literal url', withGuide({ url: 'https://192.168.1.1/x.pdf' })],
+    ['localhost url', withGuide({ url: 'https://localhost/x.pdf' })],
+    ['bare https url', withGuide({ url: 'https://' })],
+    ['whitespace in url', withGuide({ url: 'https://example.mil/x y.pdf' })],
+    ['oversized bytes', withGuide({ bytes: 60 * 1024 * 1024 + 1 })],
+    ['duplicate category id', { ...good, categories: [good.categories[0], good.categories[0]] }],
+    ['category id not a slug', { ...good, categories: [{ id: 'Bad Id', name: 'x' }] }],
+    ['non-integer year', withGuide({ year: 2015.5 })],
+    ['float pages', withGuide({ pages: 2.5 })],
   ])('rejects %s', (_name, raw) => expect(parseCatalogue(raw)).toBeNull());
 });
 
