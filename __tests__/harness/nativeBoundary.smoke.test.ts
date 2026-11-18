@@ -55,6 +55,60 @@ describe('nativeBoundary harness — injection mechanism', () => {
     expect(listed[0].sizeBytes).toBe(20 * 1024 * 1024);
   });
 
+  describe('scripted downloads on the file-system fake', () => {
+    type Rnfs = {
+      downloadFile(o: { fromUrl: string; toFile: string; progress?: (p: unknown) => void }): {
+        promise: Promise<{ statusCode: number; bytesWritten: number }>;
+      };
+      readFile(p: string): Promise<string>;
+      exists(p: string): Promise<boolean>;
+      hash(p: string, algo: string): Promise<string>;
+    };
+    const setup = () => {
+      const boundary = installNativeBoundary({ fs: true });
+      return { fs: boundary.fs!, rnfs: boundary.fs!.module as unknown as Rnfs };
+    };
+    const sha256 = (s: string) => require('crypto').createHash('sha256').update(s).digest('hex');
+
+    it('writes a seeded body to toFile, reports progress, resolves 200 and hashes for real', async () => {
+      const { fs, rnfs } = setup();
+      fs.seedDownload('https://x.test/a.pdf', 'pdf body');
+      const progress = jest.fn();
+      const res = await rnfs.downloadFile({ fromUrl: 'https://x.test/a.pdf', toFile: '/docs/a.pdf', progress }).promise;
+      expect(res).toEqual({ statusCode: 200, bytesWritten: 8 });
+      expect(progress).toHaveBeenCalledTimes(1);
+      expect(progress).toHaveBeenCalledWith({ bytesWritten: 8, contentLength: 8 });
+      expect(await rnfs.readFile('/docs/a.pdf')).toBe('pdf body');
+      expect(await rnfs.hash('/docs/a.pdf', 'sha256')).toBe(sha256('pdf body'));
+    });
+
+    it('serves a non-200 status with its body and lets a re-seed replace it', async () => {
+      const { fs, rnfs } = setup();
+      fs.seedDownload('https://x.test/a.pdf', { status: 404 });
+      const bad = await rnfs.downloadFile({ fromUrl: 'https://x.test/a.pdf', toFile: '/docs/a.pdf' }).promise;
+      expect(bad.statusCode).toBe(404);
+      fs.seedDownload('https://x.test/a.pdf', 'good');
+      const ok = await rnfs.downloadFile({ fromUrl: 'https://x.test/a.pdf', toFile: '/docs/a.pdf' }).promise;
+      expect(ok.statusCode).toBe(200);
+      expect(await rnfs.readFile('/docs/a.pdf')).toBe('good');
+    });
+
+    it('writes the partial text and rejects when failAfter is seeded', async () => {
+      const { fs, rnfs } = setup();
+      fs.seedDownload('https://x.test/a.pdf', { failAfter: 'par' });
+      await expect(rnfs.downloadFile({ fromUrl: 'https://x.test/a.pdf', toFile: '/docs/a.pdf' }).promise)
+        .rejects.toThrow('Network request failed');
+      expect(await rnfs.readFile('/docs/a.pdf')).toBe('par');
+    });
+
+    it('rejects an unseeded url and leaves no file', async () => {
+      const { rnfs } = setup();
+      await expect(rnfs.downloadFile({ fromUrl: 'https://x.test/none.pdf', toFile: '/docs/none.pdf' }).promise)
+        .rejects.toThrow('Network request failed');
+      expect(await rnfs.exists('/docs/none.pdf')).toBe(false);
+    });
+  });
+
   it('seeds the RAM leaf so DeviceMemoryModule reports the seeded free bytes', async () => {
     installNativeBoundary({ ram: { platform: 'android', totalBytes: 12 * 1024 ** 3, availBytes: 640 * 1024 * 1024 } });
     // eslint-disable-next-line @typescript-eslint/no-var-requires

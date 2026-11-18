@@ -765,6 +765,9 @@ export const MB = 1024 * 1024;
 // so it never perturbs tests that don't touch the filesystem.
 // ---------------------------------------------------------------------------
 
+/** A string or { status, body } is written to toFile and resolves; { failAfter } writes that partial text, then rejects. */
+type DownloadResponse = string | { status: number; body?: string } | { failAfter: string };
+
 export interface FsFake {
   module: Record<string, unknown>;
   /** Seed a file on the virtual disk with an exact byte size (for truncated/partial-file cases). */
@@ -773,6 +776,9 @@ export interface FsFake {
   seedDir(path: string): void;
   /** Seed a file shipped inside the APK (android/app/src/main/assets/<assetPath>), read by copyFileAssets. */
   seedAsset(assetPath: string, contents: string): void;
+  /** What a URL serves to downloadFile. A string is a 200 body; an unseeded URL fails like no connection.
+   *  Seeding the same URL again replaces what it serves. */
+  seedDownload(url: string, response: DownloadResponse): void;
   DocumentDirectoryPath: string;
 }
 
@@ -805,6 +811,27 @@ function makeFsFake(): FsFake {
     vol.mkdirSync(p.slice(0, p.lastIndexOf('/')), { recursive: true });
     vol.writeFileSync(p, contents);
   };
+  // What each URL serves to downloadFile. Unseeded URLs fail like a device with no connection.
+  const downloads = new Map<string, DownloadResponse>();
+  const seedDownload = (url: string, response: DownloadResponse) => { downloads.set(url, response); };
+  const runDownload = async (opts: {
+    fromUrl: string; toFile: string; progress?: (r: { bytesWritten: number; contentLength: number }) => void;
+  }) => {
+    const served = downloads.get(opts.fromUrl);
+    if (served === undefined) throw new Error('Network request failed');
+    const to = norm(opts.toFile);
+    vol.mkdirSync(to.slice(0, to.lastIndexOf('/')) || '/', { recursive: true });
+    if (typeof served === 'object' && 'failAfter' in served) {
+      vol.writeFileSync(to, served.failAfter);
+      throw new Error('Network request failed');
+    }
+    const statusCode = typeof served === 'string' ? 200 : served.status;
+    const body = typeof served === 'string' ? served : (served.body ?? '');
+    vol.writeFileSync(to, body);
+    const bytesWritten = Buffer.byteLength(body);
+    opts.progress?.({ bytesWritten, contentLength: bytesWritten });
+    return { statusCode, bytesWritten };
+  };
 
   const module: Record<string, unknown> = {
     DocumentDirectoryPath,
@@ -830,11 +857,14 @@ function makeFsFake(): FsFake {
     moveFile: jest.fn(async (from: string, to: string) => { vol.renameSync(norm(from), norm(to)); }),
     copyFile: jest.fn(async (from: string, to: string) => { vol.copyFileSync(norm(from), norm(to)); }),
     copyFileAssets: jest.fn(async (from: string, to: string) => { vol.copyFileSync(`${ASSETS}/${from}`, norm(to)); }),
-    hash: jest.fn(async () => 'deadbeef'),
-    downloadFile: jest.fn(() => ({ jobId: 1, promise: Promise.resolve({ statusCode: 200, bytesWritten: 0 }) })),
+    hash: jest.fn(async (p: string, algorithm: string) =>
+      require('crypto').createHash(algorithm).update(vol.readFileSync(norm(p))).digest('hex')),
+    downloadFile: jest.fn((opts: {
+      fromUrl: string; toFile: string; progress?: (r: { bytesWritten: number; contentLength: number }) => void;
+    }) => ({ jobId: 1, promise: runDownload(opts) })),
     stopDownload: jest.fn(),
   };
-  return { module, seedFile, seedDir, seedAsset, DocumentDirectoryPath };
+  return { module, seedFile, seedDir, seedAsset, seedDownload, DocumentDirectoryPath };
 }
 
 // ---------------------------------------------------------------------------
