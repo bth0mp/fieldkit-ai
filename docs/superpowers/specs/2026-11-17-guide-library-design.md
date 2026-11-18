@@ -141,10 +141,12 @@ that is stricter or looser.
    institutional archive needs a byte-identical copy on a second, independent site. Guides without one stay in
    `catalog/pending/third-party-host-class.json` until a second copy is found.
 4. **Partly unreadable guides are listed read only.** A guide a person can read but a program cannot, in part
-   (more than 2% of its text lines in a scrambled encoding, or page images with no text layer), is listed with
-   `"hasText": false`, so the app offers Download and Open and no teach switch. Its candidate carries
-   `"readOnly": true` and a `"readOnlyNote"` saying what is unreadable. The licence checks are not relaxed: every
-   page without a text layer is looked at by eye for third-party credits before the guide is listed.
+   (more than 2% of its text lines in a scrambled encoding, or more than a tenth of its pages being page images
+   with no text layer), is listed with `"hasText": false`, so the app offers Download and Open and no teach
+   switch. Its candidate carries `"readOnly": true` and a `"readOnlyNote"` saying what is unreadable. A guide with
+   a few full-page figures or picture tables is not read only: the assistant learns its text and misses those
+   pages, as it misses every figure. The licence checks are not relaxed: every page without a text layer, and
+   every page whose text is scrambled, is looked at by eye for third-party credits before the guide is listed.
 5. **Scope removals stand.** Doctrine, tactics, weapons, administration and specialist military plant stay out.
 
 Not changed by the rulings: outdated safety advice still rejects a guide; a download the app's own request cannot
