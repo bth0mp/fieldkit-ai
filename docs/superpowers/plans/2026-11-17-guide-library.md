@@ -188,11 +188,11 @@ This is research, not code. Its test is the checker and the Task 1 unit test.
   - `downloadFile({ fromUrl, toFile, progress })` returns `{ jobId, promise }`. For a string or `{ status, body }` it writes the body to `toFile`, calls `progress({ bytesWritten, contentLength })` once, and resolves `{ statusCode, bytesWritten }`. For `{ failAfter }` it writes that partial text to `toFile` and rejects with `Error('Network request failed')`. For an unseeded URL it rejects with the same error and writes nothing.
   - `hash(path, 'sha256')` resolves the real SHA-256 hex of the file in the fake volume (Node `crypto`).
 
-- [ ] **Step 1: Add smoke tests** that seed a URL, download it to `/docs/a.pdf`, and assert the file content, the resolved `statusCode` and that `hash` equals `crypto.createHash('sha256').update(body).digest('hex')`; and that an unseeded URL rejects and leaves no file.
-- [ ] **Step 2: Run.** Expected: FAIL (`seedDownload` is not a function).
-- [ ] **Step 3: Implement.**
-- [ ] **Step 4: Run the smoke file and `__tests__/integration/knowledge-base/fieldGuidesAnswer.rendered.test.tsx`.** Expected: both PASS.
-- [ ] **Step 5: Checks and commit.** `test(harness): scripted downloads and real hashes on the file-system fake`
+- [x] **Step 1: Add smoke tests** that seed a URL, download it to `/docs/a.pdf`, and assert the file content, the resolved `statusCode` and that `hash` equals `crypto.createHash('sha256').update(body).digest('hex')`; and that an unseeded URL rejects and leaves no file.
+- [x] **Step 2: Run.** Expected: FAIL (`seedDownload` is not a function).
+- [x] **Step 3: Implement.**
+- [x] **Step 4: Run the smoke file and `__tests__/integration/knowledge-base/fieldGuidesAnswer.rendered.test.tsx`.** Expected: both PASS.
+- [x] **Step 5: Checks and commit.** `test(harness): scripted downloads and real hashes on the file-system fake`
 
 ---
 
