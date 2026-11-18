@@ -1,15 +1,17 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import RNFS from 'react-native-fs';
 import { viewDocument } from '@react-native-documents/viewer';
 import logger from '../../utils/logger';
 import { ragService, type RagDocument } from '../../services/rag';
 import { ensureFieldGuidesProject, FIELD_GUIDES_PROJECT_ID } from '../fieldGuides/fieldGuides';
-import { bundledCatalogue, CATALOGUE_URL, parseCatalogue, parseSavedEntry, type Catalogue, type GuideEntry } from './catalogue';
+import { bundledCatalogue, CATALOGUE_URL, parseCatalogue, type Catalogue, type GuideEntry } from './catalogue';
 import { offersTeach, ownEntry, stateOf, useGuideLibraryStore, type GuidePhase, type GuideState } from './guideLibraryStore';
 
-export const GUIDE_LIBRARY_DIR = `${RNFS.DocumentDirectoryPath}/guide-library`;
+import {
+  deleteFromKnowledgeBase, GUIDE_LIBRARY_DIR, guidePath, reconcileDisk, removeQuietly, saveRecords,
+} from './guideLibraryDisk';
 
-const STORAGE_KEY = '@fieldkit/guide_library';
+export { GUIDE_LIBRARY_DIR } from './guideLibraryDisk';
+
 const CATALOGUE_FILE = `${GUIDE_LIBRARY_DIR}/catalogue.json`;
 const CATALOGUE_PART = 'catalogue.json.part';
 /** A fetched catalogue is untrusted and read whole into memory, so anything larger is refused. */
@@ -40,8 +42,6 @@ const EXPLAINED_RAG_ERRORS = new Set([
 /** Taught guides at which the screen warns that answers get slower. Tune after measuring on the phone. */
 export const SLOW_SEARCH_TAUGHT_GUIDES = 10;
 
-/** The id is the only thing that names a file: catalogue ids never hold a path separator or dot. */
-const guidePath = (id: string) => `${GUIDE_LIBRARY_DIR}/${id}.pdf`;
 /** The knowledge-base name of a taught guide, which answers cite. */
 const documentName = (entry: GuideEntry) => `${entry.title} (${entry.publisher}).pdf`;
 
@@ -79,20 +79,12 @@ const setGuideAndDelisted = (id: string, state: GuideState | null) =>
   store.setState(s => ({ guides: withGuide(s.guides, id, state), saved: downloaded, delisted: delistedFrom(s.catalogue) }));
 const isListed = (id: string) => store.getState().catalogue.guides.some(g => g.id === id);
 
-const saveDownloaded = () => AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ downloaded }));
+const saveDownloaded = () => saveRecords(downloaded);
 const forget = (id: string) => {
   const rest = { ...downloaded };
   delete rest[id];
   downloaded = rest;
 };
-
-async function removeQuietly(path: string): Promise<void> {
-  try {
-    if (await RNFS.exists(path)) await RNFS.unlink(path);
-  } catch (error) {
-    logger.warn('[GuideLibrary] could not delete', path, error);
-  }
-}
 
 /** moveFile fails on iOS when the destination exists, so clear it first. */
 async function replaceFile(from: string, to: string): Promise<void> {
@@ -117,39 +109,15 @@ async function loadSavedCatalogue(): Promise<Catalogue> {
   return bundledCatalogue;
 }
 
-async function loadDownloaded(): Promise<Record<string, GuideEntry>> {
-  try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
-    const saved = raw ? JSON.parse(raw)?.downloaded : null;
-    return saved && typeof saved === 'object' ? saved : {};
-  } catch (error) {
-    logger.warn('[GuideLibrary] saved state unreadable', error);
-    return {};
-  }
-}
-
 /**
  * Runs until it first succeeds, and nothing writes into the library folder before then (downloads and refreshes
- * wait for it), so every .part file it finds is from an earlier run and every file it deletes is unclaimed.
+ * wait for it), so reconcileDisk may sweep it. Saved state that cannot be read fails it, deleting nothing.
  */
 async function runInit(): Promise<boolean> {
   await RNFS.mkdir(GUIDE_LIBRARY_DIR);
   const catalogue = await loadSavedCatalogue();
-  const saved = await loadDownloaded();
-  const kept: Record<string, GuideEntry> = {};
-  for (const [id, raw] of Object.entries(saved)) {
-    // A saved record must pass the catalogue's own checks (its id names a file); one that fails is dropped.
-    const entry = parseSavedEntry(raw);
-    if (entry?.id === id && (await RNFS.exists(guidePath(id)))) kept[id] = entry;
-  }
-  // A .part file is an unfinished download (or catalogue fetch). A guide file with no record was moved in by a
-  // run killed before it saved, or its record was dropped above: nothing would ever show or delete it.
-  for (const file of await RNFS.readDir(GUIDE_LIBRARY_DIR)) {
-    const unrecorded = file.name.endsWith('.pdf') && !ownEntry(kept, file.name.slice(0, -'.pdf'.length));
-    if (file.isFile() && (file.name.endsWith('.part') || unrecorded)) await removeQuietly(file.path);
-  }
+  const kept = await reconcileDisk();
   downloaded = kept;
-  if (Object.keys(kept).length !== Object.keys(saved).length) await saveDownloaded();
   store.setState(s => {
     const guides: Record<string, GuideState> = {};
     for (const id of Object.keys(kept)) guides[id] = { phase: 'downloaded' };
@@ -420,18 +388,6 @@ function teach(id: string): Promise<void> {
   // teachNow never rejects, so one failure cannot stop the guides queued after it.
   teachQueue = teachQueue.then(() => teachNow(id, entry));
   return teachQueue;
-}
-
-/** Delete every knowledge-base document for this guide. Returns false when that failed. */
-async function deleteFromKnowledgeBase(id: string): Promise<boolean> {
-  try {
-    const docs = await ragService.getDocumentsByProject(FIELD_GUIDES_PROJECT_ID);
-    for (const doc of docs.filter(d => d.path === guidePath(id))) await ragService.deleteDocument(doc.id);
-    return true;
-  } catch (error) {
-    logger.error('[GuideLibrary] could not delete from the knowledge base', id, error);
-    return false;
-  }
 }
 
 /** Take a taught guide out of the knowledge base. The file stays. */

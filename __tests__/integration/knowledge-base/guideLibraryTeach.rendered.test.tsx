@@ -354,6 +354,29 @@ describe('Guide library teaching (rendered)', () => {
     expect((await docsInFieldGuides()).map(d => d.name)).toEqual(['Test knots (Test publisher).pdf']);
   }, 40000);
 
+  it('at launch a saved guide that only fails a newer text rule is kept, and a corrupt one goes with its document', async () => {
+    // Downloaded under an older app whose rules allowed a non-breaking space; the catalogue has since dropped it.
+    const ODD = guide('test-odd', 'Test odd title', BOWLINE);
+    const BROKEN = guide('test-broken', 'Test broken', WATER_TEXT);
+    const h = await openLibrary([BROKEN], async (fs, dir) => {
+      await seedDownloaded(fs, dir, [ODD, BROKEN], id => (id === 'test-odd' ? BOWLINE : WATER_TEXT));
+      await rag().indexDocument({ projectId: 'field-guides', filePath: `${dir}/test-broken.pdf`, fileName: 'Test broken (Test publisher).pdf', fileSize: BROKEN.bytes, bundled: true });
+      // The broken record lost its title.
+      const { title: _title, ...untitled } = BROKEN;
+      await asyncStorage().setItem('@fieldkit/guide_library', JSON.stringify({ downloaded: { 'test-odd': ODD, 'test-broken': untitled } }));
+    });
+    const { rtl, view, fs, dir } = h;
+
+    await rtl.waitFor(async () => { expect(await docsInFieldGuides()).toEqual([]); }, { timeout: 4000 });
+    expect(view.getByText('Test odd title')).toBeTruthy();
+    expect(view.getByTestId('guide-open-test-odd')).toBeTruthy();
+    expect(await exists(fs, `${dir}/test-odd.pdf`)).toBe(true);
+    expect(view.getByTestId('guide-download-test-broken')).toBeTruthy();
+    expect(await exists(fs, `${dir}/test-broken.pdf`)).toBe(false);
+    const saved = JSON.parse(await asyncStorage().getItem('@fieldkit/guide_library'));
+    expect(Object.keys(saved.downloaded)).toEqual(['test-odd']);
+  }, 40000);
+
   it('a guide deleted from the knowledge base shows as downloaded again', async () => {
     const h = await openLibrary([KNOTS]);
     const { view } = h;

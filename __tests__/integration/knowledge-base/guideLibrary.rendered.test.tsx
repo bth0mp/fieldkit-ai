@@ -331,6 +331,50 @@ describe('Guide library (rendered)', () => {
     expect(view.getByTestId('guide-open-test-water')).toBeTruthy();
   }, 30000);
 
+  it('when the saved state cannot be read, nothing is deleted, and the next open finds the guides', async () => {
+    const h = await setupChatScreen({ engine: 'llama', pdf: true, sqlite: true });
+    const fs = h.boundary.fs!;
+    DIR = require('../../../src/features/guideLibrary/guideLibraryService').GUIDE_LIBRARY_DIR;
+    // Offline, so test-knots and test-water are guides the shipped catalogue does not list: their files are the
+    // only copies the user can get.
+    fs.seedFile(`${DIR}/test-knots.pdf`, KNOTS.bytes);
+    fs.seedFile(`${DIR}/test-water.pdf`, WATER.bytes);
+    const storage = AsyncStorageOf();
+    await storage.setItem('@fieldkit/guide_library', JSON.stringify({ downloaded: { 'test-knots': KNOTS, 'test-water': WATER } }));
+    const before = await storage.getItem('@fieldkit/guide_library');
+    let failing = true;
+    // AsyncStorage's jest mock is the device's storage; keep its own implementation and fail this key on top of it.
+    const getItem = storage.getItem as jest.Mock;
+    const realGetItem = getItem.getMockImplementation()!;
+    getItem.mockImplementation(async (key: string, ...rest: unknown[]) => {
+      if (failing && key === '@fieldkit/guide_library') throw new Error('storage read failed');
+      return realGetItem(key, ...rest);
+    });
+    const failedReads = () => getItem.mock.calls.filter(([key]) => key === '@fieldkit/guide_library').length;
+
+    const { GuideLibraryScreen } = require('../../../src/screens/GuideLibraryScreen');
+    const first = h.rtl.render(h.React.createElement(GuideLibraryScreen, {}));
+    // The screen's start and its refresh each tried, and failed, to start the library.
+    await h.rtl.waitFor(() => {
+      expect(failedReads()).toBeGreaterThanOrEqual(2);
+      expect(first.getByTestId('guide-library-refresh')).not.toBeBusy();
+    }, { timeout: 4000 });
+    expect(await exists(fs, `${DIR}/test-knots.pdf`)).toBe(true);
+    expect(await exists(fs, `${DIR}/test-water.pdf`)).toBe(true);
+    failing = false;
+    expect(await storage.getItem('@fieldkit/guide_library')).toBe(before);
+    first.unmount();
+
+    const again = h.rtl.render(h.React.createElement(GuideLibraryScreen, {}));
+    h.rtl.fireEvent.changeText(again.getByTestId('guide-library-search'), 'test');
+    await h.rtl.waitFor(() => {
+      expect(again.getByTestId('guide-open-test-knots')).toBeTruthy();
+      expect(again.getByTestId('guide-open-test-water')).toBeTruthy();
+    }, { timeout: 4000 });
+    expect(again.getByText('No longer listed')).toBeTruthy();
+    getItem.mockImplementation(realGetItem);
+  }, 30000);
+
   it('a guide whose id is also an object property name shows as not downloaded and downloads', async () => {
     const body = '%PDF-1.4 a guide with an awkward id';
     const odd = guide('constructor', 'Test awkward id', 'fieldcraft', body);
