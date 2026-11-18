@@ -378,24 +378,11 @@
     "publisher": "NWCG",
     "year": 2023,
     "licence": "Public domain",
-    "licenceNote": "Public-domain statement printed in the document's back matter (page 17) and on NWCG's notices page (https://www.nwcg.gov/notices#copyrights). Hosted on NWCG's official file store linked from https://www.nwcg.gov/publications/pms560. Remote-area first aid: assessment, shock, fractures and splinting, burns, wounds, bites and stings, anaphylaxis, heat and cold illness, altitude sickness, lightning.",
+    "licenceNote": "Public-domain statement printed in the document's back matter (PDF page 17, printed '14 of 14') and on NWCG's notices page (https://www.nwcg.gov/notices#copyrights): 'Publications and training materials produced by NWCG are in the public domain. Use of public domain information, including copying, is permitted.' Hosted on NWCG's official file store linked from https://www.nwcg.gov/publications/pms560.",
     "url": "https://fs-prod-nwcg.s3.us-gov-west-1.amazonaws.com/s3fs-public/publication/pms560.pdf",
     "evidence": "Page 17 (back matter): 'Publications and training materials produced by NWCG are in the public domain. Use of public domain information, including copying, is permitted.' Cover (page 1): 'A publication of the National Wildfire Coordinating Group ... PMS 560 March 2023'. No content marked as copyrighted in the 17 pages.",
     "approxBytes": 297132,
     "creditsNote": "Wider search (permission, courtesy, copyright, reprinted, reproduced, adapted from, source:, collected from, credits, acknowledgements, standards bodies, hyphen-split forms): no hits. The only outside material is OSHA's 29 CFR 1910.151 and 1910.266 first aid requirements, quoted (federal). No references section; no figures or photos."
-  },
-  {
-    "id": "usfs-mtdc-0651-2323p-safe-use-of-small-generators",
-    "title": "Safe Use of Small Generators",
-    "category": "power",
-    "publisher": "US Forest Service",
-    "year": 2006,
-    "licence": "Public domain",
-    "licenceNote": "US government work (17 U.S.C. 105). Tech Tip 0651-2323P-MTDC by Dennis Davis, Project Leader, Missoula Technology and Development Center (Forest Service), page 1; no outside author, photo credit or copyright notice. Forest Service policy at https://www.fs.usda.gov/about-agency/disclaimers-important-notices: 'Information presented on the Forest Service website is considered public information and may be distributed or copied.' Covers carbon monoxide, fuelling, grounding, cords and loads for portable generators.",
-    "url": "https://www.fs.usda.gov/t-d/pubs/pdfpubs/pdf06512323/pdf06512323dpi300.pdf",
-    "evidence": "Page 1: 'United States Department of Agriculture Forest Service Technology & Development Program April 2006 5100/6700 0651-2323P-MTDC Safe Use of Small Generators Dennis Davis, Project Leader'. Page 6, About the Author: Davis was 'a specifications engineer for the General Services Administration until 1998 when he joined MTDC'. No copyright notice. Forest Service notices page: 'Information presented on the Forest Service website is considered public information and may be distributed or copied.'",
-    "approxBytes": 2668417,
-    "creditsNote": "Wider search: no hits apart from a hyphen-split 'amper-' (amperages). The National Electrical Code is named once as requiring generators to be grounded, not quoted. The cord gauge table and the two generator photos carry no credit; the text describes figure 1 as a typical generator available from a fire cache. The back-page notice mentions contractors as readers, not authors."
   },
   {
     "id": "usgs-fs-071-00-landslide-hazards",

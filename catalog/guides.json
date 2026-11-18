@@ -78,7 +78,7 @@
       "publisher": "NWCG",
       "year": 2023,
       "licence": "Public domain",
-      "licenceNote": "Public-domain statement printed in the document's back matter (page 17) and on NWCG's notices page (https://www.nwcg.gov/notices#copyrights). Hosted on NWCG's official file store linked from https://www.nwcg.gov/publications/pms560. Remote-area first aid: assessment, shock, fractures and splinting, burns, wounds, bites and stings, anaphylaxis, heat and cold illness, altitude sickness, lightning.",
+      "licenceNote": "Public-domain statement printed in the document's back matter (PDF page 17, printed '14 of 14') and on NWCG's notices page (https://www.nwcg.gov/notices#copyrights): 'Publications and training materials produced by NWCG are in the public domain. Use of public domain information, including copying, is permitted.' Hosted on NWCG's official file store linked from https://www.nwcg.gov/publications/pms560.",
       "url": "https://fs-prod-nwcg.s3.us-gov-west-1.amazonaws.com/s3fs-public/publication/pms560.pdf",
       "bytes": 297132,
       "sha256": "5b4c0b9b81d07634f7669f1d3fb92b860641ba2bb9fbf481dc87bb84bf40897f",
@@ -223,20 +223,6 @@
       "bytes": 5457021,
       "sha256": "d18ca012a3387f8347d46e6e5d0a78bb8f8623da723a7eb76807cf7bb487c92b",
       "pages": 100,
-      "hasText": true
-    },
-    {
-      "id": "usfs-mtdc-0651-2323p-safe-use-of-small-generators",
-      "title": "Safe Use of Small Generators",
-      "category": "power",
-      "publisher": "US Forest Service",
-      "year": 2006,
-      "licence": "Public domain",
-      "licenceNote": "US government work (17 U.S.C. 105). Tech Tip 0651-2323P-MTDC by Dennis Davis, Project Leader, Missoula Technology and Development Center (Forest Service), page 1; no outside author, photo credit or copyright notice. Forest Service policy at https://www.fs.usda.gov/about-agency/disclaimers-important-notices: 'Information presented on the Forest Service website is considered public information and may be distributed or copied.' Covers carbon monoxide, fuelling, grounding, cords and loads for portable generators.",
-      "url": "https://www.fs.usda.gov/t-d/pubs/pdfpubs/pdf06512323/pdf06512323dpi300.pdf",
-      "bytes": 2668417,
-      "sha256": "a4aba7673b30863857b219848e208371844510379797907066abedbf0de1d3f4",
-      "pages": 6,
       "hasText": true
     },
     {
