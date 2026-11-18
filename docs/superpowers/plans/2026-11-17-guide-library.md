@@ -127,7 +127,7 @@ it('the shipped catalogue is valid and has no duplicate urls', () => {
   - `node scripts/check-guides.js --verify` re-downloads every guide in `guides.json` and exits 1 if any link is dead or any size or hash differs.
   - A candidate has `id, title, category, publisher, year, licence, licenceNote, url`. The script adds `bytes, sha256, pages, hasText`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 const { hasReleaseStatement, describePdf } = require('../../../scripts/check-guides.js');
@@ -142,9 +142,9 @@ it('describes a file by size and sha256 and refuses a non-PDF', async () => {
 });
 ```
 
-- [ ] **Step 2: Run it.** Expected: FAIL, module not found.
+- [x] **Step 2: Run it.** Expected: FAIL, module not found.
 
-- [ ] **Step 3: Implement the script.** Decisions the tests do not fix:
+- [x] **Step 3: Implement the script.** Decisions the tests do not fix:
   - Download with Node's `fetch`, following redirects, header `User-Agent: Dalvik/2.1.0 (Linux; U; Android 14)` (what the phone's downloader sends), one request at a time, 2 seconds between requests to the same host, 3 tries with a growing wait. Refuse a response over 60 MB (`MAX_BYTES`) or one that does not start with `%PDF-`.
   - Each file goes into its own `fs.mkdtempSync(path.join(os.tmpdir(), 'guide-'))` directory and that directory is removed afterwards, also on failure.
   - `pages` = number of form feeds in `pdftotext <file> -` output. `hasText` = at least 2,000 non-whitespace characters in `pdftotext -l 30 <file> -`. Run `pdftotext` with `execFileSync` and the path as an argument. If `pdftotext` is not on the PATH, stop with a message naming Git Bash's `/mingw64/bin`.
@@ -152,9 +152,9 @@ it('describes a file by size and sha256 and refuses a non-PDF', async () => {
   - `--verify` only compares `bytes` and `sha256`.
   - Run only when `require.main === module`, so the tests can import the helpers.
 
-- [ ] **Step 4: Run the tests.** Expected: PASS. Then run `node scripts/check-guides.js` with the empty candidates file. Expected: prints `0 candidates` and exits 0.
+- [x] **Step 4: Run the tests.** Expected: PASS. Then run `node scripts/check-guides.js` with the empty candidates file. Expected: prints `0 candidates` and exits 0.
 
-- [ ] **Step 5: Checks and commit.** `feat(guides): script that checks candidate guides into the catalogue`
+- [x] **Step 5: Checks and commit.** `feat(guides): script that checks candidate guides into the catalogue`
 
 ---
 
