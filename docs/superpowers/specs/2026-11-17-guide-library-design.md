@@ -128,8 +128,10 @@ that is stricter or looser.
    document, and carries no copyright notice. The agency's site does not have to say more than a hedged notice
    ("most information presented on the USDA Web site is considered public domain"). The `licenceNote` says the
    proof rests on 17 U.S.C. 105 and staff authorship, and quotes the agency notice where there is one. It must not
-   claim a public-domain statement the document does not print. Thanks to outside partners or contributors, or
-   images whose source cannot be shown to be the agency, still reject the guide.
+   claim a public-domain statement the document does not print. Thanks to outside partners or contributors still
+   reject the guide. An uncredited image in such a publication is taken to be the agency's own, since agencies
+   credit the outside images they use, unless it is evidently from elsewhere: stock imagery, a manufacturer's
+   product photo, another organisation's logo, illustration or chart. An image like that rejects the guide.
 2. **Citing an outside standard is fine; reproducing it is not.** A guide may name, cite, summarise or paraphrase
    an outside standard, study or book, and may list such sources as "quoted or paraphrased". A guide that
    reproduces or adapts a table, figure, photo, form or passage credited to an outside owner (a standards body,
