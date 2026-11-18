@@ -337,3 +337,11 @@ Host notes: publications.usace.army.mil, erdc.usace.army.mil, navfac.navy.mil, n
 ### Other
 - FAA Aviation Maintenance Technician Handbook-General FAA-H-8083-30B (2023): 91 MB, over the 60 MB limit.
 - DOE Fundamentals Handbooks (Mechanical Science, Material Science): prepared by contractor (EG&G Idaho) per an earlier pass's finding; not taken.
+
+## Licence review: Navy NEETS text layers
+
+- NEETS Module 04: Introduction to Electrical Conductors, Wiring Techniques, and Schematic Reading (US Navy, https://legacy.maritime.org/doc/neets/mod04.pdf): text layer unreadable in part. About 261 of 1368 lines (text lines 155-553 and 1052-1374) are in a shifted character encoding, so the assistant could not learn the guide correctly. Licence and source were confirmed.
+- NEETS Module 06: Introduction to Electronic Emission, Tubes, and Power Supplies (US Navy, https://legacy.maritime.org/doc/neets/mod06.pdf): text layer unreadable in part. About 285 of 1712 lines (text lines 941-1458) are in a shifted character encoding, so the assistant could not learn the guide correctly. Licence and source were confirmed.
+- NEETS Module 07: Introduction to Solid-State Devices and Power Supplies (US Navy, https://legacy.maritime.org/doc/neets/mod07.pdf): text layer unreadable in part. About 236 of 2221 lines (text lines 513-1028) are in a shifted character encoding, so the assistant could not learn the guide correctly. Licence and source were confirmed.
+- NEETS Module 11: Microwave Principles (US Navy, https://legacy.maritime.org/doc/neets/mod11.pdf): text layer unreadable in part. About 184 of 1364 lines (most of chapter 1 and its summary, text lines 154-633) are in a shifted character encoding, so the assistant could not learn the guide correctly. Licence and source were confirmed.
+- NEETS Module 12: Modulation Principles (US Navy, https://legacy.maritime.org/doc/neets/mod12.pdf): text layer unreadable in part. About 37 of 1644 lines (the review questions and summaries of chapters 1 and 2, text lines 164-716, and a few lines later) are in a shifted character encoding, so the assistant could not learn the guide correctly. Licence and source were confirmed.
