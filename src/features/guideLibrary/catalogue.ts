@@ -37,31 +37,31 @@ type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !Array.isArray(v);
 const isText = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-/**
- * Code points a catalogue text field may not hold: C0 and C1 controls, the soft hyphen, zero-width and
- * directional marks, line and paragraph separators, bidirectional embeddings and overrides, invisible
- * operators and isolates, the byte-order mark, interlinear annotation marks, the tag block and lone surrogates.
- * Checked by code point, not with Unicode property escapes, which Hermes does not support.
- */
-const FORBIDDEN_RANGES: readonly (readonly [number, number])[] = [
-  [0x0000, 0x001f], [0x007f, 0x009f], [0x00ad, 0x00ad], [0x200b, 0x200f], [0x2028, 0x202e], [0x2060, 0x206f],
-  [0xd800, 0xdfff], [0xfeff, 0xfeff], [0xfff9, 0xfffb], [0xe0000, 0xe007f],
+// An allowlist, not a list of bad characters: there are too many invisible ones to name them all, and the
+// catalogue lists English-language guides. Widen it deliberately when a guide in another script is added.
+const LATIN_TEXT_CODE_POINTS: readonly (readonly [number, number])[] = [
+  [0x0020, 0x007e], // printable ASCII
+  [0x00a1, 0x00ac], [0x00ae, 0x00ff], // Latin-1 letters and symbols, without the soft hyphen U+00AD
+  [0x0100, 0x017f], // Latin Extended-A
+  [0x2013, 0x2014], // en and em dash
+  [0x2018, 0x2019], [0x201c, 0x201d], // curly quotes
+  [0x2022, 0x2022], [0x2026, 0x2026], // bullet, ellipsis
 ];
-function hasForbiddenCodePoint(s: string): boolean {
-  // for...of walks code points; a lone surrogate comes out on its own, in the 0xd800-0xdfff range.
+/** Every code point is in LATIN_TEXT_CODE_POINTS. A code-point loop: Hermes has no Unicode property escapes. */
+function isLatinText(s: string): boolean {
   for (const ch of s) {
     const cp = ch.codePointAt(0)!;
-    if (FORBIDDEN_RANGES.some(([lo, hi]) => cp >= lo && cp <= hi)) return true;
+    if (!LATIN_TEXT_CODE_POINTS.some(([lo, hi]) => cp >= lo && cp <= hi)) return false;
   }
-  return false;
+  return true;
 }
 /**
- * A single line of at most `max` characters with no surrounding whitespace and nothing invisible. Titles and
- * publishers end up in the knowledge-base document name that is quoted to the model, so a fetched catalogue
- * must not smuggle lines or hidden text in.
+ * A single line of at most `max` allowed characters with no surrounding whitespace. Titles and publishers end up
+ * in the knowledge-base document name that is quoted to the model, so a fetched catalogue must not smuggle lines
+ * or hidden text in.
  */
 const isLine = (v: unknown, max: number): v is string =>
-  isText(v) && v.length <= max && v.trim() === v && !hasForbiddenCodePoint(v);
+  isText(v) && v.length <= max && v.trim() === v && isLatinText(v);
 /** True for a catalogue id: lowercase letters, digits and dashes, so it is safe as part of a file name. */
 export const isCatalogueId = (v: unknown): v is string => typeof v === 'string' && ID_PATTERN.test(v);
 const isPositiveInt = (v: unknown): v is number => Number.isInteger(v) && (v as number) > 0;

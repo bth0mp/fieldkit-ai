@@ -18,6 +18,10 @@ describe('parseCatalogue', () => {
     const title = "Ship's Medicine Chest: First Aid & Care (Vol. 2/3), Pre-Hospital, Caf\u00e9 at 40\u00b0 N";
     expect(parseCatalogue(withGuide({ title }))?.guides[0].title).toBe(title);
   });
+  it('accepts en dashes and curly quotes in a title', () => {
+    const title = 'The \u201cField\u201d Manual \u2013 Hunter\u2019s Edition';
+    expect(parseCatalogue(withGuide({ title }))?.guides[0].title).toBe(title);
+  });
   it('accepts a guide at exactly the size limit', () => {
     expect(parseCatalogue(withGuide({ bytes: 60 * 1024 * 1024 }))).not.toBeNull();
   });
@@ -56,6 +60,11 @@ describe('parseCatalogue', () => {
     ['title with a soft hyphen', withGuide({ title: 'X\u00adY' })],
     ['title with a byte-order mark', withGuide({ title: 'X\ufeffY' })],
     ['title with a lone surrogate', withGuide({ title: 'X\ud800Y' })],
+    ['title with an Arabic letter mark', withGuide({ title: 'X\u061cY' })],
+    ['title with a Hangul filler', withGuide({ title: 'X\u3164Y' })],
+    ['title with a variation selector', withGuide({ title: 'X\ufe0fY' })],
+    ['title with a Cyrillic homoglyph of a', withGuide({ title: 'Surviv\u0430l' })],
+    ['title with a non-breaking space', withGuide({ title: 'X\u00a0Y' })],
     ['updated that is not a date', { ...good, updated: 'yesterday' }],
     ['publisher with a tab', withGuide({ publisher: 'US\tArmy' })],
     ['publisher of 81 characters', withGuide({ publisher: 'p'.repeat(81) })],
