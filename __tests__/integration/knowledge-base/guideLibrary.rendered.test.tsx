@@ -30,11 +30,14 @@ const guide = (id: string, title: string, category: string, body: string) => ({
 });
 const KNOTS = guide('test-knots', 'Test knots', 'fieldcraft', KNOTS_BODY);
 const WATER = guide('test-water', 'Test water', 'water', WATER_BODY);
-const TEST_CATALOGUE = JSON.stringify({
+const catalogueOf = (guides: unknown[]) => JSON.stringify({
   version: 1, updated: '2026-11-17',
   categories: [{ id: 'fieldcraft', name: 'Fieldcraft and knots' }, { id: 'water', name: 'Water and sanitation' }],
-  guides: [KNOTS, WATER],
+  guides,
 });
+const TEST_CATALOGUE = catalogueOf([KNOTS, WATER]);
+const DELISTED_HEADING = 'No longer listed';
+const DELISTED_LINE = 'Removed from the library. Your copy still works.';
 
 type Fs = NonNullable<Awaited<ReturnType<typeof setupChatScreen>>['boundary']['fs']>;
 const exists = (fs: Fs, path: string) => (fs.module.exists as (p: string) => Promise<boolean>)(path);
@@ -316,6 +319,99 @@ describe('Guide library (rendered)', () => {
       await rtl.waitFor(() => { expect(view.getByTestId(`guide-open-${target.id}`)).toBeTruthy(); }, { timeout: 4000 });
       expect(view.queryByTestId(`guide-download-${target.id}`)).toBeNull();
       expect(view.queryByText("Couldn't download this guide. Try again.")).toBeNull();
+    }, 30000);
+  });
+
+  describe('when the catalogue no longer lists a downloaded guide', () => {
+    async function refreshWith(h: Awaited<ReturnType<typeof openLibrary>>, catalogue: string, fetches: number) {
+      h.fs.seedDownload(CATALOGUE_URL, catalogue);
+      h.rtl.fireEvent.press(h.view.getByTestId('guide-library-refresh'));
+      await waitForRefresh(h, h.view, fetches);
+    }
+
+    it('a downloaded guide dropped by a refresh stays usable under "No longer listed"', async () => {
+      const h = await openLibrary(f => {
+        f.seedDownload(CATALOGUE_URL, TEST_CATALOGUE);
+        f.seedDownload(KNOTS.url, KNOTS_BODY);
+      });
+      const { rtl, fs, view } = h;
+      const { viewDocument } = require('@react-native-documents/viewer');
+      rtl.fireEvent.press(view.getByTestId('guide-download-test-knots'));
+      await rtl.waitFor(() => { expect(view.getByTestId('guide-open-test-knots')).toBeTruthy(); }, { timeout: 4000 });
+      expect(view.queryByText(DELISTED_HEADING)).toBeNull();
+
+      await refreshWith(h, catalogueOf([WATER]), 2);
+      expect(view.getByText(DELISTED_HEADING)).toBeTruthy();
+      expect(view.getByText(DELISTED_LINE)).toBeTruthy();
+      expect(view.getByText('Test knots')).toBeTruthy();
+      expect(view.queryByText('Fieldcraft and knots (1)')).toBeNull();
+      expect(view.queryByTestId('guide-download-test-knots')).toBeNull();
+      // It still counts as on the phone.
+      expect(view.getByText('1 guides · 1 downloaded · 0 taught')).toBeTruthy();
+
+      // Search filters the rows that are no longer listed too.
+      const search = view.getByTestId('guide-library-search');
+      rtl.fireEvent.changeText(search, 'water');
+      expect(view.queryByText('Test knots')).toBeNull();
+      expect(view.queryByText(DELISTED_HEADING)).toBeNull();
+      rtl.fireEvent.changeText(search, 'test publisher');
+      expect(view.getByText('Test knots')).toBeTruthy();
+      expect(view.getByText(DELISTED_HEADING)).toBeTruthy();
+      rtl.fireEvent.changeText(search, '');
+
+      // Listed again, it goes back to its category as it was.
+      await refreshWith(h, TEST_CATALOGUE, 3);
+      expect(view.queryByText(DELISTED_HEADING)).toBeNull();
+      expect(view.getByText('Fieldcraft and knots (1)')).toBeTruthy();
+      expect(view.getByTestId('guide-open-test-knots')).toBeTruthy();
+
+      await refreshWith(h, catalogueOf([WATER]), 4);
+      rtl.fireEvent.press(view.getByTestId('guide-open-test-knots'));
+      await rtl.waitFor(() => {
+        expect(viewDocument).toHaveBeenCalledWith({ uri: 'file:///docs/guide-library/test-knots.pdf', mimeType: 'application/pdf', grantPermissions: 'read' });
+      });
+      expect(view.queryByText("Couldn't open this guide.")).toBeNull();
+
+      rtl.fireEvent.press(view.getByTestId('guide-remove-test-knots'));
+      await rtl.waitFor(() => { expect(view.queryByTestId('guide-row-test-knots')).toBeNull(); }, { timeout: 4000 });
+      expect(view.queryByText(DELISTED_HEADING)).toBeNull();
+      expect(view.getByText('1 guides · 0 downloaded · 0 taught')).toBeTruthy();
+      expect(await exists(fs, `${DIR}/test-knots.pdf`)).toBe(false);
+    }, 40000);
+
+    it('a changed hash in a refreshed catalogue leaves the downloaded copy alone', async () => {
+      const h = await openLibrary(f => {
+        f.seedDownload(CATALOGUE_URL, TEST_CATALOGUE);
+        f.seedDownload(KNOTS.url, KNOTS_BODY);
+      });
+      const { rtl, fs, view } = h;
+      const { viewDocument } = require('@react-native-documents/viewer');
+      rtl.fireEvent.press(view.getByTestId('guide-download-test-knots'));
+      await rtl.waitFor(() => { expect(view.getByTestId('guide-open-test-knots')).toBeTruthy(); }, { timeout: 4000 });
+
+      await refreshWith(h, catalogueOf([{ ...KNOTS, sha256: sha256('a newer edition') }, WATER]), 2);
+      expect(view.getByTestId('guide-open-test-knots')).toBeTruthy();
+      expect(view.queryByTestId('guide-download-test-knots')).toBeNull();
+      expect(view.queryByText(DELISTED_HEADING)).toBeNull();
+      expect(view.queryByText("This file doesn't match the checked copy")).toBeNull();
+      expect(await exists(fs, `${DIR}/test-knots.pdf`)).toBe(true);
+      rtl.fireEvent.press(view.getByTestId('guide-open-test-knots'));
+      await rtl.waitFor(() => { expect(viewDocument).toHaveBeenCalledTimes(1); });
+      expect(view.queryByText("Couldn't open this guide.")).toBeNull();
+    }, 30000);
+
+    it('on a launch with no connection, a saved guide the shipped catalogue does not list is under "No longer listed"', async () => {
+      const { rtl, view } = await openLibrary(async f => {
+        f.seedFile(`${DIR}/test-knots.pdf`, KNOTS.bytes);
+        const m = require('@react-native-async-storage/async-storage');
+        await (m.default ?? m).setItem('@fieldkit/guide_library', JSON.stringify({ downloaded: { 'test-knots': KNOTS } }));
+      });
+      // The group comes after every shipped category, further down than the list first renders.
+      rtl.fireEvent.changeText(view.getByTestId('guide-library-search'), 'test knots');
+      expect(view.getByText(DELISTED_HEADING)).toBeTruthy();
+      expect(view.getByText(DELISTED_LINE)).toBeTruthy();
+      expect(view.getByTestId('guide-open-test-knots')).toBeTruthy();
+      expect(view.getByTestId('guide-remove-test-knots')).toBeTruthy();
     }, 30000);
   });
 

@@ -45,13 +45,23 @@ let teachQueue: Promise<void> = Promise.resolve();
 const inFlightParts = new Set<string>();
 
 const store = useGuideLibraryStore;
-const setGuide = (id: string, state: GuideState | null) =>
-  store.setState(s => {
-    const guides = { ...s.guides };
-    if (state) guides[id] = state; else delete guides[id];
-    return { guides };
-  });
+const withGuide = (guides: Record<string, GuideState>, id: string, state: GuideState | null) => {
+  const next = { ...guides };
+  if (state) next[id] = state; else delete next[id];
+  return next;
+};
+const setGuide = (id: string, state: GuideState | null) => store.setState(s => ({ guides: withGuide(s.guides, id, state) }));
 const phaseOf = (id: string): GuidePhase => store.getState().guides[id]?.phase ?? 'none';
+
+/** Downloaded guides `catalogue` does not list, by title. Their saved entries keep them usable. */
+function delistedFrom(catalogue: Catalogue): GuideEntry[] {
+  const listed = new Set(catalogue.guides.map(g => g.id));
+  return Object.values(downloaded).filter(e => !listed.has(e.id)).sort((a, b) => a.title.localeCompare(b.title));
+}
+/** Set one guide's state after `downloaded` changed, and in the same update which guides are no longer listed. */
+const setGuideAndDelisted = (id: string, state: GuideState | null) =>
+  store.setState(s => ({ guides: withGuide(s.guides, id, state), delisted: delistedFrom(s.catalogue) }));
+const isListed = (id: string) => store.getState().catalogue.guides.some(g => g.id === id);
 
 const saveDownloaded = () => AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ downloaded }));
 const forget = (id: string) => {
@@ -120,7 +130,7 @@ async function runInit(): Promise<boolean> {
     for (const [id, g] of Object.entries(s.guides)) {
       if (g.phase === 'downloading' || (g.phase === 'none' && !kept[id])) guides[id] = g;
     }
-    return { catalogue, guides };
+    return { catalogue, guides, delisted: delistedFrom(catalogue) };
   });
   await applyKnowledgeBase();
   return true;
@@ -226,7 +236,7 @@ async function refresh(): Promise<void> {
     const parsed = parseCatalogue(JSON.parse(await RNFS.readFile(part, 'utf8')));
     if (!parsed) throw new Error('fetched catalogue failed validation');
     await replaceFile(part, CATALOGUE_FILE);
-    store.setState({ catalogue: parsed });
+    store.setState({ catalogue: parsed, delisted: delistedFrom(parsed) });
   } catch (error) {
     logger.warn('[GuideLibrary] catalogue refresh failed, keeping the current one', error);
   } finally {
@@ -280,7 +290,8 @@ async function download(id: string): Promise<void> {
       inFlightParts.delete(partName);
     }
   }
-  setGuide(id, error ? { phase: 'none', error } : { phase: 'downloaded' });
+  // A refresh while downloading may have dropped the guide from the catalogue.
+  setGuideAndDelisted(id, error ? { phase: 'none', error } : { phase: 'downloaded' });
 }
 
 /** Open a downloaded guide in the phone's PDF viewer. */
@@ -332,10 +343,13 @@ async function teachFailure(id: string, e: unknown): Promise<string | null> {
   }
 }
 
-/** Index a downloaded guide into the Field guides knowledge base, after any guide already being taught. */
+/**
+ * Index a downloaded guide into the Field guides knowledge base, after any guide already being taught. A guide
+ * the catalogue no longer lists is not taught anew (one already taught stays taught until switched off).
+ */
 function teach(id: string): Promise<void> {
   const entry = downloaded[id];
-  if (phaseOf(id) !== 'downloaded' || !entry?.hasText) return Promise.resolve();
+  if (phaseOf(id) !== 'downloaded' || !entry?.hasText || !isListed(id)) return Promise.resolve();
   setGuide(id, { phase: 'teaching' });
   // teachNow never rejects, so one failure cannot stop the guides queued after it.
   teachQueue = teachQueue.then(() => teachNow(id, entry));
@@ -385,7 +399,7 @@ async function remove(id: string): Promise<void> {
   forget(id);
   // If saving fails, the next init drops the entry anyway because its file is gone.
   await saveDownloaded().catch(error => logger.warn('[GuideLibrary] could not save state', error));
-  setGuide(id, null);
+  setGuideAndDelisted(id, null);
 }
 
 /** Owns the guide library: the catalogue, each guide's file on disk and its state in the store. */

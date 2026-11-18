@@ -132,6 +132,42 @@ describe('Guide library teaching (rendered)', () => {
     expect(sent).toContain('pass the running end up through the loop');
   }, 40000);
 
+  it('a taught guide the catalogue drops still answers in a Field guides chat and can be switched off', async () => {
+    const OTHER = guide('test-other', 'Test other', WATER_TEXT);
+    const h = await openLibrary([KNOTS, OTHER]);
+    const { rtl, view, fs, dir, boundary } = h;
+    await downloadGuide(h, view, KNOTS, BOWLINE);
+    await setTaught(h, view, 'test-knots', true);
+
+    fs.seedDownload(CATALOGUE_URL, catalogueOf([OTHER]));
+    rtl.fireEvent.press(view.getByTestId('guide-library-refresh'));
+    await rtl.waitFor(() => {
+      expect(downloadsOf(fs, CATALOGUE_URL)).toBe(2);
+      expect(view.getByText('No longer listed')).toBeTruthy();
+    }, { timeout: 4000 });
+    expect(switchOf(view, 'test-knots').props.value).toBe(true);
+    expect(view.getByText('1 guides · 1 downloaded · 1 taught')).toBeTruthy();
+    view.unmount();
+
+    openRoute({ projectId: 'field-guides' });
+    h.render();
+    await h.send('How do I tie a bowline?', { text: 'Form a small loop, pass the end up through it, around the standing part and back down.' });
+    await rtl.waitFor(() => { expect(h.view!.queryByText(/around the standing part and back down/)).not.toBeNull(); }, { timeout: 6000 });
+    const sent = JSON.stringify(boundary.llama!.calls.completion.at(-1));
+    expect(sent).toContain('[Source: Test knots (Test publisher).pdf (part 1)]');
+    h.view!.unmount();
+
+    const again = await mountLibrary(h);
+    await rtl.waitFor(() => { expect(switchOf(again, 'test-knots').props.value).toBe(true); }, { timeout: 4000 });
+    rtl.fireEvent(switchOf(again, 'test-knots'), 'valueChange', false);
+    // Once off, a guide the catalogue no longer lists cannot be taught again, so the switch goes.
+    await rtl.waitFor(() => { expect(again.queryByTestId('guide-teach-test-knots')).toBeNull(); }, { timeout: 6000 });
+    expect(await docsInFieldGuides()).toEqual([]);
+    expect(again.getByText('No longer listed')).toBeTruthy();
+    expect(again.getByTestId('guide-open-test-knots')).toBeTruthy();
+    expect(await exists(fs, `${dir}/test-knots.pdf`)).toBe(true);
+  }, 60000);
+
   it('switching it off removes the guide from the knowledge base and keeps the file', async () => {
     const h = await openLibrary([KNOTS]);
     const { view, fs, dir } = h;

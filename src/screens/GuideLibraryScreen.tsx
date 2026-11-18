@@ -14,15 +14,22 @@ import { createStyles } from './GuideLibraryScreen.styles';
 type Styles = ReturnType<typeof createStyles>;
 const NONE: GuideState = { phase: 'none' };
 
-interface GuideSection { key: string; category: GuideCategory; data: GuideEntry[] }
+/** `title` is the heading as shown. `delisted` marks the "No longer listed" group. */
+interface GuideSection { key: string; title: string; delisted: boolean; data: GuideEntry[] }
 
-/** Catalogue categories in order, each with its guides matching `query` (title or publisher). Empty ones are left out. */
-function sectionsFor(catalogue: Catalogue, query: string): GuideSection[] {
+/**
+ * Catalogue categories in order, then the downloaded guides the catalogue no longer lists, each with its guides
+ * matching `query` (title or publisher). Empty ones are left out.
+ */
+function sectionsFor(catalogue: Catalogue, delisted: GuideEntry[], query: string): GuideSection[] {
   const q = query.trim().toLowerCase();
   const matches = (g: GuideEntry) => !q || g.title.toLowerCase().includes(q) || g.publisher.toLowerCase().includes(q);
-  return catalogue.categories
-    .map(category => ({ key: category.id, category, data: catalogue.guides.filter(g => g.category === category.id && matches(g)) }))
-    .filter(s => s.data.length > 0);
+  const listed = catalogue.categories.map((category: GuideCategory) => {
+    const data = catalogue.guides.filter(g => g.category === category.id && matches(g));
+    return { key: category.id, title: `${category.name} (${data.length})`, delisted: false, data };
+  });
+  const gone = { key: 'no-longer-listed', title: 'No longer listed', delisted: true, data: delisted.filter(matches) };
+  return [...listed, gone].filter(s => s.data.length > 0);
 }
 
 /** The "Assistant knows this" switch for a downloaded guide that has a text layer. */
@@ -44,12 +51,15 @@ const TeachControl: React.FC<{ entry: GuideEntry; state: GuideState; styles: Sty
   );
 };
 
-interface RowProps { entry: GuideEntry; state: GuideState; expanded: boolean; onToggle: () => void; styles: Styles }
+/** `delisted`: the catalogue no longer lists this downloaded guide, so it cannot be downloaded or taught anew. */
+interface RowProps { entry: GuideEntry; state: GuideState; delisted: boolean; expanded: boolean; onToggle: () => void; styles: Styles }
 
-const GuideRow: React.FC<RowProps> = ({ entry, state, expanded, onToggle, styles }) => {
+const GuideRow: React.FC<RowProps> = ({ entry, state, delisted, expanded, onToggle, styles }) => {
   const { colors } = useTheme();
   const { id } = entry;
   const hasFile = isOnPhone(state);
+  // A guide no longer listed keeps its switch only while taught, so the user can switch it off.
+  const showTeach = hasFile && entry.hasText && (!delisted || state.phase === 'taught' || state.phase === 'teaching');
   return (
     <TouchableOpacity style={styles.row} onPress={onToggle} testID={`guide-row-${id}`}>
       <View style={styles.rowHeader}>
@@ -57,16 +67,17 @@ const GuideRow: React.FC<RowProps> = ({ entry, state, expanded, onToggle, styles
           <Text style={styles.rowTitle}>{entry.title}</Text>
           <Text style={styles.rowMeta}>{`${entry.publisher} · ${formatBytes(entry.bytes)} · ${entry.licence}`}</Text>
         </View>
-        {state.phase === 'none' && (
+        {state.phase === 'none' && !delisted && (
           <Button title="Download" size="small" variant="outline" testID={`guide-download-${id}`}
             onPress={() => { guideLibraryService.download(id); }} />
         )}
         {state.phase === 'downloading' && <Text style={styles.progress}>{`${Math.round((state.progress ?? 0) * 100)}%`}</Text>}
         <Icon name={expanded ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textMuted} />
       </View>
+      {delisted && <Text style={[styles.teachLabel, styles.scanned]}>Removed from the library. Your copy still works.</Text>}
       {/* Said before downloading too, so the user knows a scanned guide can be read but not taught. */}
       {!entry.hasText && <Text style={[styles.teachLabel, styles.scanned]}>Scanned, read only</Text>}
-      {hasFile && entry.hasText && <TeachControl entry={entry} state={state} styles={styles} />}
+      {showTeach && <TeachControl entry={entry} state={state} styles={styles} />}
       {hasFile && (
         <View style={styles.actions}>
           <Button title="Open" size="small" variant="outline" testID={`guide-open-${id}`}
@@ -96,6 +107,7 @@ export const GuideLibraryScreen: React.FC = () => {
   const styles = useThemedStyles(createStyles);
   const catalogue = useGuideLibraryStore(s => s.catalogue);
   const guides = useGuideLibraryStore(s => s.guides);
+  const delisted = useGuideLibraryStore(s => s.delisted);
   const refreshing = useGuideLibraryStore(s => s.refreshing);
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState<string | null>(null);
@@ -106,7 +118,7 @@ export const GuideLibraryScreen: React.FC = () => {
   // Back from another screen: the user may have deleted a taught guide's document or the project there.
   useFocusEffect(useCallback(() => { guideLibraryService.reconcile(); }, []));
 
-  const sections = useMemo(() => sectionsFor(catalogue, query), [catalogue, query]);
+  const sections = useMemo(() => sectionsFor(catalogue, delisted, query), [catalogue, delisted, query]);
   const { onPhone, taught } = useMemo(() => libraryCounts(guides), [guides]);
 
   return (
@@ -149,9 +161,9 @@ export const GuideLibraryScreen: React.FC = () => {
             )}
           </>
         }
-        renderSectionHeader={({ section }) => <Text style={styles.sectionTitle}>{`${section.category.name} (${section.data.length})`}</Text>}
-        renderItem={({ item }) => (
-          <GuideRow entry={item} state={guides[item.id] ?? NONE} expanded={open === item.id} styles={styles}
+        renderSectionHeader={({ section }) => <Text style={styles.sectionTitle}>{section.title}</Text>}
+        renderItem={({ item, section }) => (
+          <GuideRow entry={item} state={guides[item.id] ?? NONE} delisted={section.delisted} expanded={open === item.id} styles={styles}
             onToggle={() => setOpen(open === item.id ? null : item.id)} />
         )}
       />
