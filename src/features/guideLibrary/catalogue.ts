@@ -1,3 +1,5 @@
+import logger from '../../utils/logger';
+
 export interface GuideCategory { id: string; name: string }
 
 export interface GuideEntry {
@@ -118,10 +120,22 @@ export function parseCatalogue(raw: unknown): Catalogue | null {
   return { version: 1, updated: raw.updated, categories, guides };
 }
 
+/**
+ * What the app runs on when the shipped catalogue is invalid: no guides, dated so that any real saved catalogue is
+ * newer. The library is empty until a valid catalogue is fetched, but the app still starts.
+ */
+const EMPTY_CATALOGUE: Catalogue = { version: 1, updated: '1970-01-01', categories: [], guides: [] };
+
+/**
+ * The shipped catalogue. This module loads at app start, so a bad edit to the data file must not throw here; the
+ * unit test that parses the shipped file, run by the pre-push hook when `catalog/` changes, catches it before
+ * release.
+ */
 function loadBundled(): Catalogue {
   const parsed = parseCatalogue(require('../../../catalog/guides.json'));
-  if (!parsed) throw new Error('catalog/guides.json is not a valid guide catalogue');
-  return parsed;
+  if (parsed) return parsed;
+  logger.error('[GuideLibrary] catalog/guides.json is not a valid guide catalogue; the library starts empty');
+  return EMPTY_CATALOGUE;
 }
 
 export const bundledCatalogue: Catalogue = loadBundled();

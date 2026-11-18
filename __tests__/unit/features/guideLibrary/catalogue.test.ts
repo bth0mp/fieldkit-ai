@@ -77,9 +77,26 @@ describe('parseCatalogue', () => {
 });
 
 describe('bundledCatalogue', () => {
-  it('the shipped catalogue is valid and has no duplicate urls', () => {
-    expect(bundledCatalogue.version).toBe(1);
+  it('the shipped catalogue is valid, lists guides and has no duplicate urls', () => {
+    // The app falls back to an empty catalogue rather than crash, so check the shipped file itself parses.
+    const shipped = parseCatalogue(require('../../../../catalog/guides.json'));
+    expect(shipped).not.toBeNull();
+    expect(shipped!.guides.length).toBeGreaterThan(0);
+    expect(bundledCatalogue).toEqual(shipped);
     const urls = bundledCatalogue.guides.map(g => g.url);
     expect(new Set(urls).size).toBe(urls.length);
+  });
+
+  it('an invalid shipped catalogue is logged and the app starts with an empty one', () => {
+    jest.isolateModules(() => {
+      jest.doMock('../../../../catalog/guides.json', () => ({ version: 1, updated: 'not a date', categories: [], guides: [] }));
+      const logger = require('../../../../src/utils/logger').default;
+      const error = jest.spyOn(logger, 'error').mockImplementation(() => {});
+      const { bundledCatalogue: fallback } = require('../../../../src/features/guideLibrary/catalogue');
+      expect(fallback).toEqual({ version: 1, updated: '1970-01-01', categories: [], guides: [] });
+      expect(error).toHaveBeenCalledWith(expect.stringContaining('catalog/guides.json is not a valid guide catalogue'));
+      error.mockRestore();
+    });
+    jest.dontMock('../../../../catalog/guides.json');
   });
 });
