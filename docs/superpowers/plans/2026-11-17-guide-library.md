@@ -275,7 +275,7 @@ This is research, not code. Its test is the checker and the Task 1 unit test.
 - Exact copy: switch label `Assistant knows this`; `Scanned, read only`; note `The assistant searches every guide it has learned. More guides make answers slower.`
 - Test ids: `guide-teach-<id>` (the switch).
 
-- [ ] **Step 1: Write the failing rendered tests** (same setup as Task 5, plus `boundary.llama.scriptEmbedding` and the embedding model asset as in `fieldGuidesAnswer.rendered.test.tsx`):
+- [x] **Step 1: Write the failing rendered tests** (same setup as Task 5, plus `boundary.llama.scriptEmbedding` and the embedding model asset as in `fieldGuidesAnswer.rendered.test.tsx`):
   - `a taught guide answers in a Field guides chat`: download `test-knots` (body contains `pass the running end up through the loop`), switch `guide-teach-test-knots` on, wait for it to show on; open a chat with `projectId: 'field-guides'`, send `How do I tie a bowline?`; expect the last completion call to contain `[Source: Test knots (Test publisher).pdf (part 1)]` and the passage.
   - `switching it off removes the guide from the knowledge base and keeps the file`.
   - `a guide marked scanned cannot be taught`: `hasText: false` shows `Scanned, read only` and no switch.
@@ -283,14 +283,14 @@ This is research, not code. Its test is the checker and the Task 1 unit test.
   - `a guide deleted from the knowledge base shows as downloaded again`: teach, delete the document with `ragService.deleteDocument`, re-mount the screen; expect the switch off.
   - `teaching recreates the Field guides project if it was deleted`.
   - `the slow-search note appears at the threshold`: with `SLOW_SEARCH_TAUGHT_GUIDES` taught documents present, the note is visible.
-- [ ] **Step 2: Run.** Expected: FAIL.
-- [ ] **Step 3: Implement.** Decisions:
+- [x] **Step 2: Run.** Expected: FAIL.
+- [x] **Step 3: Implement.** Decisions:
   - Move the `createProject({...})` call in `seedFieldGuides` into one private helper (same name, description, prompt and colour). The seed keeps calling that helper directly; `ensureFieldGuidesProject` calls it and then saves the seed state with every bundled asset in `done`. The seed's rule that a project the user deleted is not re-seeded stays.
   - `teach` runs one guide at a time through a promise chain; phase `teaching` while it runs; awaits `ensureFieldGuidesProject()` then `ragService.indexDocument({ projectId, filePath, fileName, fileSize: entry.bytes, bundled: true })`. An "already in the knowledge base" error counts as taught. Any other error sets `error` to its message and returns the phase to `downloaded`.
   - `init` (and the screen on focus) reconciles `taught` from `ragService.getDocumentsByProject('field-guides')` by path.
   - `remove` un-teaches first.
-- [ ] **Step 4: Run both library test files and `fieldGuidesAnswer.rendered.test.tsx`.** Expected: PASS.
-- [ ] **Step 5: Checks and commit.** `feat(guides): teach a downloaded guide to the assistant`
+- [x] **Step 4: Run both library test files and `fieldGuidesAnswer.rendered.test.tsx`.** Expected: PASS.
+- [x] **Step 5: Checks and commit.** `feat(guides): teach a downloaded guide to the assistant`
 
 ---
 
