@@ -2,13 +2,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import RNFS from 'react-native-fs';
 import { viewDocument } from '@react-native-documents/viewer';
 import logger from '../../utils/logger';
-import { bundledCatalogue, CATALOGUE_URL, parseCatalogue, type Catalogue, type GuideEntry } from './catalogue';
-import { useGuideLibraryStore, type GuideState } from './guideLibraryStore';
+import { bundledCatalogue, CATALOGUE_URL, isCatalogueId, parseCatalogue, type Catalogue, type GuideEntry } from './catalogue';
+import { useGuideLibraryStore, type GuidePhase, type GuideState } from './guideLibraryStore';
 
 export const GUIDE_LIBRARY_DIR = `${RNFS.DocumentDirectoryPath}/guide-library`;
 
 const STORAGE_KEY = '@fieldkit/guide_library';
 const CATALOGUE_FILE = `${GUIDE_LIBRARY_DIR}/catalogue.json`;
+const CATALOGUE_PART = 'catalogue.json.part';
+/** A fetched catalogue is untrusted and read whole into memory, so anything larger is refused. */
+const MAX_CATALOGUE_BYTES = 2 * 1024 * 1024;
 const MISMATCH = "This file doesn't match the checked copy";
 const FAILED = "Couldn't download this guide. Try again.";
 const OFFLINE = "No connection. Try again when you're online.";
@@ -20,7 +23,9 @@ const guidePath = (id: string) => `${GUIDE_LIBRARY_DIR}/${id}.pdf`;
 
 /** The catalogue entry each downloaded file was checked against, by id. */
 let downloaded: Record<string, GuideEntry> = {};
-let initPromise: Promise<void> | null = null;
+let initPromise: Promise<boolean> | null = null;
+/** Names of .part files being written right now. init's sweep leaves these alone. */
+const inFlightParts = new Set<string>();
 
 const store = useGuideLibraryStore;
 const setGuide = (id: string, state: GuideState | null) =>
@@ -29,9 +34,14 @@ const setGuide = (id: string, state: GuideState | null) =>
     if (state) guides[id] = state; else delete guides[id];
     return { guides };
   });
-const phaseOf = (id: string) => store.getState().guides[id]?.phase ?? 'none';
+const phaseOf = (id: string): GuidePhase => store.getState().guides[id]?.phase ?? 'none';
 
 const saveDownloaded = () => AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ downloaded }));
+const forget = (id: string) => {
+  const rest = { ...downloaded };
+  delete rest[id];
+  downloaded = rest;
+};
 
 async function removeQuietly(path: string): Promise<void> {
   try {
@@ -39,6 +49,12 @@ async function removeQuietly(path: string): Promise<void> {
   } catch (error) {
     logger.warn('[GuideLibrary] could not delete', path, error);
   }
+}
+
+/** moveFile fails on iOS when the destination exists, so clear it first. */
+async function replaceFile(from: string, to: string): Promise<void> {
+  if (await RNFS.exists(to)) await RNFS.unlink(to);
+  await RNFS.moveFile(from, to);
 }
 
 async function loadSavedCatalogue(): Promise<Catalogue> {
@@ -64,17 +80,18 @@ async function loadDownloaded(): Promise<Record<string, GuideEntry>> {
   }
 }
 
-async function runInit(): Promise<void> {
+async function runInit(): Promise<boolean> {
   await RNFS.mkdir(GUIDE_LIBRARY_DIR);
   const catalogue = await loadSavedCatalogue();
   const saved = await loadDownloaded();
   // A .part file is an unfinished download (or catalogue fetch) from an earlier run.
   for (const file of await RNFS.readDir(GUIDE_LIBRARY_DIR)) {
-    if (file.isFile() && file.name.endsWith('.part')) await removeQuietly(file.path);
+    if (file.isFile() && file.name.endsWith('.part') && !inFlightParts.has(file.name)) await removeQuietly(file.path);
   }
   const kept: Record<string, GuideEntry> = {};
   for (const [id, entry] of Object.entries(saved)) {
-    if (entry?.id === id && (await RNFS.exists(guidePath(id)))) kept[id] = entry;
+    // The id names a file, so a saved record must pass the same id check as the catalogue.
+    if (isCatalogueId(id) && entry?.id === id && (await RNFS.exists(guidePath(id)))) kept[id] = entry;
   }
   downloaded = kept;
   if (Object.keys(kept).length !== Object.keys(saved).length) await saveDownloaded();
@@ -82,68 +99,98 @@ async function runInit(): Promise<void> {
   for (const id of Object.keys(kept)) guides[id] = { phase: 'downloaded' };
   // Anything already in the store was started this session and is newer than what was saved.
   store.setState(s => ({ catalogue, guides: { ...guides, ...s.guides } }));
+  return true;
 }
 
-/** Load saved state, delete unfinished downloads and forget guides whose file is gone. Safe to call again. */
-function init(): Promise<void> {
+/**
+ * Load saved state, delete unfinished downloads and forget guides whose file is gone. Resolves false when
+ * that failed; nothing that writes files or saved state may run then. A failed init runs again next call.
+ */
+function init(): Promise<boolean> {
   if (!initPromise) {
     initPromise = runInit().catch(error => {
       logger.error('[GuideLibrary] init failed', error);
       initPromise = null;
+      return false;
     });
   }
   return initPromise;
+}
+
+type GuardedResult = { statusCode: number } | 'too-big' | 'failed';
+interface GuardedDownload { fromUrl: string; toFile: string; maxBytes: number; onProgress?: (bytesWritten: number) => void }
+
+/**
+ * Download `fromUrl` to `toFile`, stopping as soon as the server declares (begin) or sends (progress) more
+ * than `maxBytes`. Callbacks that arrive after the job settled are ignored.
+ */
+async function guardedDownload({ fromUrl, toFile, maxBytes, onProgress }: GuardedDownload): Promise<GuardedResult> {
+  let jobId: number | undefined;
+  let tooBig = false;
+  let settled = false;
+  const stop = () => {
+    tooBig = true;
+    if (jobId !== undefined) RNFS.stopDownload(jobId);
+  };
+  const job = RNFS.downloadFile({
+    fromUrl,
+    toFile,
+    progressDivider: 5,
+    begin: ({ contentLength }) => { if (!settled && !tooBig && contentLength > maxBytes) stop(); },
+    progress: ({ bytesWritten, contentLength }) => {
+      if (settled || tooBig) return;
+      if (contentLength > maxBytes || bytesWritten > maxBytes) stop();
+      else onProgress?.(bytesWritten);
+    },
+  });
+  jobId = job.jobId;
+  // A callback that ran before the job id was known could not stop the job itself.
+  if (tooBig) RNFS.stopDownload(jobId);
+  try {
+    const { statusCode } = await job.promise;
+    return tooBig ? 'too-big' : { statusCode };
+  } catch {
+    return tooBig ? 'too-big' : 'failed';
+  } finally {
+    settled = true;
+  }
 }
 
 /** Fetch the catalogue from the repo. Anything that fails to download or validate is ignored. */
 async function refresh(): Promise<void> {
   if (store.getState().refreshing) return;
   store.setState({ refreshing: true });
-  const part = `${CATALOGUE_FILE}.part`;
+  const part = `${GUIDE_LIBRARY_DIR}/${CATALOGUE_PART}`;
   try {
-    await init();
-    const { promise } = RNFS.downloadFile({ fromUrl: CATALOGUE_URL, toFile: part });
-    const { statusCode } = await promise;
-    if (statusCode !== 200) throw new Error(`catalogue fetch returned ${statusCode}`);
+    if (!(await init())) return;
+    inFlightParts.add(CATALOGUE_PART);
+    const result = await guardedDownload({ fromUrl: CATALOGUE_URL, toFile: part, maxBytes: MAX_CATALOGUE_BYTES });
+    if (typeof result === 'string') throw new Error(`catalogue fetch ${result}`);
+    if (result.statusCode !== 200) throw new Error(`catalogue fetch returned ${result.statusCode}`);
+    if ((await RNFS.stat(part)).size > MAX_CATALOGUE_BYTES) throw new Error('catalogue too big');
     const parsed = parseCatalogue(JSON.parse(await RNFS.readFile(part, 'utf8')));
     if (!parsed) throw new Error('fetched catalogue failed validation');
-    await RNFS.moveFile(part, CATALOGUE_FILE);
+    await replaceFile(part, CATALOGUE_FILE);
     store.setState({ catalogue: parsed });
   } catch (error) {
     logger.warn('[GuideLibrary] catalogue refresh failed, keeping the current one', error);
-    await removeQuietly(part);
   } finally {
+    await removeQuietly(part);
+    inFlightParts.delete(CATALOGUE_PART);
     store.setState({ refreshing: false });
   }
 }
 
 /** Download to `<id>.pdf.part`. Returns the user-facing error, or null once the file matches `entry`. */
 async function fetchChecked(entry: GuideEntry, part: string): Promise<string | null> {
-  let jobId: number | undefined;
-  let tooBig = false;
-  const job = RNFS.downloadFile({
-    fromUrl: entry.url,
-    toFile: part,
-    progressDivider: 5,
-    progress: ({ bytesWritten, contentLength }) => {
-      if (contentLength > entry.bytes || bytesWritten > entry.bytes) {
-        tooBig = true;
-        if (jobId !== undefined) RNFS.stopDownload(jobId);
-        return;
-      }
-      setGuide(entry.id, { phase: 'downloading', progress: Math.min(1, bytesWritten / entry.bytes) });
-    },
+  const result = await guardedDownload({
+    fromUrl: entry.url, toFile: part, maxBytes: entry.bytes,
+    onProgress: bytesWritten => setGuide(entry.id, { phase: 'downloading', progress: Math.min(1, bytesWritten / entry.bytes) }),
   });
-  jobId = job.jobId;
-  if (tooBig) RNFS.stopDownload(jobId);
-  let statusCode: number;
-  try {
-    ({ statusCode } = await job.promise);
-  } catch {
-    return tooBig ? MISMATCH : OFFLINE;
-  }
-  if (statusCode !== 200) return FAILED;
-  if (tooBig || (await RNFS.stat(part)).size !== entry.bytes) return MISMATCH;
+  if (result === 'too-big') return MISMATCH;
+  if (result === 'failed') return OFFLINE;
+  if (result.statusCode !== 200) return FAILED;
+  if ((await RNFS.stat(part)).size !== entry.bytes) return MISMATCH;
   if ((await RNFS.hash(part, 'sha256')) !== entry.sha256) return MISMATCH;
   return null;
 }
@@ -154,33 +201,31 @@ async function download(id: string): Promise<void> {
   const entry = store.getState().catalogue.guides.find(g => g.id === id);
   if (!entry) return;
   setGuide(id, { phase: 'downloading', progress: 0 });
-  const part = `${guidePath(id)}.part`;
-  let error: string | null;
-  try {
-    // init deletes stale .part files, so it must finish before this download writes one.
-    await init();
-    await RNFS.mkdir(GUIDE_LIBRARY_DIR);
-    error = await fetchChecked(entry, part);
-    if (!error) {
-      await RNFS.moveFile(part, guidePath(id));
-      downloaded = { ...downloaded, [id]: entry };
-      await saveDownloaded();
+  const partName = `${id}.pdf.part`;
+  const part = `${GUIDE_LIBRARY_DIR}/${partName}`;
+  let error: string | null = FAILED;
+  // Without a finished init the saved records are not loaded, and saving now would overwrite them.
+  if (await init()) {
+    inFlightParts.add(partName);
+    try {
+      error = await fetchChecked(entry, part);
+      if (!error) {
+        await replaceFile(part, guidePath(id));
+        downloaded = { ...downloaded, [id]: entry };
+        await saveDownloaded();
+      }
+    } catch (e) {
+      logger.error('[GuideLibrary] download failed', id, e);
+      error = FAILED;
+      // The file may have been moved in before saving failed: without a saved record it must not stay.
+      forget(id);
+      await removeQuietly(guidePath(id));
+    } finally {
+      if (error) await removeQuietly(part);
+      inFlightParts.delete(partName);
     }
-  } catch (e) {
-    logger.error('[GuideLibrary] download failed', id, e);
-    error = FAILED;
-    // The file may have been moved in before saving failed: without a saved record it must not stay.
-    const rest = { ...downloaded };
-    delete rest[id];
-    downloaded = rest;
-    await removeQuietly(guidePath(id));
   }
-  if (error) {
-    await removeQuietly(part);
-    setGuide(id, { phase: 'none', error });
-  } else {
-    setGuide(id, { phase: 'downloaded' });
-  }
+  setGuide(id, error ? { phase: 'none', error } : { phase: 'downloaded' });
 }
 
 /** Open a downloaded guide in the phone's PDF viewer. */
@@ -212,9 +257,7 @@ async function remove(id: string): Promise<void> {
       return;
     }
   }
-  const rest = { ...downloaded };
-  delete rest[id];
-  downloaded = rest;
+  forget(id);
   // If saving fails, the next init drops the entry anyway because its file is gone.
   await saveDownloaded().catch(error => logger.warn('[GuideLibrary] could not save state', error));
   setGuide(id, null);

@@ -7,14 +7,12 @@ import { useTheme, useThemedStyles } from '../theme';
 import { Button } from '../components/Button';
 import { formatBytes } from '../utils/formatBytes';
 import type { Catalogue, GuideCategory, GuideEntry } from '../features/guideLibrary/catalogue';
-import { useGuideLibraryStore, type GuidePhase, type GuideState } from '../features/guideLibrary/guideLibraryStore';
+import { isOnPhone, libraryCounts, useGuideLibraryStore, type GuideState } from '../features/guideLibrary/guideLibraryStore';
 import { guideLibraryService } from '../features/guideLibrary/guideLibraryService';
 import { createStyles } from './GuideLibraryScreen.styles';
 
 type Styles = ReturnType<typeof createStyles>;
 const NONE: GuideState = { phase: 'none' };
-/** Phases in which the guide's file is on the phone. */
-const ON_PHONE: GuidePhase[] = ['downloaded', 'teaching', 'taught'];
 
 interface GuideSection { key: string; category: GuideCategory; data: GuideEntry[] }
 
@@ -32,7 +30,7 @@ interface RowProps { entry: GuideEntry; state: GuideState; expanded: boolean; on
 const GuideRow: React.FC<RowProps> = ({ entry, state, expanded, onToggle, styles }) => {
   const { colors } = useTheme();
   const { id } = entry;
-  const hasFile = ON_PHONE.includes(state.phase);
+  const hasFile = isOnPhone(state);
   return (
     <TouchableOpacity style={styles.row} onPress={onToggle} testID={`guide-row-${id}`}>
       <View style={styles.rowHeader}>
@@ -85,9 +83,7 @@ export const GuideLibraryScreen: React.FC = () => {
   }, []);
 
   const sections = useMemo(() => sectionsFor(catalogue, query), [catalogue, query]);
-  const states = Object.values(guides);
-  const downloaded = states.filter(g => ON_PHONE.includes(g.phase)).length;
-  const taught = states.filter(g => g.phase === 'taught').length;
+  const { onPhone, taught } = useMemo(() => libraryCounts(guides), [guides]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -123,7 +119,7 @@ export const GuideLibraryScreen: React.FC = () => {
               onChangeText={setQuery}
               autoCorrect={false}
             />
-            <Text style={styles.summary}>{`${catalogue.guides.length} guides · ${downloaded} downloaded · ${taught} taught`}</Text>
+            <Text style={styles.summary}>{`${catalogue.guides.length} guides · ${onPhone} downloaded · ${taught} taught`}</Text>
           </>
         }
         renderSectionHeader={({ section }) => <Text style={styles.sectionTitle}>{`${section.category.name} (${section.data.length})`}</Text>}

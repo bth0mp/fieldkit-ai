@@ -18,7 +18,8 @@ jest.mock('@react-navigation/native', () => ({
   useFocusEffect: () => {}, useIsFocused: () => true,
 }));
 
-const DIR = '/docs/guide-library';
+// GUIDE_LIBRARY_DIR as the app computes it on the fake file system (set once the harness is installed).
+let DIR = '';
 const KNOTS_BODY = '%PDF-1.4 test knots guide body';
 const WATER_BODY = '%PDF-1.4 test water guide body, a little longer';
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
@@ -39,13 +40,22 @@ type Fs = NonNullable<Awaited<ReturnType<typeof setupChatScreen>>['boundary']['f
 const exists = (fs: Fs, path: string) => (fs.module.exists as (p: string) => Promise<boolean>)(path);
 const downloadsOf = (fs: Fs, url: string) =>
   (fs.module.downloadFile as jest.Mock).mock.calls.filter(([opts]) => opts.fromUrl === url).length;
+/** The jobId downloadFile returned for the last download of `url`. */
+const jobIdOf = (fs: Fs, url: string) => {
+  const mock = fs.module.downloadFile as jest.Mock;
+  const i = mock.mock.calls.map(([opts]) => opts.fromUrl).lastIndexOf(url);
+  return mock.mock.results[i].value.jobId as number;
+};
+const unlinked = (fs: Fs, path: string) => (fs.module.unlink as jest.Mock).mock.calls.some(([p]) => p === path);
 
 /** Boot the app, let `seed` set up the device, then open the Guide library and wait for its refresh to end. */
-async function openLibrary(seed: (fs: Fs) => void = () => {}) {
+async function openLibrary(seed: (fs: Fs) => void | Promise<void> = () => {}) {
   const h = await setupChatScreen({ engine: 'llama', pdf: true, sqlite: true });
   const { React, rtl, boundary } = h;
   const fs = boundary.fs!;
-  seed(fs);
+  const { GUIDE_LIBRARY_DIR } = require('../../../src/features/guideLibrary/guideLibraryService');
+  DIR = GUIDE_LIBRARY_DIR;
+  await seed(fs);
   const fetchedBeforeOpen = downloadsOf(fs, CATALOGUE_URL);
   const { GuideLibraryScreen } = require('../../../src/screens/GuideLibraryScreen');
   const view = rtl.render(React.createElement(GuideLibraryScreen, {}));
@@ -143,7 +153,7 @@ describe('Guide library (rendered)', () => {
     expect(await exists(fs, `${DIR}/test-knots.pdf.part`)).toBe(false);
   }, 30000);
 
-  it('a download larger than the checked file is stopped and refused', async () => {
+  it('a download that declares more bytes than the checked file is stopped before anything is written', async () => {
     const { rtl, fs, view } = await openLibrary(f => {
       f.seedDownload(CATALOGUE_URL, TEST_CATALOGUE);
       f.seedDownload(KNOTS.url, `${KNOTS_BODY} and a lot more than the catalogue said`);
@@ -151,9 +161,58 @@ describe('Guide library (rendered)', () => {
 
     rtl.fireEvent.press(view.getByTestId('guide-download-test-knots'));
     await rtl.waitFor(() => { expect(view.getByText("This file doesn't match the checked copy")).toBeTruthy(); }, { timeout: 4000 });
-    expect(fs.module.stopDownload).toHaveBeenCalled();
+    expect(fs.module.stopDownload).toHaveBeenCalledTimes(1);
+    expect(fs.module.stopDownload).toHaveBeenCalledWith(jobIdOf(fs, KNOTS.url));
+    // Nothing of the body reached the disk, so there was no part file to clean up.
+    expect(unlinked(fs, `${DIR}/test-knots.pdf.part`)).toBe(false);
     expect(await exists(fs, `${DIR}/test-knots.pdf`)).toBe(false);
     expect(await exists(fs, `${DIR}/test-knots.pdf.part`)).toBe(false);
+  }, 30000);
+
+  it('a download with no declared length that sends more bytes than the checked file is stopped and refused', async () => {
+    const { rtl, fs, view } = await openLibrary(f => {
+      f.seedDownload(CATALOGUE_URL, TEST_CATALOGUE);
+      f.seedDownload(KNOTS.url, { status: 200, body: `${KNOTS_BODY} and a lot more`, contentLength: -1 });
+    });
+
+    rtl.fireEvent.press(view.getByTestId('guide-download-test-knots'));
+    await rtl.waitFor(() => { expect(view.getByText("This file doesn't match the checked copy")).toBeTruthy(); }, { timeout: 4000 });
+    // Stopped from inside the progress callback, once, for this job.
+    expect(fs.module.stopDownload).toHaveBeenCalledTimes(1);
+    expect(fs.module.stopDownload).toHaveBeenCalledWith(jobIdOf(fs, KNOTS.url));
+    expect(await exists(fs, `${DIR}/test-knots.pdf`)).toBe(false);
+    expect(await exists(fs, `${DIR}/test-knots.pdf.part`)).toBe(false);
+  }, 30000);
+
+  it('a fetched catalogue over the size cap is refused', async () => {
+    const { fs, view } = await openLibrary(f => f.seedDownload(CATALOGUE_URL, TEST_CATALOGUE + ' '.repeat(2 * 1024 * 1024)));
+    expect(view.queryByText('Test knots')).toBeNull();
+    expect(view.getByText(new RegExp(`^${bundledCatalogue.guides.length} guides`))).toBeTruthy();
+    expect(fs.module.stopDownload).toHaveBeenCalledWith(jobIdOf(fs, CATALOGUE_URL));
+    expect(await exists(fs, `${DIR}/catalogue.json`)).toBe(false);
+    expect(await exists(fs, `${DIR}/catalogue.json.part`)).toBe(false);
+  }, 30000);
+
+  it('on launch, a saved guide whose file is there opens and one whose file is gone is forgotten', async () => {
+    const AsyncStorage = () => {
+      const m = require('@react-native-async-storage/async-storage');
+      return m.default ?? m;
+    };
+    const { fs, view } = await openLibrary(async f => {
+      f.seedDownload(CATALOGUE_URL, TEST_CATALOGUE);
+      f.seedFile(`${DIR}/test-knots.pdf`, KNOTS.bytes);
+      // test-water's file is gone; a record whose id is not a catalogue id must never name a file.
+      await AsyncStorage().setItem('@fieldkit/guide_library', JSON.stringify({
+        downloaded: { 'test-knots': KNOTS, 'test-water': WATER, '../escape': { ...KNOTS, id: '../escape' } },
+      }));
+    });
+
+    expect(view.getByTestId('guide-open-test-knots')).toBeTruthy();
+    expect(view.getByTestId('guide-download-test-water')).toBeTruthy();
+    expect(view.getByText('2 guides · 1 downloaded · 0 taught')).toBeTruthy();
+    const saved = JSON.parse(await AsyncStorage().getItem('@fieldkit/guide_library'));
+    expect(Object.keys(saved.downloaded)).toEqual(['test-knots']);
+    expect((fs.module.exists as jest.Mock).mock.calls.some(([p]) => String(p).includes('escape'))).toBe(false);
   }, 30000);
 
   it('a download cut off part-way leaves nothing behind and can be retried', async () => {

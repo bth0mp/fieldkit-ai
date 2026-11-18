@@ -765,8 +765,15 @@ export const MB = 1024 * 1024;
 // so it never perturbs tests that don't touch the filesystem.
 // ---------------------------------------------------------------------------
 
-/** A string or { status, body } is written to toFile and resolves; { failAfter } writes that partial text, then rejects. */
-type DownloadResponse = string | { status: number; body?: string } | { failAfter: string };
+/** A string or { status, body } is written to toFile and resolves; { failAfter } writes that partial text, then rejects.
+ *  `contentLength` is the length the server declares (default: the body's real length; -1 for none). */
+type DownloadResponse = string | { status: number; body?: string; contentLength?: number } | { failAfter: string };
+type DownloadProgress = { jobId: number; bytesWritten: number; contentLength: number };
+type DownloadBegin = { jobId: number; statusCode: number; contentLength: number; headers: Record<string, string> };
+interface DownloadOptions {
+  fromUrl: string; toFile: string;
+  begin?: (r: DownloadBegin) => void; progress?: (r: DownloadProgress) => void;
+}
 
 export interface FsFake {
   module: Record<string, unknown>;
@@ -814,9 +821,15 @@ function makeFsFake(): FsFake {
   // What each URL serves to downloadFile. Unseeded URLs fail like a device with no connection.
   const downloads = new Map<string, DownloadResponse>();
   const seedDownload = (url: string, response: DownloadResponse) => { downloads.set(url, response); };
-  const runDownload = async (opts: {
-    fromUrl: string; toFile: string; progress?: (r: { bytesWritten: number; contentLength: number }) => void;
-  }) => {
+  // Like react-native-fs: downloadFile returns { jobId, promise } at once and the native side calls begin and
+  // progress later; stopDownload(jobId) rejects that job's promise and stops any further writes.
+  let lastJobId = 0;
+  const stopped = new Set<number>();
+  const later = () => new Promise<void>(resolve => setImmediate(resolve));
+  const abortIfStopped = (jobId: number) => { if (stopped.has(jobId)) throw new Error('Download has been aborted'); };
+  const runDownload = async (jobId: number, opts: DownloadOptions) => {
+    await later();
+    abortIfStopped(jobId);
     const served = downloads.get(opts.fromUrl);
     if (served === undefined) throw new Error('Network request failed');
     const to = norm(opts.toFile);
@@ -827,10 +840,16 @@ function makeFsFake(): FsFake {
     }
     const statusCode = typeof served === 'string' ? 200 : served.status;
     const body = typeof served === 'string' ? served : (served.body ?? '');
-    vol.writeFileSync(to, body);
     const bytesWritten = Buffer.byteLength(body);
-    opts.progress?.({ bytesWritten, contentLength: bytesWritten });
-    return { statusCode, bytesWritten };
+    const contentLength = typeof served === 'string' ? bytesWritten : (served.contentLength ?? bytesWritten);
+    opts.begin?.({ jobId, statusCode, contentLength, headers: {} });
+    await later();
+    abortIfStopped(jobId);
+    vol.writeFileSync(to, body);
+    opts.progress?.({ jobId, bytesWritten, contentLength });
+    await later();
+    abortIfStopped(jobId);
+    return { jobId, statusCode, bytesWritten };
   };
 
   const module: Record<string, unknown> = {
@@ -859,10 +878,11 @@ function makeFsFake(): FsFake {
     copyFileAssets: jest.fn(async (from: string, to: string) => { vol.copyFileSync(`${ASSETS}/${from}`, norm(to)); }),
     hash: jest.fn(async (p: string, algorithm: string) =>
       require('crypto').createHash(algorithm).update(vol.readFileSync(norm(p))).digest('hex')),
-    downloadFile: jest.fn((opts: {
-      fromUrl: string; toFile: string; progress?: (r: { bytesWritten: number; contentLength: number }) => void;
-    }) => ({ jobId: 1, promise: runDownload(opts) })),
-    stopDownload: jest.fn(),
+    downloadFile: jest.fn((opts: DownloadOptions) => {
+      lastJobId += 1;
+      return { jobId: lastJobId, promise: runDownload(lastJobId, opts) };
+    }),
+    stopDownload: jest.fn((jobId: number) => { stopped.add(jobId); }),
   };
   return { module, seedFile, seedDir, seedAsset, seedDownload, DocumentDirectoryPath };
 }

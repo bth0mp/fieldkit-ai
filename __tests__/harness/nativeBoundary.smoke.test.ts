@@ -57,9 +57,10 @@ describe('nativeBoundary harness — injection mechanism', () => {
 
   describe('scripted downloads on the file-system fake', () => {
     type Rnfs = {
-      downloadFile(o: { fromUrl: string; toFile: string; progress?: (p: unknown) => void }): {
-        promise: Promise<{ statusCode: number; bytesWritten: number }>;
-      };
+      downloadFile(o: {
+        fromUrl: string; toFile: string; begin?: (b: { jobId: number; contentLength: number }) => void; progress?: (p: unknown) => void;
+      }): { jobId: number; promise: Promise<{ jobId: number; statusCode: number; bytesWritten: number }> };
+      stopDownload(jobId: number): void;
       readFile(p: string): Promise<string>;
       exists(p: string): Promise<boolean>;
       hash(p: string, algo: string): Promise<string>;
@@ -73,11 +74,17 @@ describe('nativeBoundary harness — injection mechanism', () => {
     it('writes a seeded body to toFile, reports progress, resolves 200 and hashes for real', async () => {
       const { fs, rnfs } = setup();
       fs.seedDownload('https://x.test/a.pdf', 'pdf body');
+      const begin = jest.fn();
       const progress = jest.fn();
-      const res = await rnfs.downloadFile({ fromUrl: 'https://x.test/a.pdf', toFile: '/docs/a.pdf', progress }).promise;
-      expect(res).toEqual({ statusCode: 200, bytesWritten: 8 });
+      const job = rnfs.downloadFile({ fromUrl: 'https://x.test/a.pdf', toFile: '/docs/a.pdf', begin, progress });
+      // Like the native module, nothing is reported before downloadFile has returned the job.
+      expect(begin).not.toHaveBeenCalled();
+      expect(progress).not.toHaveBeenCalled();
+      const res = await job.promise;
+      expect(res).toEqual({ jobId: job.jobId, statusCode: 200, bytesWritten: 8 });
+      expect(begin).toHaveBeenCalledWith({ jobId: job.jobId, statusCode: 200, contentLength: 8, headers: {} });
       expect(progress).toHaveBeenCalledTimes(1);
-      expect(progress).toHaveBeenCalledWith({ bytesWritten: 8, contentLength: 8 });
+      expect(progress).toHaveBeenCalledWith({ jobId: job.jobId, bytesWritten: 8, contentLength: 8 });
       expect(await rnfs.readFile('/docs/a.pdf')).toBe('pdf body');
       expect(await rnfs.hash('/docs/a.pdf', 'sha256')).toBe(sha256('pdf body'));
     });
@@ -99,6 +106,31 @@ describe('nativeBoundary harness — injection mechanism', () => {
       await expect(rnfs.downloadFile({ fromUrl: 'https://x.test/a.pdf', toFile: '/docs/a.pdf' }).promise)
         .rejects.toThrow('Network request failed');
       expect(await rnfs.readFile('/docs/a.pdf')).toBe('par');
+    });
+
+    it('gives each job its own id; stopDownload in begin rejects that job and writes nothing', async () => {
+      const { fs, rnfs } = setup();
+      fs.seedDownload('https://x.test/a.pdf', 'pdf body');
+      const first = rnfs.downloadFile({ fromUrl: 'https://x.test/a.pdf', toFile: '/docs/first.pdf' });
+      const second = rnfs.downloadFile({
+        fromUrl: 'https://x.test/a.pdf', toFile: '/docs/second.pdf', begin: ({ jobId }) => rnfs.stopDownload(jobId),
+      });
+      expect(second.jobId).not.toBe(first.jobId);
+      await expect(second.promise).rejects.toThrow('Download has been aborted');
+      expect(await rnfs.exists('/docs/second.pdf')).toBe(false);
+      await expect(first.promise).resolves.toMatchObject({ statusCode: 200 });
+    });
+
+    it('stopDownload in progress rejects the job after the bytes so far were written', async () => {
+      const { fs, rnfs } = setup();
+      fs.seedDownload('https://x.test/a.pdf', { status: 200, body: 'pdf body', contentLength: -1 });
+      const begin = jest.fn();
+      const job = rnfs.downloadFile({
+        fromUrl: 'https://x.test/a.pdf', toFile: '/docs/a.pdf', begin, progress: () => rnfs.stopDownload(job.jobId),
+      });
+      await expect(job.promise).rejects.toThrow('Download has been aborted');
+      expect(begin).toHaveBeenCalledWith(expect.objectContaining({ contentLength: -1 }));
+      expect(await rnfs.readFile('/docs/a.pdf')).toBe('pdf body');
     });
 
     it('rejects an unseeded url and leaves no file', async () => {

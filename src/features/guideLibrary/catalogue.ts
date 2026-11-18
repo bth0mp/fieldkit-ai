@@ -36,10 +36,12 @@ type Obj = Record<string, unknown>;
 
 const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !Array.isArray(v);
 const isText = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
+/** True for a catalogue id: lowercase letters, digits and dashes, so it is safe as part of a file name. */
+export const isCatalogueId = (v: unknown): v is string => typeof v === 'string' && ID_PATTERN.test(v);
 const isPositiveInt = (v: unknown): v is number => Number.isInteger(v) && (v as number) > 0;
 
 function parseCategory(raw: unknown): GuideCategory | null {
-  if (!isObj(raw) || typeof raw.id !== 'string' || !ID_PATTERN.test(raw.id) || !isText(raw.name)) return null;
+  if (!isObj(raw) || !isCatalogueId(raw.id) || !isText(raw.name)) return null;
   return { id: raw.id, name: raw.name };
 }
 
@@ -47,7 +49,7 @@ function parseGuide(raw: unknown, categoryIds: Set<string>): GuideEntry | null {
   if (!isObj(raw)) return null;
   const { id, title, category, publisher, year, licence, licenceNote, url, bytes, sha256, pages, hasText } = raw;
   const valid =
-    typeof id === 'string' && ID_PATTERN.test(id) &&
+    isCatalogueId(id) &&
     isText(title) && isText(publisher) && isText(licence) && isText(licenceNote) &&
     typeof category === 'string' && categoryIds.has(category) &&
     Number.isInteger(year) &&
