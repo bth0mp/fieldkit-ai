@@ -58,6 +58,20 @@
       "hasText": true
     },
     {
+      "id": "usfs-mtdc-1051-2316p-heat-illness-basics",
+      "title": "Heat Illness Basics for Wildland Firefighters",
+      "category": "medical",
+      "publisher": "US Forest Service",
+      "year": 2010,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105); the proof rests on staff authorship. Tech Tip 1051-2316P-MTDC, June 2010, is published under the USDA Forest Service Technology and Development Program name and written by Joe Domitrovich and Brian Sharkey, Project Leaders. About the Authors (page 8) describes each as 'an exercise physiologist at MTDC', the Forest Service Missoula Technology and Development Center. No outside author, contractor, photographer, illustrator or university is credited, nobody outside the agency is thanked, and there is no copyright notice. The document prints no public-domain statement of its own.",
+      "url": "https://www.fs.usda.gov/t-d/pubs/pdfpubs/pdf10512316/pdf10512316dpi300.pdf",
+      "bytes": 2730152,
+      "sha256": "4503b5ae24bc5ffc4ee3840527c4629a3f0c91958abb7edfd2d79fa61718ff68",
+      "pages": 8,
+      "hasText": true
+    },
+    {
       "id": "army-tb-med-507",
       "title": "Heat Stress Control and Heat Casualty Management",
       "category": "medical",
@@ -86,6 +100,48 @@
       "hasText": true
     },
     {
+      "id": "usda-nrcs-650-ch11-ponds-and-reservoirs",
+      "title": "Engineering Field Handbook, Chapter 11: Ponds and Reservoirs",
+      "category": "water",
+      "publisher": "USDA",
+      "year": 2021,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105); proof rests on staff authorship. Chapter 11 of the NRCS Engineering Field Handbook (210-650-H, 2nd Ed., Feb 2021) is issued by USDA NRCS alone; its Acknowledgements (650.1125, page 650-11.97) say it was prepared by USDA NRCS, originally compiled by an SCS engineer, and revised by a committee of NRCS staff. Figure sources it names are USDA publications. No outside author, photographer, illustrator or other owner is credited and there is no copyright notice. The document prints no public-domain statement of its own.",
+      "url": "https://directives.nrcs.usda.gov/sites/default/files2/1712930891/31804.pdf",
+      "bytes": 10169341,
+      "sha256": "6e4876aefda2ac2038da0196dcb1c61770c9cc253b1eeb603fed29e8671bb747",
+      "pages": 106,
+      "hasText": false
+    },
+    {
+      "id": "usda-nrcs-650-ch12-springs-and-wells",
+      "title": "Engineering Field Handbook, Chapter 12: Springs and Wells",
+      "category": "water",
+      "publisher": "USDA",
+      "year": 2021,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105); proof rests on staff authorship. Chapter 12 of the NRCS Engineering Field Handbook (210-650-H, 2nd Ed., Feb 2021) is issued by USDA NRCS alone. It names no individual authors and has no acknowledgments section; it credits no outside author, photographer, illustrator or other owner anywhere and carries no copyright notice. Map figures are attributed in the text to the US Geological Survey. The document prints no public-domain statement of its own.",
+      "url": "https://directives.nrcs.usda.gov/sites/default/files2/1712930899/31759.pdf",
+      "bytes": 7886032,
+      "sha256": "1673e9ece5acf3fae426308240c2dc6720bdc0ff792963a8a20fbe12d3a2d92b",
+      "pages": 57,
+      "hasText": true
+    },
+    {
+      "id": "usda-nrcs-650-ch09-diversions",
+      "title": "Engineering Field Handbook, Chapter 9: Diversions",
+      "category": "water",
+      "publisher": "USDA",
+      "year": 2021,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105); proof rests on staff authorship. Chapter 9 of the NRCS Engineering Field Handbook (210-650-H, 2nd Ed., Feb 2021) is issued by USDA NRCS alone; its Acknowledgments (950.0907, printed page 630-9.24) name NRCS engineers, a retired USDA Agricultural Research Service engineer, and an NRCS editor and NRCS illustrator. No outside author, photographer, illustrator or other owner is credited and there is no copyright notice. The document prints no public-domain statement of its own.",
+      "url": "https://directives.nrcs.usda.gov/sites/default/files2/1712930876/31785.pdf",
+      "bytes": 2386208,
+      "sha256": "e26b37cdd984964d045a69dd5de3fcdbf5a0008901c7d2e90b68245cfa9d13d6",
+      "pages": 31,
+      "hasText": true
+    },
+    {
       "id": "army-tb-med-593",
       "title": "Guidelines for Field Waste Management",
       "category": "water",
@@ -100,6 +156,20 @@
       "hasText": true
     },
     {
+      "id": "usda-nrcs-ah-590-ponds",
+      "title": "Ponds: Planning, Design, Construction",
+      "category": "water",
+      "publisher": "USDA",
+      "year": 1997,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105); proof rests on staff authorship. Agriculture Handbook 590 (issued June 1982, revised November 1997) is published by USDA Natural Resources Conservation Service alone; its Acknowledgments (page ii) name only NRCS engineers, landscape architects, editors and an NRCS illustrator, and its reprinted material is credited to an NRCS (SCS) note. No outside author, photographer, illustrator or other owner is credited and there is no copyright notice. The document prints no public-domain statement of its own. Copy served by govinfo.gov (GPO).",
+      "url": "https://www.govinfo.gov/content/pkg/GOVPUB-A-PURL-LPS102909/pdf/GOVPUB-A-PURL-LPS102909.pdf",
+      "bytes": 1915522,
+      "sha256": "6f25287c5d52959daffe2d75f2cb6755089eb1e4fb5738a3082a29d497de3739",
+      "pages": 96,
+      "hasText": true
+    },
+    {
       "id": "army-atp-4-25-12",
       "title": "Unit Field Sanitation Teams",
       "category": "water",
@@ -111,6 +181,20 @@
       "bytes": 5049825,
       "sha256": "2f51ec9f16984bd9a780cf14abd4d304d3e7f220f1f8e2a148eb360dff0b3f04",
       "pages": 174,
+      "hasText": true
+    },
+    {
+      "id": "usfs-sdtdc-0523-1301-vitamin-c-to-neutralize-chlorine",
+      "title": "Using Vitamin C To Neutralize Chlorine in Water Systems",
+      "category": "water",
+      "publisher": "US Forest Service",
+      "year": 2005,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105); the proof rests on staff authorship. Tech Tip 0523 1301-SDTDC, April 2005, is published under the USDA Forest Service Technology and Development Program name and written by Brenda Land, Sanitary Engineer, Project Leader at the Forest Service San Dimas Technology and Development Center (page 1; contact details at SDTDC with an fs.fed.us address on page 4). The text says the SDTDC project leader ran the experiment it reports. No outside author, photographer, illustrator, university or company is credited, and there is no copyright notice. The document prints no public-domain statement of its own.",
+      "url": "https://www.fs.usda.gov/t-d/pubs/pdf/05231301.pdf",
+      "bytes": 275394,
+      "sha256": "9c7c23a24e0e17d2e57193bfd5ee06a9d3c01520ed5b0da57b174c8b150d43fa",
+      "pages": 4,
       "hasText": true
     },
     {
@@ -198,6 +282,20 @@
       "hasText": true
     },
     {
+      "id": "army-tc-9-60",
+      "title": "Communications-Electronics Fundamentals: Basic Principles of Alternating Current and Direct Current",
+      "category": "power",
+      "publisher": "US Army",
+      "year": 2004,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105). TC 9-60, cover (page 1): 'DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited.' Headquarters, Department of the Army, 30 August 2004.",
+      "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tc9_60.pdf",
+      "bytes": 6004528,
+      "sha256": "2b5783159f6057a361ddc30db88dd7ec92d17609380f825635da90ab9f2be3be",
+      "pages": 266,
+      "hasText": true
+    },
+    {
       "id": "army-tc-9-62",
       "title": "Communications-Electronics Fundamentals: Solid State Devices and Solid State Power Supplies and Amplifiers",
       "category": "power",
@@ -240,6 +338,20 @@
       "hasText": true
     },
     {
+      "id": "navy-neets-module-04",
+      "title": "NEETS Module 04: Introduction to Electrical Conductors, Wiring Techniques, and Schematic Reading",
+      "category": "power",
+      "publisher": "US Navy",
+      "year": 1998,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14176 (NEETS Module 4), September 1998, cover and title page: Distribution Statement A, approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; an identical copy is at lifeboat.com. No official or institutional copy was found. The licence rests on the release statement printed in the document.",
+      "url": "https://legacy.maritime.org/doc/neets/mod04.pdf",
+      "bytes": 1568011,
+      "sha256": "dd39eb37233c1a4048feff49f08b31f8e4c30c10be22b04c92163bb4c7ca4c6b",
+      "pages": 316,
+      "hasText": false
+    },
+    {
       "id": "navy-neets-module-05",
       "title": "NEETS Module 05: Introduction to Generators and Motors",
       "category": "power",
@@ -252,6 +364,20 @@
       "sha256": "4d1b5ac216fc8b32140e7d1bfb7ee875f0045c9e09a9fdd0cff7f8e5edcf09ba",
       "pages": 120,
       "hasText": true
+    },
+    {
+      "id": "navy-neets-module-07",
+      "title": "NEETS Module 07: Introduction to Solid-State Devices and Power Supplies",
+      "category": "power",
+      "publisher": "US Navy",
+      "year": 1998,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14179 (NEETS Module 7), September 1998, cover and title page: Distribution Statement A, approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; an identical copy is at lifeboat.com. No official or institutional copy was found. The licence rests on the release statement printed in the document.",
+      "url": "https://legacy.maritime.org/doc/neets/mod07.pdf",
+      "bytes": 2530628,
+      "sha256": "0d8d27c4d11c526912f9fb936257203728f459f7eda0da7b98b3cbaba02438a0",
+      "pages": 502,
+      "hasText": false
     },
     {
       "id": "army-stp-9-91d13-sm-tg",
@@ -422,6 +548,48 @@
       "hasText": true
     },
     {
+      "id": "navy-neets-module-11",
+      "title": "NEETS Module 11: Microwave Principles",
+      "category": "radio",
+      "publisher": "US Navy",
+      "year": 1998,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14183 (NEETS Module 11), September 1998, cover and title page: Distribution Statement A, approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; an identical copy is at lifeboat.com. No official or institutional copy was found. The licence rests on the release statement printed in the document.",
+      "url": "https://legacy.maritime.org/doc/neets/mod11.pdf",
+      "bytes": 4493836,
+      "sha256": "32d079d372cc14a778c03436e3536c73e0bf3228829e5acfa691115bc62cef63",
+      "pages": 275,
+      "hasText": false
+    },
+    {
+      "id": "navy-neets-module-12",
+      "title": "NEETS Module 12: Modulation Principles",
+      "category": "radio",
+      "publisher": "US Navy",
+      "year": 1998,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14184 (NEETS Module 12), September 1998, cover and title page: Distribution Statement A, approved for public release; distribution is unlimited. Copy uploaded to legacy.maritime.org by a member of the public; an identical copy is at lifeboat.com. No official or institutional copy was found. The licence rests on the release statement printed in the document.",
+      "url": "https://legacy.maritime.org/doc/neets/mod12.pdf",
+      "bytes": 1739811,
+      "sha256": "3cbefc20da81f3cfd6283fff5fc205535ad3939a9598733486a2823034eb1421",
+      "pages": 232,
+      "hasText": false
+    },
+    {
+      "id": "army-tc-9-524",
+      "title": "Fundamentals of Machine Tools",
+      "category": "mechanical",
+      "publisher": "US Army",
+      "year": 1996,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105). TC 9-524, October 1996, front cover (page 1): distribution statement printed in the document: approved for public release; distribution is unlimited.",
+      "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tc9_524.pdf",
+      "bytes": 7006162,
+      "sha256": "d157c2709df54bc600dc03bb9379a2da3deb8e9d94e5d28a88a73ae6fa204ef9",
+      "pages": 312,
+      "hasText": false
+    },
+    {
       "id": "army-atp-4-31",
       "title": "Ground Equipment Battle Damage Assessment, Repair, and Recovery",
       "category": "mechanical",
@@ -464,6 +632,20 @@
       "hasText": true
     },
     {
+      "id": "army-tm-5-642",
+      "title": "Operation and Maintenance Small Heating Systems",
+      "category": "mechanical",
+      "publisher": "US Army",
+      "year": 1990,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105). TM 5-642, August 1990, 'Reproduction Authorization/Restrictions' page inside the cover: 'This manual has been prepared by or for the Government and is public property and not subject to copyright.' The same page asks that reprints carry a credit line naming the manual. The manual prints no distribution statement; the no-copyright statement, which makes no exceptions, is the proof.",
+      "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tm5_642.pdf",
+      "bytes": 37495378,
+      "sha256": "125d7fcfbe414bcb45b0772dae39f7b3cb24f533b1cf8d7273ed3c2e53bd906b",
+      "pages": 159,
+      "hasText": true
+    },
+    {
       "id": "army-tm-3-34-86",
       "title": "Rigging Techniques, Procedures, and Applications",
       "category": "mechanical",
@@ -492,6 +674,20 @@
       "hasText": true
     },
     {
+      "id": "army-tc-9-237",
+      "title": "Welding Theory and Application",
+      "category": "mechanical",
+      "publisher": "US Army",
+      "year": 1993,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105). TC 9-237, May 1993, front cover (page 1); the same statement is repeated on page 2: distribution statement printed in the document: approved for public release; distribution is unlimited.",
+      "url": "https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tc9_237.pdf",
+      "bytes": 14371965,
+      "sha256": "065fdf7f0b4439f3da7985bd3a18af0ca8ad8e7d4a26d426e0fd535c951ebf88",
+      "pages": 782,
+      "hasText": false
+    },
+    {
       "id": "nwcg-pms-212-chainsaw-operations",
       "title": "Wildland Fire Chainsaw Operations Standards",
       "category": "mechanical",
@@ -506,6 +702,20 @@
       "hasText": true
     },
     {
+      "id": "nwcg-pms-461-incident-response-pocket-guide",
+      "title": "Incident Response Pocket Guide (IRPG)",
+      "category": "disasters",
+      "publisher": "NWCG",
+      "year": 2025,
+      "licence": "Public domain",
+      "licenceNote": "Public-domain statement printed in the document, page 122 of 122 (PDF page 138): 'Publications and training materials produced by the National Wildfire Coordinating Group (NWCG) are in the public domain. Use of public domain information, including copying, is permitted.' The same page says the guide is developed and maintained by the NWCG Incident Operations Subcommittee; no outside author, photographer, illustrator, university or company is credited and there is no copyright notice. Cover: PMS 461, January 2025. Hosted on NWCG's official file store.",
+      "url": "https://fs-prod-nwcg.s3.us-gov-west-1.amazonaws.com/s3fs-public/publication/pms461.pdf",
+      "bytes": 3045707,
+      "sha256": "fe37094a3a7ceb8722cfe49f340757951a76d1122a316892608da2de74f3a92a",
+      "pages": 140,
+      "hasText": true
+    },
+    {
       "id": "usgs-fs-071-00-landslide-hazards",
       "title": "Landslide Hazards",
       "category": "disasters",
@@ -517,6 +727,48 @@
       "bytes": 553380,
       "sha256": "89b20fa8c9c2ed76648229c2b7314851d164d163c1c28da3c79c00c41c72c9c4",
       "pages": 2,
+      "hasText": true
+    },
+    {
+      "id": "usda-nrcs-650-ch10-gully-treatment",
+      "title": "Engineering Field Handbook, Chapter 10: Gully Treatment",
+      "category": "farming",
+      "publisher": "USDA",
+      "year": 2021,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105); proof rests on staff authorship. Chapter 10 of the NRCS Engineering Field Handbook (cover: 210-650-10, 2020 Ed., Feb 2021) is issued by USDA NRCS alone; its Acknowledgments (650.1008, page 650-10.24) name only NRCS engineers as authors and only NRCS staff as contributors and reviewers. No outside author, photographer, illustrator or other owner is credited and there is no copyright notice. The document prints no public-domain statement of its own.",
+      "url": "https://directives.nrcs.usda.gov/sites/default/files2/1712930882/31786.pdf",
+      "bytes": 4315071,
+      "sha256": "9157f01140332f8aafe758db875643294a163cc36d968d01f054ac36ce205f80",
+      "pages": 28,
+      "hasText": true
+    },
+    {
+      "id": "usda-nrcs-650-ch15-irrigation",
+      "title": "Engineering Field Handbook, Chapter 15: Irrigation",
+      "category": "farming",
+      "publisher": "USDA",
+      "year": 2021,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105); proof rests on staff authorship. Chapter 15 of the NRCS Engineering Field Handbook (210-650-H 2nd Ed., Feb 2021) is issued by USDA NRCS alone. It names no individual authors and has no acknowledgments section; it credits no outside author, photographer, illustrator or other owner anywhere and carries no copyright notice. The document prints no public-domain statement of its own.",
+      "url": "https://directives.nrcs.usda.gov/sites/default/files2/1712930921/31803.pdf",
+      "bytes": 2828963,
+      "sha256": "669a295b850be19b59d8320aada9931c21394aea982788bf600bf7764256e7c4",
+      "pages": 70,
+      "hasText": true
+    },
+    {
+      "id": "usda-nrcs-650-ch08-terraces",
+      "title": "Engineering Field Handbook, Chapter 8: Terraces",
+      "category": "farming",
+      "publisher": "USDA",
+      "year": 2021,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105); proof rests on staff authorship. Chapter 8 of the NRCS Engineering Field Handbook (210-650-H, 2nd Ed., Feb 2021) is issued by USDA NRCS alone; its Acknowledgments (650.0816, page 650-8.64) say it was prepared by NRCS and name only NRCS engineers as writer and reviewers. No outside author, photographer, illustrator or other owner is credited anywhere and there is no copyright notice. The document prints no public-domain statement of its own.",
+      "url": "https://directives.nrcs.usda.gov/sites/default/files2/1712930870/31758.pdf",
+      "bytes": 10617223,
+      "sha256": "36b46b08b0fbccfb840766634efca4f7b3ddb3d3ff6551b7c65688dc06cd4f62",
+      "pages": 102,
       "hasText": true
     }
   ]
