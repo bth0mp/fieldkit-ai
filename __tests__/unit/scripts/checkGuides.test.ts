@@ -2,7 +2,37 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
-const { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem } = require('../../../scripts/check-guides.js');
+const { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem, thirdPartyMentions } = require('../../../scripts/check-guides.js');
+
+describe('thirdPartyMentions', () => {
+  it('finds a permission notice for supplied figures', () => {
+    const out = thirdPartyMentions('Figures 5-22 through 5-38 were provided by Huntron Instruments, Inc. Permission to reproduce these illustrations must be obtained from the source.');
+    expect(out).toHaveLength(1);
+    expect(out[0]).toContain('Permission to reproduce');
+  });
+
+  it('finds courtesy, copyright sign and a bare CREDITS heading', () => {
+    expect(thirdPartyMentions('Figure 3. Courtesy of Tektronix')).toHaveLength(1);
+    expect(thirdPartyMentions('page text\n© 2004 Someone\nmore')).toHaveLength(1);
+    expect(thirdPartyMentions('intro text\nCREDITS\nHuntron')).toHaveLength(1);
+  });
+
+  it('finds acknowledgments in either spelling', () => {
+    expect(thirdPartyMentions('Acknowledgements')).toHaveLength(1);
+    expect(thirdPartyMentions('Acknowledgment')).toHaveLength(1);
+  });
+
+  it('finds nothing in a release statement or ordinary prose', () => {
+    expect(thirdPartyMentions('Approved for public release; distribution is unlimited.')).toEqual([]);
+    expect(thirdPartyMentions('The card is preprinted with your name.')).toEqual([]);
+    expect(thirdPartyMentions('You may permit the copy to dry. The credits of the course are listed in a table; do not copy it.')).toEqual([]);
+  });
+
+  it('returns at most five snippets', () => {
+    const text = Array.from({ length: 9 }, (_, i) => `${'x'.repeat(200)} courtesy of party ${i}`).join('\n');
+    expect(thirdPartyMentions(text)).toHaveLength(5);
+  });
+});
 
 describe('needsMirror', () => {
   it.each([
@@ -96,7 +126,7 @@ describe('redirect hops', () => {
 describe('shapeEntries', () => {
   const entry = (id: string, category: string, title: string) => ({
     id, title, category, publisher: 'p', year: 2020, licence: 'l', licenceNote: 'n', url: 'https://a.gov/x.pdf',
-    bytes: 1, sha256: 'a'.repeat(64), pages: 1, hasText: true, statementSeen: true, evidence: 'e', approxBytes: 5, mirrors: ['https://b.org/x.pdf'],
+    bytes: 1, sha256: 'a'.repeat(64), pages: 1, hasText: true, statementSeen: true, evidence: 'e', approxBytes: 5, mirrors: ['https://b.org/x.pdf'], creditsReviewed: true, creditsNote: 'n',
   });
 
   it('strips helper fields and sorts by category order, then title', () => {
@@ -107,6 +137,8 @@ describe('shapeEntries', () => {
       expect(g).not.toHaveProperty('evidence');
       expect(g).not.toHaveProperty('approxBytes');
       expect(g).not.toHaveProperty('mirrors');
+      expect(g).not.toHaveProperty('creditsReviewed');
+      expect(g).not.toHaveProperty('creditsNote');
       expect(Object.keys(g)).toHaveLength(12);
     }
   });

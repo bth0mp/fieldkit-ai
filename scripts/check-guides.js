@@ -145,7 +145,7 @@ function readTextLayer(file) {
   const parts = pdfText(file).split('\f');
   const head = parts.slice(0, TEXT_PAGES).join('\f');
   const hasText = head.replace(/\s/g, '').length >= MIN_TEXT_CHARS;
-  return { pages: parts.length - 1, hasText, head };
+  return { pages: parts.length - 1, hasText, head, text: parts.join('\f') };
 }
 
 /** Why a candidate's "approved for public release" claim cannot be accepted, or null if it can (or none is made). */
@@ -153,6 +153,36 @@ function releaseStatementProblem(candidate, headText, hasText) {
   if (!hasReleaseStatement(candidate.licenceNote)) return null;
   if (!hasText) return candidate.statementSeen === true ? null : 'scanned, statement must be confirmed by eye';
   return hasReleaseStatement(headText) ? null : 'release statement not found in the document';
+}
+
+const THIRD_PARTY_PATTERN = new RegExp([
+  'copyright', '©', 'all rights reserved', 'courtesy of', 'by permission', 'permission to reproduce', 'permission of',
+  '\\breprinted (?:from|with)', '\\breproduced (?:from|with|by)', '^[ \\t]*credits[ \\t]*$', 'acknowledg(?:e)?ments?',
+].join('|'), 'gim');
+const SNIPPET_RADIUS = 60;
+const MAX_SNIPPETS = 5;
+
+/** Up to five short snippets around wording that suggests third-party material, searched in the whole text. */
+function thirdPartyMentions(text) {
+  const pattern = new RegExp(THIRD_PARTY_PATTERN.source, THIRD_PARTY_PATTERN.flags);
+  const snippets = [];
+  let match;
+  while (snippets.length < MAX_SNIPPETS && (match = pattern.exec(text)) !== null) {
+    const raw = text.slice(Math.max(0, match.index - SNIPPET_RADIUS), match.index + match[0].length + SNIPPET_RADIUS);
+    snippets.push(raw.replace(/\s+/g, ' ').trim());
+    pattern.lastIndex = match.index + match[0].length + SNIPPET_RADIUS;
+  }
+  return snippets;
+}
+
+const quoted = s => `"${s}"`;
+
+/** Why a document with third-party wording cannot be accepted without review, or null. */
+function thirdPartyProblem(record, text) {
+  if (record && record.creditsReviewed === true) return null;
+  const snippets = thirdPartyMentions(text);
+  if (!snippets.length) return null;
+  return `third-party material mentioned, review needed: ${snippets.map(quoted).join(' | ')}`;
 }
 
 /** Strips helper fields, sorts by category order then title. */
@@ -251,6 +281,8 @@ function measureCandidate(candidate) {
     validateMeasured(measured, layer);
     const problem = releaseStatementProblem(candidate, layer.head, layer.hasText);
     if (problem) throw new Error(problem);
+    const creditsProblem = thirdPartyProblem(candidate, layer.text);
+    if (creditsProblem) throw new Error(creditsProblem);
     return { ...candidate, ...measured, pages: layer.pages, hasText: layer.hasText };
   });
 }
@@ -288,10 +320,32 @@ async function addCandidates() {
   return 0;
 }
 
-async function verifyPrimary(guide) {
-  const actual = await withDownload(guide.url, describePdf);
-  if (actual.bytes !== guide.bytes) throw new Error(`size changed (${guide.bytes} -> ${actual.bytes})`);
-  if (actual.sha256 !== guide.sha256) throw new Error('sha256 changed');
+/** Re-downloads the primary: size, hash and the third-party scan. Returns the problems found (empty if none). */
+function verifyPrimary(guide, record) {
+  return withDownload(guide.url, async file => {
+    const problems = [];
+    const actual = await describePdf(file);
+    if (actual.bytes !== guide.bytes) problems.push(`size changed (${guide.bytes} -> ${actual.bytes})`);
+    if (actual.sha256 !== guide.sha256) problems.push('sha256 changed');
+    try {
+      const problem = thirdPartyProblem(record, pdfText(file));
+      if (problem) problems.push(problem);
+    } catch (err) {
+      problems.push(err.message);
+    }
+    return problems;
+  });
+}
+
+/** Parses `--only a,b` and checks every id exists in the catalogue. Returns null when not given. */
+function onlyIds(argv, guides) {
+  const at = argv.indexOf('--only');
+  if (at < 0) return null;
+  const ids = (argv[at + 1] || '').split(',').filter(Boolean);
+  if (!ids.length) throw new Error('--only needs a comma-separated list of ids');
+  const unknown = ids.filter(id => !guides.some(g => g.id === id));
+  if (unknown.length) throw new Error(`unknown id in --only: ${unknown.join(', ')}`);
+  return ids;
 }
 
 /** Mirrors come from the guide's record in candidates.json; a guide that needs one and has none fails. */
@@ -303,15 +357,29 @@ function verifyMirrors(guide, candidates) {
   return checkMirrors(guide.url, (record && record.mirrors) || [], guide.sha256);
 }
 
+async function verifyGuide(guide, candidates, mirrorsOnly) {
+  const record = candidates.find(c => c.id === guide.id);
+  const problems = mirrorsOnly ? [] : await verifyPrimary(guide, record);
+  try {
+    await verifyMirrors(guide, candidates);
+  } catch (err) {
+    problems.push(err.message);
+  }
+  return problems;
+}
+
 async function verifyCatalogue(mirrorsOnly) {
   const { guides } = readJson(GUIDES_FILE);
   const candidates = readJson(CANDIDATES_FILE);
-  const checked = mirrorsOnly ? guides.filter(g => needsMirror(g.url) || candidates.some(c => c.id === g.id && c.mirrors?.length)) : guides;
+  const ids = onlyIds(process.argv, guides);
+  let checked = mirrorsOnly ? guides.filter(g => needsMirror(g.url) || candidates.some(c => c.id === g.id && c.mirrors?.length)) : guides;
+  if (ids) checked = guides.filter(g => ids.includes(g.id) && (!mirrorsOnly || checked.includes(g)));
+  if (!mirrorsOnly) checkPdftotext();
   let failures = 0;
   for (const guide of checked) {
     try {
-      if (!mirrorsOnly) await verifyPrimary(guide);
-      await verifyMirrors(guide, candidates);
+      const problems = await verifyGuide(guide, candidates, mirrorsOnly);
+      if (problems.length) throw new Error(problems.join('; '));
       console.log(`ok ${guide.id}`);
     } catch (err) {
       failures++;
@@ -328,4 +396,4 @@ if (require.main === module) {
   run().then(code => process.exit(code), err => { console.error(err.message); process.exit(2); });
 }
 
-module.exports = { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem };
+module.exports = { hasReleaseStatement, describePdf, releaseStatementProblem, shapeEntries, nextHop, needsMirror, mirrorProblem, thirdPartyMentions };
