@@ -766,7 +766,8 @@ export const MB = 1024 * 1024;
 // so it never perturbs tests that don't touch the filesystem.
 // ---------------------------------------------------------------------------
 
-/** A string or { status, body } is written to toFile and resolves; { failAfter } writes that partial text, then rejects.
+/** A string or { status: 2xx, body } is written to toFile and resolves; any other status resolves with that status
+ *  and writes no file, as react-native-fs does on Android; { failAfter } writes that partial text, then rejects.
  *  `contentLength` is the length the server declares (default: the body's real length; -1 for none). */
 type DownloadResponse = string | { status: number; body?: string; contentLength?: number } | { failAfter: string };
 type DownloadProgress = { jobId: number; bytesWritten: number; contentLength: number };
@@ -787,6 +788,8 @@ export interface FsFake {
   /** What a URL serves to downloadFile. A string is a 200 body; an unseeded URL fails like no connection.
    *  Seeding the same URL again replaces what it serves. */
   seedDownload(url: string, response: DownloadResponse): void;
+  /** The free space getFSInfo reports, in bytes (default: plenty, 64 GB). */
+  setFreeSpace(bytes: number): void;
   DocumentDirectoryPath: string;
 }
 
@@ -825,6 +828,7 @@ function makeFsFake(): FsFake {
   // Like react-native-fs: downloadFile returns { jobId, promise } at once and the native side calls begin and
   // progress later; stopDownload(jobId) rejects that job's promise and stops any further writes.
   let lastJobId = 0;
+  let freeSpace = 64 * GB;
   const stopped = new Set<number>();
   const later = () => new Promise<void>(resolve => setImmediate(resolve));
   const abortIfStopped = (jobId: number) => { if (stopped.has(jobId)) throw new Error('Download has been aborted'); };
@@ -846,6 +850,7 @@ function makeFsFake(): FsFake {
     opts.begin?.({ jobId, statusCode, contentLength, headers: {} });
     await later();
     abortIfStopped(jobId);
+    if (statusCode < 200 || statusCode > 299) return { jobId, statusCode, bytesWritten: 0 };
     vol.writeFileSync(to, body);
     opts.progress?.({ jobId, bytesWritten, contentLength });
     await later();
@@ -884,8 +889,9 @@ function makeFsFake(): FsFake {
       return { jobId: lastJobId, promise: runDownload(lastJobId, opts) };
     }),
     stopDownload: jest.fn((jobId: number) => { stopped.add(jobId); }),
+    getFSInfo: jest.fn(async () => ({ freeSpace, totalSpace: 256 * GB })),
   };
-  return { module, seedFile, seedDir, seedAsset, seedDownload, DocumentDirectoryPath };
+  return { module, seedFile, seedDir, seedAsset, seedDownload, setFreeSpace: (bytes: number) => { freeSpace = bytes; }, DocumentDirectoryPath };
 }
 
 // ---------------------------------------------------------------------------

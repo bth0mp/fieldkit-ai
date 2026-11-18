@@ -89,11 +89,12 @@ describe('nativeBoundary harness — injection mechanism', () => {
       expect(await rnfs.hash('/docs/a.pdf', 'sha256')).toBe(sha256('pdf body'));
     });
 
-    it('serves a non-200 status with its body and lets a re-seed replace it', async () => {
+    it('resolves a non-200 status without writing a file, and lets a re-seed replace it', async () => {
       const { fs, rnfs } = setup();
-      fs.seedDownload('https://x.test/a.pdf', { status: 404 });
+      fs.seedDownload('https://x.test/a.pdf', { status: 404, body: 'Not found' });
       const bad = await rnfs.downloadFile({ fromUrl: 'https://x.test/a.pdf', toFile: '/docs/a.pdf' }).promise;
-      expect(bad.statusCode).toBe(404);
+      expect(bad).toEqual({ jobId: expect.any(Number), statusCode: 404, bytesWritten: 0 });
+      expect(await rnfs.exists('/docs/a.pdf')).toBe(false);
       fs.seedDownload('https://x.test/a.pdf', 'good');
       const ok = await rnfs.downloadFile({ fromUrl: 'https://x.test/a.pdf', toFile: '/docs/a.pdf' }).promise;
       expect(ok.statusCode).toBe(200);
@@ -138,6 +139,14 @@ describe('nativeBoundary harness — injection mechanism', () => {
       await expect(rnfs.downloadFile({ fromUrl: 'https://x.test/none.pdf', toFile: '/docs/none.pdf' }).promise)
         .rejects.toThrow('Network request failed');
       expect(await rnfs.exists('/docs/none.pdf')).toBe(false);
+    });
+
+    it('reports plenty of free space until a test sets it', async () => {
+      const { fs, rnfs } = setup();
+      const info = (rnfs as unknown as { getFSInfo(): Promise<{ freeSpace: number }> }).getFSInfo;
+      expect((await info()).freeSpace).toBeGreaterThan(1024 * 1024 * 1024);
+      fs.setFreeSpace(1234);
+      expect((await info()).freeSpace).toBe(1234);
     });
   });
 

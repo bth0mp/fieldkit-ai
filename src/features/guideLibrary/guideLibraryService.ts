@@ -16,7 +16,16 @@ const CATALOGUE_PART = 'catalogue.json.part';
 const MAX_CATALOGUE_BYTES = 2 * 1024 * 1024;
 const MISMATCH = "This file doesn't match the checked copy";
 const FAILED = "Couldn't download this guide. Try again.";
-const OFFLINE = "No connection. Try again when you're online.";
+/** Any download that did not finish: no connection, a read timeout, a TLS error, a full disk. */
+const DIDNT_FINISH = "The download didn't finish. Check your connection and try again.";
+const NO_SPACE = 'Not enough free space for this guide.';
+/** Room kept free beyond a guide's own size before its download starts. */
+const FREE_SPACE_MARGIN_BYTES = 5 * 1024 * 1024;
+/** Government hosts are slow to answer and to send: the library's 5 s and 15 s defaults cut them off. */
+const CONNECTION_TIMEOUT_MS = 30000;
+const READ_TIMEOUT_MS = 60000;
+/** At most two progress events a second, even from a server that sends no length (one event per 8 KB read). */
+const PROGRESS_INTERVAL_MS = 500;
 const OPEN_FAILED = "Couldn't open this guide.";
 const REMOVE_FAILED = "Couldn't remove this guide. Try again.";
 const TEACH_FAILED = "Couldn't teach this guide to the assistant. Try again.";
@@ -93,11 +102,16 @@ async function replaceFile(from: string, to: string): Promise<void> {
   await RNFS.moveFile(from, to);
 }
 
+/**
+ * The saved (last fetched) catalogue or the bundled one, whichever was updated later: after an app update the
+ * bundled list can be newer than the last fetch. A tie goes to the saved one.
+ */
 async function loadSavedCatalogue(): Promise<Catalogue> {
   try {
     if (await RNFS.exists(CATALOGUE_FILE)) {
       const parsed = parseCatalogue(JSON.parse(await RNFS.readFile(CATALOGUE_FILE, 'utf8')));
-      if (parsed) return parsed;
+      // `updated` is a validated YYYY-MM-DD date, so the strings compare as dates.
+      if (parsed && parsed.updated >= bundledCatalogue.updated) return parsed;
     }
   } catch (error) {
     logger.warn('[GuideLibrary] saved catalogue unreadable, using the bundled one', error);
@@ -225,6 +239,9 @@ async function guardedDownload({ fromUrl, toFile, maxBytes, onProgress }: Guarde
   const job = RNFS.downloadFile({
     fromUrl,
     toFile,
+    connectionTimeout: CONNECTION_TIMEOUT_MS,
+    readTimeout: READ_TIMEOUT_MS,
+    progressInterval: PROGRESS_INTERVAL_MS,
     progressDivider: 5,
     begin: ({ contentLength }) => { if (!settled && !tooBig && contentLength > maxBytes) stop(); },
     progress: ({ bytesWritten, contentLength }) => {
@@ -260,6 +277,8 @@ async function refresh(): Promise<void> {
     if ((await RNFS.stat(part)).size > MAX_CATALOGUE_BYTES) throw new Error('catalogue too big');
     const parsed = parseCatalogue(JSON.parse(await RNFS.readFile(part, 'utf8')));
     if (!parsed) throw new Error('fetched catalogue failed validation');
+    // An empty list is valid but would move every downloaded guide to "No longer listed": a mistake, not news.
+    if (parsed.guides.length === 0) throw new Error('fetched catalogue lists no guides');
     await replaceFile(part, CATALOGUE_FILE);
     store.setState({ catalogue: parsed, delisted: delistedFrom(parsed) });
   } catch (error) {
@@ -271,14 +290,26 @@ async function refresh(): Promise<void> {
   }
 }
 
+/** False when the phone has less free space than `bytes` and a margin. If that cannot be told, the download goes ahead. */
+async function hasRoomFor(bytes: number): Promise<boolean> {
+  try {
+    return (await RNFS.getFSInfo()).freeSpace >= bytes + FREE_SPACE_MARGIN_BYTES;
+  } catch (error) {
+    logger.warn('[GuideLibrary] free space unknown, downloading anyway', error);
+    return true;
+  }
+}
+
 /** Download to `<id>.pdf.part`. Returns the user-facing error, or null once the file matches `entry`. */
 async function fetchChecked(entry: GuideEntry, part: string): Promise<string | null> {
+  if (!(await hasRoomFor(entry.bytes))) return NO_SPACE;
   const result = await guardedDownload({
     fromUrl: entry.url, toFile: part, maxBytes: entry.bytes,
     onProgress: bytesWritten => setGuide(entry.id, { phase: 'downloading', progress: Math.min(1, bytesWritten / entry.bytes) }),
   });
   if (result === 'too-big') return MISMATCH;
-  if (result === 'failed') return OFFLINE;
+  if (result === 'failed') return DIDNT_FINISH;
+  // On Android a non-2xx response resolves with its status and writes no file.
   if (result.statusCode !== 200) return FAILED;
   if ((await RNFS.stat(part)).size !== entry.bytes) return MISMATCH;
   if ((await RNFS.hash(part, 'sha256')) !== entry.sha256) return MISMATCH;

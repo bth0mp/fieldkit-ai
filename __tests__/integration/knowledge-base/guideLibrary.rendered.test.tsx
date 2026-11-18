@@ -38,6 +38,7 @@ const catalogueOf = (guides: unknown[]) => JSON.stringify({
 const TEST_CATALOGUE = catalogueOf([KNOTS, WATER]);
 const DELISTED_HEADING = 'No longer listed';
 const DELISTED_LINE = 'Removed from the library. Your copy still works.';
+const DIDNT_FINISH = "The download didn't finish. Check your connection and try again.";
 
 type Fs = NonNullable<Awaited<ReturnType<typeof setupChatScreen>>['boundary']['fs']>;
 const exists = (fs: Fs, path: string) => (fs.module.exists as (p: string) => Promise<boolean>)(path);
@@ -128,6 +129,9 @@ describe('Guide library (rendered)', () => {
     rtl.fireEvent.press(view.getByTestId('guide-download-test-knots'));
     await rtl.waitFor(() => { expect(view.getByTestId('guide-open-test-knots')).toBeTruthy(); }, { timeout: 4000 });
     expect(await exists(fs, `${DIR}/test-knots.pdf`)).toBe(true);
+    // Slow government hosts get time to answer and to send; progress comes at most twice a second.
+    const [opts] = (fs.module.downloadFile as jest.Mock).mock.calls.find(([o]) => o.fromUrl === KNOTS.url)!;
+    expect(opts).toMatchObject({ connectionTimeout: 30000, readTimeout: 60000, progressInterval: 500 });
 
     rtl.fireEvent.press(view.getByTestId('guide-open-test-knots'));
     await rtl.waitFor(() => {
@@ -154,6 +158,26 @@ describe('Guide library (rendered)', () => {
     rtl.fireEvent.press(view.getByTestId('guide-download-test-knots'));
     await rtl.waitFor(() => { expect(view.getByText("Couldn't download this guide. Try again.")).toBeTruthy(); }, { timeout: 4000 });
     expect(await exists(fs, `${DIR}/test-knots.pdf.part`)).toBe(false);
+  }, 30000);
+
+  it('a guide too big for the free space is not downloaded and says so', async () => {
+    const { rtl, fs, view } = await openLibrary(f => {
+      f.seedDownload(CATALOGUE_URL, TEST_CATALOGUE);
+      f.seedDownload(KNOTS.url, KNOTS_BODY);
+      // Room for the file itself, but not for the margin kept free beyond it.
+      f.setFreeSpace(KNOTS.bytes + 1024);
+    });
+
+    rtl.fireEvent.press(view.getByTestId('guide-download-test-knots'));
+    await rtl.waitFor(() => { expect(view.getByText('Not enough free space for this guide.')).toBeTruthy(); }, { timeout: 4000 });
+    expect(downloadsOf(fs, KNOTS.url)).toBe(0);
+    expect(await exists(fs, `${DIR}/test-knots.pdf`)).toBe(false);
+    expect(view.getByTestId('guide-download-test-knots')).toBeTruthy();
+
+    // When the free space cannot be read, the download goes ahead.
+    (fs.module.getFSInfo as jest.Mock).mockRejectedValueOnce(new Error('statfs failed'));
+    rtl.fireEvent.press(view.getByTestId('guide-download-test-knots'));
+    await rtl.waitFor(() => { expect(view.getByTestId('guide-open-test-knots')).toBeTruthy(); }, { timeout: 4000 });
   }, 30000);
 
   it('a download that declares more bytes than the checked file is stopped before anything is written', async () => {
@@ -186,6 +210,35 @@ describe('Guide library (rendered)', () => {
     expect(await exists(fs, `${DIR}/test-knots.pdf`)).toBe(false);
     expect(await exists(fs, `${DIR}/test-knots.pdf.part`)).toBe(false);
   }, 30000);
+
+  it('a fetched catalogue that lists no guides is refused', async () => {
+    const h = await openLibrary(fs => fs.seedDownload(CATALOGUE_URL, TEST_CATALOGUE));
+    const { view } = h;
+    h.fs.seedDownload(CATALOGUE_URL, catalogueOf([]));
+    h.rtl.fireEvent.press(view.getByTestId('guide-library-refresh'));
+    await waitForRefresh(h, view, 2);
+    expect(view.getByText('Test knots')).toBeTruthy();
+    expect(view.getByText('Test water')).toBeTruthy();
+  }, 30000);
+
+  describe('on a launch with no connection', () => {
+    const savedCatalogue = (updated: string) => async (fs: Fs) => {
+      await (fs.module.writeFile as (p: string, c: string) => Promise<void>)(
+        `${DIR}/catalogue.json`, JSON.stringify({ ...JSON.parse(TEST_CATALOGUE), updated }));
+    };
+
+    it('the bundled catalogue is shown when it is newer than the saved one', async () => {
+      const { view } = await openLibrary(savedCatalogue('2000-01-01'));
+      expect(view.queryByText('Test knots')).toBeNull();
+      expect(view.getByText(new RegExp(`^${bundledCatalogue.guides.length} guides`))).toBeTruthy();
+    }, 30000);
+
+    it('the saved catalogue is shown when it is newer than the bundled one', async () => {
+      const { view } = await openLibrary(savedCatalogue('2999-12-31'));
+      expect(view.getByText('Test knots')).toBeTruthy();
+      expect(view.getByText('2 guides · 0 downloaded · 0 taught')).toBeTruthy();
+    }, 30000);
+  });
 
   it('a fetched catalogue over the size cap is refused', async () => {
     const { fs, view } = await openLibrary(f => f.seedDownload(CATALOGUE_URL, TEST_CATALOGUE + ' '.repeat(2 * 1024 * 1024)));
@@ -228,13 +281,13 @@ describe('Guide library (rendered)', () => {
     expect(await exists(fs, `${DIR}/test-water.pdf.part`)).toBe(false);
 
     rtl.fireEvent.press(view.getByTestId('guide-download-test-knots'));
-    await rtl.waitFor(() => { expect(view.getByText("No connection. Try again when you're online.")).toBeTruthy(); }, { timeout: 4000 });
+    await rtl.waitFor(() => { expect(view.getByText(DIDNT_FINISH)).toBeTruthy(); }, { timeout: 4000 });
     expect(await exists(fs, `${DIR}/test-knots.pdf.part`)).toBe(false);
 
     fs.seedDownload(KNOTS.url, KNOTS_BODY);
     rtl.fireEvent.press(view.getByTestId('guide-download-test-knots'));
     await rtl.waitFor(() => { expect(view.getByTestId('guide-open-test-knots')).toBeTruthy(); }, { timeout: 4000 });
-    expect(view.queryByText("No connection. Try again when you're online.")).toBeNull();
+    expect(view.queryByText(DIDNT_FINISH)).toBeNull();
   }, 30000);
 
   it('a second tap while downloading does not start a second download', async () => {
