@@ -121,6 +121,16 @@ export const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
+  guideLibraryRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.surface,
+  },
   docInfo: {
     flex: 1,
     marginRight: SPACING.sm,

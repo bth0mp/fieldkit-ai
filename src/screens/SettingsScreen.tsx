@@ -236,6 +236,16 @@ export const SettingsScreen: React.FC = () => {
         {/* About */}
         <AnimatedEntry index={9} staggerMs={40} trigger={focusTrigger}>
           <View style={styles.navSection}>
+            <TouchableOpacity style={styles.navItem} testID="settings-guide-library" onPress={() => navigation.navigate('GuideLibrary')}>
+              <View style={styles.navItemIcon}>
+                <Icon name="book-open" size={16} color={colors.textSecondary} />
+              </View>
+              <View style={styles.navItemContent}>
+                <Text style={styles.navItemTitle}>Guide library</Text>
+                <Text style={styles.navItemDesc}>Free guides to download and use offline</Text>
+              </View>
+              <Icon name="chevron-right" size={16} color={colors.textMuted} />
+            </TouchableOpacity>
             <TouchableOpacity style={[styles.navItem, styles.navItemLast]} onPress={() => navigation.navigate('About')}>
               <View style={styles.navItemIcon}>
                 <Icon name="info" size={16} color={colors.textSecondary} />

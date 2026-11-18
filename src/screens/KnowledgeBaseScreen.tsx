@@ -23,6 +23,7 @@ import { ragService } from '../services/rag';
 import type { RagDocument } from '../services/rag';
 import { RootStackParamList } from '../navigation/types';
 import { isPickerStuck } from '../utils/pickerErrorUtils';
+import { FIELD_GUIDES_PROJECT_ID } from '../features/fieldGuides/fieldGuides';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'KnowledgeBase'>;
@@ -177,6 +178,22 @@ export const KnowledgeBaseScreen: React.FC = () => {
     </TouchableOpacity>
   );
 
+  const guideLibraryRow = projectId === FIELD_GUIDES_PROJECT_ID ? (
+    <TouchableOpacity
+      style={styles.guideLibraryRow}
+      testID="kb-open-guide-library"
+      onPress={() => navigation.navigate('GuideLibrary')}
+      activeOpacity={0.7}
+    >
+      <Icon name="book-open" size={16} color={colors.textSecondary} />
+      <View style={styles.docInfo}>
+        <Text style={styles.docName}>Guide library</Text>
+        <Text style={styles.docSize}>Download more free guides</Text>
+      </View>
+      <Icon name="chevron-right" size={16} color={colors.textMuted} />
+    </TouchableOpacity>
+  ) : null;
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
@@ -223,6 +240,8 @@ export const KnowledgeBaseScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       )}
+
+      {guideLibraryRow}
 
       {isLoading ? (
         <View style={styles.centered}>

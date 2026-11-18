@@ -46,7 +46,7 @@ export const OpenSourceLicensesScreen: React.FC = () => {
         initialNumToRender={20}
         ListHeaderComponent={
           <Text style={styles.intro}>
-            {BRAND.name} is built on the open-source software below and ships the public-domain field guides listed. Tap an entry to read its license.
+            {BRAND.name} is built on the open-source software below and ships the public-domain field guides listed. Guides you download from the Guide library are listed there with their licences. Tap an entry to read its license.
           </Text>
         }
         renderSectionHeader={({ section }) => <Text style={styles.sectionTitle}>{section.title}</Text>}
