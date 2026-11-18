@@ -18,6 +18,7 @@ const fullText = (e: Entry) =>
 const SECTIONS: { title: string; data: Entry[] }[] = [
   { title: 'Based on', data: [notices.base] },
   { title: 'Native components and models', data: notices.native },
+  { title: 'Field guides', data: notices.guides },
   { title: `JavaScript packages (${notices.packages.length})`, data: notices.packages },
 ];
 
@@ -45,7 +46,7 @@ export const OpenSourceLicensesScreen: React.FC = () => {
         initialNumToRender={20}
         ListHeaderComponent={
           <Text style={styles.intro}>
-            {BRAND.name} is built on the open-source software below. Tap an entry to read its license.
+            {BRAND.name} is built on the open-source software below and ships the public-domain field guides listed. Tap an entry to read its license.
           </Text>
         }
         renderSectionHeader={({ section }) => <Text style={styles.sectionTitle}>{section.title}</Text>}

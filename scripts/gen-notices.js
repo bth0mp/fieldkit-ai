@@ -33,6 +33,19 @@ const NATIVE = [
   { title: 'all-MiniLM-L6-v2 (bundled embedding model)', license: 'Apache-2.0', copyright: 'Copyright sentence-transformers contributors', url: 'https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2', textId: 'Apache-2.0' },
 ];
 
+// Field guide PDFs shipped in android/app/src/main/assets/guides (src/features/fieldGuides). Only add a
+// guide whose licence allows redistribution; url is where the shipped file was downloaded from.
+const US_GOV = 'A work of the United States government, not subject to copyright in the United States (17 U.S.C. 105).';
+const ARMY_RELEASE = 'Distribution restriction: approved for public release; distribution is unlimited. Included unmodified.';
+const GUIDES = [
+  { title: 'ATP 3-50.21 Survival (US Army, September 2018)', license: 'Public domain', copyright: `Headquarters, Department of the Army. ${US_GOV}`, note: ARMY_RELEASE, url: 'https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/ARN12086_ATP%203-50x21%20FINAL%20WEB%202.pdf' },
+  { title: 'ATP 4-02.11 Casualty Response, Tactical Combat Casualty Care, and First Aid (US Army, March 2026)', license: 'Public domain', copyright: `Headquarters, Department of the Army. ${US_GOV}`, note: ARMY_RELEASE, url: 'https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN46159-ATP_4-02.11-000-WEB-1.pdf' },
+  { title: 'TC 4-02.3 Field Hygiene and Sanitation (US Army, May 2015)', license: 'Public domain', copyright: `Headquarters, Department of the Army. ${US_GOV}`, note: ARMY_RELEASE, url: 'https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tc4_02x3.pdf' },
+  { title: "The Ship's Medicine Chest and Medical Aid at Sea (US Public Health Service, 2003 edition)", license: 'Public domain', copyright: `US Department of Health and Human Services, Public Health Service, Office of the Surgeon General. ${US_GOV}`, note: 'DHHS Publication No. (PHS) 03-2024. The publication states that it may be reproduced and/or translated in part or in full without payment or royalty. Included unmodified.', url: 'https://www.govinfo.gov/content/pkg/GOVPUB-HE20-PURL-gpo20582/pdf/GOVPUB-HE20-PURL-gpo20582.pdf' },
+  { title: 'Technical Note No. 28: Design of Small Photovoltaic (PV) Solar-Powered Water Pump Systems (USDA NRCS Oregon, October 2010)', license: 'Public domain', copyright: `USDA Natural Resources Conservation Service. ${US_GOV}`, note: 'Originally published at https://www.nrcs.usda.gov/Internet/FSE_DOCUMENTS/nrcs142p2_046471.pdf; the shipped copy comes from the University of North Texas web archive of that address. Included unmodified.', url: 'https://webarchive.library.unt.edu/web/20170122215704/https://www.nrcs.usda.gov/Internet/FSE_DOCUMENTS/nrcs142p2_046471.pdf' },
+  { title: 'NEETS Module 1: Introduction to Matter, Energy, and Direct Current (NAVEDTRA 14173, US Navy, September 1998)', license: 'Public domain', copyright: `US Navy, Naval Education and Training Professional Development and Technology Center. ${US_GOV}`, note: 'Distribution statement A: approved for public release; distribution is unlimited. The shipped copy comes from the Internet Archive. Included unmodified.', url: 'https://archive.org/download/NEETSModules/NEETS%20Module%2001%20-%20Introduction%20to%20Matter%20Energy%20and%20Direct%20Current.pdf' },
+];
+
 const COPYRIGHT_LINE = /^\s*(copyright\b|\(c\)|©)/i;
 const LICENSE_FILE = /^(licen[cs]e|copying)(\.(md|txt|markdown))?$/i;
 
@@ -93,6 +106,7 @@ const upstreamLicense = readFileSync(join(ROOT, 'LICENSE'), 'utf8').replace(/\r\
 const notices = {
   base: { title: 'Off Grid AI (the open-source app this one is based on)', license: 'MIT', body: upstreamLicense },
   native,
+  guides: GUIDES,
   packages,
   texts,
 };
