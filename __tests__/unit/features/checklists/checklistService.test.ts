@@ -7,7 +7,7 @@
  * 18 November 2026 (https://www.ready.gov/kit, last updated 07/01/2026), not read from the code.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { checklistService } from '../../../../src/features/checklists/checklistService';
+import { CHECKLIST_LIMITS, checklistService } from '../../../../src/features/checklists/checklistService';
 import { useChecklistStore } from '../../../../src/features/checklists/checklistStore';
 import { STARTER_LISTS } from '../../../../src/features/checklists/starterLists';
 
@@ -170,11 +170,12 @@ describe('checklist service', () => {
 
   // Typed from the two Ready.gov pages as read on 19 November 2026, not read from the code:
   // https://www.ready.gov/car, "Emergency Kit for the Car" (last updated 03/12/2026), and
-  // https://www.ready.gov/pets, "Build a Kit for Your Pet" (last updated 03/20/2026). The pet list is each
-  // item's name as the page prints it in bold; the sentence of explanation after each name is left out.
-  it("starts a list from Ready.gov's car kit, item for item", () => {
+  // https://www.ready.gov/pets, "Build a Kit for Your Pet" (last updated 03/20/2026).
+  it("starts a list from Ready.gov's car extras, item for item, and says they are extras", () => {
+    // The page: "keep an emergency supply kit in your car with these automobile extras". The seven items are
+    // additions to a kit, not a kit: no water, food or first aid kit is among them.
     checklistService.createFromStarter('ready-car-kit');
-    expect(only().name).toBe('Car emergency kit');
+    expect(only().name).toBe('Car kit extras');
     expect(only().items.map(i => i.text)).toEqual([
       'Jumper cables',
       'Flares or reflective triangle',
@@ -186,30 +187,50 @@ describe('checklist service', () => {
     ]);
     expect(only().items.some(i => i.done)).toBe(false);
     expect(STARTER_LISTS[1]).toMatchObject({
-      label: 'Start from the Ready.gov car kit',
-      source: 'Ready.gov, Emergency Kit for the Car, as updated 12 March 2026',
+      label: 'Start from the Ready.gov car extras',
+      source: 'Ready.gov, Emergency Kit for the Car, as updated 12 March 2026. Extras to keep in the car with an emergency kit.',
     });
   });
 
-  it("starts a list from Ready.gov's pet kit, item for item", () => {
+  it("starts a list from Ready.gov's pet kit, with what each item is for, and says it is adapted", () => {
+    // The page prints ten items, each a name and a sentence or two of explanation. A bare name loses what to
+    // pack ("Sanitation needs", "Medicine"), and the full text does not fit a line, so each item here is the
+    // name with the page's own words cut down, and the two long items are split into the things they name:
+    //   "Collar with ID tag and a harness or leash. Include a backup leash, collar and ID tag. Have copies of
+    //    your pet's registration information and other relevant documents in a waterproof container and
+    //    available electronically."
+    //   "Sanitation needs. Include pet litter and litter box (if appropriate), newspapers, paper towels,
+    //    plastic trash bags and household chlorine bleach to provide for your pet's sanitation needs."
     checklistService.createFromStarter('ready-pet-kit');
     expect(only().name).toBe('Pet emergency kit');
     expect(only().items.map(i => i.text)).toEqual([
-      'Food',
-      'Water',
-      'Medicine',
-      'First aid kit',
+      "Food (several days' supply in an airtight, waterproof container)",
+      "Water (a water bowl and several days' supply of water)",
+      'Medicine (an extra supply of the medicine your pet takes regularly, in a waterproof container)',
+      'First aid kit (talk to your veterinarian about what is most appropriate for your pet)',
       'Collar with ID tag and a harness or leash',
+      'Backup leash, collar and ID tag',
+      "Copies of your pet's registration information and other relevant documents in a waterproof container",
+      'The same documents available electronically',
       'Traveling bag, crate or sturdy carrier, ideally one for each pet',
-      'Grooming items',
-      'Sanitation needs',
+      'Grooming items (pet shampoo, conditioner and other items)',
+      'Pet litter and litter box (if appropriate)',
+      'Newspapers, paper towels, plastic trash bags and household chlorine bleach',
       'A picture of you and your pet together',
-      'Familiar items',
+      'Familiar items (favorite toys, treats or bedding)',
     ]);
     expect(STARTER_LISTS[2]).toMatchObject({
       label: 'Start from the Ready.gov pet kit',
-      source: 'Ready.gov, Build a Kit for Your Pet, as updated 20 March 2026',
+      source: 'Adapted from Ready.gov, Build a Kit for Your Pet, as updated 20 March 2026',
     });
+  });
+
+  it('has no starter item or name too long to be kept whole', () => {
+    // A longer item would be cut short without a word when the list is made.
+    for (const starter of STARTER_LISTS) {
+      expect(starter.name.length).toBeLessThanOrEqual(CHECKLIST_LIMITS.name);
+      for (const item of starter.items) expect({ item, fits: item.length <= CHECKLIST_LIMITS.item }).toEqual({ item, fits: true });
+    }
   });
 
   it('gives every list and item its own id, even on an engine with no Web Crypto and within one millisecond', () => {
