@@ -35,8 +35,11 @@ describe('Quick reference (rendered)', () => {
 
     // Four cards, all closed.
     const screen = rtl.render(React.createElement(QuickReferenceScreen, {}));
+    const { StyleSheet } = require('react-native');
+    const { TYPOGRAPHY } = require('../../../src/constants');
     for (const title of ['Distress signals', 'Ground-to-air signals', 'Radio alphabet', 'Morse code']) {
-      expect(screen.getByText(title)).toBeTruthy();
+      // A card's title is the thing to tap: body text, not a small label.
+      expect(StyleSheet.flatten(screen.getByText(title).props.style).fontSize).toBe(TYPOGRAPHY.body.fontSize);
     }
     expect(screen.queryByText('Require medical assistance')).toBeNull();
 

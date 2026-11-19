@@ -5,6 +5,8 @@ import { createStyles as createKiwixStyles } from './KiwixFilesScreen.styles';
 /** The Guide library's look and the Kiwix screen's group headers, plus a two-column sign and meaning row. */
 export const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
   ...createKiwixStyles(colors, shadows),
+  // A card's title is the thing to tap: body text that wraps, not the small label a Kiwix category gets.
+  cardTitle: { ...TYPOGRAPHY.body, color: colors.text, flex: 1, paddingRight: SPACING.sm },
   referenceRow: {
     flexDirection: 'row' as const,
     alignItems: 'flex-start' as const,

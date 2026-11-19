@@ -42,7 +42,7 @@ export const QuickReferenceScreen: React.FC = () => {
             <View key={card.id}>
               <TouchableOpacity style={styles.groupHeader} onPress={() => toggle(card.id)} testID={`quick-reference-card-${card.id}`}
                 accessibilityRole="button" accessibilityState={{ expanded: isOpen }}>
-                <Text style={styles.groupTitle}>{card.title}</Text>
+                <Text style={styles.cardTitle}>{card.title}</Text>
                 <Icon name={isOpen ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textMuted} />
               </TouchableOpacity>
               {isOpen && (
