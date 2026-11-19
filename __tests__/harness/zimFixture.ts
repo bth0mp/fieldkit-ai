@@ -1,7 +1,8 @@
 /**
  * Builds small, valid Kiwix .zim files in memory for tests: the device boundary's stand-in for the files Kiwix
- * downloads. Layout per the ZIM format (checked against a real Kiwix file; see the Kiwix design doc): header,
- * MIME list, path pointers, (old scheme) title pointers, directory entries, cluster pointers, clusters, checksum.
+ * downloads. Layout as libzim 7+ writes it (checked against a real Kiwix file; see the Kiwix design doc): header,
+ * MIME list, clusters, directory entries, path pointers, (old scheme) title pointers, cluster pointers, checksum.
+ * The articles' cluster is the last one, so nothing in the file says where it ends.
  * New scheme: articles in C, metadata in M, W/mainPage, the title index in X/listing/titleOrdered/v1. Old scheme:
  * articles in A and the header's title pointer list.
  */
@@ -22,6 +23,8 @@ export interface ZimFixture {
   zstdParams?: Record<number, number>;
   /** Bytes appended to the article cluster after its zstd frame, e.g. a second frame. */
   zstdTrailer?: Buffer;
+  /** Bytes between the last cluster and the directory entries: a big file's directory, in a test-sized file. */
+  directoryPadding?: number;
 }
 
 type Entry = { ns: string; path: string; title: string; mime: string; data?: Buffer; redirect?: string; cluster?: number; blob?: number };
@@ -62,16 +65,18 @@ export function buildZim(opts: ZimFixture): Uint8Array {
   entries.sort((a, b) => Buffer.compare(key(a), key(b)));
   const indexOf = (k: string) => entries.findIndex(e => `${e.ns}${e.path}` === k);
 
-  // Cluster 0: every blob but the listing, compressed as asked. Cluster 1: the listing, uncompressed.
-  const blobs: Buffer[] = [];
-  for (const e of entries) if (e.data) { e.cluster = 0; e.blob = blobs.length; blobs.push(e.data); }
-  const clusters = [cluster(blobs, opts.compression ?? 'zstd', opts.zstdParams, opts.zstdTrailer)];
+  // In the new scheme cluster 0 is the title listing, uncompressed; the last cluster holds every other blob,
+  // compressed as asked.
   const front = entries.map((e, i) => ({ e, i })).filter(({ e }) => e.ns === ns).sort((a, b) => Buffer.compare(titleKey(a.e), titleKey(b.e)));
+  const clusters: Buffer[] = [];
   if (scheme === 'new') {
     const listing = entries[indexOf('Xlisting/titleOrdered/v1')];
-    listing.cluster = 1; listing.blob = 0;
+    listing.cluster = 0; listing.blob = 0;
     clusters.push(cluster([Buffer.concat(front.map(f => u32(f.i)))], 'none'));
   }
+  const blobs: Buffer[] = [];
+  for (const e of entries) if (e.data) { e.cluster = clusters.length; e.blob = blobs.length; blobs.push(e.data); }
+  clusters.push(cluster(blobs, opts.compression ?? 'zstd', opts.zstdParams, opts.zstdTrailer));
 
   const dirents = entries.map(e => {
     const head = Buffer.alloc(e.redirect ? 12 : 16);
@@ -87,14 +92,18 @@ export function buildZim(opts: ZimFixture): Uint8Array {
   const mimeList = Buffer.from(`${MIMES.join('\0')}\0\0`);
   const allTitles = entries.map((e, i) => ({ e, i })).sort((a, b) => Buffer.compare(titleKey(a.e), titleKey(b.e)));
   const mimeListPos = 80;
-  const pathPtrPos = mimeListPos + mimeList.length;
-  const titlePtrPos = pathPtrPos + 8 * entries.length;
-  const titleList = scheme === 'old' ? Buffer.concat(allTitles.map(t => u32(t.i))) : Buffer.alloc(0);
-  let at = titlePtrPos + titleList.length;
+  let at = mimeListPos + mimeList.length;
+  const clusterPos = clusters.map(c => { const p = at; at += c.length; return p; });
+  const padding = Buffer.alloc(opts.directoryPadding ?? 0);
+  at += padding.length;
   const direntPos = dirents.map(d => { const p = at; at += d.length; return p; });
+  const pathPtrPos = at;
+  at += 8 * entries.length;
+  const titlePtrPos = at;
+  const titleList = scheme === 'old' ? Buffer.concat(allTitles.map(t => u32(t.i))) : Buffer.alloc(0);
+  at += titleList.length;
   const clusterPtrPos = at;
   at += 8 * clusters.length;
-  const clusterPos = clusters.map(c => { const p = at; at += c.length; return p; });
   const checksumPos = at;
 
   const header = Buffer.alloc(80);
@@ -112,7 +121,7 @@ export function buildZim(opts: ZimFixture): Uint8Array {
   header.writeBigUInt64LE(BigInt(checksumPos), 72);
 
   return new Uint8Array(Buffer.concat([
-    header, mimeList, ...direntPos.map(u64), titleList, ...dirents, ...clusterPos.map(u64), ...clusters, Buffer.alloc(16),
+    header, mimeList, ...clusters, padding, ...dirents, ...direntPos.map(u64), titleList, ...clusterPos.map(u64), Buffer.alloc(16),
   ]));
 }
 

@@ -44,6 +44,8 @@ const DIRENT_READ_LONG = 4096;
 const MAX_REDIRECTS = 5;
 /** Largest cluster read or decompressed. Real files use 2 MB clusters; a damaged file is refused, not read. */
 const MAX_CLUSTER_BYTES = 16 * 1024 * 1024;
+/** First read of the last cluster, whose end the file doesn't record; doubled until the cluster fits. */
+const LAST_CLUSTER_READ = 1024 * 1024;
 /** Words too common to look up as a title on their own. */
 const STOP_WORDS = new Set(['how', 'what', 'why', 'when', 'where', 'who', 'the', 'and', 'for', 'with', 'does', 'can', 'should', 'about', 'from', 'into', 'your', 'you']);
 
@@ -97,45 +99,68 @@ function zimHtmlToText(html: string, maxChars: number): string {
   return body.structuredText.replace(/[ \t]+/g, ' ').replace(/^ | $/gm, '').replace(/\n\s*\n+/g, '\n\n').trim().slice(0, maxChars);
 }
 
-/** Every frame of a zstd payload is well formed and asks for a window under the cap (RFC 8878 frame layout). */
-function zstdFramesFit(data: Uint8Array): boolean {
-  for (let at = 0; at < data.length;) {
-    if (at + 6 > data.length) return false;
-    const magic = u32(data, at);
-    if (magic >= 0x184d2a50 && magic <= 0x184d2a5f) { at += 8 + u32(data, at + 4); continue; } // skippable frame
-    if (magic !== 0xfd2fb528) return false;
-    const flags = data[at + 4];
-    const single = (flags & 0x20) !== 0;
-    const fcf = flags >> 6;
-    let p = at + 5 + (single ? 0 : 1) + [0, 1, 2, 4][flags & 3];
-    const sizeBytes = fcf ? [0, 2, 4, 8][fcf] : single ? 1 : 0;
-    let window: number;
-    if (single) {
-      let size = 0;
-      for (let i = sizeBytes - 1; i >= 0; i--) size = size * 256 + (data[p + i] ?? 0);
-      window = fcf === 1 ? size + 256 : size;
-    } else {
-      const base = 2 ** (10 + (data[at + 5] >> 3));
-      window = base + (base / 8) * (data[at + 5] & 7);
-    }
-    if (window > MAX_CLUSTER_BYTES) return false;
-    p += sizeBytes;
-    for (let last = false; !last;) {
-      if (p + 3 > data.length) return false;
-      const head = u16(data, p) + data[p + 2] * 0x10000;
-      const type = (head >> 1) & 3;
-      if (type === 3) return false;
-      last = (head & 1) === 1;
-      p += 3 + (type === 1 ? 1 : head >>> 3);
-    }
-    at = p + (flags & 4 ? 4 : 0);
+/**
+ * Where the zstd frame at the start of `data` ends (RFC 8878 frame layout): -1 when it is malformed or asks for a
+ * window over the cap, null when `data` stops before the frame does. A cluster is one frame; bytes after it are
+ * not part of the cluster and are never decompressed.
+ */
+function zstdFrameEnd(data: Uint8Array): number | null {
+  if (data.length < 6) return null;
+  if (u32(data, 0) !== 0xfd2fb528) return -1;
+  const flags = data[4];
+  const single = (flags & 0x20) !== 0;
+  const fcf = flags >> 6;
+  let p = 5 + (single ? 0 : 1) + [0, 1, 2, 4][flags & 3];
+  const sizeBytes = fcf ? [0, 2, 4, 8][fcf] : single ? 1 : 0;
+  if (p + sizeBytes > data.length) return null;
+  let window: number;
+  if (single) {
+    let size = 0;
+    for (let i = sizeBytes - 1; i >= 0; i--) size = size * 256 + data[p + i];
+    window = fcf === 1 ? size + 256 : size;
+  } else {
+    const base = 2 ** (10 + (data[5] >> 3));
+    window = base + (base / 8) * (data[5] & 7);
   }
-  return true;
+  if (window > MAX_CLUSTER_BYTES) return -1;
+  p += sizeBytes;
+  for (let last = false; !last;) {
+    if (p + 3 > data.length) return null;
+    const head = u16(data, p) + data[p + 2] * 0x10000;
+    const type = (head >> 1) & 3;
+    if (type === 3) return -1;
+    last = (head & 1) === 1;
+    p += 3 + (type === 1 ? 1 : head >>> 3);
+  }
+  const end = p + (flags & 4 ? 4 : 0);
+  return end <= data.length ? end : null;
 }
 
-/** zstd with a ceiling on both the window it allocates and the bytes it writes. */
+/**
+ * Where a cluster (its info byte first) ends, from its own data: a zstd cluster where its frame ends, an
+ * uncompressed one at its last blob offset. -1 when damaged, null when `raw` stops first.
+ */
+function clusterEnd(raw: Uint8Array): number | null {
+  if (raw.length < 1) return null;
+  const compression = raw[0] & 0x0f;
+  if (compression === 5) {
+    const end = zstdFrameEnd(raw.subarray(1));
+    return end === null || end < 0 ? end : end + 1;
+  }
+  if (compression > 1) return raw.length;
+  const size = raw[0] & 0x10 ? 8 : 4;
+  const offset = (at: number) => (size === 8 ? u64(raw, at) : u32(raw, at));
+  if (raw.length < 1 + size) return null;
+  const first = offset(1);
+  if (first < size || first % size) return -1;
+  if (raw.length < 1 + first) return null;
+  const end = 1 + offset(1 + first - size);
+  if (end < 1 + first) return -1;
+  return end <= raw.length ? end : null;
+}
+
+/** One zstd frame, with a ceiling on the bytes it writes (zstdFrameEnd already checked its window). */
 function inflate(frame: Uint8Array): Uint8Array {
-  if (!zstdFramesFit(frame)) throw new ZimError('unreadable');
   const parts: Uint8Array[] = [];
   let total = 0;
   try {
@@ -191,7 +216,6 @@ export async function openZim(read: ReadRange): Promise<ZimArchive> {
   const clusterPtrPos = u64(header, 48);
   const mimeListPos = u64(header, 56);
   const mainPage = u32(header, 64);
-  const checksumPos = u64(header, 72);
   const articleNs = major >= 6 && minor >= 1 ? 'C' : 'A';
 
   // ponytail: the MIME list is read in one 4 KB go; real files list a dozen types.
@@ -235,25 +259,35 @@ export async function openZim(read: ReadRange): Promise<ZimArchive> {
 
   // ponytail: the last decompressed cluster is kept, nothing more; an LRU if repeated searches are slow on the phone.
   let cached: { index: number; data: Uint8Array; offsetSize: number } | null = null;
-  async function clusterBounds(index: number): Promise<[number, number]> {
-    const start = await u64At(clusterPtrPos + 8 * index);
-    const end = index + 1 < clusterCount ? await u64At(clusterPtrPos + 8 * (index + 1)) : checksumPos;
-    return [start, end];
-  }
+  const clusterStart = (index: number) => u64At(clusterPtrPos + 8 * index);
   function refuse(compression: number): never {
     throw new ZimError(compression === 4 ? 'xz' : 'compression');
   }
+  // libzim 7+ writes the directory after the clusters, so nothing in the file says where the last one ends: it is
+  // read in growing pieces, up to the cap, until its own data says.
+  async function lastCluster(start: number): Promise<Uint8Array> {
+    for (let size = LAST_CLUSTER_READ; ; size = Math.min(size * 2, MAX_CLUSTER_BYTES)) {
+      const raw = await bytes(start, size);
+      if (clusterEnd(raw) !== null || raw.length < size || size === MAX_CLUSTER_BYTES) return raw;
+    }
+  }
   async function cluster(index: number): Promise<{ data: Uint8Array; offsetSize: number }> {
     if (cached?.index === index) return cached;
-    const [start, end] = await clusterBounds(index);
-    if (!(start < end && end - start <= MAX_CLUSTER_BYTES)) throw new ZimError('unreadable');
-    const raw = await bytes(start, end - start);
+    const start = await clusterStart(index);
+    let raw: Uint8Array;
+    if (index + 1 < clusterCount) {
+      const end = await clusterStart(index + 1);
+      if (!(start < end && end - start <= MAX_CLUSTER_BYTES)) throw new ZimError('unreadable');
+      raw = await bytes(start, end - start);
+    } else {
+      raw = await lastCluster(start);
+    }
     const compression = raw[0] & 0x0f;
-    let data: Uint8Array;
-    if (compression <= 1) data = raw.subarray(1);
-    else if (compression === 5) data = inflate(raw.subarray(1));
-    else refuse(compression);
-    cached = { index, data, offsetSize: raw[0] & 0x10 ? 8 : 4 };
+    if (compression > 1 && compression !== 5) refuse(compression);
+    const end = clusterEnd(raw);
+    if (end === null || end < 0) throw new ZimError('unreadable');
+    const body = raw.subarray(1, end);
+    cached = { index, data: compression === 5 ? inflate(body) : body, offsetSize: raw[0] & 0x10 ? 8 : 4 };
     return cached;
   }
   async function blob(clusterIndex: number, blobIndex: number): Promise<Uint8Array> {
@@ -277,7 +311,7 @@ export async function openZim(read: ReadRange): Promise<ZimArchive> {
     if (at === null) return null;
     const listing = await direntAt(at);
     if (listing.cluster === undefined || listing.blob === undefined) return null;
-    const [start] = await clusterBounds(listing.cluster);
+    const start = await clusterStart(listing.cluster);
     const info = (await bytes(start, 1))[0];
     const offsetSize = info & 0x10 ? 8 : 4;
     const keyOf = (e: Dirent) => e.titleBytes;
@@ -303,7 +337,7 @@ export async function openZim(read: ReadRange): Promise<ZimArchive> {
   if (mainPage !== NONE && mainPage < entryCount) {
     const main = await resolve(await direntAt(mainPage));
     if (main.cluster !== undefined) {
-      const [start] = await clusterBounds(main.cluster);
+      const start = await clusterStart(main.cluster);
       const compression = (await bytes(start, 1))[0] & 0x0f;
       if (compression > 1 && compression !== 5) refuse(compression);
     }

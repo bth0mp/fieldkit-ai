@@ -71,7 +71,7 @@ describe('ZIM reader', () => {
     const bytes = buildZim(WIKIMED);
     const view = Buffer.from(bytes.buffer, bytes.byteOffset, bytes.length);
     const clusterPtrPos = Number(view.readBigUInt64LE(48));
-    view.writeBigUInt64LE(2n ** 40n, clusterPtrPos + 8); // cluster 1 "starts" a terabyte in, so cluster 0 ends there
+    view.writeBigUInt64LE(2n ** 40n, clusterPtrPos + 8); // the articles' cluster "starts" a terabyte in
     let longest = 0;
     const read = async (offset: number, length: number) => { longest = Math.max(longest, length); return rangeReader(bytes)(offset, length); };
     await expect(openZim(read)).rejects.toMatchObject({ code: 'unreadable' });
@@ -82,6 +82,13 @@ describe('ZIM reader', () => {
     const articles = [...WIKIMED.articles, { path: 'Huge', title: 'Huge', html: 'a'.repeat(17 * 1024 * 1024) }];
     await expect(open({ articles })).rejects.toMatchObject({ code: 'unreadable' });
     await expect(open({ articles, zstdParams: { [constants.ZSTD_c_contentSizeFlag]: 0 } })).rejects.toMatchObject({ code: 'unreadable' });
+  }, 30000);
+
+  it('reads the last cluster of a big file, whose directory after it runs past 16 MB', async () => {
+    for (const compression of ['zstd', 'none'] as const) {
+      const zim = await open({ compression, directoryPadding: 17 * 1024 * 1024 });
+      expect((await zim.readArticle('Burn', 500))?.text).toContain('Cool the burn');
+    }
   }, 30000);
 
   it('works without TextDecoder, which the phone engine (Hermes) does not have', async () => {
@@ -101,9 +108,10 @@ describe('ZIM reader', () => {
     }
   });
 
-  it('refuses a cluster whose second zstd frame asks for a 128 MB window', async () => {
+  it("decompresses only the cluster's own zstd frame, never a second one asking for a 128 MB window", async () => {
     // Frame magic, no single segment, window descriptor 2^27, then one empty last raw block.
     const frame = Buffer.from([0x28, 0xb5, 0x2f, 0xfd, 0x00, 0x88, 0x01, 0x00, 0x00]);
-    await expect(open({ zstdTrailer: frame })).rejects.toMatchObject({ code: 'unreadable' });
+    const zim = await open({ zstdTrailer: frame });
+    expect((await zim.readArticle('Burn', 500))?.text).toContain('Cool the burn');
   });
 });
