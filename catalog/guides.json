@@ -576,6 +576,20 @@
       "hasText": true
     },
     {
+      "id": "usda-hg-158-beekeeping-for-beginners",
+      "title": "Beekeeping for Beginners",
+      "category": "farming",
+      "publisher": "USDA",
+      "year": 1974,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105); the proof rests on staff authorship. Home and Garden Bulletin No. 158, revised April 1974, is published under the U.S. Department of Agriculture's name and 'Prepared by National Program Staff, Agricultural Research Service' (page 12). No personal author, outside author, photographer, illustrator, university or company is credited, and there is no copyright notice. The document prints no public-domain statement of its own. USDA's site notice (usda.gov, Policies and Links, read 18 November 2026): 'Most information presented on the USDA Web site is considered public domain information.' The file is the National Agricultural Library's own scan, with its stamps on the cover. The library's old download address no longer serves it, so the address is the Wayback Machine's raw capture of that address.",
+      "url": "https://web.archive.org/web/20150711125837id_/http://naldc.nal.usda.gov:80/download/CAT87214848/PDF",
+      "bytes": 684112,
+      "sha256": "77d8eb91128e4235199f6f9bc2a05c0371b969eb207b629aeccb9bbc7c1c286d",
+      "pages": 12,
+      "hasText": true
+    },
+    {
       "id": "usda-nrcs-650-ch10-gully-treatment",
       "title": "Engineering Field Handbook, Chapter 10: Gully Treatment",
       "category": "farming",
