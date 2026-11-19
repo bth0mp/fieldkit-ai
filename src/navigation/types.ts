@@ -15,6 +15,7 @@ export type RootStackParamList = {
   KiwixFiles: undefined;
   QuickReference: undefined;
   Checklists: undefined;
+  Calculators: undefined;
   DocumentPreview: { filePath: string; fileName: string; fileSize: number };
   // Former SettingsStack
   ModelSettings: undefined;

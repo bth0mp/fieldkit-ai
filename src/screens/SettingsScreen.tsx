@@ -256,6 +256,16 @@ export const SettingsScreen: React.FC = () => {
               </View>
               <Icon name="chevron-right" size={16} color={colors.textMuted} />
             </TouchableOpacity>
+            <TouchableOpacity style={styles.navItem} testID="settings-calculators" onPress={() => navigation.navigate('Calculators')}>
+              <View style={styles.navItemIcon}>
+                <Icon name="hash" size={16} color={colors.textSecondary} />
+              </View>
+              <View style={styles.navItemContent}>
+                <Text style={styles.navItemTitle}>Calculators</Text>
+                <Text style={styles.navItemDesc}>Units, grid references, sun and moon, distance, dates</Text>
+              </View>
+              <Icon name="chevron-right" size={16} color={colors.textMuted} />
+            </TouchableOpacity>
             <TouchableOpacity style={styles.navItem} testID="settings-checklists" onPress={() => navigation.navigate('Checklists')}>
               <View style={styles.navItemIcon}>
                 <Icon name="check-square" size={16} color={colors.textSecondary} />
