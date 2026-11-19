@@ -5,7 +5,7 @@
  * entry per step of a binary search, then the one cluster that holds an article. Layout notes and the real file
  * it was checked against: docs/superpowers/specs/2026-11-18-kiwix-library-design.md. All integers little-endian.
  */
-import { decompress } from 'fzstd';
+import { Decompress } from 'fzstd';
 import { parse } from 'node-html-parser';
 
 export type ReadRange = (offset: number, length: number) => Promise<Uint8Array>;
@@ -42,6 +42,8 @@ const NONE = 0xffffffff;
 const DIRENT_READ = 512;
 const DIRENT_READ_LONG = 4096;
 const MAX_REDIRECTS = 5;
+/** Largest cluster read or decompressed. Real files use clusters of a few MB; a damaged file is refused, not read. */
+const MAX_CLUSTER_BYTES = 64 * 1024 * 1024;
 /** Words too common to look up as a title on their own. */
 const STOP_WORDS = new Set(['how', 'what', 'why', 'when', 'where', 'who', 'the', 'and', 'for', 'with', 'does', 'can', 'should', 'about', 'from', 'into', 'your', 'you']);
 
@@ -69,6 +71,43 @@ export function zimHtmlToText(html: string, maxChars: number): string {
   root.querySelectorAll('script, style').forEach(node => node.remove());
   const body = root.querySelector('body') ?? root;
   return body.structuredText.replace(/[ \t]+/g, ' ').replace(/^ | $/gm, '').replace(/\n\s*\n+/g, '\n\n').trim().slice(0, maxChars);
+}
+
+/** The window a zstd frame asks the decoder to allocate (RFC 8878 frame header); 0 for anything else. */
+function zstdWindowSize(frame: Uint8Array): number {
+  if (frame.length < 6 || u32(frame, 0) !== 0xfd2fb528) return 0;
+  const flags = frame[4];
+  if (!(flags & 0x20)) {
+    const base = 2 ** (10 + (frame[5] >> 3));
+    return base + (base / 8) * (frame[5] & 7);
+  }
+  // Single segment: the window is the content size, after the dictionary id.
+  const fcf = flags >> 6;
+  const at = 5 + [0, 1, 2, 4][flags & 3];
+  let size = 0;
+  for (let i = [1, 2, 4, 8][fcf] - 1; i >= 0; i--) size = size * 256 + (frame[at + i] ?? 0);
+  return fcf === 1 ? size + 256 : size;
+}
+
+/** zstd with a ceiling on both the window it allocates and the bytes it writes. */
+function inflate(frame: Uint8Array): Uint8Array {
+  // ponytail: only the first frame's window is checked; libzim writes one frame per cluster.
+  if (zstdWindowSize(frame) > MAX_CLUSTER_BYTES) throw new ZimError('unreadable');
+  const parts: Uint8Array[] = [];
+  let total = 0;
+  try {
+    new Decompress(chunk => {
+      total += chunk.length;
+      if (total > MAX_CLUSTER_BYTES) throw new ZimError('unreadable');
+      parts.push(chunk);
+    }).push(frame, true);
+  } catch {
+    throw new ZimError('unreadable');
+  }
+  const out = new Uint8Array(total);
+  let at = 0;
+  for (const part of parts) { out.set(part, at); at += part.length; }
+  return out;
 }
 
 function parseDirent(b: Uint8Array): Dirent | null {
@@ -164,17 +203,13 @@ export async function openZim(read: ReadRange): Promise<ZimArchive> {
   async function cluster(index: number): Promise<{ data: Uint8Array; offsetSize: number }> {
     if (cached?.index === index) return cached;
     const [start, end] = await clusterBounds(index);
+    if (!(start < end && end - start <= MAX_CLUSTER_BYTES)) throw new ZimError('unreadable');
     const raw = await bytes(start, end - start);
     const compression = raw[0] & 0x0f;
     let data: Uint8Array;
     if (compression <= 1) data = raw.subarray(1);
-    else if (compression === 5) {
-      try {
-        data = decompress(raw.subarray(1));
-      } catch {
-        throw new ZimError('unreadable');
-      }
-    } else refuse(compression);
+    else if (compression === 5) data = inflate(raw.subarray(1));
+    else refuse(compression);
     cached = { index, data, offsetSize: raw[0] & 0x10 ? 8 : 4 };
     return cached;
   }

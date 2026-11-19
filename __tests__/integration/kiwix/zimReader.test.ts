@@ -4,6 +4,7 @@
  * supported compressions, and the files it refuses. The files are built in memory (harness/zimFixture), the
  * device boundary's stand-in for files Kiwix downloaded.
  */
+import { constants } from 'zlib';
 import { buildZim, rangeReader, WIKIMED } from '../../harness/zimFixture';
 import { openZim } from '../../../src/services/kiwix/zimReader';
 
@@ -65,4 +66,21 @@ describe('ZIM reader', () => {
     broken = true;
     await expect(zim.readArticle('Burn', 100)).rejects.toMatchObject({ code: 'unreadable' });
   });
+
+  it('refuses a damaged file whose cluster pointer runs far past the end, without asking for a huge read', async () => {
+    const bytes = buildZim(WIKIMED);
+    const view = Buffer.from(bytes.buffer, bytes.byteOffset, bytes.length);
+    const clusterPtrPos = Number(view.readBigUInt64LE(48));
+    view.writeBigUInt64LE(2n ** 40n, clusterPtrPos + 8); // cluster 1 "starts" a terabyte in, so cluster 0 ends there
+    let longest = 0;
+    const read = async (offset: number, length: number) => { longest = Math.max(longest, length); return rangeReader(bytes)(offset, length); };
+    await expect(openZim(read)).rejects.toMatchObject({ code: 'unreadable' });
+    expect(longest).toBeLessThanOrEqual(64 * 1024 * 1024);
+  });
+
+  it('refuses a cluster that would decompress to more than 64 MB, declared or not', async () => {
+    const articles = [...WIKIMED.articles, { path: 'Huge', title: 'Huge', html: 'a'.repeat(65 * 1024 * 1024) }];
+    await expect(open({ articles })).rejects.toMatchObject({ code: 'unreadable' });
+    await expect(open({ articles, zstdParams: { [constants.ZSTD_c_contentSizeFlag]: 0 } })).rejects.toMatchObject({ code: 'unreadable' });
+  }, 30000);
 });

@@ -18,6 +18,8 @@ export interface ZimFixture {
   redirects?: Redirect[];
   compression?: 'zstd' | 'none' | 'xz';
   scheme?: 'new' | 'old';
+  /** zstd parameters for the article cluster, e.g. no content size in the frame header. */
+  zstdParams?: Record<number, number>;
 }
 
 type Entry = { ns: string; path: string; title: string; mime: string; data?: Buffer; redirect?: string; cluster?: number; blob?: number };
@@ -29,14 +31,14 @@ const titleKey = (e: Entry) => Buffer.from(`${e.ns}${e.title || e.path}`);
 function u64(n: number): Buffer { const b = Buffer.alloc(8); b.writeBigUInt64LE(BigInt(n)); return b; }
 function u32(n: number): Buffer { const b = Buffer.alloc(4); b.writeUInt32LE(n); return b; }
 
-function cluster(blobs: Buffer[], compression: 'zstd' | 'none' | 'xz'): Buffer {
+function cluster(blobs: Buffer[], compression: 'zstd' | 'none' | 'xz', zstdParams?: Record<number, number>): Buffer {
   const offsets: number[] = [];
   let at = 4 * (blobs.length + 1);
   for (const b of blobs) { offsets.push(at); at += b.length; }
   offsets.push(at);
   const body = Buffer.concat([...offsets.map(u32), ...blobs]);
   if (compression === 'xz') return Buffer.concat([Buffer.from([4]), Buffer.from('not really xz data')]);
-  if (compression === 'zstd') return Buffer.concat([Buffer.from([5]), zstdCompressSync(body)]);
+  if (compression === 'zstd') return Buffer.concat([Buffer.from([5]), zstdCompressSync(body, { params: zstdParams })]);
   return Buffer.concat([Buffer.from([1]), body]);
 }
 
@@ -61,7 +63,7 @@ export function buildZim(opts: ZimFixture): Uint8Array {
   // Cluster 0: every blob but the listing, compressed as asked. Cluster 1: the listing, uncompressed.
   const blobs: Buffer[] = [];
   for (const e of entries) if (e.data) { e.cluster = 0; e.blob = blobs.length; blobs.push(e.data); }
-  const clusters = [cluster(blobs, opts.compression ?? 'zstd')];
+  const clusters = [cluster(blobs, opts.compression ?? 'zstd', opts.zstdParams)];
   const front = entries.map((e, i) => ({ e, i })).filter(({ e }) => e.ns === ns).sort((a, b) => Buffer.compare(titleKey(a.e), titleKey(b.e)));
   if (scheme === 'new') {
     const listing = entries[indexOf('Xlisting/titleOrdered/v1')];
