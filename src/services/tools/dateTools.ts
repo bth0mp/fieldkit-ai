@@ -17,7 +17,8 @@ const count = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 function inRange(at: number): number {
   const year = new Date(at).getUTCFullYear();
-  if (year < FIRST_YEAR || year > LAST_YEAR) throw new Error(`Dates must be between ${FIRST_YEAR} and ${LAST_YEAR}.`);
+  // Written this way round so a date too far off to be a date at all (its year is not a number) is refused too.
+  if (!(year >= FIRST_YEAR && year <= LAST_YEAR)) throw new Error(`Dates must be between ${FIRST_YEAR} and ${LAST_YEAR}.`);
   return at;
 }
 

@@ -65,4 +65,12 @@ describe('date_math', () => {
     expect(() => run({ start: '2026-11-18', add_days: 100000 })).toThrow(/between 1900 and 2100/);
     expect(() => run({ start: '1850-01-01', add_days: 1 })).toThrow(/between 1900 and 2100/);
   });
+
+  it('gives the same plain refusal for a number of days past anything a calendar holds', () => {
+    // Far enough on, the date itself is no longer a date; the answer must still be the year limits, not an
+    // engine error.
+    for (const days of [100000000, 1e300, '99999999999999999999999', -100000000]) {
+      expect(() => run({ start: '2026-01-01', add_days: days })).toThrow('Dates must be between 1900 and 2100.');
+    }
+  });
 });
