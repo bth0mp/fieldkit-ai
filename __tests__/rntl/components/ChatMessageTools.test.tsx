@@ -80,6 +80,20 @@ describe('ChatMessage — Tool message rendering', () => {
       },
     );
 
+    it('labels the row with the first line of an answer that runs to several', () => {
+      // Collapsed, the label is cut at two lines and the time taken, which follows it, was cut off first;
+      // opened, the whole answer is shown underneath anyway.
+      const both = 'KD7ABC = Kilo Delta Seven Alfa Bravo Charlie\nMorse: -.- -.. --... .- -... -.-.';
+      const { getByTestId } = renderToolResult('phonetic_morse', both, { generationTimeMs: 12 });
+      const label = getByTestId('tool-result-label-phonetic_morse');
+      expect([label.props.children].flat().join('')).toBe('KD7ABC = Kilo Delta Seven Alfa Bravo Charlie (12ms)');
+
+      const twoWays = '19S 545000 3927239 can be read two ways. Ask which is meant before using either.\nZone 19, southern hemisphere: -54.8, -68.3';
+      const grid = renderToolResult('convert_coordinates', twoWays);
+      expect([grid.getByTestId('tool-result-label-convert_coordinates').props.children].flat().join(''))
+        .toBe('19S 545000 3927239 can be read two ways. Ask which is meant before using either.');
+    });
+
     it('shows duration when generationTimeMs is set', () => {
       const { getByText } = renderToolResult('web_search', 'Result data', { generationTimeMs: 350 });
       expect(getByText(/350ms/)).toBeTruthy();

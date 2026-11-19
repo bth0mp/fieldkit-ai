@@ -53,7 +53,9 @@ const ANSWER_IS_THE_LABEL = new Map([
 
 function getToolLabel(toolName?: string, content?: string): string {
   const whenEmpty = toolName ? ANSWER_IS_THE_LABEL.get(toolName) : undefined;
-  if (whenEmpty) return content || whenEmpty;
+  // An answer of several lines (both readings of a grid reference, a spelling and its Morse) is labelled by
+  // its first; the row opens to show the rest.
+  if (whenEmpty) return content?.split('\n')[0] || whenEmpty;
   switch (toolName) {
     case 'web_search': {
       const queryMatch = content ? /^No results found for "([^"]+)"/.exec(content) : null;
