@@ -13,6 +13,7 @@ export type RootStackParamList = {
   KnowledgeBase: { projectId: string };
   GuideLibrary: undefined;
   KiwixFiles: undefined;
+  QuickReference: undefined;
   DocumentPreview: { filePath: string; fileName: string; fileSize: number };
   // Former SettingsStack
   ModelSettings: undefined;

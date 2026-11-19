@@ -19,9 +19,12 @@ const MARK_CODES: Array<[string, string]> = [
 
 const pairs = (keys: string[], values: string[]) => keys.map((key, i): [string, string] => [key, values[i]]);
 const DIGITS = DIGIT_WORDS.map((_, i) => String(i));
+/** The two published tables, also shown as Quick reference cards: one copy of each. */
+export const RADIO_WORDS: ReadonlyArray<[string, string]> = [...pairs(LETTERS, WORDS), ...pairs(DIGITS, DIGIT_WORDS)];
+export const MORSE_CODES: ReadonlyArray<[string, string]> = [...pairs(LETTERS, CODES), ...pairs(DIGITS, DIGIT_CODES), ...MARK_CODES];
 // Maps, not plain objects: the keys are characters the model passed.
-const PHONETIC = new Map([...pairs(LETTERS, WORDS), ...pairs(DIGITS, DIGIT_WORDS), ['-', 'Dash'], ['/', 'Slash']]);
-const MORSE = new Map([...pairs(LETTERS, CODES), ...pairs(DIGITS, DIGIT_CODES), ...MARK_CODES]);
+const PHONETIC = new Map([...RADIO_WORDS, ['-', 'Dash'], ['/', 'Slash']]);
+const MORSE = new Map(MORSE_CODES);
 // The distress signal is sent as one run, with no gaps between its letters.
 const FROM_MORSE = new Map([...[...MORSE].map(([char, code]): [string, string] => [code, char]), ['...---...', 'SOS']]);
 

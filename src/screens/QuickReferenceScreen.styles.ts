@@ -1,0 +1,20 @@
+import type { ThemeColors, ThemeShadows } from '../theme';
+import { SPACING, TYPOGRAPHY } from '../constants';
+import { createStyles as createKiwixStyles } from './KiwixFilesScreen.styles';
+
+/** The Guide library's look and the Kiwix screen's group headers, plus a two-column sign and meaning row. */
+export const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
+  ...createKiwixStyles(colors, shadows),
+  referenceRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'flex-start' as const,
+    gap: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  // A share of the row, not a fixed width: the sign column grows with the screen and holds "Three of anything".
+  sign: { ...TYPOGRAPHY.body, color: colors.text, flex: 2, minWidth: 96 },
+  meaning: { ...TYPOGRAPHY.body, color: colors.textSecondary, flex: 5 },
+  source: { ...TYPOGRAPHY.metaSmall, color: colors.textMuted, paddingTop: SPACING.sm },
+});

@@ -214,6 +214,17 @@ export const GuideLibraryScreen: React.FC = () => {
                 <Icon name="chevron-right" size={16} color={colors.textMuted} />
               </View>
             </TouchableOpacity>
+            <TouchableOpacity style={[styles.row, styles.kiwixRow]} testID="guide-library-open-quick-reference" accessibilityRole="button"
+              onPress={() => navigation.navigate('QuickReference')}>
+              <View style={styles.rowHeader}>
+                <Icon name="zap" size={16} color={colors.textSecondary} />
+                <View style={styles.rowContent}>
+                  <Text style={styles.rowTitle}>Quick reference</Text>
+                  <Text style={styles.rowMeta}>Distress signals, radio alphabet and Morse</Text>
+                </View>
+                <Icon name="chevron-right" size={16} color={colors.textMuted} />
+              </View>
+            </TouchableOpacity>
             <Text style={styles.summary}>{`${total} ${total === 1 ? 'guide' : 'guides'} · ${onPhone} downloaded · ${taught} taught`}</Text>
             {taught >= SLOW_SEARCH_TAUGHT_GUIDES && (
               <Text style={styles.note}>The assistant searches every guide it has learned. More guides make answers slower.</Text>
