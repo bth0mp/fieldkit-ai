@@ -9,6 +9,7 @@ import { errorCodes, isErrorWithCode, pick, pickDirectory, releaseLongTermAccess
 import { ensureCategoryProject, isLibraryProject, libraryProjectId, libraryProjectIds, projectStoreHydrated } from '../../features/library/libraryProjects';
 import { useProjectStore } from '../../stores/projectStore';
 import { generateId } from '../../utils/generateId';
+import { oneLine } from '../../utils/oneLine';
 import logger from '../../utils/logger';
 import { categoryFor } from './kiwixCategory';
 import { type KiwixFile, useKiwixStore } from './kiwixStore';
@@ -66,10 +67,6 @@ function readerFor(file: KiwixFile): Promise<ZimArchive> {
   if (readers.size > MAX_OPEN_READERS) readers.delete(readers.keys().next().value!);
   return reader;
 }
-
-/** File metadata is shown on screen and named in the system prompt: one line, no control characters, cut short. */
-const oneLine = (text: string, max: number) =>
-  [...text.replace(/\s+/g, ' ')].filter(c => c.charCodeAt(0) >= 32 && c.charCodeAt(0) !== 127).join('').trim().slice(0, max);
 
 /** How well a file's best title answers the query: the whole query (3), a phrase in it (2), a prefix (1). */
 function rank(title: string | undefined, query: string): number {

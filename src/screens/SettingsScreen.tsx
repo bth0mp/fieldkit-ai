@@ -246,6 +246,16 @@ export const SettingsScreen: React.FC = () => {
               </View>
               <Icon name="chevron-right" size={16} color={colors.textMuted} />
             </TouchableOpacity>
+            <TouchableOpacity style={styles.navItem} testID="settings-checklists" onPress={() => navigation.navigate('Checklists')}>
+              <View style={styles.navItemIcon}>
+                <Icon name="check-square" size={16} color={colors.textSecondary} />
+              </View>
+              <View style={styles.navItemContent}>
+                <Text style={styles.navItemTitle}>Checklists</Text>
+                <Text style={styles.navItemDesc}>Your own packing and check lists</Text>
+              </View>
+              <Icon name="chevron-right" size={16} color={colors.textMuted} />
+            </TouchableOpacity>
             <TouchableOpacity style={[styles.navItem, styles.navItemLast]} onPress={() => navigation.navigate('About')}>
               <View style={styles.navItemIcon}>
                 <Icon name="info" size={16} color={colors.textSecondary} />
