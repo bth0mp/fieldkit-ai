@@ -199,12 +199,20 @@ function evaluateExpression(expr: string): number {
     return left;
   }
 
-  /** The remainder, with the binary dust taken off: 1 % 0.1 is 0, not 0.09999999999999995. */
+  /**
+   * The remainder, with the binary dust taken off: 1 % 0.1 is 0, not 0.09999999999999995. It is 0 only where
+   * the first number is a whole number of the second as near as a double can say (1 / 0.1 is 10.000000000000002).
+   * A remainder that is merely small beside the divisor is real: 0.18 % 1000000 is 0.18. And past a thousand
+   * million divisors a double cannot tell a whole number of them from nearly one, so the remainder is left as
+   * the numbers held give it.
+   */
   function remainder(left: number, right: number): number {
     const rest = left % right;
     if (bothExact(left, right)) return rest;
-    const size = Math.abs(right);
-    return Math.abs(rest) < 1e-12 * size || Math.abs(Math.abs(rest) - size) < 1e-12 * size ? 0 : rest;
+    const times = left / right;
+    const whole = Math.round(times);
+    const wholeTimes = whole !== 0 && Math.abs(times) < 1e9 && Math.abs(times - whole) <= 4 * Number.EPSILON * Math.abs(times);
+    return wholeTimes ? 0 : rest;
   }
 
   function parseTerm(): number {

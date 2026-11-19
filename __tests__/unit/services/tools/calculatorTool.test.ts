@@ -58,7 +58,7 @@ describe('calculator', () => {
     expect(await run('999999999999999+0.5')).toBe('999999999999999+0.5 = about 999999999999999.5');
     expect(await run('99999999999999+0.5')).toBe('99999999999999+0.5 = 99999999999999.5');
     // The largest numbers there are do not come out as "Infinity".
-    expect(await run('1.7976931348623157*10^308')).toMatch(/= about 1\.7976931348623157e\+308$/);
+    expect(await run('1.7976931348623157*10^308')).toBe('1.7976931348623157*10^308 = about 1.7976931348623157e+308');
   });
 
   it('gives the remainder of decimal fractions as arithmetic does', async () => {
@@ -71,6 +71,21 @@ describe('calculator', () => {
     expect(await run('7.5%2')).toBe('7.5%2 = 1.5');
     expect(await run('1%0.3')).toBe('1%0.3 = 0.1');
     expect(await run('17%5')).toBe('17%5 = 2');
+    expect(await run('2.2%1.1')).toBe('2.2%1.1 = 0');
+    expect(await run('-5.5%1.1')).toBe('-5.5%1.1 = 0');
+  });
+
+  it('keeps a small number whole when it is divided by a much larger one', async () => {
+    // The first rule for the dust called any remainder far smaller than the divisor "dust", so these were 0.
+    // Found by comparing the tool with a textbook evaluator on 20,000 random sums.
+    expect(await run('0.18%831^6')).toBe('0.18%831^6 = 0.18');
+    expect(await run('0.3%1000000000000000')).toBe('0.3%1000000000000000 = 0.3');
+    expect(await run('7.1%142^425')).toBe('7.1%142^425 = 7.1');
+    expect(await run('308/915591187%26.1^8')).toBe('308/915591187%26.1^8 = 3.36394675236209e-7');
+    expect(await run('8+720%95.5^7')).toBe('8+720%95.5^7 = 728');
+    // Nor is a remainder called 0 because the first number is so much the larger that no double can tell: it
+    // is then the remainder of the numbers as held, as it always was.
+    expect(await run('2^790%3.74')).toBe('2^790%3.74 = 1.97115562766305');
   });
 
   it('gives zero where decimal fractions cancel, and keeps a real small difference', async () => {
