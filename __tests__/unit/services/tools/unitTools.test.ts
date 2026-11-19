@@ -83,4 +83,64 @@ describe('convert_units', () => {
     expect(run(1, 'mg', 't')).toBe('1 mg = 1e-9 t');
     expect(run(0, 'F', 'F')).toBe('0 °F = 0 °F');
   });
+
+  it('does not round a large result to a few digits and pad the rest with zeros', () => {
+    // 1000 mi is 1 609 344 m exactly. Six digits padded with a zero read as an exact, and wrong, 1 609 340.
+    expect(run(1000, 'mi', 'm')).toBe('1000 mi = 1609344 m');
+    // 1 234 567 / 0.3048 = 4 050 416.67; the caller's own number comes back as it was sent.
+    expect(run(1234567, 'm', 'ft')).toBe('1234567 m = 4050417 ft');
+    // 123 456 789 km / 1.609344 = 76 712 492.17 mi.
+    expect(run(123456789, 'km', 'mi')).toBe('123456789 km = 76712492 mi');
+    expect(run(0.1 + 0.2, 'm', 'cm')).toBe('0.3 m = 30 cm');
+  });
+
+  it('gives absolute zero as exactly zero kelvin, whichever scale it came from', () => {
+    expect(run(-459.67, 'F', 'K')).toBe('-459.67 °F = 0 K');
+    expect(run(-273.15, 'C', 'K')).toBe('-273.15 °C = 0 K');
+  });
+
+  it('asks which calorie is meant, since the food Calorie is a thousand of the other', () => {
+    const which = 'can mean the small calorie (cal, 4.184 J) or the food Calorie (kcal, 4184 J). Say cal or kcal.';
+    expect(() => run(250, 'Calories', 'kJ')).toThrow(`"Calories" ${which}`);
+    expect(() => run(2000, 'calories', 'kcal')).toThrow(`"calories" ${which}`);
+    expect(() => run(1, 'kJ', 'calorie')).toThrow(`"calorie" ${which}`);
+    expect(() => run(250, 'Cal', 'kJ')).toThrow(`"Cal" ${which}`);
+    // Named exactly, each is taken as written.
+    expect(run(250, 'cal', 'J')).toBe('250 cal = 1046 J');
+    expect(run(250, 'kcal', 'kJ')).toBe('250 kcal = 1046 kJ');
+    expect(run(250, 'food calories', 'kJ')).toBe('250 kcal = 1046 kJ');
+    expect(run(1, 'kilocalorie', 'cal')).toBe('1 kcal = 1000 cal');
+  });
+
+  it('asks about "Mg", a milligram to a hurried typist and a tonne by the book', () => {
+    expect(() => run(1, 'Mg', 'kg')).toThrow('"Mg" can mean a milligram (mg) or a megagram, which is a tonne (t). Say mg or t.');
+    expect(run(1, 'mg', 'g')).toBe('1 mg = 0.001 g');
+    expect(run(1, 'MG', 'g')).toBe('1 mg = 0.001 g');
+  });
+
+  it('does not make a unit out of a one-letter symbol and an s', () => {
+    expect(() => run(20, 'cs', 'f')).toThrow(/Unknown unit "cs"/);
+    expect(() => run(20, 'fs', 'c')).toThrow(/Unknown unit "fs"/);
+  });
+
+  it('reads rates and plurals as people write them', () => {
+    expect(run(60, 'miles per hour', 'kilometers per hour')).toBe('60 mph = 96.5606 km/h');
+    expect(run(10, 'metres per second', 'km/hr')).toBe('10 m/s = 36 km/h');
+    expect(run(30, 'pounds per square inch', 'kPa')).toBe('30 psi = 206.843 kPa');
+    expect(run(100, 'yds', 'm')).toBe('100 yd = 91.44 m');
+    expect(run(2, 'BTUs', 'kJ')).toBe('2 BTU = 2.11011 kJ');
+  });
+
+  it('takes a number only as a plain decimal, not as hexadecimal or another base', () => {
+    for (const odd of ['0x10', '0b11', '0o17', '1_000', '١٢']) {
+      expect(() => run(odd, 'km', 'mi')).toThrow('value must be a number');
+    }
+    expect(run('1e3', 'm', 'km')).toBe('1000 m = 1 km');
+    expect(run(' -2.5 ', 'C', 'K')).toBe('-2.5 °C = 270.65 K');
+    expect(run('.5', 'km', 'm')).toBe('0.5 km = 500 m');
+  });
+
+  it('refuses a result too large to write, instead of printing Infinity', () => {
+    expect(() => run(1e308, 'km', 'mm')).toThrow('That is too large to convert.');
+  });
 });

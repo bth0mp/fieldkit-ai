@@ -27,7 +27,7 @@ const UNITS: Unit[] = [
   length('km', 1000, ['kilometer', 'kilometre', 'klick']),
   length('in', 0.0254, ['inch', 'inches']),
   length('ft', 0.3048, ['foot', 'feet']),
-  length('yd', 0.9144, ['yard']),
+  length('yd', 0.9144, ['yard', 'yds']),
   length('fathom', 1.8288, ['fathom']),
   length('mi', 1609.344, ['mile', 'statute mile']),
   length('nmi', 1852, ['nautical mile']),
@@ -58,7 +58,7 @@ const UNITS: Unit[] = [
   temperature('K', 1, ['kelvin']),
   // speed, base metre per second
   speed('m/s', 1, ['mps', 'meter per second', 'metre per second']),
-  speed('km/h', 1000 / 3600, ['kph', 'kmh', 'kilometer per hour', 'kilometre per hour']),
+  speed('km/h', 1000 / 3600, ['kph', 'kmh', 'kmph', 'km/hr', 'kilometer per hour', 'kilometre per hour']),
   speed('mph', 1609.344 / 3600, ['mile per hour', 'mi/h']),
   speed('kn', 1852 / 3600, ['knot', 'kt']),
   // pressure, base pascal
@@ -82,9 +82,10 @@ const UNITS: Unit[] = [
   energy('kJ', 1000, ['kilojoule']),
   energy('Wh', 3600, ['watt hour', 'watt-hour']),
   energy('kWh', 3.6e6, ['kilowatt hour', 'kilowatt-hour']),
-  energy('cal', 4.184, ['calorie']),
+  // "calorie" is not a name of either: see refuseAmbiguous.
+  energy('cal', 4.184, ['small calorie', 'gram calorie']),
   energy('kcal', 4184, ['kilocalorie', 'food calorie']),
-  energy('BTU', 1055.05585262, ['british thermal unit']),
+  energy('BTU', 1055.05585262, ['btu', 'british thermal unit']),
 ];
 
 /** One spelling of a name: lower case, no dots, no leading "degrees", single spaces. */
@@ -102,13 +103,31 @@ for (const u of UNITS) register(u.symbol, u);
 for (const u of UNITS) {
   for (const name of u.names) {
     register(name, u);
-    // Plurals of names only ("miles", "knots"); a plural of a symbol ("ms", "gs") means nothing.
-    if (!name.endsWith('s')) register(`${name}s`, u);
+    // Plurals of names only ("miles", "knots"); a plural of a symbol or of a one-letter name ("ms", "cs")
+    // means nothing. A rate is made plural in its first word: "miles per hour".
+    if (name.length > 1 && !name.endsWith('s')) register(`${name}s`, u);
+    if (name.includes(' per ')) register(name.replace(' per ', 's per '), u);
   }
 }
 
-/** Case-blind on purpose: no two units here differ only by case, and models send "KM", "Kg" and "f". */
+const WHICH_CALORIE = 'can mean the small calorie (cal, 4.184 J) or the food Calorie (kcal, 4184 J). Say cal or kcal.';
+
+/**
+ * Two spellings mean units a thousand, or a thousand million, apart, and the wrong one would be a confident
+ * wrong answer: the caller is asked which. "cal" and "mg" written exactly are taken as written.
+ */
+function refuseAmbiguous(raw: unknown): void {
+  if (typeof raw !== 'string') return;
+  const written = raw.trim();
+  const key = normalize(written);
+  const isCalorieWord = key === 'calorie' || key === 'calories';
+  if (isCalorieWord || (key === 'cal' && written.replaceAll('.', '') !== 'cal')) throw new Error(`"${written}" ${WHICH_CALORIE}`);
+  if (written === 'Mg') throw new Error('"Mg" can mean a milligram (mg) or a megagram, which is a tonne (t). Say mg or t.');
+}
+
+/** Case-blind on purpose: models send "KM", "Kg" and "f". The two cases where case matters are refused first. */
 function findUnit(raw: unknown): Unit | null {
+  refuseAmbiguous(raw);
   return typeof raw === 'string' ? BY_NAME.get(normalize(raw)) ?? null : null;
 }
 
@@ -118,18 +137,25 @@ function knownUnits(): string {
   return [...byDimension].map(([dimension, symbols]) => `${dimension}: ${symbols.join(', ')}`).join('; ');
 }
 
-/** Up to 6 significant digits, no trailing zeros; an exponent only for sizes nobody writes out. */
-function formatNumber(n: number): string {
-  const rounded = Number(n.toPrecision(6));
+/**
+ * Six significant digits, or as many as the whole-number part has: a rounded result is never padded with
+ * zeros that read as exact. No trailing zeros; an exponent only for sizes nobody writes out.
+ */
+function formatNumber(n: number, digits = 6): string {
+  const whole = Math.abs(n) >= 1 ? Math.floor(Math.log10(Math.abs(n))) + 1 : 0;
+  const rounded = Number(n.toPrecision(Math.min(15, Math.max(digits, whole))));
   const abs = Math.abs(rounded);
   if (abs !== 0 && (abs >= 1e15 || abs < 1e-6)) return rounded.toExponential().replace('e+', 'e');
   return String(rounded);
 }
 
+const PLAIN_DECIMAL = /^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i;
+
 export function convertUnits(call: ToolCall): string {
   const { value: rawValue, from: rawFrom, to: rawTo } = call.arguments;
-  // Models often send the number as text ("5"). An empty string must not read as 0.
-  const value = typeof rawValue === 'string' && rawValue.trim() !== '' ? Number(rawValue) : rawValue;
+  // Models often send the number as text ("5"). Only a plain decimal is read: an empty string must not be 0,
+  // nor "0x10" sixteen.
+  const value = typeof rawValue === 'string' && PLAIN_DECIMAL.test(rawValue.trim()) ? Number(rawValue) : rawValue;
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     throw new Error('Missing or invalid parameter: value must be a number');
   }
@@ -144,12 +170,17 @@ export function convertUnits(call: ToolCall): string {
     throw new Error(`Cannot convert ${from.dimension} (${from.symbol}) to ${to.dimension} (${to.symbol})`);
   }
 
-  const base = value * from.factor + from.offset;
-  if (from.dimension === 'temperature' && base < -1e-9) {
-    throw new Error(`${formatNumber(value)} ${from.symbol} is below absolute zero`);
+  // The caller's own number is echoed as sent, not rounded to six digits.
+  const sent = formatNumber(value, 15);
+  let base = value * from.factor + from.offset;
+  if (from.dimension === 'temperature') {
+    if (base < -1e-9) throw new Error(`${sent} ${from.symbol} is below absolute zero`);
+    // Adding an offset leaves float dust at absolute zero itself (-459.67 °F is 0 K, not -2.8e-14 K).
+    if (Math.abs(base) < 1e-9) base = 0;
   }
   let result = (base - to.offset) / to.factor;
   // Subtracting two offsets leaves float dust where the true answer is zero (32 °F is 0 °C, not 5.7e-14).
   if (to.offset !== 0 && Math.abs(result) < Math.abs(base / to.factor) * 1e-12) result = 0;
-  return `${formatNumber(value)} ${from.symbol} = ${formatNumber(result)} ${to.symbol}`;
+  if (!Number.isFinite(result)) throw new Error('That is too large to convert.');
+  return `${sent} ${from.symbol} = ${formatNumber(result)} ${to.symbol}`;
 }
