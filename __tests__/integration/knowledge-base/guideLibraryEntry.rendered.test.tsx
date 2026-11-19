@@ -35,14 +35,14 @@ const setFocused = (focused: boolean) => { mockFocus.focused = focused; mockFocu
 describe('Guide library entry points (rendered)', () => {
   beforeEach(() => { mockNavigate.mockClear(); mockFocus.focused = true; });
 
-  it('the Field guides knowledge base offers the Guide library and opens it without downloading anything', async () => {
+  it('the knowledge base of a library project offers the Guide library and opens it without downloading anything', async () => {
     const h = await setupChatScreen({ engine: 'llama', pdf: true, sqlite: true });
     const { React, rtl, boundary } = h;
-    const { FIELD_GUIDES_PROJECT_ID } = require('../../../src/features/fieldGuides/fieldGuides');
+    const LIBRARY_PROJECT_ID = 'library-medical';
     const { KnowledgeBaseScreen } = require('../../../src/screens/KnowledgeBaseScreen');
 
     // Empty state: nothing has been added yet.
-    openRoute({ projectId: FIELD_GUIDES_PROJECT_ID });
+    openRoute({ projectId: LIBRARY_PROJECT_ID });
     const kb = rtl.render(React.createElement(KnowledgeBaseScreen, {}));
     await rtl.waitFor(() => { expect(kb.queryByText('No documents yet')).not.toBeNull(); });
     expect(kb.queryByText('Guide library')).not.toBeNull();
@@ -55,22 +55,22 @@ describe('Guide library entry points (rendered)', () => {
     expect(boundary.fs!.module.downloadFile).not.toHaveBeenCalled();
   }, 30000);
 
-  it('back on the Field guides knowledge base, it lists a guide taught meanwhile', async () => {
+  it('back on the knowledge base of a library project, it lists a guide taught meanwhile', async () => {
     const h = await setupChatScreen({ engine: 'llama', pdf: true, sqlite: true });
     const { React, rtl, boundary } = h;
     const fs = boundary.fs!;
     fs.seedAsset('models/all-MiniLM-L6-v2-Q8_0.gguf', 'GGUF');
     boundary.llama!.scriptEmbedding(() => [0.1, 1]);
     const { ragService } = require('../../../src/services/rag');
-    const { FIELD_GUIDES_PROJECT_ID } = require('../../../src/features/fieldGuides/fieldGuides');
+    const LIBRARY_PROJECT_ID = 'library-medical';
     const index = async (name: string, text: string) => {
       const path = `${fs.DocumentDirectoryPath}/guide-library/${name}`;
       await (fs.module.writeFile as (p: string, c: string) => Promise<void>)(path, text);
-      await ragService.indexDocument({ projectId: FIELD_GUIDES_PROJECT_ID, filePath: path, fileName: name, fileSize: text.length, bundled: true });
+      await ragService.indexDocument({ projectId: LIBRARY_PROJECT_ID, filePath: path, fileName: name, fileSize: text.length, bundled: true });
     };
     await index('First guide.pdf', 'How to tie a bowline.');
     const { KnowledgeBaseScreen } = require('../../../src/screens/KnowledgeBaseScreen');
-    openRoute({ projectId: FIELD_GUIDES_PROJECT_ID });
+    openRoute({ projectId: LIBRARY_PROJECT_ID });
     const kb = rtl.render(React.createElement(KnowledgeBaseScreen, {}));
     await rtl.waitFor(() => { expect(kb.getByText('First guide.pdf')).toBeTruthy(); });
     expect(kb.getByText('Guide library')).toBeTruthy();

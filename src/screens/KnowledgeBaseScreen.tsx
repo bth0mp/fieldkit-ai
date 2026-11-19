@@ -23,7 +23,7 @@ import { ragService } from '../services/rag';
 import type { RagDocument } from '../services/rag';
 import { RootStackParamList } from '../navigation/types';
 import { isPickerStuck } from '../utils/pickerErrorUtils';
-import { FIELD_GUIDES_PROJECT_ID } from '../features/fieldGuides/fieldGuides';
+import { isLibraryProject } from '../features/library/libraryProjects';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'KnowledgeBase'>;
@@ -180,7 +180,7 @@ export const KnowledgeBaseScreen: React.FC = () => {
     </TouchableOpacity>
   );
 
-  const guideLibraryRow = projectId === FIELD_GUIDES_PROJECT_ID ? (
+  const guideLibraryRow = isLibraryProject(projectId) ? (
     <TouchableOpacity
       style={styles.guideLibraryRow}
       testID="kb-open-guide-library"

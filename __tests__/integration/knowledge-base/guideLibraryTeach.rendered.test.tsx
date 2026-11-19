@@ -1,7 +1,7 @@
 /**
  * Guide library teaching (rendered) — the user switches "Assistant knows this" on for a downloaded guide, the
- * guide is indexed into the Field guides knowledge base and a Field guides chat cites it like the bundled
- * guides. Switching it off (or removing the guide) takes it out of the knowledge base again.
+ * guide is indexed into the knowledge base of its category's library project, and a chat there cites it like
+ * the bundled guides. Switching it off (or removing the guide) takes it out of the knowledge base again.
  *
  * Real stack: the real GuideLibraryScreen, guide library service and store, ragService.indexDocument →
  * documentService → chunking → embedding → real SQL, the project store and the real ChatScreen send path.
@@ -48,7 +48,8 @@ const asyncStorage = () => {
   return m.default ?? m;
 };
 const rag = () => require('../../../src/services/rag').ragService;
-const docsInFieldGuides = async (): Promise<{ id: number; name: string; path: string }[]> => rag().getDocumentsByProject('field-guides');
+const fieldcraftProject = () => require('../../../src/features/library/libraryProjects').ensureCategoryProject('fieldcraft');
+const docsInFieldcraft = async (): Promise<{ id: number; name: string; path: string }[]> => rag().getDocumentsByProject('library-fieldcraft');
 
 type Opened = Awaited<ReturnType<typeof setupChatScreen>>;
 type Fs = NonNullable<Opened['boundary']['fs']>;
@@ -123,7 +124,7 @@ async function removeGuide(h: Opened, view: View, id: string, answer: 'Remove' |
 }
 
 describe('Guide library teaching (rendered)', () => {
-  it('a taught guide answers in a Field guides chat', async () => {
+  it('a taught guide answers in a Fieldcraft chat', async () => {
     const h = await openLibrary([KNOTS]);
     const { rtl, view, boundary } = h;
     await downloadGuide(h, view, KNOTS, BOWLINE);
@@ -133,8 +134,11 @@ describe('Guide library teaching (rendered)', () => {
     await setTaught(h, view, 'test-knots', true);
     expect(view.getByText('1 guide · 1 downloaded · 1 taught')).toBeTruthy();
     view.unmount();
+    // It went into its category's project and no other.
+    const { useProjectStore } = require('../../../src/stores/projectStore');
+    expect(useProjectStore.getState().projects.map((p: { id: string }) => p.id).filter((id: string) => id.startsWith('library-'))).toEqual(['library-fieldcraft']);
 
-    openRoute({ projectId: 'field-guides' });
+    openRoute({ projectId: 'library-fieldcraft' });
     h.render();
     await h.send('How do I tie a bowline?', { text: 'Form a small loop, pass the end up through it, around the standing part and back down.' });
     await rtl.waitFor(() => { expect(h.view!.queryByText(/around the standing part and back down/)).not.toBeNull(); }, { timeout: 6000 });
@@ -143,7 +147,7 @@ describe('Guide library teaching (rendered)', () => {
     expect(sent).toContain('pass the running end up through the loop');
   }, 40000);
 
-  it('a taught guide the catalogue drops still answers in a Field guides chat and can be switched off', async () => {
+  it('a taught guide the catalogue drops still answers in a Fieldcraft chat and can be switched off', async () => {
     const OTHER = guide('test-other', 'Test other', WATER_TEXT);
     const h = await openLibrary([KNOTS, OTHER]);
     const { rtl, view, fs, dir, boundary } = h;
@@ -160,7 +164,7 @@ describe('Guide library teaching (rendered)', () => {
     expect(view.getByText('2 guides · 1 downloaded · 1 taught')).toBeTruthy();
     view.unmount();
 
-    openRoute({ projectId: 'field-guides' });
+    openRoute({ projectId: 'library-fieldcraft' });
     h.render();
     await h.send('How do I tie a bowline?', { text: 'Form a small loop, pass the end up through it, around the standing part and back down.' });
     await rtl.waitFor(() => { expect(h.view!.queryByText(/around the standing part and back down/)).not.toBeNull(); }, { timeout: 6000 });
@@ -173,7 +177,7 @@ describe('Guide library teaching (rendered)', () => {
     rtl.fireEvent(switchOf(again, 'test-knots'), 'valueChange', false);
     // Once off, a guide the catalogue no longer lists cannot be taught again, so the switch goes.
     await rtl.waitFor(() => { expect(again.queryByTestId('guide-teach-test-knots')).toBeNull(); }, { timeout: 6000 });
-    expect(await docsInFieldGuides()).toEqual([]);
+    expect(await docsInFieldcraft()).toEqual([]);
     expect(again.getByText('No longer listed')).toBeTruthy();
     expect(again.getByTestId('guide-open-test-knots')).toBeTruthy();
     expect(await exists(fs, `${dir}/test-knots.pdf`)).toBe(true);
@@ -184,10 +188,10 @@ describe('Guide library teaching (rendered)', () => {
     const { view, fs, dir } = h;
     await downloadGuide(h, view, KNOTS, BOWLINE);
     await setTaught(h, view, 'test-knots', true);
-    expect((await docsInFieldGuides()).map(d => d.name)).toEqual(['Test knots (Test publisher).pdf']);
+    expect((await docsInFieldcraft()).map(d => d.name)).toEqual(['Test knots (Test publisher).pdf']);
 
     await setTaught(h, view, 'test-knots', false);
-    expect(await docsInFieldGuides()).toEqual([]);
+    expect(await docsInFieldcraft()).toEqual([]);
     expect(await exists(fs, `${dir}/test-knots.pdf`)).toBe(true);
     expect(view.getByTestId('guide-open-test-knots')).toBeTruthy();
     expect(view.getByText('1 guide · 1 downloaded · 0 taught')).toBeTruthy();
@@ -202,7 +206,7 @@ describe('Guide library teaching (rendered)', () => {
     const message = await removeGuide(h, view, 'test-knots');
     expect(message).toBe('"Test knots" will be deleted from your phone. The assistant will stop using it.');
     await rtl.waitFor(() => { expect(view.getByTestId('guide-download-test-knots')).toBeTruthy(); }, { timeout: 4000 });
-    expect(await docsInFieldGuides()).toEqual([]);
+    expect(await docsInFieldcraft()).toEqual([]);
     expect(await exists(fs, `${dir}/test-knots.pdf`)).toBe(false);
   }, 40000);
 
@@ -228,7 +232,7 @@ describe('Guide library teaching (rendered)', () => {
     expect(switchOf(view, 'test-blank').props.value).toBe(false);
     expect(view.getByTestId('guide-open-test-blank')).toBeTruthy();
     expect(await exists(fs, `${dir}/test-blank.pdf`)).toBe(true);
-    expect(await docsInFieldGuides()).toEqual([]);
+    expect(await docsInFieldcraft()).toEqual([]);
   }, 40000);
 
   it('a teach that fails inside the app shows the fixed message, not the internal error', async () => {
@@ -241,21 +245,22 @@ describe('Guide library teaching (rendered)', () => {
     await rtl.waitFor(() => { expect(view.getByText("Couldn't teach this guide to the assistant. Try again.")).toBeTruthy(); }, { timeout: 6000 });
     expect(view.queryByText(/native error|ggml/)).toBeNull();
     expect(switchOf(view, 'test-knots').props.value).toBe(false);
-    expect(await docsInFieldGuides()).toEqual([]);
+    expect(await docsInFieldcraft()).toEqual([]);
   }, 40000);
 
-  it('a guide whose name is taken by another document in Field guides is not counted as taught', async () => {
+  it('a guide whose name is taken by another document in its project is not counted as taught', async () => {
     const h = await openLibrary([KNOTS], async fs => {
-      // The user added their own file under the same name to the Field guides knowledge base.
+      // The user added their own file under the same name to the Fieldcraft knowledge base.
       const other = `${fs.DocumentDirectoryPath}/picked/knots.pdf`;
       await (fs.module.writeFile as (p: string, c: string) => Promise<void>)(other, 'My own notes on the bowline.');
-      await rag().indexDocument({ projectId: 'field-guides', filePath: other, fileName: 'Test knots (Test publisher).pdf', fileSize: 28, bundled: true });
+      await fieldcraftProject(); // the project exists wherever its documents do
+      await rag().indexDocument({ projectId: 'library-fieldcraft', filePath: other, fileName: 'Test knots (Test publisher).pdf', fileSize: 28, bundled: true });
     });
     const { rtl, view } = h;
     await downloadGuide(h, view, KNOTS, BOWLINE);
 
     rtl.fireEvent(switchOf(view, 'test-knots'), 'valueChange', true);
-    await rtl.waitFor(() => { expect(view.getByText('A document with this name is already in Field guides. Remove it there first.')).toBeTruthy(); }, { timeout: 6000 });
+    await rtl.waitFor(() => { expect(view.getByText("A document with this name is already in this guide's project. Remove it there first.")).toBeTruthy(); }, { timeout: 6000 });
     expect(switchOf(view, 'test-knots').props.value).toBe(false);
     expect(view.getByText('1 guide · 1 downloaded · 0 taught')).toBeTruthy();
   }, 40000);
@@ -281,7 +286,7 @@ describe('Guide library teaching (rendered)', () => {
     expect(view.queryByTestId('guide-open-test-knots')).toBeNull();
     expect(view.getByText('1 guide · 0 downloaded · 0 taught')).toBeTruthy();
     expect(await exists(fs, `${dir}/test-knots.pdf`)).toBe(false);
-    expect(await docsInFieldGuides()).toEqual([]);
+    expect(await docsInFieldcraft()).toEqual([]);
   }, 40000);
 
   it('a guide switched on while another is being taught waits its turn, even when the first fails', async () => {
@@ -303,7 +308,7 @@ describe('Guide library teaching (rendered)', () => {
     }, { timeout: 6000 });
     expect(switchOf(view, 'test-blank').props.value).toBe(false);
     expect(switchOf(view, 'test-knots').props.value).toBe(true);
-    expect((await docsInFieldGuides()).map(d => d.name)).toEqual(['Test knots (Test publisher).pdf']);
+    expect((await docsInFieldcraft()).map(d => d.name)).toEqual(['Test knots (Test publisher).pdf']);
   }, 40000);
 
   it('while guides are taught, the row says which one is being learned and which is waiting', async () => {
@@ -341,17 +346,18 @@ describe('Guide library teaching (rendered)', () => {
       // An earlier run was killed while embedding: the document and its chunks were written, no embeddings.
       await rag().ensureReady();
       const { ragDatabase } = require('../../../src/services/rag/database');
-      const docId = ragDatabase.insertDocument({ projectId: 'field-guides', name: 'Test knots (Test publisher).pdf', path: `${dir}/test-knots.pdf`, size: KNOTS.bytes });
+      await fieldcraftProject(); // the project exists wherever its documents do
+      const docId = ragDatabase.insertDocument({ projectId: 'library-fieldcraft', name: 'Test knots (Test publisher).pdf', path: `${dir}/test-knots.pdf`, size: KNOTS.bytes });
       ragDatabase.insertChunks(docId, [{ content: BOWLINE, position: 0 }]);
     });
     const { rtl, view } = h;
     await rtl.waitFor(() => { expect(view.getByText('1 guide · 1 downloaded · 0 taught')).toBeTruthy(); }, { timeout: 4000 });
     expect(switchOf(view, 'test-knots').props.value).toBe(false);
-    await rtl.waitFor(async () => { expect(await docsInFieldGuides()).toEqual([]); }, { timeout: 4000 });
+    await rtl.waitFor(async () => { expect(await docsInFieldcraft()).toEqual([]); }, { timeout: 4000 });
 
     // It can be taught again.
     await setTaught(h, view, 'test-knots', true);
-    expect((await docsInFieldGuides()).map(d => d.name)).toEqual(['Test knots (Test publisher).pdf']);
+    expect((await docsInFieldcraft()).map(d => d.name)).toEqual(['Test knots (Test publisher).pdf']);
   }, 40000);
 
   it('at launch a saved guide that only fails a newer text rule is kept, and a corrupt one goes with its document', async () => {
@@ -360,14 +366,15 @@ describe('Guide library teaching (rendered)', () => {
     const BROKEN = guide('test-broken', 'Test broken', WATER_TEXT);
     const h = await openLibrary([BROKEN], async (fs, dir) => {
       await seedDownloaded(fs, dir, [ODD, BROKEN], id => (id === 'test-odd' ? BOWLINE : WATER_TEXT));
-      await rag().indexDocument({ projectId: 'field-guides', filePath: `${dir}/test-broken.pdf`, fileName: 'Test broken (Test publisher).pdf', fileSize: BROKEN.bytes, bundled: true });
+      await fieldcraftProject(); // the project exists wherever its documents do
+      await rag().indexDocument({ projectId: 'library-fieldcraft', filePath: `${dir}/test-broken.pdf`, fileName: 'Test broken (Test publisher).pdf', fileSize: BROKEN.bytes, bundled: true });
       // The broken record lost its title.
       const { title: _title, ...untitled } = BROKEN;
       await asyncStorage().setItem('@fieldkit/guide_library', JSON.stringify({ downloaded: { 'test-odd': ODD, 'test-broken': untitled } }));
     });
     const { rtl, view, fs, dir } = h;
 
-    await rtl.waitFor(async () => { expect(await docsInFieldGuides()).toEqual([]); }, { timeout: 4000 });
+    await rtl.waitFor(async () => { expect(await docsInFieldcraft()).toEqual([]); }, { timeout: 4000 });
     expect(view.getByText('Test odd title')).toBeTruthy();
     expect(view.getByTestId('guide-open-test-odd')).toBeTruthy();
     expect(await exists(fs, `${dir}/test-odd.pdf`)).toBe(true);
@@ -384,8 +391,8 @@ describe('Guide library teaching (rendered)', () => {
     await setTaught(h, view, 'test-knots', true);
     view.unmount();
 
-    // Elsewhere in the app, the user deletes the document from the Field guides knowledge base.
-    const [doc] = await docsInFieldGuides();
+    // Elsewhere in the app, the user deletes the document from the Fieldcraft knowledge base.
+    const [doc] = await docsInFieldcraft();
     await rag().deleteDocument(doc.id);
 
     const again = await mountLibrary(h);
@@ -394,46 +401,44 @@ describe('Guide library teaching (rendered)', () => {
     expect(again.getByText('1 guide · 1 downloaded · 0 taught')).toBeTruthy();
   }, 40000);
 
-  it('teaching recreates the Field guides project if it was deleted', async () => {
+  it('teaching recreates the Fieldcraft project if it was deleted', async () => {
     const h = await openLibrary([KNOTS], async () => {
-      // An earlier launch created the project, which the user then deleted.
-      await asyncStorage().setItem('@fieldkit/field_guides_seeded', JSON.stringify({ projectCreated: true, done: [] }));
+      // An earlier launch seeded the survival manual into the Fieldcraft project, which the user then deleted.
+      await asyncStorage().setItem('@fieldkit/field_guides_seeded', JSON.stringify({ done: ['atp-3-50-21-survival.pdf'] }));
     });
     const { view, boundary } = h;
     const { useProjectStore } = require('../../../src/stores/projectStore');
-    expect(useProjectStore.getState().getProject('field-guides')).toBeUndefined();
+    expect(useProjectStore.getState().getProject('library-fieldcraft')).toBeUndefined();
 
     await downloadGuide(h, view, KNOTS, BOWLINE);
     await setTaught(h, view, 'test-knots', true);
-    const project = useProjectStore.getState().getProject('field-guides');
-    expect(project?.name).toBe('Field guides');
+    const project = useProjectStore.getState().getProject('library-fieldcraft');
+    expect(project?.name).toBe('Fieldcraft and knots');
 
-    // The next launch's seed does not put back the bundled guides the user had removed.
+    // The next launch's seed does not put back the bundled guide the user had removed.
     boundary.fs!.seedAsset('guides/atp-3-50-21-survival.pdf', 'A survival manual.');
     const { seedFieldGuides } = require('../../../src/features/fieldGuides/fieldGuides');
     await seedFieldGuides();
-    expect((await docsInFieldGuides()).map(d => d.name)).toEqual(['Test knots (Test publisher).pdf']);
+    expect((await docsInFieldcraft()).map(d => d.name)).toEqual(['Test knots (Test publisher).pdf']);
   }, 40000);
 
-  it('teaching before the first-launch seed made the project leaves the bundled guides for the seed to add', async () => {
-    // A launch whose seed never got as far as creating the project (nothing saved).
+  it('teaching before the first-launch seed leaves the bundled guides for the seed to add', async () => {
+    // A launch whose seed never ran (nothing saved).
     const h = await openLibrary([KNOTS]);
     const { view, boundary } = h;
     await downloadGuide(h, view, KNOTS, BOWLINE);
     await setTaught(h, view, 'test-knots', true);
     const { useProjectStore } = require('../../../src/stores/projectStore');
-    expect(useProjectStore.getState().projects.filter((p: { id: string }) => p.id === 'field-guides')).toHaveLength(1);
+    expect(useProjectStore.getState().projects.filter((p: { id: string }) => p.id === 'library-fieldcraft')).toHaveLength(1);
 
-    // The next launch's seed adds every shipped guide to the project the teach created, and no second project.
+    // The next launch's seed adds the survival manual to the project the teach created, and no second project.
     const shipped = readdirSync(join(__dirname, '../../../android/app/src/main/assets/guides'));
     for (const file of shipped) boundary.fs!.seedAsset(`guides/${file}`, `Shipped guide ${file}.`);
     const { seedFieldGuides } = require('../../../src/features/fieldGuides/fieldGuides');
     await seedFieldGuides();
-    const names = (await docsInFieldGuides()).map(d => d.name);
-    expect(names).toContain('Test knots (Test publisher).pdf');
-    expect(names).toContain('Survival (US Army ATP 3-50.21).pdf');
-    expect(names).toHaveLength(shipped.length + 1);
-    expect(useProjectStore.getState().projects.filter((p: { id: string }) => p.id === 'field-guides')).toHaveLength(1);
+    const names = (await docsInFieldcraft()).map(d => d.name);
+    expect(names.sort()).toEqual(['Survival (US Army ATP 3-50.21).pdf', 'Test knots (Test publisher).pdf']);
+    expect(useProjectStore.getState().projects.filter((p: { id: string }) => p.id === 'library-fieldcraft')).toHaveLength(1);
   }, 40000);
 
   it('the slow-search note appears at the threshold', async () => {
@@ -443,7 +448,8 @@ describe('Guide library teaching (rendered)', () => {
       await seedDownloaded(fs, dir, many, bodyOf);
       // All but one were taught in an earlier run.
       for (const g of many.slice(1)) {
-        await rag().indexDocument({ projectId: 'field-guides', filePath: `${dir}/${g.id}.pdf`, fileName: `${g.title} (${g.publisher}).pdf`, fileSize: g.bytes, bundled: true });
+        await fieldcraftProject(); // the project exists wherever its documents do
+        await rag().indexDocument({ projectId: 'library-fieldcraft', filePath: `${dir}/${g.id}.pdf`, fileName: `${g.title} (${g.publisher}).pdf`, fileSize: g.bytes, bundled: true });
       }
     });
     const { view } = h;

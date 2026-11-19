@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import RNFS from 'react-native-fs';
 import logger from '../../utils/logger';
 import { ragService } from '../../services/rag';
-import { FIELD_GUIDES_PROJECT_ID } from '../fieldGuides/fieldGuides';
+import { libraryProjectIds } from '../library/libraryProjects';
 import { isCatalogueId, parseSavedEntry, type GuideEntry } from './catalogue';
 import { ownEntry } from './guideLibraryStore';
 
@@ -29,8 +29,10 @@ export async function removeQuietly(path: string): Promise<void> {
 /** Delete every knowledge-base document for this guide. Returns false when that failed (and logs why). */
 export async function deleteFromKnowledgeBase(id: string): Promise<boolean> {
   try {
-    const docs = await ragService.getDocumentsByProject(FIELD_GUIDES_PROJECT_ID);
-    for (const doc of docs.filter(d => d.path === guidePath(id))) await ragService.deleteDocument(doc.id);
+    for (const projectId of libraryProjectIds()) {
+      const docs = await ragService.getDocumentsByProject(projectId);
+      for (const doc of docs.filter(d => d.path === guidePath(id))) await ragService.deleteDocument(doc.id);
+    }
     return true;
   } catch (error) {
     logger.error('[GuideLibrary] could not delete from the knowledge base', id, error);

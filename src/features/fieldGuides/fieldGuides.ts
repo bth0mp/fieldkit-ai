@@ -4,6 +4,7 @@ import { ragService } from '../../services/rag';
 import { useProjectStore } from '../../stores/projectStore';
 import { copyBundledAsset } from '../../utils/bundledAsset';
 import logger from '../../utils/logger';
+import { ensureCategoryProject, projectStoreHydrated } from '../library/libraryProjects';
 
 export const FIELD_GUIDES_PROJECT_ID = 'field-guides';
 
@@ -12,12 +13,12 @@ export const FIELD_GUIDES_PROJECT_ID = 'field-guides';
  * credited in scripts/gen-notices.js (Open-source licenses screen). `name` is what the user and the model see.
  */
 const FIELD_GUIDES = [
-  { asset: 'atp-3-50-21-survival.pdf', name: 'Survival (US Army ATP 3-50.21).pdf' },
-  { asset: 'ships-medicine-chest.pdf', name: "Ship's Medicine Chest and Medical Aid at Sea (US Public Health Service).pdf" },
-  { asset: 'atp-4-02-11-first-aid.pdf', name: 'Casualty Response and First Aid (US Army ATP 4-02.11).pdf' },
-  { asset: 'tc-4-02-3-field-hygiene.pdf', name: 'Field Hygiene and Sanitation (US Army TC 4-02.3).pdf' },
-  { asset: 'nrcs-tn28-solar-pumps.pdf', name: 'Solar-Powered Water Pump Systems (USDA NRCS Technical Note 28).pdf' },
-  { asset: 'neets-1-direct-current.pdf', name: 'Matter, Energy and Direct Current (US Navy NEETS Module 1).pdf' },
+  { asset: 'atp-3-50-21-survival.pdf', name: 'Survival (US Army ATP 3-50.21).pdf', category: 'fieldcraft' },
+  { asset: 'ships-medicine-chest.pdf', name: "Ship's Medicine Chest and Medical Aid at Sea (US Public Health Service).pdf", category: 'medical' },
+  { asset: 'atp-4-02-11-first-aid.pdf', name: 'Casualty Response and First Aid (US Army ATP 4-02.11).pdf', category: 'medical' },
+  { asset: 'tc-4-02-3-field-hygiene.pdf', name: 'Field Hygiene and Sanitation (US Army TC 4-02.3).pdf', category: 'water' },
+  { asset: 'nrcs-tn28-solar-pumps.pdf', name: 'Solar-Powered Water Pump Systems (USDA NRCS Technical Note 28).pdf', category: 'power' },
+  { asset: 'neets-1-direct-current.pdf', name: 'Matter, Energy and Direct Current (US Navy NEETS Module 1).pdf', category: 'power' },
 ];
 
 const SYSTEM_PROMPT = `You are a field guide assistant running offline on the user's phone. Answer from the field guides in your knowledge base: give clear, numbered steps and name the guide you used. If the guides do not cover the question, say so before answering from general knowledge. For injuries and illness, say that this is first aid guidance, not a substitute for a medical professional, and that emergency services should be contacted when they can be reached.`;
@@ -37,14 +38,6 @@ async function readState(): Promise<SeedState> {
 }
 
 const saveState = (state: SeedState) => AsyncStorage.setItem(STATE_KEY, JSON.stringify(state));
-
-async function projectStoreHydrated(): Promise<void> {
-  const persist = useProjectStore.persist;
-  if (persist.hasHydrated()) return;
-  await new Promise<void>((resolve) => {
-    const unsubscribe = persist.onFinishHydration(() => { unsubscribe(); resolve(); });
-  });
-}
 
 /** Creates the Field guides project unless it exists (createProject would add a second one with the same id). */
 function createFieldGuidesProject(): void {
@@ -82,37 +75,26 @@ async function copyGuide(asset: string, dest: string): Promise<void> {
 }
 
 /**
- * First-launch setup of the bundled field guides: creates the Field guides project and indexes each guide
- * into its knowledge base. Runs on every launch but only does work for guides not yet indexed; a guide that
- * fails is logged and retried on the next launch.
+ * First-launch setup of the bundled field guides: indexes each guide into the knowledge base of its category's
+ * library project. Runs on every launch but only does work for guides not yet seeded; a guide that fails is logged
+ * and retried on the next launch. A seeded guide the user deletes later is not added again.
  */
 export async function seedFieldGuides(): Promise<void> {
   const state = await readState();
   const todo = FIELD_GUIDES.filter(g => !state.done.includes(g.asset));
   if (todo.length === 0) return;
 
-  await projectStoreHydrated();
   const dir = `${RNFS.DocumentDirectoryPath}/field-guides`;
   await RNFS.mkdir(dir);
-  const projects = useProjectStore.getState();
-  if (!projects.getProject(FIELD_GUIDES_PROJECT_ID)) {
-    if (state.projectCreated) return; // the user deleted the project
-    // Throws before any project exists when this build ships no guides (iOS has none bundled).
-    await copyGuide(todo[0].asset, `${dir}/${todo[0].asset}`);
-    // Teaching a library guide may have created it while the copy ran; then this does nothing.
-    createFieldGuidesProject();
-    state.projectCreated = true;
-    await saveState(state);
-  }
-
-  const indexed = new Set((await ragService.getDocumentsByProject(FIELD_GUIDES_PROJECT_ID)).map(d => d.name));
   for (const guide of todo) {
     try {
-      if (!indexed.has(guide.name)) {
-        const path = `${dir}/${guide.asset}`;
-        await copyGuide(guide.asset, path);
+      const path = `${dir}/${guide.asset}`;
+      // Throws before any project exists when this build ships no guides (iOS has none bundled).
+      await copyGuide(guide.asset, path);
+      const projectId = await ensureCategoryProject(guide.category);
+      if (!(await ragService.getDocumentsByProject(projectId)).some(d => d.name === guide.name)) {
         const { size } = await RNFS.stat(path);
-        await ragService.indexDocument({ projectId: FIELD_GUIDES_PROJECT_ID, filePath: path, fileName: guide.name, fileSize: Number(size), bundled: true });
+        await ragService.indexDocument({ projectId, filePath: path, fileName: guide.name, fileSize: Number(size), bundled: true });
       }
       state.done.push(guide.asset);
       await saveState(state);

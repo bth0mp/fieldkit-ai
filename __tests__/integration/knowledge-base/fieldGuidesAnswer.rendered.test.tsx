@@ -1,6 +1,7 @@
 /**
- * Field guides (rendered) — the public-domain guides shipped in the APK land in a "Field guides" project on
- * first launch, and a question asked in that project's chat reaches the model together with the matching
+ * Field guides (rendered) — the public-domain guides shipped in the APK land, on first launch, in one project per
+ * library category (Survival in "Fieldcraft, knots and survival", the two medical guides in "First aid and
+ * medical", ...), and a question asked in a category project's chat reaches the model together with the matching
  * passage from the right guide.
  *
  * Real stack: the real first-launch seeding (copy out of the APK → ragService.indexDocument → documentService →
@@ -35,7 +36,7 @@ const keywordVector = (text: string) => [0.1, ...KEYWORDS.map(k => (text.toLower
 const openRoute = (params: Record<string, unknown>) => { require('../../harness/chatHarness').routeHolder.params = params; };
 
 describe('Field guides (rendered)', () => {
-  it('a Field guides chat sends the bowline passage from the survival manual with the question', async () => {
+  it('a Fieldcraft chat sends the bowline passage from the survival manual with the question', async () => {
     const h = await setupChatScreen({ engine: 'llama', pdf: true, sqlite: true });
     const { React, rtl, boundary } = h;
 
@@ -51,20 +52,33 @@ describe('Field guides (rendered)', () => {
     boundary.llama!.scriptEmbedding(keywordVector);
 
     // App launch: the boot step that prepares the bundled guides.
-    const { seedFieldGuides, FIELD_GUIDES_PROJECT_ID } = require('../../../src/features/fieldGuides/fieldGuides');
+    const { seedFieldGuides } = require('../../../src/features/fieldGuides/fieldGuides');
     const { KnowledgeBaseScreen } = require('../../../src/screens/KnowledgeBaseScreen');
+    const { useProjectStore } = require('../../../src/stores');
     await seedFieldGuides();
 
-    // The user opens the Field guides project's knowledge base and sees every shipped guide.
-    openRoute({ projectId: FIELD_GUIDES_PROJECT_ID });
+    // The guides sit in their category projects; there is no single Field guides project.
+    expect(useProjectStore.getState().getProject('field-guides')).toBeUndefined();
+    expect(useProjectStore.getState().getProject('library-medical')?.name).toBe('First aid and medical');
+
+    // The user opens the medical project's knowledge base and sees its two guides and the Guide library row.
+    openRoute({ projectId: 'library-medical' });
+    const medical = rtl.render(React.createElement(KnowledgeBaseScreen, {}));
+    await rtl.waitFor(() => { expect(medical.queryByText("Ship's Medicine Chest and Medical Aid at Sea (US Public Health Service).pdf")).not.toBeNull(); }, { timeout: 4000 });
+    expect(medical.queryByText('Casualty Response and First Aid (US Army ATP 4-02.11).pdf')).not.toBeNull();
+    expect(medical.queryAllByText(/\.pdf$/)).toHaveLength(2);
+    expect(medical.queryByTestId('kb-open-guide-library')).not.toBeNull();
+    medical.unmount();
+
+    // ...and the Fieldcraft project's knowledge base, which holds the survival manual.
+    openRoute({ projectId: 'library-fieldcraft' });
     const kb = rtl.render(React.createElement(KnowledgeBaseScreen, {}));
     await rtl.waitFor(() => { expect(kb.queryByText('Survival (US Army ATP 3-50.21).pdf')).not.toBeNull(); }, { timeout: 4000 });
-    expect(kb.queryByText("Ship's Medicine Chest and Medical Aid at Sea (US Public Health Service).pdf")).not.toBeNull();
-    expect(kb.queryAllByText(/\.pdf$/)).toHaveLength(shipped.length);
+    expect(kb.queryAllByText(/\.pdf$/)).toHaveLength(1);
     kb.unmount();
 
     // ...then starts a chat in that project and asks how to tie a bowline.
-    openRoute({ projectId: FIELD_GUIDES_PROJECT_ID });
+    openRoute({ projectId: 'library-fieldcraft' });
     h.render();
     await h.send('How do I tie a bowline?', { text: 'Form a small loop, pass the end up through it, around the standing part and back down.' });
     await rtl.waitFor(() => { expect(h.view!.queryByText(/around the standing part and back down/)).not.toBeNull(); }, { timeout: 6000 });

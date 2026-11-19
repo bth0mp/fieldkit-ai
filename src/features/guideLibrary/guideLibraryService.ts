@@ -2,7 +2,7 @@ import RNFS from 'react-native-fs';
 import { viewDocument } from '@react-native-documents/viewer';
 import logger from '../../utils/logger';
 import { ragService, type RagDocument } from '../../services/rag';
-import { ensureFieldGuidesProject, FIELD_GUIDES_PROJECT_ID } from '../fieldGuides/fieldGuides';
+import { ensureCategoryProject, libraryProjectIds } from '../library/libraryProjects';
 import { bundledCatalogue, CATALOGUE_URL, parseCatalogue, type Catalogue, type GuideEntry } from './catalogue';
 import { offersTeach, ownEntry, stateOf, useGuideLibraryStore, type GuidePhase, type GuideState } from './guideLibraryStore';
 
@@ -32,7 +32,7 @@ const OPEN_FAILED = "Couldn't open this guide.";
 const REMOVE_FAILED = "Couldn't remove this guide. Try again.";
 const TEACH_FAILED = "Couldn't teach this guide to the assistant. Try again.";
 const UNTEACH_FAILED = "Couldn't take this guide out of the assistant's knowledge. Try again.";
-const NAME_CLASH = 'A document with this name is already in Field guides. Remove it there first.';
+const NAME_CLASH = "A document with this name is already in this guide's project. Remove it there first.";
 /** What ragService.indexDocument says, for the user, when a file has no text it can index. Shown as is. */
 const EXPLAINED_RAG_ERRORS = new Set([
   'This looks like a scanned PDF with no text layer, so there was no text to extract (OCR is not available).',
@@ -133,16 +133,18 @@ async function runInit(): Promise<boolean> {
 }
 
 /**
- * The library guides' documents in the Field guides knowledge base, by path. `usable` paths have embeddings, so
+ * The library guides' documents in the library projects' knowledge bases, by path. `usable` paths have embeddings, so
  * the assistant can find them; `unusable` documents have none (indexing was cut off, say by the app being killed
  * while embedding), so the assistant cannot use them and nothing ever fills them in.
  */
 async function libraryDocuments(): Promise<{ usable: Set<string>; unusable: RagDocument[] }> {
   const usable = new Set<string>();
   const unusable: RagDocument[] = [];
-  for (const doc of await ragService.getDocumentsByProject(FIELD_GUIDES_PROJECT_ID)) {
-    if (!doc.path.startsWith(`${GUIDE_LIBRARY_DIR}/`)) continue;
-    if (await ragService.hasEmbeddings(doc.id)) usable.add(doc.path); else unusable.push(doc);
+  for (const projectId of libraryProjectIds()) {
+    for (const doc of await ragService.getDocumentsByProject(projectId)) {
+      if (!doc.path.startsWith(`${GUIDE_LIBRARY_DIR}/`)) continue;
+      if (await ragService.hasEmbeddings(doc.id)) usable.add(doc.path); else unusable.push(doc);
+    }
   }
   return { usable, unusable };
 }
@@ -345,9 +347,9 @@ async function teachNow(id: string, entry: GuideEntry): Promise<void> {
   if (phaseOf(id) !== 'teaching') return;
   store.setState({ learning: id });
   try {
-    await ensureFieldGuidesProject();
+    const projectId = await ensureCategoryProject(entry.category);
     await ragService.indexDocument({
-      projectId: FIELD_GUIDES_PROJECT_ID, filePath: guidePath(id), fileName: documentName(entry), fileSize: entry.bytes, bundled: true,
+      projectId, filePath: guidePath(id), fileName: documentName(entry), fileSize: entry.bytes, bundled: true,
     });
     store.setState(s => ({ guides: withGuide(s.guides, id, { phase: 'taught' }), learning: null }));
   } catch (e) {
@@ -377,7 +379,7 @@ async function teachFailure(id: string, e: unknown): Promise<string | null> {
 }
 
 /**
- * Index a downloaded guide into the Field guides knowledge base, after any guide already being taught. A guide
+ * Index a downloaded guide into its category project's knowledge base, after any guide already being taught. A guide
  * the catalogue no longer lists is not taught anew (one already taught stays taught until switched off).
  */
 function teach(id: string): Promise<void> {
