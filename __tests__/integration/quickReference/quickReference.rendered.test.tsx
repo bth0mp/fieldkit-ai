@@ -163,7 +163,11 @@ describe('Quick reference (rendered)', () => {
     expect(screen.getByText('Any CB channel may be used in an emergency, and emergency calls come first on every channel.')).toBeTruthy();
     // 47 CFR 95.567 sets ceilings ("does not exceed"), so the card says "no more than".
     expect(screen.getByText('An FRS radio puts out no more than 2 watts on channels 1 to 7 and 15 to 22, and no more than half a watt on channels 8 to 14.')).toBeTruthy();
-    expect(screen.getByText('Marine VHF channel 16 and the aircraft emergency frequency are on the Distress signals card.')).toBeTruthy();
+    // The two emergency frequencies of the Distress signals card have rows here that point to it. (They used to
+    // be a note, and a search for "distress" or "marine" then listed all 22 FRS channels.)
+    expect(meaningOf('radio-channels', 'Marine VHF 16')).toBe('156.8 MHz. See the Distress signals card');
+    expect(meaningOf('radio-channels', 'Aircraft emergency')).toBe('121.5 MHz. See the Distress signals card');
+    expect(screen.queryByText(/are on the Distress signals card/)).toBeNull();
     // The sources are United States ones. They say nothing of other countries, so neither does the card.
     expect(screen.getByText('These are United States channels and rules.')).toBeTruthy();
     expect(screen.queryByText(/other countries/)).toBeNull();
@@ -209,10 +213,12 @@ describe('Quick reference (rendered)', () => {
     expect(meaning('radio-channels', 'FRS 1')).toBe('462.5625 MHz');
     expect(rowsShown()).toBe(1);
 
-    // A card's notes are searched too: 121.5 MHz is only in a note. A card found by a note alone is shown
-    // whole, because a note read without the rows it is about can mislead.
+    // A card's notes are searched too: on the Distress card 121.5 MHz is only in a note. A card found by a note
+    // alone is shown whole (its 8 rows), because a note read without the rows it is about can mislead. The
+    // ninth row is the Radio channels card's pointer to it.
     rtl.fireEvent.changeText(search, '121.5');
-    expect(rowsShown()).toBe(8);
+    expect(meaning('radio-channels', 'Aircraft emergency')).toBe('121.5 MHz. See the Distress signals card');
+    expect(rowsShown()).toBe(9);
     expect(screen.getByText('Distress signals')).toBeTruthy();
     expect(screen.getByText(/Aircraft emergency frequency: 121\.5 MHz/)).toBeTruthy();
     expect(screen.queryByText('Radio alphabet')).toBeNull();
@@ -333,9 +339,41 @@ describe('Quick reference (rendered)', () => {
     // Morse typed without its spaces is read back by the spelling, not hunted for across words.
     rtl.fireEvent.changeText(search, '...---...');
     expect(screen.getByText('...---... = SOS')).toBeTruthy();
+    // The code that is exactly what was typed comes first: ".-" is A, not the full stop whose sign is ".".
     rtl.fireEvent.changeText(search, '.-');
-    expect(meaning('morse', 'A')).toBe('.-');
+    expect(screen.getAllByTestId(/^quick-reference-morse-/)[0].props.testID).toBe('quick-reference-morse-A');
     expect(screen.queryByTestId('quick-reference-distress-SOS')).toBeNull();
+    // A Morse punctuation mark is found by its name.
+    rtl.fireEvent.changeText(search, 'question mark');
+    expect(meaning('morse', '?')).toBe('..--..');
+    expect(rowsShown()).toBe(1);
+
+    // Numbers. "16" is marine channel 16, FRS 16 and the wind that goes up to 16 knots. It is not the weather
+    // frequencies that begin 162, and the Distress card, whose note gives channel 16, is listed with it.
+    rtl.fireEvent.changeText(search, '16');
+    expect(meaning('radio-channels', 'Marine VHF 16')).toMatch(/^156\.8 MHz/);
+    expect(meaning('radio-channels', 'FRS 16')).toBe('462.5750 MHz');
+    expect(screen.queryByTestId('quick-reference-radio-channels-Weather radio')).toBeNull();
+    expect(screen.getByText(/Marine VHF radio: channel 16 \(156\.8 MHz\)/)).toBeTruthy();
+    // "46" is the top of force 8, not the start of every FRS frequency.
+    rtl.fireEvent.changeText(search, '46');
+    expect(meaning('wind-force', 'Force 8')).toMatch(/39 to 46 mph/);
+    expect(rowsShown()).toBe(1);
+    // The whole-number part of a frequency does find it, and so does a decimal typed part of the way.
+    rtl.fireEvent.changeText(search, '462');
+    expect(rowsShown()).toBe(15);
+    rtl.fireEvent.changeText(search, '162.4');
+    expect(meaning('radio-channels', 'Weather radio')).toMatch(/^NOAA Weather Radio/);
+    expect(rowsShown()).toBe(1);
+    // The day a source was read is not something to find a card by: "november" is N in the radio alphabet.
+    rtl.fireEvent.changeText(search, 'november');
+    expect(meaning('radio-alphabet', 'N')).toBe('November');
+    expect(rowsShown()).toBe(1);
+    // One card's name does not list another card whole.
+    rtl.fireEvent.changeText(search, 'marine');
+    expect(meaning('radio-channels', 'Marine VHF 16')).toMatch(/^156\.8 MHz/);
+    expect(screen.queryByTestId('quick-reference-radio-channels-FRS 1')).toBeNull();
+    expect(meaning('distress', 'SOS')).toMatch(/^\.\.\. --- \.\.\./);
 
     // One character also finds a Morse code that is exactly it, and a sign that has it as a word.
     rtl.fireEvent.changeText(search, '.');

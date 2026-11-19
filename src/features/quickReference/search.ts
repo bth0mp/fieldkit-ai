@@ -18,21 +18,29 @@ const isLetterOrDigit = (char: string | undefined) => char !== undefined && /[a-
 
 /** Small words that are in most notes and sources: finding a card by one of them finds every card. */
 const COMMON = new Set(['and', 'the', 'for', 'not', 'are', 'but', 'use', 'may', 'any', 'all', 'can', 'has', 'its',
-  'one', 'two', 'out', 'with', 'from', 'that', 'this', 'they', 'then', 'than', 'here', 'each', 'only', 'used', 'also']);
+  'one', 'two', 'out', 'with', 'from', 'that', 'this', 'they', 'then', 'than', 'here', 'each', 'only', 'used', 'also',
+  'these', 'same', 'more', 'every', 'come', 'between', 'inside', 'often', 'which', 'given', 'above', 'start', 'first']);
 
 /**
  * Whether `text` holds `typed` starting at the start of a word; with `whole`, ending at the end of one too. A
- * number is not found inside a longer one: "8" is not in "18", nor "5625" in "462.5625".
+ * number is not found inside a longer one: "8" is not in "18", "5625" is not in "462.5625", and "16" is not the
+ * start of "162.400". A whole-number part is found ("462" for 462.5625), and so is a decimal typed part of the
+ * way ("162.4" for 162.400).
  */
 function holds(text: string, typed: string, whole = false): boolean {
+  const endsInDigit = /\d$/.test(typed) && !typed.includes('.');
   for (let at = text.indexOf(typed); at !== -1; at = text.indexOf(typed, at + 1)) {
     const before = text[at - 1];
-    const insideNumber = /\d/.test(typed[0]) && before === '.' && /\d/.test(text[at - 2] ?? '');
     const after = text[at + typed.length];
-    if (!isLetterOrDigit(before) && !insideNumber && !(whole && isLetterOrDigit(after))) return true;
+    const insideNumber = /\d/.test(typed[0]) && before === '.' && /\d/.test(text[at - 2] ?? '');
+    const startsLongerNumber = endsInDigit && /\d/.test(after ?? '');
+    if (!isLetterOrDigit(before) && !insideNumber && !startsLongerNumber && !(whole && isLetterOrDigit(after))) return true;
   }
   return false;
 }
+
+/** A card's source as searched: what it names, without the day it was read ("... as read on 19 November 2026"). */
+const sourceNames = (source: string) => spaced(source.replace(/,? ?(all )?as read on .*$/i, ''));
 
 /** A row for dots and dashes typed in: a code that contains them, or a sentence that quotes them as typed. */
 function holdsMarks(row: Row, marks: string): boolean {
@@ -51,11 +59,15 @@ function holdsWords(row: Row, typed: string): boolean {
   const parts = typed.split(' ');
   return holds(sign, typed) || holds(spaced(row.meaning), typed)
     || holds(joined(row.sign), run) || (oneWord && holds(joined(row.meaning), run))
-    || (parts.length > 1 && parts.every(part => holds(sign, part, true)));
+    || (parts.length > 1 && parts.every(part => holds(sign, part, true)))
+    // A Morse punctuation mark by the name a screen reader gives it: "question mark", "comma".
+    || (row.spokenSign !== undefined && holds(spaced(row.spokenSign), typed));
 }
 
 /** 0 for the row that is exactly what was typed, 1 for one whose sign has it as a word, 2 for the rest. */
-function rank(row: Row, typed: string): number {
+function rank(row: Row, typed: string, onlyMarks: boolean): number {
+  // Dots and dashes are a code, never a sign: ".-" is A, not the full stop whose sign is ".".
+  if (onlyMarks) return row.meaning.trim() === typed.replace(/ /g, '') ? 0 : 2;
   if (joined(row.sign) === joined(typed) || words(row.meaning) === typed) return 0;
   return holds(spaced(row.sign), typed, true) ? 1 : 2;
 }
@@ -77,15 +89,19 @@ export function searchCards(query: string): { card: ReferenceCard; rows: Referen
   if (marks.length === 1) matches = row => row.sign.toLowerCase().split(' ').includes(marks) || row.meaning === marks;
   else if (onlyMarks) matches = row => holdsMarks(row, marks);
   else matches = row => holdsWords(row, typed);
-  const byCard = !onlyMarks && typed.length > 2 && !COMMON.has(typed);
+  // A number is looked for in a card's notes from two characters ("16" for marine channel 16), and never in its
+  // source, which holds dates and section numbers. Words need three characters, and not the common ones.
+  const number = /^[\d.]+$/.test(typed);
+  const byCard = !onlyMarks && marks.length > 1 && (number || (typed.length > 2 && !COMMON.has(typed)));
   return QUICK_REFERENCE_CARDS.flatMap(card => {
     const matched = card.rows.filter(matches);
     if (matched.length > 0) {
       const key = onlyMarks ? marks : typed;
-      return [{ card, rows: [0, 1, 2].flatMap(wanted => matched.filter(row => rank(row, key) === wanted)) }];
+      return [{ card, rows: [0, 1, 2].flatMap(wanted => matched.filter(row => rank(row, key, onlyMarks) === wanted)) }];
     }
-    const named = byCard && (holds(spaced(card.title), typed)
-      || [card.source, ...card.notes].some(text => holds(spaced(text), typed, true)));
+    const named = byCard && ((!number && holds(spaced(card.title), typed))
+      || card.notes.some(note => holds(spaced(note), typed, true))
+      || (!number && holds(sourceNames(card.source), typed, true)));
     return named ? [{ card, rows: card.rows }] : [];
   });
 }

@@ -139,12 +139,15 @@ export const QUICK_REFERENCE_CARDS: ReferenceCard[] = [
     rows: [
       { sign: 'Weather radio', meaning: 'NOAA Weather Radio broadcasts on seven frequencies: 162.400, 162.425, 162.450, 162.475, 162.500, 162.525 and 162.550 MHz. It needs a receiver or scanner that can pick them up' },
       { sign: 'CB channel 9', meaning: '27.065 MHz. For emergencies and traveler assistance only' },
+      // The two emergency frequencies given on the Distress signals card, as rows that point to it. As a note
+      // they made a search for "distress" or "marine" list every row of this card.
+      { sign: 'Marine VHF 16', meaning: '156.8 MHz. See the Distress signals card' },
+      { sign: 'Aircraft emergency', meaning: '121.5 MHz. See the Distress signals card' },
       ...FRS_MHZ.map((mhz, index) => ({ sign: `FRS ${index + 1}`, meaning: `${mhz} MHz` })),
     ],
     notes: [
       'Any CB channel may be used in an emergency, and emergency calls come first on every channel.',
       'An FRS radio puts out no more than 2 watts on channels 1 to 7 and 15 to 22, and no more than half a watt on channels 8 to 14.',
-      'Marine VHF channel 16 and the aircraft emergency frequency are on the Distress signals card.',
       'These are United States channels and rules.',
     ],
     source: 'NOAA Weather Radio (weather.gov/nwr). FCC rules: 47 CFR 95.563 and 95.567 for FRS, 95.931 and 95.963 for CB. All as read on 19 November 2026.',
