@@ -15,6 +15,20 @@ Fieldkit AI is free and non-commercial. See [Credits and licenses](#credits-and-
 - Attach documents and images to a chat, use vision models, transcribe speech with
   Whisper, generate images with Stable Diffusion.
 - Connect to an Ollama, LM Studio or other OpenAI-compatible server on your network.
+- Guide library: free public-domain guides (medical, water, food, building, power,
+  fieldcraft, navigation, radio, mechanical, disasters, farming) to download, read
+  offline and teach to the assistant. The list, and what was turned down and why, is in
+  `catalog/`.
+- Kiwix files: add `.zim` files, such as an offline Wikipedia, and the knowledge-base
+  search reads them too.
+- Tools the assistant can call, each off until you switch it on. Among them: a
+  calculator, a unit converter, grid references (latitude/longitude, UTM, MGRS), sunrise,
+  sunset and moon times, distance and bearing, date sums, and the radio spelling alphabet
+  and Morse code. These work the answer out on the phone from what you type.
+- Quick reference: cards that need no model at all. Distress and ground-to-air signals,
+  the radio alphabet, Morse code, the Beaufort wind scale and United States radio
+  channels, with a search field.
+- Checklists: your own tick lists, kept on the phone, with starter lists from Ready.gov.
 
 ## Build with GitHub Actions
 
