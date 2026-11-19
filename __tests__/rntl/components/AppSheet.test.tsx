@@ -545,6 +545,19 @@ describe('AppSheet', () => {
       }, { timeout: 1000 });
     });
 
+    it('still closes, and says so, when it is not opened again', async () => {
+      const onClosed = jest.fn();
+      const sheet = (visible: boolean) => (
+        <AppSheet visible={visible} onClose={jest.fn()} onClosed={onClosed} title="Closing">
+          <Text>Closing content</Text>
+        </AppSheet>
+      );
+      const view = render(sheet(true));
+      view.rerender(sheet(false));
+      await waitFor(() => { expect(view.toJSON()).toBeNull(); }, { timeout: 2000 });
+      expect(onClosed).toHaveBeenCalledTimes(1);
+    });
+
     it('backdrop tap triggers dismiss', async () => {
       const onClose = jest.fn();
       const { UNSAFE_getByType } = render(

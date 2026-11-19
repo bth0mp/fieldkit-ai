@@ -192,6 +192,23 @@ export const AppSheet: React.FC<AppSheetProps> = ({
   // Track whether we should animate on next onShow
   const pendingAnimateIn = useRef(false);
 
+  // What the parent wants and what the Modal is doing, for callbacks that outlive a render.
+  const visibleRef = useRef(visible);
+  visibleRef.current = visible;
+  const modalVisibleRef = useRef(modalVisible);
+  modalVisibleRef.current = modalVisible;
+
+  // Shows the sheet. One that is still up, sliding away from a close that has not finished, gets no onShow
+  // from the Modal, so it is slid back in here.
+  const show = useCallback(() => {
+    if (modalVisibleRef.current) {
+      pendingAnimateIn.current = false;
+      animateIn();
+    } else {
+      setModalVisible(true);
+    }
+  }, [animateIn]);
+
   useEffect(() => {
     if (visible) {
       pendingAnimateIn.current = true;
@@ -203,7 +220,7 @@ export const AppSheet: React.FC<AppSheetProps> = ({
         const openOnce = () => {
           if (opened) return;
           opened = true;
-          setModalVisible(true);
+          show();
         };
         const sub = Keyboard.addListener('keyboardDidHide', () => {
           sub.remove();
@@ -219,10 +236,12 @@ export const AppSheet: React.FC<AppSheetProps> = ({
           sub.remove();
         };
       }
-      setModalVisible(true);
+      show();
 
     } else if (modalVisible) {
       animateOut(() => {
+        // Wanted again while it was sliding away (an error put up as its confirmation closes): it stays.
+        if (visibleRef.current) return;
         setModalVisible(false);
         onClosedRef.current?.();
       });
