@@ -57,6 +57,10 @@ function readerFor(file: KiwixFile): Promise<ZimArchive> {
   return reader;
 }
 
+/** File metadata is shown on screen and named in the system prompt: one line, no control characters, cut short. */
+const oneLine = (text: string, max: number) =>
+  [...text.replace(/\s+/g, ' ')].filter(c => c.charCodeAt(0) >= 32 && c.charCodeAt(0) !== 127).join('').trim().slice(0, max);
+
 const isCancel = (e: unknown) => isErrorWithCode(e) && e.code === errorCodes.OPERATION_CANCELED;
 const isKnown = (uri: string) => Object.values(store.getState().files).some(f => f.uri === uri);
 const nameOf = (uri: string) => decodeURIComponent(uri.slice(uri.lastIndexOf('/') + 1)).replace(/^.*[:/]/, '');
@@ -78,8 +82,8 @@ async function addDocuments(docs: TreeDocument[]): Promise<void> {
         const category = categoryFor(zim.metadata);
         await ensureCategoryProject(category);
         const file: KiwixFile = {
-          id: generateId(), uri: doc.uri, fileName: doc.name, title: zim.metadata.title || doc.name,
-          description: zim.metadata.description, bytes: doc.size, category,
+          id: generateId(), uri: doc.uri, fileName: oneLine(doc.name, 120), title: oneLine(zim.metadata.title, 80) || oneLine(doc.name, 80),
+          description: oneLine(zim.metadata.description, 200), bytes: doc.size, category,
         };
         store.setState(s => ({
           files: { ...s.files, [file.id]: file },
