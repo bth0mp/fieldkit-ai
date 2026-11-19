@@ -32,7 +32,30 @@ describe('sun_times', () => {
     const result = run({ position: '51.4778, -0.0015', date: '2026-11-18', utc_offset: 0 });
     expect(result.startsWith('Sun at 51.47780, -0.00150 on 2026-11-18 (UTC+00:00): ')).toBe(true);
     expectTimes(result, { 'civil dawn': '06:46', sunrise: '07:23', 'solar noon': '11:45', sunset: '16:07', 'civil dusk': '16:44' });
-    expect(result).toMatch(/Daylight 8 h 4[345] min\.$/);
+    expect(result).toMatch(/Daylight 8 h 4[345] min\. Moon: /);
+  });
+
+  // The Observatory gives the moon's lit fraction for about midday UTC; this tool gives it for solar noon at the
+  // place, so Greenwich is the like-for-like check. Near a quarter the fraction moves a point every two hours.
+  it.each([
+    ['2026-06-21', 'waxing crescent', 46],
+    ['2026-12-21', 'waxing gibbous', 90],
+    ['2026-03-20', 'waxing crescent', 3],
+    ['2026-11-18', 'waxing gibbous', 60],
+    ['2026-09-01', 'waning gibbous', 80],
+    ['2026-02-10', 'waning crescent', 41],
+    ['2026-07-04', 'waning gibbous', 82],
+    ['2024-02-29', 'waning gibbous', 79],
+  ])("gives the moon's phase on %s as the Observatory does: %s, %s%% lit", (date, phase, percent) => {
+    const result = run({ position: '51.4778, -0.0015', date, utc_offset: 0 });
+    const m = / Moon: ([a-z ]+), (\d+)% lit\./.exec(result);
+    expect(m && m[1]).toBe(phase);
+    expect(Math.abs(Number(m![2]) - percent)).toBeLessThanOrEqual(2);
+  });
+
+  it('gives the moon in the polar cases too', () => {
+    expect(run({ position: '69.6492, 18.9553', date: '2026-12-21', utc_offset: 0 })).toMatch(/ Moon: waxing gibbous, (8[89]|9[012])% lit\./);
+    expect(run({ position: '69.6492, 18.9553', date: '2026-06-21', utc_offset: 0 })).toMatch(/ Moon: waxing crescent, 4[4-8]% lit\./);
   });
 
   it.each([

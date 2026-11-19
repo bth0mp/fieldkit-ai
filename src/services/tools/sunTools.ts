@@ -43,6 +43,26 @@ function sunAt(ms: number): { declination: number; equationOfTime: number } {
   return { declination: Math.asin(Math.sin(obliquity) * Math.sin(apparentLongitude)) / RAD, equationOfTime };
 }
 
+/**
+ * The moon at an instant: how much of its face is lit, and whether that is growing (Meeus, Astronomical
+ * Algorithms, chapter 48). Good to about a point in a hundred.
+ */
+function moonPhrase(ms: number): string {
+  const century = (ms / DAY_MS + 2440587.5 - 2451545) / 36525;
+  const elongation = (297.8501921 + 445267.1114034 * century) * RAD;
+  const sunAnomaly = (357.5291092 + 35999.0502909 * century) * RAD;
+  const moonAnomaly = (134.9633964 + 477198.8675055 * century) * RAD;
+  const phaseAngle = 180 - elongation / RAD
+    - 6.289 * Math.sin(moonAnomaly) + 2.1 * Math.sin(sunAnomaly) - 1.274 * Math.sin(2 * elongation - moonAnomaly)
+    - 0.658 * Math.sin(2 * elongation) - 0.214 * Math.sin(2 * moonAnomaly) - 0.11 * Math.sin(elongation);
+  const percent = Math.round(((1 + Math.cos(phaseAngle * RAD)) / 2) * 100);
+  // The phase angle runs from 180 (new) down to 0 (full) while the moon waxes, and back up while it wanes.
+  const waxing = (((180 - phaseAngle) % 360) + 360) % 360 < 180;
+  const shape = percent < 50 ? 'crescent' : 'gibbous';
+  const name = percent <= 1 ? 'new moon' : percent >= 99 ? 'full moon' : `${waxing ? 'waxing' : 'waning'} ${shape}`;
+  return ` Moon: ${name}, ${percent}% lit.`;
+}
+
 type Place = { lat: number; lon: number };
 /** The instant the sun crosses a zenith angle, or which side of it the sun stays on. */
 type Crossing = number | 'above' | 'below';
@@ -170,5 +190,5 @@ export function sunTimes(call: ToolCall, now: Date = new Date()): string {
     ? ` These are ${zone} clock times, not this place's own local time, and its date there may differ. Give utc_offset for the place to get its local times.`
     : '';
   const head = `Sun at ${place.lat.toFixed(5)}, ${place.lon.toFixed(5)} on ${day.year}-${pad(day.month)}-${pad(day.day)} (${zone}): `;
-  return `${head}${describe(events, clock)}${elsewhere}`;
+  return `${head}${describe(events, clock)}${moonPhrase(noon)}${elsewhere}`;
 }
