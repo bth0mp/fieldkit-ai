@@ -171,7 +171,7 @@ describe('Quick reference (rendered)', () => {
     const { QuickReferenceScreen } = require('../../../src/screens/QuickReferenceScreen');
     const screen = rtl.render(React.createElement(QuickReferenceScreen, {}));
     const search = screen.getByTestId('quick-reference-search');
-    expect(search.props.placeholder).toBe('Search the cards');
+    expect(search.props.placeholder).toBe('Search the cards, or type a word to spell');
     const meaning = (card: string, sign: string) =>
       String(rtl.within(screen.getByTestId(`quick-reference-${card}-${sign}`)).getByTestId('quick-reference-meaning').props.children);
     const rowsShown = () => screen.queryAllByTestId('quick-reference-meaning').length;
@@ -212,12 +212,49 @@ describe('Quick reference (rendered)', () => {
     expect(screen.queryByText('Radio alphabet')).toBeNull();
 
     // Nothing found says so. Clearing the field brings the six closed cards back.
-    rtl.fireEvent.changeText(search, 'zzz');
+    rtl.fireEvent.changeText(search, '§§');
     expect(screen.getByText('No card has that.')).toBeTruthy();
     rtl.fireEvent.changeText(search, '');
     expect(screen.queryByText('No card has that.')).toBeNull();
     expect(screen.getByText('Wind force (Beaufort scale)')).toBeTruthy();
     expect(screen.getByText('Radio alphabet')).toBeTruthy();
     expect(rowsShown()).toBe(0);
+  });
+
+  it('spells what is typed for the radio and in Morse, and reads Morse back, with no model', async () => {
+    const h = await setupChatScreen({ engine: 'llama', sqlite: true });
+    const { React, rtl } = h;
+    const { QuickReferenceScreen } = require('../../../src/screens/QuickReferenceScreen');
+    const screen = rtl.render(React.createElement(QuickReferenceScreen, {}));
+    const search = screen.getByTestId('quick-reference-search');
+    expect(screen.queryByText('Spelled out')).toBeNull();
+
+    // A call sign: the ICAO spelling alphabet and International Morse, as the Phonetic & Morse tool gives them.
+    rtl.fireEvent.changeText(search, 'KD7ABC');
+    expect(screen.getByText('Spelled out')).toBeTruthy();
+    expect(screen.getByText('KD7ABC = Kilo Delta Seven Alfa Bravo Charlie')).toBeTruthy();
+    expect(screen.getByText('Morse: -.- -.. --... .- -... -.-.')).toBeTruthy();
+    // A screen reader hears the dots and dashes as words, a letter at a time.
+    expect(screen.getByLabelText('Morse: dash dot dash, dash dot dot, dash dash dot dot dot, dot dash, dash dot dot dot, dash dot dash dot')).toBeTruthy();
+    // No card holds "KD7ABC", and with a spelling on screen that goes without saying.
+    expect(screen.queryByText('No card has that.')).toBeNull();
+
+    // A word is spelled above the rows that hold it.
+    rtl.fireEvent.changeText(search, 'gale');
+    expect(screen.getByText('gale = Golf Alfa Lima Echo')).toBeTruthy();
+    expect(screen.queryAllByTestId('quick-reference-meaning')).toHaveLength(4);
+
+    // Dots and dashes are read back, above the row that holds them.
+    rtl.fireEvent.changeText(search, '... --- ...');
+    expect(screen.getByText('... --- ... = SOS')).toBeTruthy();
+    expect(screen.getByTestId('quick-reference-distress-SOS')).toBeTruthy();
+
+    // One character is answered by the cards alone, and what cannot be spelled shows no spelling.
+    rtl.fireEvent.changeText(search, 's');
+    expect(screen.queryByText('Spelled out')).toBeNull();
+    rtl.fireEvent.changeText(search, '§§');
+    expect(screen.queryByText('Spelled out')).toBeNull();
+    rtl.fireEvent.changeText(search, '');
+    expect(screen.queryByText('Spelled out')).toBeNull();
   });
 });

@@ -19,4 +19,6 @@ export const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
   sign: { ...TYPOGRAPHY.body, color: colors.text, flex: 2, minWidth: 96 },
   meaning: { ...TYPOGRAPHY.body, color: colors.textSecondary, flex: 5 },
   source: { ...TYPOGRAPHY.metaSmall, color: colors.textMuted, paddingTop: SPACING.sm },
+  // What was typed, spelled out: body text, a line for the radio words and a line for the Morse.
+  spelled: { ...TYPOGRAPHY.body, color: colors.text, paddingVertical: SPACING.xs },
 });

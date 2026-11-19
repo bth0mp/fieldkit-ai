@@ -4,7 +4,7 @@
  * dose belongs here, and a number goes on a card only as its source prints it: a wrong number on a card is
  * worse than no card.
  */
-import { MORSE_CODES, RADIO_WORDS } from '../../services/tools/spellTools';
+import { MORSE_CODES, RADIO_WORDS, spellOut } from '../../services/tools/spellTools';
 
 interface ReferenceRow {
   sign: string;
@@ -165,4 +165,23 @@ export function searchCards(query: string) {
       notes: card.notes.filter(holds),
     }))
     .filter(found => found.rows.length > 0 || found.notes.length > 0);
+}
+
+/**
+ * What is typed, spelled for the radio and in Morse, or read back if it is Morse: the Phonetic & Morse tool's own
+ * answer, a line at a time, each with the way a screen reader should say it. Nothing when one character or none
+ * is typed (the cards answer that) or when the tool has no answer.
+ */
+export function spellTyped(typed: string): { text: string; spoken: string }[] {
+  if (typed.trim().length < 2) return [];
+  let answer: string;
+  try {
+    answer = spellOut({ name: 'phonetic_morse', arguments: { text: typed } });
+  } catch {
+    return [];
+  }
+  // A run of dots and dashes is said as words, with a pause after each letter's code.
+  const spoken = (line: string) => line.split(' ')
+    .map(part => (/^[.-]+$/.test(part) ? `${speakMorse(part)},` : part)).join(' ').replace(/,$/, '');
+  return answer.split('\n').map(text => ({ text, spoken: spoken(text) }));
 }

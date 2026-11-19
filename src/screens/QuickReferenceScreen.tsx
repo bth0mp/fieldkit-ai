@@ -4,13 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
 import { useTheme, useThemedStyles } from '../theme';
-import { QUICK_REFERENCE_CARDS, ReferenceCard, searchCards } from '../features/quickReference/cards';
+import { QUICK_REFERENCE_CARDS, ReferenceCard, searchCards, spellTyped } from '../features/quickReference/cards';
 import { createStyles } from './QuickReferenceScreen.styles';
 
 /**
  * Signal and code cards to read at a glance: no model, no download, no network. Cards start closed; opening one
  * shows its signs with their meanings, its notes and the standard it comes from. Typing in the search field
- * shows the matching rows and notes of every card instead.
+ * shows the matching rows and notes of every card instead, under what was typed spelled for the radio and in
+ * Morse (or read back, if it was Morse).
  */
 export const QuickReferenceScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -20,6 +21,7 @@ export const QuickReferenceScreen: React.FC = () => {
   const [query, setQuery] = useState('');
   const searching = query.trim() !== '';
   const found = searchCards(query);
+  const spelled = spellTyped(query);
 
   const toggle = (id: string) => setOpen(prev => {
     const next = new Set(prev);
@@ -49,9 +51,20 @@ export const QuickReferenceScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <Text style={styles.note}>Signals, codes and scales to read at a glance. Nothing here needs a model, a download or a signal.</Text>
         <TextInput testID="quick-reference-search" style={styles.search} value={query} onChangeText={setQuery}
-          placeholder="Search the cards" placeholderTextColor={colors.textMuted} accessibilityLabel="Search the cards"
+          placeholder="Search the cards, or type a word to spell" placeholderTextColor={colors.textMuted}
+          accessibilityLabel="Search the cards, or type a word to spell"
           autoCapitalize="none" autoCorrect={false} returnKeyType="search" />
-        {searching && found.length === 0 && <Text style={styles.empty}>No card has that.</Text>}
+        {spelled.length > 0 && (
+          <View>
+            <View style={styles.groupHeader}>
+              <Text style={styles.cardTitle} accessibilityRole="header">Spelled out</Text>
+            </View>
+            {spelled.map(line => (
+              <Text key={line.text} style={styles.spelled} accessibilityLabel={line.spoken} selectable>{line.text}</Text>
+            ))}
+          </View>
+        )}
+        {searching && found.length === 0 && spelled.length === 0 && <Text style={styles.empty}>No card has that.</Text>}
         {searching && found.map(({ card, rows, notes }) => (
           <View key={card.id}>
             <View style={styles.groupHeader}>
