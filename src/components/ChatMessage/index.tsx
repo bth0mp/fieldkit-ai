@@ -32,6 +32,7 @@ function getToolIcon(toolName?: string): string {
     case 'convert_units': return 'repeat';
     case 'convert_coordinates': return 'map-pin';
     case 'sun_times': return 'sun';
+    case 'distance_bearing': return 'compass';
     default: return 'tool';
   }
 }
@@ -52,6 +53,7 @@ function getToolLabel(toolName?: string, content?: string): string {
     case 'convert_units': return content || 'Converted';
     case 'convert_coordinates': return content || 'Grid reference';
     case 'sun_times': return content || 'Sun times';
+    case 'distance_bearing': return content || 'Distance and bearing';
     default: return toolName || 'Tool result';
   }
 }

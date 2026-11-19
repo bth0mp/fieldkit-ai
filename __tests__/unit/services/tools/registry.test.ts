@@ -16,8 +16,8 @@ describe('Tool Registry', () => {
   // AVAILABLE_TOOLS
   // ========================================================================
   describe('AVAILABLE_TOOLS', () => {
-    it('has exactly 12 tools with correct IDs', () => {
-      expect(AVAILABLE_TOOLS).toHaveLength(12);
+    it('has exactly 13 tools with correct IDs', () => {
+      expect(AVAILABLE_TOOLS).toHaveLength(13);
 
       const ids = AVAILABLE_TOOLS.map(t => t.id);
       expect(ids).toEqual([
@@ -33,7 +33,15 @@ describe('Tool Registry', () => {
         'convert_units',
         'convert_coordinates',
         'sun_times',
+        'distance_bearing',
       ]);
+    });
+
+    it('distance_bearing says what it gives within the 100 characters the LiteRT tool router reads', () => {
+      const tool = AVAILABLE_TOOLS.find(t => t.id === 'distance_bearing')!;
+      const routed = tool.description.split('\n')[0].slice(0, 100);
+      for (const word of ['Distance', 'bearing', 'two positions']) expect(routed).toContain(word);
+      expect(Object.entries(tool.parameters).filter(([, p]) => p.required).map(([k]) => k)).toEqual(['from', 'to']);
     });
 
     it('sun_times says what it gives within the 100 characters the LiteRT tool router reads', () => {
@@ -76,6 +84,7 @@ describe('Tool Registry', () => {
         convert_units: false,
         convert_coordinates: false,
         sun_times: false,
+        distance_bearing: false,
       });
     });
 

@@ -236,6 +236,27 @@ export const AVAILABLE_TOOLS: ToolDefinition[] = [
       },
     },
   },
+  {
+    id: 'distance_bearing',
+    name: 'distance_bearing',
+    displayName: 'Distance & Bearing',
+    // The LiteRT tool router reads only the first 100 characters of a description.
+    description: 'Distance and compass bearing between two positions, with the bearing back. Use this instead of working out a distance or direction yourself. Bearings are true, not magnetic.',
+    icon: 'compass',
+    userNote: 'Works out distance and direction on this phone from two positions you type. It does not use your location, and its bearings are true, not magnetic.',
+    parameters: {
+      from: {
+        type: 'string',
+        description: 'The starting position: a latitude and longitude such as "40.6892, -74.0445", or a UTM or MGRS grid reference',
+        required: true,
+      },
+      to: {
+        type: 'string',
+        description: 'The position to go to, written the same way',
+        required: true,
+      },
+    },
+  },
 ];
 
 export function getToolsAsOpenAISchema(enabledToolIds: string[]) {
