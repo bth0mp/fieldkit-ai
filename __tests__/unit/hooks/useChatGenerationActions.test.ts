@@ -151,7 +151,7 @@ jest.mock('../../../src/stores/chatStore', () => ({
 
 const mockProjectStoreGetProject = jest.fn((_id: string) => null as any);
 jest.mock('../../../src/stores/projectStore', () => ({
-  useProjectStore: { getState: () => ({ getProject: mockProjectStoreGetProject }) },
+  useProjectStore: { getState: () => ({ getProject: mockProjectStoreGetProject }), subscribe: () => () => {} },
 }));
 
 jest.mock('../../../src/components', () => ({
