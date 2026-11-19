@@ -66,7 +66,7 @@ const withNs = (ns: string, bytes: Uint8Array) => { const out = new Uint8Array(b
 const capitalise = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /** Plain text of an article's HTML: no scripts or styles, blank lines collapsed, cut to maxChars. */
-export function zimHtmlToText(html: string, maxChars: number): string {
+function zimHtmlToText(html: string, maxChars: number): string {
   const root = parse(html);
   root.querySelectorAll('script, style').forEach(node => node.remove());
   const body = root.querySelector('body') ?? root;

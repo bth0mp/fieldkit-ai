@@ -33,7 +33,7 @@ const titleKey = (e: Entry) => Buffer.from(`${e.ns}${e.title || e.path}`);
 function u64(n: number): Buffer { const b = Buffer.alloc(8); b.writeBigUInt64LE(BigInt(n)); return b; }
 function u32(n: number): Buffer { const b = Buffer.alloc(4); b.writeUInt32LE(n); return b; }
 
-function cluster(blobs: Buffer[], compression: 'zstd' | 'none' | 'xz', zstdParams?: Record<number, number>, zstdTrailer = Buffer.alloc(0)): Buffer {
+function cluster(blobs: Buffer[], compression: 'zstd' | 'none' | 'xz', zstdParams?: Record<number, number>, zstdTrailer: Buffer = Buffer.alloc(0)): Buffer {
   const offsets: number[] = [];
   let at = 4 * (blobs.length + 1);
   for (const b of blobs) { offsets.push(at); at += b.length; }
