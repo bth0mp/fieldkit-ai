@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 // The app is edge to edge, so the window does not shrink for the keyboard: this scroll view keeps the box being
@@ -34,6 +34,8 @@ export const CalculatorsScreen: React.FC = () => {
   };
 
   const go = async (calculator: Calculator) => {
+    // The answer is drawn below the button, where the keyboard is.
+    Keyboard.dismiss();
     setWorking(calculator.id);
     const outcome = await workOut(calculator.id, typed[calculator.id] ?? {});
     setOutcomes(prev => ({ ...prev, [calculator.id]: outcome }));
@@ -79,12 +81,16 @@ export const CalculatorsScreen: React.FC = () => {
                       testID={`calculators-${calculator.id}-go`} loading={working === calculator.id}
                       disabled={working !== null} onPress={() => go(calculator)} />
                   </View>
-                  {outcome?.problem ? (
-                    <Text style={styles.error} accessibilityLiveRegion="polite" testID={`calculators-${calculator.id}-problem`}>{outcome.problem}</Text>
-                  ) : null}
-                  {outcome?.answer ? (
-                    <Text style={styles.answer} accessibilityLiveRegion="polite" selectable testID={`calculators-${calculator.id}-answer`}>{outcome.answer}</Text>
-                  ) : null}
+                  {/* Always there, so that what appears in it is announced: a live region that arrives already
+                      filled is not. */}
+                  <View accessibilityLiveRegion="polite" testID={`calculators-${calculator.id}-outcome`}>
+                    {outcome?.problem ? (
+                      <Text style={styles.error} testID={`calculators-${calculator.id}-problem`}>{outcome.problem}</Text>
+                    ) : null}
+                    {outcome?.answer ? (
+                      <Text style={styles.answer} selectable testID={`calculators-${calculator.id}-answer`}>{outcome.answer}</Text>
+                    ) : null}
+                  </View>
                 </>
               )}
             </View>

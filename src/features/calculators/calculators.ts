@@ -10,12 +10,21 @@ import { AVAILABLE_TOOLS, executeToolCall } from '../../services/tools';
 
 const IDS = ['calculator', 'convert_units', 'convert_coordinates', 'sun_times', 'distance_bearing', 'date_math', 'phonetic_morse'];
 
+/** Where a tool's own words for a box, written for a model, do not tell a person enough. */
+const HINTS = new Map([
+  ['calculator.expression', 'Numbers with + - * / ^ and brackets, for example (3+4)*2. % gives the remainder, not a percentage.'],
+]);
+
+/** What every tool takes for a number: digits, a sign, a decimal point, an exponent. Each may be stricter. */
+const PLAIN_NUMBER = /^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i;
+
 interface CalculatorField {
   key: string;
   label: string;
-  /** What to put in the box, in the words the tool's own definition uses. */
+  /** What to put in the box. */
   hint: string;
   required: boolean;
+  numeric: boolean;
 }
 
 export interface Calculator {
@@ -24,7 +33,7 @@ export interface Calculator {
   fields: CalculatorField[];
 }
 
-/** "add_days" as "Add days": close to the name the tool uses when it refuses a value. */
+/** "add_days" as "Add days": the box's name on the screen. */
 function labelOf(key: string): string {
   if (key === 'utc_offset') return 'UTC offset';
   const words = key.replace(/_/g, ' ');
@@ -37,15 +46,31 @@ export const CALCULATORS: Calculator[] = IDS.flatMap(id => {
   const fields = Object.entries(tool.parameters).map(([key, parameter]) => ({
     key,
     label: labelOf(key),
-    hint: parameter.enum ? `${parameter.description} (${parameter.enum.join(' or ')})` : parameter.description,
+    hint: HINTS.get(`${id}.${key}`)
+      ?? (parameter.enum ? `${parameter.description} (${parameter.enum.join(' or ')})` : parameter.description),
     required: parameter.required === true,
+    numeric: parameter.type === 'number',
   }));
   return [{ id, title: tool.displayName, fields }];
 });
 
 /**
- * What the tool answers for the boxes as filled in, or why it has no answer, in the tool's own words. A needed
- * box left empty is named and the tool is not run; an optional one left empty is left out of the call.
+ * A tool's words with its boxes called what the screen calls them. The tools speak to a model and name their
+ * parameters: "add_days must be a whole number", "Give utc_offset for the place".
+ */
+function inScreenWords(text: string, calculator: Calculator): string {
+  let said = text;
+  for (const field of calculator.fields) {
+    if (field.key.includes('_')) said = said.replaceAll(field.key, field.label);
+  }
+  const first = calculator.fields.find(field => said.startsWith(`${field.key} must`) || said.startsWith(`${field.key}: `));
+  return first ? first.label + said.slice(first.key.length) : said;
+}
+
+/**
+ * What the tool answers for the boxes as filled in, or why it has no answer. A needed box left empty is named
+ * and the tool is not run; an optional one left empty is left out of the call; a number box must hold a plain
+ * number (the unit, the "UTC+", the comma belong elsewhere or nowhere).
  */
 export async function workOut(id: string, typed: Record<string, string>): Promise<{ answer: string; problem: string }> {
   const calculator = CALCULATORS.find(candidate => candidate.id === id);
@@ -53,7 +78,11 @@ export async function workOut(id: string, typed: Record<string, string>): Promis
   const filled = new Map(calculator.fields.map(field => [field.key, (typed[field.key] ?? '').trim()]));
   const missing = calculator.fields.find(field => field.required && filled.get(field.key) === '');
   if (missing) return { answer: '', problem: `Fill in "${missing.label}".` };
+  const notNumber = calculator.fields.find(field => field.numeric && filled.get(field.key) !== '' && !PLAIN_NUMBER.test(filled.get(field.key) ?? ''));
+  if (notNumber) return { answer: '', problem: `"${notNumber.label}" must be a plain number, for example 5.5 or -5.` };
   const given = Object.fromEntries([...filled].filter(([, value]) => value !== ''));
   const result = await executeToolCall({ name: calculator.id, arguments: given });
-  return result.error ? { answer: '', problem: result.error } : { answer: result.content, problem: '' };
+  return result.error
+    ? { answer: '', problem: inScreenWords(result.error, calculator) }
+    : { answer: inScreenWords(result.content, calculator), problem: '' };
 }

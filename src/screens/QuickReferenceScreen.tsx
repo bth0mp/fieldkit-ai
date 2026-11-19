@@ -64,9 +64,12 @@ export const QuickReferenceScreen: React.FC = () => {
             ))}
           </View>
         )}
-        {searching && found.length === 0 && spelled.length === 0 && (
-          <Text style={styles.empty} accessibilityLiveRegion="polite">No card has that.</Text>
-        )}
+        {/* Always there, so that the line appearing in it is announced. */}
+        <View accessibilityLiveRegion="polite">
+          {searching && found.length === 0 && spelled.length === 0 && (
+            <Text style={styles.empty} accessibilityLiveRegion="polite">No card has that.</Text>
+          )}
+        </View>
         {/* Every result carries all of its card's notes and its source, never the bare rows. */}
         {searching && found.map(({ card, rows }) => (
           <View key={card.id}>

@@ -64,8 +64,14 @@ describe('Calculators (rendered)', () => {
     rtl.fireEvent.press(screen.getByText('Unit Converter'));
     expect(screen.getByText('Value')).toBeTruthy();
     expect(screen.getByText('Unit to convert from, e.g. mi, lb, gal, F, psi')).toBeTruthy();
+    // The place the answer goes is there before any answer, so a screen reader is told when it fills.
+    expect(screen.getByTestId('calculators-convert_units-outcome').props.accessibilityLiveRegion).toBe('polite');
+    const { Keyboard } = require('react-native');
+    const dismissed = jest.spyOn(Keyboard, 'dismiss');
     fill('convert_units', { value: '26.2', from: 'mi', to: 'km' });
     expect(await answerOf('convert_units')).toBe('26.2 mi = 42.1648 km');
+    // The keyboard is put away, since the answer is drawn below the button it would cover.
+    expect(dismissed).toHaveBeenCalled();
 
     // Changing a box takes the old answer away: it no longer belongs to what is typed.
     fill('convert_units', { to: 'xyz' });
@@ -76,6 +82,11 @@ describe('Calculators (rendered)', () => {
     // An empty box that is needed is named, and the tool is not run.
     fill('convert_units', { value: '   ', to: 'km' });
     expect(await problemOf('convert_units')).toBe('Fill in "Value".');
+    // Typing takes a problem away too, and a unit in the number box is asked to move.
+    fill('convert_units', { value: '72 F' });
+    expect(screen.queryByTestId('calculators-convert_units-problem')).toBeNull();
+    expect(await problemOf('convert_units')).toBe('"Value" must be a plain number, for example 5.5 or -5.');
+    fill('convert_units', { value: '26.2' });
 
     // Opening another closes the first; what was typed in it is kept.
     rtl.fireEvent.press(screen.getByText('Sunrise & Sunset'));
