@@ -178,6 +178,7 @@ export const AVAILABLE_TOOLS: ToolDefinition[] = [
     // The LiteRT tool router reads only the first 100 characters of a description.
     description: 'Convert a value between units: length, mass, volume, temperature, speed, pressure, area, energy. Use this instead of converting in your head, e.g. miles to km, °F to °C, psi to kPa, gallons to litres.',
     icon: 'repeat',
+    userNote: 'Try: "convert 26.2 miles to km" or "what is 72 F in Celsius?"',
     parameters: {
       value: {
         type: 'number',
@@ -203,7 +204,7 @@ export const AVAILABLE_TOOLS: ToolDefinition[] = [
     // The LiteRT tool router reads only the first 100 characters of a description.
     description: 'Convert a map position between latitude/longitude, UTM and MGRS grid references. Pass the position as the user wrote it; the result gives all three forms. Never work a grid reference out yourself.',
     icon: 'map-pin',
-    userNote: 'Works out the grid on this phone from a position you type. It does not use your location.',
+    userNote: 'Works out the grid on this phone from a position you type. It does not use your location. Try: "what is the grid reference for 40.6892, -74.0445?"',
     parameters: {
       position: {
         type: 'string',
@@ -219,7 +220,7 @@ export const AVAILABLE_TOOLS: ToolDefinition[] = [
     // The LiteRT tool router reads only the first 100 characters of a description.
     description: "Sunrise, sunset, solar noon, civil twilight and the moon's phase for a place and a day. Use this for any question about daylight, dark or moonlight instead of guessing. Times are for a level horizon, to about a minute.",
     icon: 'sun',
-    userNote: 'Works the times out on this phone from a position you type. It does not use your location.',
+    userNote: 'Works the times out on this phone from a position you type. It does not use your location. Try: "when is sunset at 51.48, 0.00 on 21 June?"',
     parameters: {
       position: {
         type: 'string',
@@ -243,7 +244,7 @@ export const AVAILABLE_TOOLS: ToolDefinition[] = [
     // The LiteRT tool router reads only the first 100 characters of a description.
     description: 'Distance and compass bearing between two positions, with the bearing back. Use this instead of working out a distance or direction yourself. Bearings are true, not magnetic.',
     icon: 'compass',
-    userNote: 'Works out distance and direction on this phone from two positions you type. It does not use your location, and its bearings are true, not magnetic.',
+    userNote: 'Works out distance and direction on this phone from two positions you type. It does not use your location, and its bearings are true, not magnetic. Try: "how far and which way is 78.22, 15.65 from 78, 15?"',
     parameters: {
       from: {
         type: 'string',

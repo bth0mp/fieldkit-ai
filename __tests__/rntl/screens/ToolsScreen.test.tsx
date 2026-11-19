@@ -9,7 +9,7 @@
  */
 
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, within } from '@testing-library/react-native';
 import { ToolsScreen } from '../../../src/screens/ToolsScreen';
 import { AVAILABLE_TOOLS } from '../../../src/services/tools/registry';
 import { registerScreen, _clearScreensForTesting } from '../../../src/navigation/screenRegistry';
@@ -78,6 +78,19 @@ describe('ToolsScreen', () => {
     expect(getByText('Tools')).toBeTruthy();
     for (const tool of AVAILABLE_TOOLS) {
       expect(getByTestId(`tool-picker-row-${tool.id}`)).toBeTruthy();
+    }
+  });
+
+  it('shows an example question on each field tool, so it is plain what to ask', () => {
+    const { getByTestId } = render(<ToolsScreen />);
+    const examples: Record<string, RegExp> = {
+      convert_units: /Try: "convert 26\.2 miles to km"/,
+      convert_coordinates: /Try: "what is the grid reference for 40\.6892, -74\.0445\?"/,
+      sun_times: /Try: "when is sunset at 51\.48, 0\.00 on 21 June\?"/,
+      distance_bearing: /Try: "how far and which way is 78\.22, 15\.65 from 78, 15\?"/,
+    };
+    for (const [id, example] of Object.entries(examples)) {
+      expect(within(getByTestId(`tool-picker-row-${id}`)).getByText(example)).toBeTruthy();
     }
   });
 
