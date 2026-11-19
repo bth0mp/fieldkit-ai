@@ -192,10 +192,10 @@ function evaluateExpression(expr: string): number {
   }
 
   function parseTerm(): number {
-    let left = parsePower();
+    let left = parseUnary();
     while (pos < str.length && (str[pos] === '*' || str[pos] === '/' || str[pos] === '%')) {
       const op = str[pos++];
-      const right = parsePower();
+      const right = parseUnary();
       if (op === '*') left *= right;
       else if (op === '/') left /= right;
       else left %= right;
@@ -203,20 +203,21 @@ function evaluateExpression(expr: string): number {
     return left;
   }
 
+  // A sign ranks below a power, as in arithmetic: -2^2 is -(2^2), not (-2)^2.
+  function parseUnary(): number {
+    if (str[pos] === '-') { pos++; return -parseUnary(); }
+    if (str[pos] === '+') { pos++; return parseUnary(); }
+    return parsePower();
+  }
+
   function parsePower(): number {
-    let base = parseUnary();
+    let base = parseAtom();
     if (pos < str.length && str[pos] === '^') {
       pos++;
-      const exp = parsePower(); // right-associative
+      const exp = parseUnary(); // right-associative, and the exponent may carry a sign: 2^-1
       base = Math.pow(base, exp);
     }
     return base;
-  }
-
-  function parseUnary(): number {
-    if (str[pos] === '-') { pos++; return -parseAtom(); }
-    if (str[pos] === '+') { pos++; return parseAtom(); }
-    return parseAtom();
   }
 
   function parseAtom(): number {
@@ -238,9 +239,24 @@ function evaluateExpression(expr: string): number {
   return result;
 }
 
+/**
+ * A result as people expect to read it. Fifteen significant digits is all a double holds for certain, and it
+ * drops the dust of binary fractions (0.1+0.2 is 0.3, not 0.30000000000000004). Past the largest exact whole
+ * number the last digits are not known, and the answer says "about".
+ */
+function formatCalculated(result: number): string {
+  if (Number.isSafeInteger(result)) return String(result);
+  const rounded = Number(result.toPrecision(15));
+  return Math.abs(rounded) > Number.MAX_SAFE_INTEGER ? `about ${rounded}` : String(rounded);
+}
+
 function handleCalculator(expression: string): string {
+  // A space is not an operator: "1 1/2" must not be read as 11/2. A person typing into the Calculators screen
+  // writes it; a model rarely did.
+  if (/[\d.)]\s+[\d.(]/.test(expression)) throw new Error('Put an operator between the numbers: a space is not one.');
+  if (expression.includes(',')) throw new Error('Use a decimal point and no commas in numbers, for example 1.5 or 1000.');
   const sanitized = expression.replaceAll(/\s/g, '');
-  if (!/^[0-9+\-*/().,%^]+$/.test(sanitized)) {
+  if (!/^[0-9+\-*/().%^]+$/.test(sanitized)) {
     throw new Error('Invalid expression: only numbers and basic operators (+, -, *, /, ^, %, parentheses) are allowed');
   }
 
@@ -250,7 +266,7 @@ function handleCalculator(expression: string): string {
     throw new TypeError('Expression did not evaluate to a finite number');
   }
 
-  return `${expression} = ${result}`;
+  return `${expression.trim()} = ${formatCalculated(result)}`;
 }
 
 function handleGetDatetime(timezone?: string): string {
