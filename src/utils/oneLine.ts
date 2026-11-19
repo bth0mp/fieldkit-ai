@@ -31,12 +31,17 @@ const INVISIBLE: ReadonlyArray<readonly [number, number]> = [
 
 const isInvisible = (code: number) => INVISIBLE.some(([first, last]) => code >= first && code <= last);
 
+/** The text without its invisible characters, white space left as it is. */
+export function stripInvisible(text: string): string {
+  return [...text].filter(c => !isInvisible(c.codePointAt(0) ?? 0)).join('');
+}
+
 /**
  * Text someone typed, or a file supplied, as one line of plain text: invisible characters go, runs of white
  * space become one space, and it is cut to `max` characters (code points, so never through a surrogate pair).
  * Used for names shown in rows and for file titles that go into the assistant's system prompt.
  */
 export function oneLine(text: string, max: number): string {
-  const plain = [...text].filter(c => !isInvisible(c.codePointAt(0) ?? 0)).join('').replace(/\s+/g, ' ').trim();
+  const plain = stripInvisible(text).replace(/\s+/g, ' ').trim();
   return [...plain].slice(0, max).join('').trimEnd();
 }

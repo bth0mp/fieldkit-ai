@@ -55,6 +55,17 @@ describe('phonetic_morse', () => {
     it('names what it left out instead of dropping it silently', () => {
       expect(run({ text: 'OK! #2', to: 'phonetic' })).toBe('OK! #2 = Oscar Kilo / Two (left out: ! #)');
     });
+
+    it('takes the accent off a letter only: a sign that merely contains another sign is left out', () => {
+      // "≠" is "=" with a stroke through it as far as Unicode's decomposition goes. It is not an equals sign.
+      expect(run({ text: '2≠1', to: 'morse' })).toBe('2≠1 = ..--- .---- (left out: ≠)');
+      expect(run({ text: 'café', to: 'phonetic' })).toBe('café = Charlie Alfa Foxtrot Echo');
+      expect(run({ text: 'Ångström', to: 'phonetic' })).toBe('Ångström = Alfa November Golf Sierra Tango Romeo Oscar Mike');
+    });
+
+    it('accepts "both" for both spellings', () => {
+      expect(run({ text: 'SOS', to: 'both' })).toBe('SOS = Sierra Oscar Sierra\nMorse: ... --- ...');
+    });
   });
 
   describe('into Morse', () => {
@@ -107,6 +118,43 @@ describe('phonetic_morse', () => {
       expect(run({ text: '•• –– __' })).toBe('.. -- -- = IMM');
       expect(run({ text: '-. ---   --. ---' })).toBe('-. --- / --. --- = NO GO');
       expect(run({ text: '-. --- | --. ---' })).toBe('-. --- / --. --- = NO GO');
+    });
+
+    it('reads Morse that arrives wrapped, labelled or with the keyboard\'s own ellipsis', () => {
+      expect(run({ text: '"... --- ..."' })).toBe('... --- ... = SOS');
+      expect(run({ text: '`.- -...`' })).toBe('.- -... = AB');
+      expect(run({ text: 'Morse: .- -...' })).toBe('.- -... = AB');
+      expect(run({ text: 'morse code: ... --- ...' })).toBe('... --- ... = SOS');
+      // A phone keyboard turns three full stops into one ellipsis character.
+      expect(run({ text: '… --- …' })).toBe('... --- ... = SOS');
+      expect(run({ text: '... --- ...​' })).toBe('... --- ... = SOS');
+    });
+
+    it('reads Morse whatever "to" says, since "to" is about spelling', () => {
+      expect(run({ text: '... --- ...', to: 'text' })).toBe('... --- ... = SOS');
+      expect(run({ text: '... --- ...', to: 'english' })).toBe('... --- ... = SOS');
+    });
+
+    it('refuses Morse with other characters in it, instead of spelling its dots as full stops', () => {
+      const stray = (found: string) => `That looks like Morse code with other characters in it (${found}). Send only dots, dashes, spaces and / between words.`;
+      expect(() => run({ text: '... --- ... x' })).toThrow(stray('x'));
+      expect(() => run({ text: '.-. .- -.. .. ---!' })).toThrow(stray('!'));
+      expect(() => run({ text: '.- -... ?', to: 'morse' })).toThrow(stray('?'));
+      // Ordinary text with a few marks in it is still spelled.
+      expect(run({ text: 'a - b', to: 'phonetic' })).toBe('a - b = Alfa / Dash / Bravo');
+      expect(run({ text: '1-2', to: 'phonetic' })).toBe('1-2 = One Dash Two');
+    });
+
+    it('gives both readings of a lone mark, which is a letter in Morse and a character to spell', () => {
+      expect(run({ text: '.', to: 'morse' })).toBe('. can be read two ways.\nAs Morse: . = E\nAs the character itself: . = .-.-.-');
+      expect(run({ text: '-', to: 'phonetic' })).toBe('- can be read two ways.\nAs Morse: - = T\nAs the character itself: - = Dash');
+      expect(run({ text: ' - ' })).toBe('- can be read two ways.\nAs Morse: - = T\nAs the character itself: - = Dash\nMorse: -....-');
+      // A full stop by itself has no radio word, and a long dash has no code of its own: one reading only.
+      expect(run({ text: '.', to: 'phonetic' })).toBe('. = E');
+      expect(run({ text: '—' })).toBe('- = T');
+      // Two or more marks are Morse.
+      expect(run({ text: '...' })).toBe('... = S');
+      expect(run({ text: '---', to: 'morse' })).toBe('--- = O');
     });
 
     it('marks a code it does not know and says how many', () => {
