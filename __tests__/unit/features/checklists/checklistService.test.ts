@@ -211,11 +211,12 @@ describe('checklist service', () => {
       'Collar with ID tag and a harness or leash',
       'Backup leash, collar and ID tag',
       "Copies of your pet's registration information and other relevant documents in a waterproof container",
-      'The same documents available electronically',
+      // Each item must make sense alone: a list can be reordered by removing items, and bleach needs its reason.
+      "Electronic copies of your pet's registration information and other relevant documents",
       'Traveling bag, crate or sturdy carrier, ideally one for each pet',
       'Grooming items (pet shampoo, conditioner and other items)',
-      'Pet litter and litter box (if appropriate)',
-      'Newspapers, paper towels, plastic trash bags and household chlorine bleach',
+      'For sanitation: pet litter and litter box (if appropriate)',
+      'For sanitation: newspapers, paper towels, plastic trash bags and household chlorine bleach',
       'A picture of you and your pet together',
       'Familiar items (favorite toys, treats or bedding)',
     ]);

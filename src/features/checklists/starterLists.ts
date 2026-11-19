@@ -64,7 +64,9 @@ export const STARTER_LISTS: StarterList[] = [
     // https://www.ready.gov/pets, read 19 November 2026. The page's ten items are a name and a sentence or two
     // of explanation, too long for a line here, and a bare name loses what to pack ("Sanitation needs"). So
     // each item is the name with the page's own words cut down, and its two long items (identification;
-    // sanitation) are split into the things they name. Nothing is added. The source line says "Adapted from".
+    // sanitation) are split into the things they name, each made to stand alone ("For sanitation:", "Electronic
+    // copies of"). Three phrases are reworded with the same meaning: "regularly" for "on a regular basis", and
+    // those two. No thing to pack is added or dropped. The source line says "Adapted from".
     source: 'Adapted from Ready.gov, Build a Kit for Your Pet, as updated 20 March 2026',
     items: [
       "Food (several days' supply in an airtight, waterproof container)",
@@ -74,11 +76,11 @@ export const STARTER_LISTS: StarterList[] = [
       'Collar with ID tag and a harness or leash',
       'Backup leash, collar and ID tag',
       "Copies of your pet's registration information and other relevant documents in a waterproof container",
-      'The same documents available electronically',
+      "Electronic copies of your pet's registration information and other relevant documents",
       'Traveling bag, crate or sturdy carrier, ideally one for each pet',
       'Grooming items (pet shampoo, conditioner and other items)',
-      'Pet litter and litter box (if appropriate)',
-      'Newspapers, paper towels, plastic trash bags and household chlorine bleach',
+      'For sanitation: pet litter and litter box (if appropriate)',
+      'For sanitation: newspapers, paper towels, plastic trash bags and household chlorine bleach',
       'A picture of you and your pet together',
       'Familiar items (favorite toys, treats or bedding)',
     ],

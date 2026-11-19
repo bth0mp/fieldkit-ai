@@ -181,7 +181,7 @@ describe('Checklists (rendered)', () => {
     expect(screen.getByText('Pet emergency kit (0 of 14)')).toBeTruthy();
     expect(screen.getByLabelText('Collar with ID tag and a harness or leash')).toBeTruthy();
     expect(screen.getByLabelText('Backup leash, collar and ID tag')).toBeTruthy();
-    expect(screen.getByLabelText('Newspapers, paper towels, plastic trash bags and household chlorine bleach')).toBeTruthy();
+    expect(screen.getByLabelText('For sanitation: newspapers, paper towels, plastic trash bags and household chlorine bleach')).toBeTruthy();
     rtl.fireEvent.press(screen.getByTestId('checklists-starter-ready-car-kit'));
     expect(screen.getByText('Car kit extras (0 of 7)')).toBeTruthy();
     expect(screen.getByLabelText('Cat litter or sand (for better tire traction)')).toBeTruthy();
