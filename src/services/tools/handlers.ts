@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import DeviceInfo from 'react-native-device-info';
 import { ToolCall, ToolResult } from './types';
+import { calculate } from './calculatorTool';
 import type { RagSearchResult } from '../rag';
 import type { KiwixHit } from '../kiwix/kiwixService';
 import type { KiwixFile } from '../kiwix/kiwixStore';
@@ -41,7 +42,7 @@ async function dispatchTool(call: ToolCall): Promise<string> {
       return handleWebSearch(q);
     }
     case 'calculator':
-      return handleCalculator(call.arguments.expression);
+      return calculate(call.arguments.expression);
     case 'get_current_datetime':
       return handleGetDatetime(call.arguments.timezone);
     case 'get_device_info':
@@ -170,137 +171,6 @@ function decodeHTMLEntities(text: string): string {
     .replaceAll('&apos;', "'")
     .replaceAll(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
     .replaceAll(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCodePoint(Number.parseInt(hex, 16)));
-}
-
-/**
- * Safe math expression evaluator using recursive descent parsing.
- * Supports: +, -, *, /, %, ^ (exponentiation), parentheses, decimals.
- * No dynamic code execution (no eval/new Function).
- */
-function evaluateExpression(expr: string): number {
-  let pos = 0;
-  const str = expr.replaceAll(/\s/g, '');
-
-  // Whole numbers and binary fractions (halves, quarters, down to 1/1024ths) are held exactly, so a small
-  // difference between two of them is real. A decimal fraction such as 0.1 is not, and sums of those leave dust.
-  const exact = (x: number) => Number.isInteger(x * 1024);
-  const bothExact = (a: number, b: number) => exact(a) && exact(b);
-
-  function parseExpr(): number {
-    let left = parseTerm();
-    while (pos < str.length && (str[pos] === '+' || str[pos] === '-')) {
-      const op = str[pos++];
-      const right = parseTerm();
-      const sum = op === '+' ? left + right : left - right;
-      // 0.1+0.2-0.3 is 5.55e-17 in binary. A result that small beside what made it has no real digits: it is 0.
-      const dust = !bothExact(left, right) && Math.abs(sum) < 1e-14 * Math.max(Math.abs(left), Math.abs(right));
-      left = dust ? 0 : sum;
-    }
-    return left;
-  }
-
-  /**
-   * The remainder, with the binary dust taken off: 1 % 0.1 is 0, not 0.09999999999999995. It is 0 only where
-   * the first number is a whole number of the second as near as a double can say (1 / 0.1 is 10.000000000000002).
-   * A remainder that is merely small beside the divisor is real: 0.18 % 1000000 is 0.18. And past a thousand
-   * million divisors a double cannot tell a whole number of them from nearly one, so the remainder is left as
-   * the numbers held give it.
-   */
-  function remainder(left: number, right: number): number {
-    const rest = left % right;
-    if (bothExact(left, right)) return rest;
-    const times = left / right;
-    const whole = Math.round(times);
-    const wholeTimes = whole !== 0 && Math.abs(times) < 1e9 && Math.abs(times - whole) <= 4 * Number.EPSILON * Math.abs(times);
-    return wholeTimes ? 0 : rest;
-  }
-
-  function parseTerm(): number {
-    let left = parseUnary();
-    while (pos < str.length && (str[pos] === '*' || str[pos] === '/' || str[pos] === '%')) {
-      const op = str[pos++];
-      const right = parseUnary();
-      // Refused here, not only when the whole sum is infinite: 1/(1/0) would otherwise come out as 0.
-      if (op !== '*' && right === 0) throw new Error('Cannot divide by zero.');
-      if (op === '*') left *= right;
-      else if (op === '/') left /= right;
-      else left = remainder(left, right);
-    }
-    return left;
-  }
-
-  // A sign ranks below a power, as in arithmetic: -2^2 is -(2^2), not (-2)^2.
-  function parseUnary(): number {
-    if (str[pos] === '-') { pos++; return -parseUnary(); }
-    if (str[pos] === '+') { pos++; return parseUnary(); }
-    return parsePower();
-  }
-
-  function parsePower(): number {
-    let base = parseAtom();
-    if (pos < str.length && str[pos] === '^') {
-      pos++;
-      const exp = parseUnary(); // right-associative, and the exponent may carry a sign: 2^-1
-      base = Math.pow(base, exp);
-    }
-    return base;
-  }
-
-  function parseAtom(): number {
-    if (str[pos] === '(') {
-      pos++; // skip '('
-      const val = parseExpr();
-      if (str[pos] !== ')') throw new Error('Mismatched parentheses');
-      pos++; // skip ')'
-      return val;
-    }
-    const start = pos;
-    while (pos < str.length && (str[pos] >= '0' && str[pos] <= '9' || str[pos] === '.')) pos++;
-    if (pos === start) throw new Error('Unexpected character');
-    const digits = str.substring(start, pos);
-    // "1.2.3" and a lone "." are not numbers; Number() would make them NaN and the message would be about infinity.
-    if (!/^(\d+\.?\d*|\.\d+)$/.test(digits)) throw new Error(`That is not a number: ${digits}`);
-    return Number(digits);
-  }
-
-  const result = parseExpr();
-  if (pos < str.length) throw new Error('Unexpected character');
-  return result;
-}
-
-/**
- * A result as people expect to read it. A whole number that a double holds exactly is printed as it is. Anything
- * else under a hundred million million is rounded to fifteen significant digits, which drops the dust of binary
- * fractions (0.1+0.2 is 0.3, not 0.30000000000000004). From there up fifteen digits no longer reach the units,
- * so the number is printed as held, unrounded, and the answer says "about".
- */
-function formatCalculated(result: number): string {
-  if (Number.isSafeInteger(result)) return String(result);
-  if (Math.abs(result) >= 1e14) return `about ${result}`;
-  return String(Number(result.toPrecision(15)));
-}
-
-/** The multiply, divide and minus signs a phone keyboard offers, by code point, as the ones the parser knows. */
-const KEYBOARD_SIGNS: Array<[number, string]> = [[0xd7, '*'], [0xf7, '/'], [0x2212, '-']];
-
-function handleCalculator(typed: string): string {
-  const expression = KEYBOARD_SIGNS.reduce((text, [code, sign]) => text.replaceAll(String.fromCodePoint(code), sign), typed);
-  // A space is not an operator: "1 1/2" must not be read as 11/2. A person typing into the Calculators screen
-  // writes it; a model rarely did.
-  if (/[\d.)]\s+[\d.(]/.test(expression)) throw new Error('Put an operator between the numbers: a space is not one.');
-  if (expression.includes(',')) throw new Error('Use a decimal point and no commas in numbers, for example 1.5 or 1000.');
-  const sanitized = expression.replaceAll(/\s/g, '');
-  if (!/^[0-9+\-*/().%^]+$/.test(sanitized)) {
-    throw new Error('Invalid expression: only numbers and basic operators (+, -, *, /, ^, %, parentheses) are allowed');
-  }
-
-  const result = evaluateExpression(sanitized);
-
-  if (typeof result !== 'number' || !Number.isFinite(result)) {
-    throw new TypeError('Expression did not evaluate to a finite number');
-  }
-
-  return `${typed.trim()} = ${formatCalculated(result)}`;
 }
 
 function handleGetDatetime(timezone?: string): string {

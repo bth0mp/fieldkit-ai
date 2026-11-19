@@ -31,7 +31,7 @@ describe('calculator', () => {
     expect(await run('2^-1')).toBe('2^-1 = 0.5');
     // A tower of powers still works from the right: 2^(3^2).
     expect(await run('2^3^2')).toBe('2^3^2 = 512');
-    expect(await run('-2^0.5')).toBe('-2^0.5 = -1.4142135623731');
+    expect(await run('-2^0.5')).toBe('-2^0.5 = -1.41421356237');
     expect(await run('2^(1+1)')).toBe('2^(1+1) = 4');
   });
 
@@ -40,8 +40,48 @@ describe('calculator', () => {
     expect(await run('4.35*100')).toBe('4.35*100 = 435');
     expect(await run('0.1+0.2')).toBe('0.1+0.2 = 0.3');
     expect(await run('100*1.1')).toBe('100*1.1 = 110');
-    expect(await run('1/3')).toBe('1/3 = 0.333333333333333');
+    // A result that is not a short decimal is shown to twelve digits, as a pocket calculator does: the
+    // fifteenth was wrong about one time in three ((70-13)/13*100 printed ...539 for ...538).
+    expect(await run('1/3')).toBe('1/3 = 0.333333333333');
+    expect(await run('(70-13)/13*100')).toBe('(70-13)/13*100 = 438.461538462');
+    // Twelve digits whenever a step was not exact, even where the answer happens to fit twelve decimal places.
+    expect(await run('(269-63)/63*100')).toBe('(269-63)/63*100 = 326.984126984');
+    expect(await run('885.85/3.1')).toBe('885.85/3.1 = 285.758064516');
+    // An exact decimal answer is given in full however many digits it has.
+    expect(await run('12345678901.23+0.01')).toBe('12345678901.23+0.01 = 12345678901.24');
+    expect(await run('1/8')).toBe('1/8 = 0.125');
+    expect(await run('1.5^2')).toBe('1.5^2 = 2.25');
+    expect(await run('2^-3')).toBe('2^-3 = 0.125');
     expect(await run('500*321')).toBe('500*321 = 160500');
+  });
+
+  it('does sums of ordinary decimals exactly', async () => {
+    // Binary fractions made these 0.00999999999999979, 0.0999999999999996, 0.100000000000023 and so on. A last
+    // review, with exact arithmetic as the truth, found one subtraction of prices in thirty printed noise.
+    const sums: Array<[string, string]> = [
+      ['5-4.99', '0.01'], ['10-9.99', '0.01'], ['20-19.99', '0.01'], ['10.1-10', '0.1'], ['1.4-1.3', '0.1'],
+      ['2-1.94', '0.06'], ['0.56-0.50', '0.06'], ['1000.1-1000', '0.1'], ['4.35*100-434', '1'],
+      ['123456.789-123456.788', '0.001'], ['1.1*1.1', '1.21'], ['0.1*0.1', '0.01'], ['19.99*3', '59.97'],
+      ['0.6/0.2', '3'], ['0.3/0.1', '3'], ['1.21/1.1', '1.1'], ['100.1-100-0.1+5', '5'],
+      // Dust that an earlier step left used to slip past: the big number had already cancelled.
+      ['16.1-16-0.1', '0'], ['2.01-2-0.01', '0'], ['2.75+0.01-2.75-0.01', '0'], ['254.01-253.52-0.49', '0'],
+      ['3654.55-10.06-612.89-240.07-438.66-988.60-763.52-559.53-41.22', '0'],
+      // A small decimal is written out, not as 1e-7.
+      ['0.0000001+0', '0.0000001'], ['0.00000123*1', '0.00000123'],
+      // A real difference in the fourteenth place is kept: the rule for binary dust used to call it 0.
+      ['1.00000000000001-1', '0.00000000000001'], ['1.0000000000001-1', '0.0000000000001'],
+      ['1.1-1.0999999999999', '0.0000000000001'], ['1.00000000000001%1', '0.00000000000001'],
+    ];
+    for (const [sum, answer] of sums) expect(await run(sum)).toBe(`${sum} = ${answer}`);
+    expect(await run('1/(16.1-16-0.1)')).toBe('ERROR Cannot divide by zero.');
+  });
+
+  it('gives the remainder of ordinary decimals exactly', async () => {
+    const sums: Array<[string, string]> = [
+      ['8.3%0.7', '0.6'], ['0.7%0.2', '0.1'], ['1.2%1.1', '0.1'], ['1%0.07', '0.02'], ['10.15%0.1', '0.05'],
+      ['100.3%0.25', '0.05'], ['-85.64%0.8', '-0.04'], ['1000000%0.001', '0'], ['100000000%0.1', '0'],
+    ];
+    for (const [sum, answer] of sums) expect(await run(sum)).toBe(`${sum} = ${answer}`);
   });
 
   it('says "about" when a result is too big to be exact, and never changes its whole-number part', async () => {
@@ -80,12 +120,32 @@ describe('calculator', () => {
     // Found by comparing the tool with a textbook evaluator on 20,000 random sums.
     expect(await run('0.18%831^6')).toBe('0.18%831^6 = 0.18');
     expect(await run('0.3%1000000000000000')).toBe('0.3%1000000000000000 = 0.3');
-    expect(await run('7.1%142^425')).toBe('7.1%142^425 = 7.1');
-    expect(await run('308/915591187%26.1^8')).toBe('308/915591187%26.1^8 = 3.36394675236209e-7');
+    expect(await run('308/915591187%26.1^8')).toBe('308/915591187%26.1^8 = 3.36394675236e-7');
     expect(await run('8+720%95.5^7')).toBe('8+720%95.5^7 = 728');
     // Nor is a remainder called 0 because the first number is so much the larger that no double can tell: it
     // is then the remainder of the numbers as held, as it always was.
-    expect(await run('2^790%3.74')).toBe('2^790%3.74 = 1.97115562766305');
+    expect(await run('2^790%3.74')).toBe('2^790%3.74 = 1.97115562766');
+  });
+
+  it('refuses a step that overflows or divides by zero, though the end would be finite', async () => {
+    // 0 to a negative power is a division by zero; it used to become Infinity, and 1/Infinity is 0.
+    for (const sum of ['1/0^-1', '8/(5-5)^-1', '5/0^-2+3', '7%0^-1', '0^-1']) {
+      expect({ sum, answer: await run(sum) }).toEqual({ sum, answer: 'ERROR Cannot divide by zero.' });
+    }
+    for (const sum of ['10^400', '1/10^400', '7.1%142^425', '10^200*10^200', '5-10^400']) {
+      expect({ sum, answer: await run(sum) }).toEqual({ sum, answer: 'ERROR That is too large to work out.' });
+    }
+    expect(await run('(0-8)^(1/3)')).toBe('ERROR Expression did not evaluate to a finite number');
+  });
+
+  it('takes a number where a model sends one, and names a missing sum', async () => {
+    const send = async (expression: unknown) => {
+      const result = await executeToolCall({ name: 'calculator', arguments: { expression } });
+      return result.error ? `ERROR ${result.error}` : result.content;
+    };
+    expect(await send(42)).toBe('42 = 42');
+    expect(await send(undefined)).toBe('ERROR Missing required parameter: expression');
+    expect(await send('   ')).toBe('ERROR Missing required parameter: expression');
   });
 
   it('gives zero where decimal fractions cancel, and keeps a real small difference', async () => {
@@ -131,6 +191,6 @@ describe('calculator', () => {
     expect(await run('200 % 15')).toBe('200 % 15 = 5');
     expect(await run('2+abc')).toMatch(/^ERROR Invalid expression: only numbers and basic operators/);
     expect(await run('2*')).toMatch(/^ERROR /);
-    expect(await run('10^400')).toBe('ERROR Expression did not evaluate to a finite number');
+    expect(await run('2*')).toBe('ERROR Unexpected character');
   });
 });
