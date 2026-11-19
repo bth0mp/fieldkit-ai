@@ -141,7 +141,7 @@ export const QUICK_REFERENCE_CARDS: ReferenceCard[] = [
       { sign: 'CB channel 9', meaning: '27.065 MHz. For emergencies and traveler assistance only' },
       // The two emergency frequencies given on the Distress signals card, as rows that point to it. As a note
       // they made a search for "distress" or "marine" list every row of this card.
-      { sign: 'Marine VHF 16', meaning: '156.8 MHz. See the Distress signals card' },
+      { sign: 'Marine VHF channel 16', meaning: '156.8 MHz. See the Distress signals card' },
       { sign: 'Aircraft emergency', meaning: '121.5 MHz. See the Distress signals card' },
       ...FRS_MHZ.map((mhz, index) => ({ sign: `FRS ${index + 1}`, meaning: `${mhz} MHz` })),
     ],

@@ -165,7 +165,7 @@ describe('Quick reference (rendered)', () => {
     expect(screen.getByText('An FRS radio puts out no more than 2 watts on channels 1 to 7 and 15 to 22, and no more than half a watt on channels 8 to 14.')).toBeTruthy();
     // The two emergency frequencies of the Distress signals card have rows here that point to it. (They used to
     // be a note, and a search for "distress" or "marine" then listed all 22 FRS channels.)
-    expect(meaningOf('radio-channels', 'Marine VHF 16')).toBe('156.8 MHz. See the Distress signals card');
+    expect(meaningOf('radio-channels', 'Marine VHF channel 16')).toBe('156.8 MHz. See the Distress signals card');
     expect(meaningOf('radio-channels', 'Aircraft emergency')).toBe('121.5 MHz. See the Distress signals card');
     expect(screen.queryByText(/are on the Distress signals card/)).toBeNull();
     // The sources are United States ones. They say nothing of other countries, so neither does the card.
@@ -351,7 +351,7 @@ describe('Quick reference (rendered)', () => {
     // Numbers. "16" is marine channel 16, FRS 16 and the wind that goes up to 16 knots. It is not the weather
     // frequencies that begin 162, and the Distress card, whose note gives channel 16, is listed with it.
     rtl.fireEvent.changeText(search, '16');
-    expect(meaning('radio-channels', 'Marine VHF 16')).toMatch(/^156\.8 MHz/);
+    expect(meaning('radio-channels', 'Marine VHF channel 16')).toMatch(/^156\.8 MHz/);
     expect(meaning('radio-channels', 'FRS 16')).toBe('462.5750 MHz');
     expect(screen.queryByTestId('quick-reference-radio-channels-Weather radio')).toBeNull();
     expect(screen.getByText(/Marine VHF radio: channel 16 \(156\.8 MHz\)/)).toBeTruthy();
@@ -369,9 +369,21 @@ describe('Quick reference (rendered)', () => {
     rtl.fireEvent.changeText(search, 'november');
     expect(meaning('radio-alphabet', 'N')).toBe('November');
     expect(rowsShown()).toBe(1);
+    // "channel 16" and "vhf channel 16" find the marine row by its words.
+    rtl.fireEvent.changeText(search, 'vhf channel 16');
+    expect(meaning('radio-channels', 'Marine VHF channel 16')).toMatch(/^156\.8 MHz/);
+    rtl.fireEvent.changeText(search, 'channel 16');
+    expect(meaning('radio-channels', 'Marine VHF channel 16')).toMatch(/^156\.8 MHz/);
+    // A frequency typed with more zeros than the card prints is the same number.
+    rtl.fireEvent.changeText(search, '121.500');
+    expect(meaning('radio-channels', 'Aircraft emergency')).toMatch(/^121\.5 MHz/);
+    rtl.fireEvent.changeText(search, '156.800');
+    expect(meaning('radio-channels', 'Marine VHF channel 16')).toMatch(/^156\.8 MHz/);
+    rtl.fireEvent.changeText(search, '462.5500');
+    expect(meaning('radio-channels', 'FRS 15')).toBe('462.5500 MHz');
     // One card's name does not list another card whole.
     rtl.fireEvent.changeText(search, 'marine');
-    expect(meaning('radio-channels', 'Marine VHF 16')).toMatch(/^156\.8 MHz/);
+    expect(meaning('radio-channels', 'Marine VHF channel 16')).toMatch(/^156\.8 MHz/);
     expect(screen.queryByTestId('quick-reference-radio-channels-FRS 1')).toBeNull();
     expect(meaning('distress', 'SOS')).toMatch(/^\.\.\. --- \.\.\./);
 

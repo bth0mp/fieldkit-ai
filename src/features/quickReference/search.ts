@@ -80,7 +80,10 @@ function rank(row: Row, typed: string, onlyMarks: boolean): number {
  * One character finds a sign that is it or has it as a word, and a Morse code that is exactly it: "s" is S in
  * the radio alphabet and in Morse, not every row with an s in it.
  */
-export function searchCards(query: string): { card: ReferenceCard; rows: ReferenceCard['rows'] }[] {
+export function searchCards(asTyped: string): { card: ReferenceCard; rows: ReferenceCard['rows'] }[] {
+  // A number typed with more zeros than a card prints is the same number: "121.500" is 121.5, "16." is 16.
+  const plain = asTyped.trim();
+  const query = /^\d+\.\d*$/.test(plain) ? plain.replace(/0+$/, '').replace(/\.$/, '') : asTyped;
   const typed = spaced(query);
   const marks = words(query);
   if (!marks) return [];
