@@ -30,6 +30,8 @@ describe('sun_times in a chat', () => {
     await h.rtl.waitFor(() => {
       expect(h.view!.queryByText(/Sun at 51\.47780, -0\.00150 on 2026-11-18 \(UTC\+00:00\): .*sunrise 07:2[234], .*sunset 16:0[678], /)).not.toBeNull();
     });
+    // The moon that day, from the Observatory too: it rises at 13:26 and does not set until 00:43 on the 19th.
+    expect(h.view!.queryByText(/ Moon: waxing gibbous, \d+% lit\. Moonrise 13:2[567], no moonset this day\./)).not.toBeNull();
     await h.rtl.waitFor(() => { expect(h.view!.queryByText(/Sunset is at about 16:07 UTC\./)).not.toBeNull(); });
   });
 });

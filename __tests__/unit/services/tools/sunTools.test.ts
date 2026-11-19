@@ -175,7 +175,7 @@ describe('sun_times', () => {
     const tromso = run({ position: '69.6492, 18.9553', date: '2026-07-25', utc_offset: 0 });
     expectTimes2(tromso, { sunset: '22:36' });
     expect(tromso).not.toMatch(/sunrise \d/);
-    expect(tromso).not.toContain('up all day');
+    expect(tromso).not.toContain('the sun is up all day');
     const arcticCircle = run({ position: '66, 25', date: '2026-06-30', utc_offset: 0 });
     expectTimes2(arcticCircle, { sunset: '22:08' });
     expect(arcticCircle).not.toMatch(/sunrise \d/);
@@ -187,7 +187,7 @@ describe('sun_times', () => {
     expect(minutesOf(tromso, 'sunrise')).toBeGreaterThanOrEqual(hm('22:53') - 1440 - 2);
     expect(minutesOf(tromso, 'sunrise')).toBeLessThanOrEqual(hm('22:53') - 1440 + 2);
     expect(tromso).not.toMatch(/sunset \d/);
-    expect(tromso).not.toContain('up all day');
+    expect(tromso).not.toContain('the sun is up all day');
   });
 
   it('says civil twilight lasts all day when the sun is only just below the horizon at the pole', () => {
@@ -233,6 +233,119 @@ describe('sun_times', () => {
     const now = new Date(Date.UTC(2026, 10, 18, 18, 30));
     expect(run({ position: '1.87, -157.4', utc_offset: 14 }, now)).toContain('on 2026-11-19 (UTC+14:00): ');
     expect(run({ position: '40.6892, -74.0445', utc_offset: -5 }, now)).toContain('on 2026-11-18 (UTC-05:00): ');
+  });
+});
+
+/**
+ * Moonrise and moonset. The expected times are the US Naval Observatory's too, read on 2026-11-19 from the same
+ * API (its moondata, to the minute): the moon's events inside the calendar day in the zone shown. Grace is one
+ * minute, since both sides round to the minute; two where the moon crosses the horizon at a shallow angle.
+ */
+type MoonEvent = ['moonrise' | 'moonset', string];
+
+/** The moon's events in a result, in the order printed: "Moonset 13:42, moonrise 22:28." gives both. */
+function moonEventsOf(result: string): [string, number][] {
+  const sentence = /% lit\. ([^.]*)\./.exec(result);
+  if (!sentence) throw new Error(`no moon events in: ${result}`);
+  return [...sentence[1].matchAll(/(moonrise|moonset) (\d\d):(\d\d)/gi)]
+    .map(found => [found[1].toLowerCase(), Number(found[2]) * 60 + Number(found[3])]);
+}
+
+function expectMoon(result: string, expected: MoonEvent[], grace = 1) {
+  const found = moonEventsOf(result);
+  expect(found.map(([name]) => name)).toEqual(expected.map(([name]) => name));
+  expected.forEach(([name, time], index) => {
+    const off = found[index][1] - hm(time);
+    expect({ name, time, minutesOff: Math.abs(off) <= grace ? 0 : off }).toEqual({ name, time, minutesOff: 0 });
+  });
+}
+
+describe('sun_times, moonrise and moonset', () => {
+  const at = (position: string, date: string, utc_offset = 0) => run({ position, date, utc_offset });
+  const GREENWICH = '51.4778, -0.0015';
+  const TROMSO = '69.6492, 18.9553';
+  const MCMURDO = '-77.85, 166.67';
+  const LONGYEARBYEN = '78.22, 15.65';
+
+  it.each<[string, string, string, MoonEvent[]]>([
+    ['Greenwich', GREENWICH, '2026-11-01', [['moonset', '13:42'], ['moonrise', '22:28']]],
+    ['Greenwich', GREENWICH, '2026-11-10', [['moonrise', '08:54'], ['moonset', '16:14']]],
+    ['Greenwich at full moon', GREENWICH, '2026-11-24', [['moonset', '07:43'], ['moonrise', '15:17']]],
+    ['New York', '40.7128, -74.006', '1950-07-15', [['moonset', '00:37'], ['moonrise', '09:37']]],
+    ['New York', '40.7128, -74.006', '2099-12-31', [['moonrise', '01:11'], ['moonset', '15:16']]],
+    ['Quito', '-0.18, -78.47', '1987-04-05', [['moonset', '04:33'], ['moonrise', '17:00']]],
+    ['Sydney', '-33.8688, 151.2093', '2075-09-09', [['moonset', '06:27'], ['moonrise', '20:04']]],
+    ['Tokyo', '35.6762, 139.6503', '2045-05-05', [['moonrise', '13:43'], ['moonset', '23:11']]],
+    ['Cape Town', '-33.9249, 18.4241', '2000-01-01', [['moonrise', '00:09'], ['moonset', '13:27']]],
+    ['Fiji', '-16.8, 179.9', '2026-06-21', [['moonset', '11:40'], ['moonrise', '23:58']]],
+    ['Ushuaia', '-54.8, -68.3', '1987-04-05', [['moonset', '00:20'], ['moonrise', '19:45']]],
+    ['Ushuaia', '-54.8, -68.3', '2045-05-05', [['moonset', '17:19'], ['moonrise', '23:28']]],
+  ])('%s (%s) on %s, as the Observatory has it', (_place, position, date, events) => {
+    expectMoon(at(position, date), events);
+  });
+
+  it('gives the events in the order they happen, as one sentence after the phase', () => {
+    // 12 November 2026: rise 10:58, set 17:41.
+    expect(at(GREENWICH, '2026-11-12')).toMatch(/ Moon: waxing crescent, \d+% lit\. Moonrise 1[01]:\d\d, moonset 17:[34]\d\.$/);
+    expect(at(GREENWICH, '2026-11-01')).toMatch(/ Moon: waning gibbous, \d+% lit\. Moonset 13:4\d, moonrise 22:[23]\d\.$/);
+  });
+
+  it('says so on a day with no moonrise, and on a day with no moonset', () => {
+    // Greenwich, 3 November 2026: the moon sets at 14:18 and next rises at 01:14 on the 4th.
+    const noRise = at(GREENWICH, '2026-11-03');
+    expectMoon(noRise, [['moonset', '14:18']]);
+    expect(noRise).toMatch(/% lit\. Moonset 14:\d\d, no moonrise this day\.$/);
+    // 18 November: it rises at 13:26 and next sets at 00:43 on the 19th.
+    const noSet = at(GREENWICH, '2026-11-18');
+    expectMoon(noSet, [['moonrise', '13:26']]);
+    expect(noSet).toMatch(/% lit\. Moonrise 13:\d\d, no moonset this day\.$/);
+    // The same away from Greenwich and from this year.
+    expectMoon(at('-0.18, -78.47', '2030-12-25'), [['moonrise', '12:00']]);
+    expectMoon(at('-33.8688, 151.2093', '2024-02-29'), [['moonrise', '10:45']]);
+    expectMoon(at('35.6762, 139.6503', '2010-10-10'), [['moonset', '09:36']]);
+  });
+
+  it('says when the moon is up all day or down all day', () => {
+    // The Observatory has "Object continuously above the Horizon" or "below" for each of these days.
+    expect(at(TROMSO, '2026-11-24')).toMatch(/% lit\. The moon is up all day\.$/);
+    expect(at(LONGYEARBYEN, '2026-11-23')).toMatch(/% lit\. The moon is up all day\.$/);
+    // (McMurdo's answer goes on to say that UTC is not its own clock.)
+    expect(at(MCMURDO, '2026-11-24')).toMatch(/% lit\. The moon is below the horizon all day\./);
+    expect(at(LONGYEARBYEN, '2026-11-17')).toMatch(/% lit\. The moon is below the horizon all day\.$/);
+  });
+
+  // Far north and south the moon crosses the horizon at a shallow angle, so a small error in where it is moves
+  // the time further.
+  it.each<[string, string, string, MoonEvent[]]>([
+    ['Anchorage, down for an hour and a half', '61.2181, -149.9003', '1987-04-05', [['moonset', '15:00'], ['moonrise', '16:27']]],
+    ['Anchorage, up for under three hours', '61.2181, -149.9003', '2045-05-05', [['moonrise', '12:13'], ['moonset', '14:58']]],
+    ['Tromso', TROMSO, '2026-11-18', [['moonrise', '12:55'], ['moonset', '22:51']]],
+    ['Tromso, the day before it stops setting', TROMSO, '2026-11-22', [['moonset', '05:08'], ['moonrise', '11:07']]],
+    ['Tromso, no moonset', TROMSO, '2026-11-19', [['moonrise', '12:32']]],
+    ['McMurdo, down for under three hours', MCMURDO, '2026-11-17', [['moonset', '18:03'], ['moonrise', '20:51']]],
+    ['McMurdo, the day before it stops rising', MCMURDO, '2026-11-21', [['moonrise', '06:53'], ['moonset', '11:52']]],
+    ['Longyearbyen, its first day up', LONGYEARBYEN, '2026-11-18', [['moonrise', '14:18'], ['moonset', '22:13']]],
+    ['Longyearbyen, the day before it stops setting', LONGYEARBYEN, '2026-11-21', [['moonset', '04:36'], ['moonrise', '10:07']]],
+  ])('%s (%s) on %s, within two minutes of the Observatory', (_place, position, date, events) => {
+    expectMoon(at(position, date), events, 2);
+  });
+
+  it('lists the events of the calendar day in the zone shown', () => {
+    // The Observatory with tz=-4, New York, 21 June 2026: set 00:29, rise 12:50.
+    const newYork = at('40.7128, -74.006', '2026-06-21', -4);
+    expectMoon(newYork, [['moonset', '00:29'], ['moonrise', '12:50']]);
+    // No "(+1 day)" on a moon time: every one is inside the day asked about.
+    expect(newYork).not.toMatch(/moon(rise|set) \d\d:\d\d \(/i);
+    // tz=9, Tokyo, the same date: rise 10:57, set 23:24.
+    expectMoon(at('35.6762, 139.6503', '2026-06-21', 9), [['moonrise', '10:57'], ['moonset', '23:24']]);
+    // tz=12, Fiji at 179.9 E, 18 November 2026: set 00:20, rise 12:13.
+    expectMoon(at('-16.8, 179.9', '2026-11-18', 12), [['moonset', '00:20'], ['moonrise', '12:13']]);
+    // tz=11, Sydney, 20 November 2026: set 02:30, rise 14:56.
+    expectMoon(at('-33.8688, 151.2093', '2026-11-20', 11), [['moonset', '02:30'], ['moonrise', '14:56']]);
+  });
+
+  it('keeps the warning about another place\'s clock as the last thing said', () => {
+    expect(at('64.8378, -147.7164', '2026-03-20', 9)).toMatch(/% lit\. [^.]*\. These are UTC\+09:00 clock times, not this place's own local time/);
   });
 });
 

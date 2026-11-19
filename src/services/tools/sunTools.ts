@@ -1,5 +1,6 @@
 import { ToolCall } from './types';
 import { positionOf } from './coordinateTools';
+import { moonDay } from './moonTools';
 
 /**
  * sun_times: sunrise, sunset, solar noon and civil twilight for a place and a date, worked out on the phone.
@@ -8,6 +9,8 @@ import { positionOf } from './coordinateTools';
  * sunset are when the sun's centre is 0.833 degrees below a level horizon (refraction plus the sun's radius);
  * civil twilight ends at 6 degrees below. Against the US Naval Observatory it is within a minute, two where
  * the sun only grazes the horizon; it knows nothing of a real skyline of hills.
+ *
+ * The answer ends with the moon: its phase at solar noon, and its risings and settings that day (moonTools).
  */
 const RAD = Math.PI / 180;
 const MINUTE_MS = 60000;
@@ -158,6 +161,17 @@ function describe({ noon, rise, set, dawn, dusk }: Events, clock: Clock): string
   return `the sun is up all day, with no sunrise or sunset. Its highest point, solar noon ${clock(noon)}.`;
 }
 
+/** " Moonset 13:42, moonrise 22:28." for the 24 hours from `start`, saying which of the two a day lacks. */
+function moonEvents(place: Place, start: number, clock: Clock): string {
+  const { events, up } = moonDay(place, start);
+  if (events.length === 0) return up ? ' The moon is up all day.' : ' The moon is below the horizon all day.';
+  const said = events.map(event => `${event.rises ? 'moonrise' : 'moonset'} ${clock(event.at)}`);
+  if (events.every(event => !event.rises)) said.push('no moonrise this day');
+  if (events.every(event => event.rises)) said.push('no moonset this day');
+  const sentence = said.join(', ');
+  return ` ${sentence[0].toUpperCase()}${sentence.slice(1)}.`;
+}
+
 export function sunTimes(call: ToolCall, now: Date = new Date()): string {
   const { position: rawPosition } = call.arguments;
   if (typeof rawPosition !== 'string' || !rawPosition.trim()) throw new Error('Missing required parameter: position');
@@ -190,5 +204,6 @@ export function sunTimes(call: ToolCall, now: Date = new Date()): string {
     ? ` These are ${zone} clock times, not this place's own local time, and its date there may differ. Give utc_offset for the place to get its local times.`
     : '';
   const head = `Sun at ${place.lat.toFixed(5)}, ${place.lon.toFixed(5)} on ${day.year}-${pad(day.month)}-${pad(day.day)} (${zone}): `;
-  return `${head}${describe(events, clock)}${moonPhrase(noon)}${elsewhere}`;
+  // The moon's events are those inside the calendar day asked about, on the clock shown.
+  return `${head}${describe(events, clock)}${moonPhrase(noon)}${moonEvents(place, midnight - offsetMs, clock)}${elsewhere}`;
 }

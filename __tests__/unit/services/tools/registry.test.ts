@@ -66,7 +66,7 @@ describe('Tool Registry', () => {
     it('sun_times says what it gives within the 100 characters the LiteRT tool router reads', () => {
       const tool = AVAILABLE_TOOLS.find(t => t.id === 'sun_times')!;
       const routed = tool.description.split('\n')[0].slice(0, 100);
-      for (const word of ['Sunrise', 'sunset', 'twilight']) expect(routed).toContain(word);
+      for (const word of ['Sunrise', 'sunset', 'twilight', 'moonrise', 'moonset', 'moon phase']) expect(routed).toContain(word);
       // Only the place is required: the day and the clock offset default to the phone's own.
       expect(Object.entries(tool.parameters).filter(([, p]) => p.required).map(([k]) => k)).toEqual(['position']);
       expect(Object.keys(tool.parameters)).toEqual(['position', 'date', 'utc_offset']);

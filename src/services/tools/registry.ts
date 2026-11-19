@@ -218,7 +218,7 @@ export const AVAILABLE_TOOLS: ToolDefinition[] = [
     name: 'sun_times',
     displayName: 'Sunrise & Sunset',
     // The LiteRT tool router reads only the first 100 characters of a description.
-    description: "Sunrise, sunset, solar noon, civil twilight and the moon's phase for a place and a day. Use this for any question about daylight, dark or moonlight instead of guessing. Times are for a level horizon, to about a minute.",
+    description: 'Sunrise, sunset, solar noon, civil twilight, moonrise, moonset and moon phase for a place and a day. Use this for any question about daylight, dark or moonlight instead of guessing. Times are for a level horizon, to about a minute.',
     icon: 'sun',
     userNote: 'Works the times out on this phone from a position you type. It does not use your location. Try: "when is sunset at 51.48, 0.00 on 21 June?"',
     parameters: {
