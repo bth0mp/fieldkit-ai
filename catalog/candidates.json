@@ -637,5 +637,33 @@
     "evidence": "Page 1: 'U.S. DEPARTMENT OF AGRICULTURE - HOME AND GARDEN BULLETIN NO. 158'. Page 12: 'Prepared by / National Program Staff / Agricultural Research Service', 'Revised April 1974', 'For sale by the Superintendent of Documents, U.S. Government Printing Office / Washington, D.C. 20402 - Price 25 cents / Stock No. 0100-03216'. Page 11: 'Department of Agriculture research on beekeeping and insect pollination is conducted in laboratories across the country, usually in cooperation with State agricultural experiment stations or universities' describes where the Department's research is done, not who prepared the bulletin; page 12 lists its laboratories, some at university addresses. Safety: it names no drug, pesticide, fumigant or other chemical. Its sting advice (scrape the stinger off; see an allergy specialist if you become allergic) agrees with NIOSH Publication 2010-117. It does not say to get emergency help for a severe reaction, and it was written before varroa mites and Africanized bees reached the United States.",
     "creditsNote": "Picture audit, 18 November 2026: all 12 pages were looked at by eye (6 carry a picture). No picture carries a credit, a name, a signature or a maker's mark: a cover wash drawing, a hive plan, and photographs marked only with file numbers (BN-31336, BN-30050, BN-25450, BN-30052, BN-30060, BN-30061, ST-25448) that name no owner. The cover also carries the National Agricultural Library's own shelf labels and received stamp. None of the 22 embedded images carries ownership wording in its data.",
     "creditsReviewed": true
+  },
+  {
+    "id": "usda-ah-82-methods-for-evaluating-irrigation-systems",
+    "title": "Methods for Evaluating Irrigation Systems",
+    "category": "farming",
+    "publisher": "USDA",
+    "year": 1956,
+    "licence": "Public domain",
+    "licenceNote": "US government work (17 U.S.C. 105); the proof rests on staff authorship. Agriculture Handbook No. 82, issued April 1956, is published under the Soil Conservation Service, United States Department of Agriculture name alone and written 'By Wayne D. Criddle, Sterling Davis, Claude H. Pair, and Dell G. Shockley, Irrigation Engineers', with the footnote that it consolidates three provisional handbooks 'prepared while the authors were employees of the Soil Conservation Service' (page 3). No outside author, photographer, illustrator, university or company is credited, there are no acknowledgements and there is no copyright notice. The document prints no public-domain statement of its own. Copy served by govinfo.gov (GPO), which has added its authentication seal to page 1. USDA's site notice (usda.gov, Policies and Links, read 18 November 2026): 'Most information presented on the USDA Web site is considered public domain information.'",
+    "url": "https://www.govinfo.gov/content/pkg/GOVPUB-A-PURL-gpo18899/pdf/GOVPUB-A-PURL-gpo18899.pdf",
+    "evidence": "Page 1: 'Agriculture Handbook No. 82 / Soil Conservation Service / UNITED STATES DEPARTMENT OF AGRICULTURE'. Page 2: 'Washington, D. C. Issued April 1956' and 'For sale by the Superintendent of Documents, U. S. Government Printing Office Washington 25, D. C. - Price 20 cents'. Page 3: the authors' line and footnote quoted in the licence note. Figure 28 (page 22) is a filled-in sample of the Service's own record form; its typed entries name a sprinkler and a pump make ('Make Rainbird', 'Make Ingersoll-Rand'), which is data on the form and not a maker's picture. The handbook gives no chemical, fuel, wiring, food-handling or first-aid advice.",
+    "creditsNote": "Picture audit, 18 November 2026: all 24 pages were looked at by eye (20 carry a picture). No picture carries a credit or a maker's mark: the Service's own field photographs of its technicians measuring water, line diagrams, nomographs and sample forms. The cover carries a library's received stamp of 1956 and govinfo's seal. No ownership wording in the file's image or metadata streams.",
+    "creditsReviewed": true
+  },
+  {
+    "id": "usda-scs-leaflet-570-farming-and-maintaining-terraces",
+    "title": "Farming and Maintaining Terraces",
+    "category": "farming",
+    "publisher": "USDA",
+    "year": 1990,
+    "licence": "Public domain",
+    "licenceNote": "US government work (17 U.S.C. 105); the proof rests on staff authorship. Leaflet Number 570, May 1987, 'Reviewed and approved for reprinting June 1990', is published under the United States Department of Agriculture, Soil Conservation Service name alone (cover and page 20). No author, photographer, illustrator, university or company is credited, there are no acknowledgements and there is no copyright notice. The document prints no public-domain statement of its own. Copy served by govinfo.gov (GPO). USDA's site notice (usda.gov, Policies and Links, read 18 November 2026): 'Most information presented on the USDA Web site is considered public domain information.'",
+    "url": "https://www.govinfo.gov/content/pkg/GOVPUB-A-PURL-gpo93173/pdf/GOVPUB-A-PURL-gpo93173.pdf",
+    "evidence": "Read by eye, since the file has no text layer. Page 1 (cover): 'United States Department of Agriculture / Soil Conservation Service / Leaflet Number 570 / Farming and Maintaining Terraces'. Page 20: 'Supersedes Farming Terraced Land, Leaflet 335 Reprinted April 1980', 'May 1987', 'Reviewed and approved for reprinting June 1990.' It names no chemical; its only mentions are general ('Control tree and brush growth by spraying or mowing', 'protect them from herbicide damage').",
+    "creditsNote": "Picture audit, 18 November 2026: all 20 pages were looked at by eye (16 carry a picture). No picture carries a credit: colour field photographs of terraced farmland and the leaflet's own colour step diagrams. Tractors and bulldozers appear at work in the fields, none as the subject of a product picture. No ownership wording in the file's image or metadata streams.",
+    "creditsReviewed": true,
+    "readOnly": true,
+    "readOnlyNote": "No page has a text layer: all 20 pages are page images, so a program cannot read any of it."
   }
 ]

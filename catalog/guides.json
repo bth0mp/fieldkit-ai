@@ -630,6 +630,34 @@
       "sha256": "36b46b08b0fbccfb840766634efca4f7b3ddb3d3ff6551b7c65688dc06cd4f62",
       "pages": 102,
       "hasText": true
+    },
+    {
+      "id": "usda-scs-leaflet-570-farming-and-maintaining-terraces",
+      "title": "Farming and Maintaining Terraces",
+      "category": "farming",
+      "publisher": "USDA",
+      "year": 1990,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105); the proof rests on staff authorship. Leaflet Number 570, May 1987, 'Reviewed and approved for reprinting June 1990', is published under the United States Department of Agriculture, Soil Conservation Service name alone (cover and page 20). No author, photographer, illustrator, university or company is credited, there are no acknowledgements and there is no copyright notice. The document prints no public-domain statement of its own. Copy served by govinfo.gov (GPO). USDA's site notice (usda.gov, Policies and Links, read 18 November 2026): 'Most information presented on the USDA Web site is considered public domain information.'",
+      "url": "https://www.govinfo.gov/content/pkg/GOVPUB-A-PURL-gpo93173/pdf/GOVPUB-A-PURL-gpo93173.pdf",
+      "bytes": 3785398,
+      "sha256": "405a189ce2a52a93bf4ba96b1ed93c5ea04ee9634b4efebb79e5387a8e07bef8",
+      "pages": 20,
+      "hasText": false
+    },
+    {
+      "id": "usda-ah-82-methods-for-evaluating-irrigation-systems",
+      "title": "Methods for Evaluating Irrigation Systems",
+      "category": "farming",
+      "publisher": "USDA",
+      "year": 1956,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105); the proof rests on staff authorship. Agriculture Handbook No. 82, issued April 1956, is published under the Soil Conservation Service, United States Department of Agriculture name alone and written 'By Wayne D. Criddle, Sterling Davis, Claude H. Pair, and Dell G. Shockley, Irrigation Engineers', with the footnote that it consolidates three provisional handbooks 'prepared while the authors were employees of the Soil Conservation Service' (page 3). No outside author, photographer, illustrator, university or company is credited, there are no acknowledgements and there is no copyright notice. The document prints no public-domain statement of its own. Copy served by govinfo.gov (GPO), which has added its authentication seal to page 1. USDA's site notice (usda.gov, Policies and Links, read 18 November 2026): 'Most information presented on the USDA Web site is considered public domain information.'",
+      "url": "https://www.govinfo.gov/content/pkg/GOVPUB-A-PURL-gpo18899/pdf/GOVPUB-A-PURL-gpo18899.pdf",
+      "bytes": 1741525,
+      "sha256": "5d24294c46f5c2ae467863fa8a9a063fea18ce053165a596e2487ff33935a4a9",
+      "pages": 24,
+      "hasText": true
     }
   ]
 }
