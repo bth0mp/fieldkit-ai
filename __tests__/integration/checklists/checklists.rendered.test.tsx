@@ -170,6 +170,16 @@ describe('Checklists (rendered)', () => {
     const screen = rtl.render(React.createElement(ChecklistsScreen, {}));
 
     expect(screen.getByText('Ready.gov, Basic Disaster Supplies Kit, as updated 1 July 2026')).toBeTruthy();
+    // Two shorter starters, each with its own button and its own source line.
+    expect(screen.getByText('Start from the Ready.gov car kit')).toBeTruthy();
+    expect(screen.getByText('Ready.gov, Emergency Kit for the Car, as updated 12 March 2026')).toBeTruthy();
+    expect(screen.getByText('Ready.gov, Build a Kit for Your Pet, as updated 20 March 2026')).toBeTruthy();
+    rtl.fireEvent.press(screen.getByTestId('checklists-starter-ready-pet-kit'));
+    expect(screen.getByText('Pet emergency kit (0 of 10)')).toBeTruthy();
+    expect(screen.getByLabelText('Collar with ID tag and a harness or leash')).toBeTruthy();
+    rtl.fireEvent.press(screen.getByTestId('checklists-starter-ready-car-kit'));
+    expect(screen.getByText('Car emergency kit (0 of 7)')).toBeTruthy();
+    expect(screen.getByLabelText('Cat litter or sand (for better tire traction)')).toBeTruthy();
     rtl.fireEvent.press(screen.getByTestId('checklists-starter-ready-basic-kit'));
     expect(screen.getByText('Emergency kit (0 of 14)')).toBeTruthy();
     expect(screen.getByLabelText('Whistle (to signal for help)')).toBeTruthy();

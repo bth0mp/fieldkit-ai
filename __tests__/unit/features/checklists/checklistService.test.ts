@@ -160,12 +160,56 @@ describe('checklist service', () => {
   });
 
   it("starts a list from Ready.gov's basic kit, item for item, with nothing ticked", () => {
-    expect(STARTER_LISTS.map(s => s.id)).toEqual(['ready-basic-kit']);
+    expect(STARTER_LISTS.map(s => s.id)).toEqual(['ready-basic-kit', 'ready-car-kit', 'ready-pet-kit']);
     const id = checklistService.createFromStarter('ready-basic-kit');
     expect(only()).toMatchObject({ id, name: 'Emergency kit' });
     expect(only().items.map(i => i.text)).toEqual(READY_BASIC_KIT);
     expect(only().items.some(i => i.done)).toBe(false);
     expect(STARTER_LISTS[0].source).toBe('Ready.gov, Basic Disaster Supplies Kit, as updated 1 July 2026');
+  });
+
+  // Typed from the two Ready.gov pages as read on 19 November 2026, not read from the code:
+  // https://www.ready.gov/car, "Emergency Kit for the Car" (last updated 03/12/2026), and
+  // https://www.ready.gov/pets, "Build a Kit for Your Pet" (last updated 03/20/2026). The pet list is each
+  // item's name as the page prints it in bold; the sentence of explanation after each name is left out.
+  it("starts a list from Ready.gov's car kit, item for item", () => {
+    checklistService.createFromStarter('ready-car-kit');
+    expect(only().name).toBe('Car emergency kit');
+    expect(only().items.map(i => i.text)).toEqual([
+      'Jumper cables',
+      'Flares or reflective triangle',
+      'Ice scraper',
+      'Car cell phone charger',
+      'Blanket',
+      'Map',
+      'Cat litter or sand (for better tire traction)',
+    ]);
+    expect(only().items.some(i => i.done)).toBe(false);
+    expect(STARTER_LISTS[1]).toMatchObject({
+      label: 'Start from the Ready.gov car kit',
+      source: 'Ready.gov, Emergency Kit for the Car, as updated 12 March 2026',
+    });
+  });
+
+  it("starts a list from Ready.gov's pet kit, item for item", () => {
+    checklistService.createFromStarter('ready-pet-kit');
+    expect(only().name).toBe('Pet emergency kit');
+    expect(only().items.map(i => i.text)).toEqual([
+      'Food',
+      'Water',
+      'Medicine',
+      'First aid kit',
+      'Collar with ID tag and a harness or leash',
+      'Traveling bag, crate or sturdy carrier, ideally one for each pet',
+      'Grooming items',
+      'Sanitation needs',
+      'A picture of you and your pet together',
+      'Familiar items',
+    ]);
+    expect(STARTER_LISTS[2]).toMatchObject({
+      label: 'Start from the Ready.gov pet kit',
+      source: 'Ready.gov, Build a Kit for Your Pet, as updated 20 March 2026',
+    });
   });
 
   it('gives every list and item its own id, even on an engine with no Web Crypto and within one millisecond', () => {
