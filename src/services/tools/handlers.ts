@@ -3,6 +3,7 @@ import DeviceInfo from 'react-native-device-info';
 import { ToolCall, ToolResult } from './types';
 import type { RagSearchResult } from '../rag';
 import type { KiwixHit } from '../kiwix/kiwixService';
+import type { KiwixFile } from '../kiwix/kiwixStore';
 import { emailTool } from './emailTool';
 import { createCalendarEvent, readCalendarEvents } from './calendarTools';
 import logger from '../../utils/logger';
@@ -399,7 +400,7 @@ async function handleSearchKnowledgeBase(query: string, projectId?: string): Pro
 }
 
 /** The "From Kiwix files" part: per file its best article, its other matches, or why it can't be read. */
-function formatKiwixResult({ hits, searched, total }: { hits: KiwixHit[]; searched: number; total: number }): string {
+function formatKiwixResult({ hits, notSearched }: { hits: KiwixHit[]; notSearched: KiwixFile[] }): string {
   const parts: string[] = [];
   for (const { file, article, otherTitles, error } of hits) {
     if (error) { parts.push(`[${file.title}] ${error}`); continue; }
@@ -409,7 +410,11 @@ function formatKiwixResult({ hits, searched, total }: { hits: KiwixHit[]; search
     }
     if (lines.length > 0) parts.push(lines.join('\n'));
   }
-  if (searched < total) parts.push(`Searched ${searched} of ${total} Kiwix files.`);
+  if (notSearched.length > 0) {
+    const names = notSearched.slice(0, 20).map(f => f.title).join(', ');
+    const more = notSearched.length > 20 ? ` and ${notSearched.length - 20} more` : '';
+    parts.push(`Not searched yet, out of time: ${names}${more}. Search again to look in them.`);
+  }
   return parts.length > 0 ? `From Kiwix files:\n${parts.join('\n\n')}` : '';
 }
 

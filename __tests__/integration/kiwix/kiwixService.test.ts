@@ -9,6 +9,11 @@ import { installNativeBoundary } from '../../harness/nativeBoundary';
 import { buildZim, WIKIMED } from '../../harness/zimFixture';
 
 const TREE = 'content://com.android.externalstorage.documents/tree/primary%3AAndroid%2Fmedia%2Forg.kiwix.kiwixmobile';
+/** A second medical file whose title sorts before WikiMed's, with a long article that only starts with "burn". */
+const FIRST_AID = {
+  ...WIKIMED, name: 'first_aid_manual', title: 'Aid manual test', description: 'First aid', tags: '', redirects: [],
+  articles: [{ path: 'Burning_mouth', title: 'Burning mouth syndrome', html: `<p>${'Burning mouth syndrome is a burning feeling. '.repeat(150)}</p>` }],
+};
 const WIKIVOYAGE = { ...WIKIMED, name: 'wikivoyage_en_all', title: 'Wikivoyage test', description: 'Travel guides', tags: 'wikivoyage', articles: [{ path: 'Trail', title: 'Trail', html: '<p>Stay on the marked trail.</p>' }], redirects: [] };
 
 function setup() {
@@ -68,13 +73,37 @@ describe('Kiwix service', () => {
     const { kiwixService } = setup();
     await kiwixService.addFolder();
     const result = await kiwixService.search('library-medical', 'burn', SEARCH);
-    expect(result.total).toBe(1);
-    expect(result.searched).toBe(1);
+    expect(result.notSearched).toEqual([]);
     expect(result.hits[0].file.title).toBe('WikiMed test');
     expect(result.hits[0].article?.title).toBe('Burn');
     expect(result.hits[0].article?.text).toContain('Cool the burn');
     expect(result.hits[0].otherTitles).toEqual(expect.arrayContaining(['Burns']));
     expect((await kiwixService.search('library-travel', 'burn', SEARCH)).hits[0].article).toBeNull();
+  });
+
+  it('an exact title in a later file ranks above a prefix match in the first, and is read first', async () => {
+    const { kiwixService, docs } = setup();
+    docs.seed(`${TREE}/firstaid.zim`, buildZim(FIRST_AID));
+    await kiwixService.addFolder();
+    const { hits } = await kiwixService.search('library-medical', 'burn', SEARCH);
+    expect(hits.map((h: { article: { title: string } | null }) => h.article?.title)).toEqual(['Burn', 'Burning mouth syndrome']);
+    expect(hits[0].article?.text).toContain('Cool the burn');
+    const read = hits.reduce((n: number, h: { article: { text: string } | null }) => n + (h.article?.text.length ?? 0), 0);
+    expect(read).toBeLessThanOrEqual(SEARCH.budgetChars);
+  });
+
+  it('files left out when time runs out are named, and the next search starts with them', async () => {
+    const { kiwixService, docs } = setup();
+    docs.seed(`${TREE}/firstaid.zim`, buildZim(FIRST_AID));
+    await kiwixService.addFolder();
+    const quick = { budgetChars: 3000, timeBudgetMs: 0 };
+    const titles = (files: Array<{ title: string }>) => files.map(f => f.title);
+    const first = await kiwixService.search('library-medical', 'burn', quick);
+    expect(titles(first.hits.map((h: { file: { title: string } }) => h.file))).toEqual(['Aid manual test']);
+    expect(titles(first.notSearched)).toEqual(['WikiMed test']);
+    const second = await kiwixService.search('library-medical', 'burn', quick);
+    expect(titles(second.hits.map((h: { file: { title: string } }) => h.file))).toEqual(['WikiMed test']);
+    expect(titles(second.notSearched)).toEqual(['Aid manual test']);
   });
 
   it('a file that can no longer be read is named in the search, which does not fail', async () => {

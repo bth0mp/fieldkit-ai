@@ -33,6 +33,10 @@ const PROMPT_FILES = 20;
 const tree = (): DocumentTreeModule | undefined => NativeModules.FieldkitDocumentTree;
 const store = useKiwixStore;
 const readers = new Map<string, Promise<ZimArchive>>();
+// ponytail: least recently searched files go first, so a search cut short by time reaches every file over a few
+// searches; in memory only, a restart starts over.
+const lastSearched = new Map<string, number>();
+let searches = 0;
 
 function hydrated(): Promise<void> {
   if (store.persist.hasHydrated()) return Promise.resolve();
@@ -60,6 +64,17 @@ function readerFor(file: KiwixFile): Promise<ZimArchive> {
 /** File metadata is shown on screen and named in the system prompt: one line, no control characters, cut short. */
 const oneLine = (text: string, max: number) =>
   [...text.replace(/\s+/g, ' ')].filter(c => c.charCodeAt(0) >= 32 && c.charCodeAt(0) !== 127).join('').trim().slice(0, max);
+
+/** How well a file's best title answers the query: the whole query (3), a phrase in it (2), a prefix (1). */
+function rank(title: string | undefined, query: string): number {
+  if (!title) return 0;
+  const t = title.toLowerCase();
+  const q = query.trim().toLowerCase().replace(/\s+/g, ' ');
+  if (t === q) return 3;
+  return ` ${q} `.includes(` ${t} `) ? 2 : 1;
+}
+
+const errorOf = (e: unknown) => (e instanceof ZimError ? e.message : UNREADABLE);
 
 const isCancel = (e: unknown) => isErrorWithCode(e) && e.code === errorCodes.OPERATION_CANCELED;
 const isKnown = (uri: string) => Object.values(store.getState().files).some(f => f.uri === uri);
@@ -91,7 +106,7 @@ async function addDocuments(docs: TreeDocument[]): Promise<void> {
           removed: s.removed.filter(uri => uri !== doc.uri),
         }));
       } catch (e) {
-        refuse(doc.name, e instanceof ZimError ? e.message : UNREADABLE);
+        refuse(doc.name, errorOf(e));
       }
     }
   } finally {
@@ -178,31 +193,49 @@ export const kiwixService = {
   },
 
   /**
-   * The best article per file in the project and its other matching titles. Article text shares budgetChars
-   * across files; files left when timeBudgetMs runs out are not searched (searched < total). A file that can't
-   * be read is a hit with an error, not a failure.
+   * The project's files that have matching titles, best match first, with the best article of each. The best one
+   * gets most of budgetChars and the others share the rest. At least one file is searched; files left when
+   * timeBudgetMs runs out are notSearched, and go first next time. A file that can't be read is a hit with an
+   * error, not a failure.
    */
-  async search(projectId: string, query: string, opts: { budgetChars: number; timeBudgetMs: number }): Promise<{ hits: KiwixHit[]; searched: number; total: number }> {
+  async search(projectId: string, query: string, opts: { budgetChars: number; timeBudgetMs: number }): Promise<{ hits: KiwixHit[]; notSearched: KiwixFile[] }> {
     await hydrated();
-    const files = kiwixService.filesInProject(projectId);
     const started = Date.now();
-    const hits: KiwixHit[] = [];
-    let budget = opts.budgetChars;
+    const outOfTime = () => Date.now() - started >= opts.timeBudgetMs;
+    const files = kiwixService.filesInProject(projectId)
+      .sort((a, b) => (lastSearched.get(a.id) ?? 0) - (lastSearched.get(b.id) ?? 0));
+    const found: Array<{ hit: KiwixHit; zim?: ZimArchive; titles: string[] }> = [];
     // ponytail: files are searched one after another inside a time budget; batched native reads if the phone is slow.
     for (const file of files) {
-      if (Date.now() - started > opts.timeBudgetMs) break;
+      lastSearched.set(file.id, ++searches);
       try {
         const zim = await readerFor(file);
-        const titles = await zim.findTitles(query);
-        const article = titles.length > 0 && budget > 0 ? await zim.readArticle(titles[0], budget) : null;
-        if (article) budget -= article.text.length;
-        hits.push({ file, article, otherTitles: titles.filter(t => t !== article?.title) });
+        found.push({ hit: { file, article: null, otherTitles: [] }, zim, titles: await zim.findTitles(query) });
       } catch (e) {
         readers.delete(file.id);
-        hits.push({ file, article: null, otherTitles: [], error: e instanceof ZimError ? e.message : UNREADABLE });
+        found.push({ hit: { file, article: null, otherTitles: [], error: errorOf(e) }, titles: [] });
+      }
+      if (outOfTime()) break;
+    }
+    found.sort((a, b) => rank(b.titles[0], query) - rank(a.titles[0], query));
+    const readable = found.filter(f => f.zim && f.titles.length > 0);
+    let budget = opts.budgetChars;
+    for (const [i, { hit, zim, titles }] of readable.entries()) {
+      hit.otherTitles = titles;
+      const share = Math.floor(i === 0 && readable.length > 1 ? budget * 0.6 : budget / (readable.length - i));
+      if (share <= 0 || (i > 0 && outOfTime())) continue;
+      try {
+        hit.article = await zim!.readArticle(titles[0], share);
+      } catch (e) {
+        readers.delete(hit.file.id);
+        hit.error = errorOf(e);
+      }
+      if (hit.article) {
+        budget -= hit.article.text.length;
+        hit.otherTitles = titles.filter(t => t !== hit.article!.title);
       }
     }
-    return { hits, searched: hits.length, total: files.length };
+    return { hits: found.map(f => f.hit), notSearched: files.slice(found.length) };
   },
 
   /** Drops files whose category project the user deleted; adding one again brings its project back. */
