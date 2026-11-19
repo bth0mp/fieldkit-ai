@@ -24,6 +24,11 @@ import type { RagDocument } from '../services/rag';
 import { RootStackParamList } from '../navigation/types';
 import { isPickerStuck } from '../utils/pickerErrorUtils';
 import { isLibraryProject } from '../features/library/libraryProjects';
+import { kiwixService } from '../services/kiwix/kiwixService';
+import { useKiwixStore } from '../services/kiwix/kiwixStore';
+
+/** Kiwix files listed here; the rest are counted, and the Kiwix files screen lists them all. */
+const KIWIX_ROWS = 20;
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, 'KnowledgeBase'>;
@@ -49,6 +54,8 @@ export const KnowledgeBaseScreen: React.FC = () => {
   const isPickingRef = useRef(false);
 
   const project = useProjectStore((s) => s.getProject(projectId));
+  useKiwixStore(s => s.files); // re-render when the project's Kiwix files change
+  const kiwixFiles = isLibraryProject(projectId) ? kiwixService.filesInProject(projectId) : [];
 
   const loadKbDocs = useCallback(async () => {
     try {
@@ -196,6 +203,38 @@ export const KnowledgeBaseScreen: React.FC = () => {
     </TouchableOpacity>
   ) : null;
 
+  // Read only here: files are added, moved and removed on the Kiwix files screen.
+  const kiwixSection = kiwixFiles.length > 0 ? (
+    <View>
+      <TouchableOpacity
+        style={styles.guideLibraryRow}
+        testID="kb-manage-kiwix"
+        onPress={() => navigation.navigate('KiwixFiles')}
+        activeOpacity={0.7}
+      >
+        <Icon name="archive" size={16} color={colors.textSecondary} />
+        <View style={styles.docInfo}>
+          <Text style={styles.docName}>{`Kiwix files (${kiwixFiles.length})`}</Text>
+          <Text style={styles.docSize}>Manage in Guide library</Text>
+        </View>
+        <Icon name="chevron-right" size={16} color={colors.textMuted} />
+      </TouchableOpacity>
+      {kiwixFiles.slice(0, KIWIX_ROWS).map(file => (
+        <View key={file.id} style={styles.docRow} testID={`kb-kiwix-${file.id}`}>
+          <View style={styles.docInfo}>
+            <Text style={styles.docName} numberOfLines={1}>{file.title}</Text>
+            <Text style={styles.docSize}>{formatFileSize(file.bytes)}</Text>
+          </View>
+        </View>
+      ))}
+      {kiwixFiles.length > KIWIX_ROWS && (
+        <View style={styles.docRow}>
+          <Text style={styles.docSize}>{`and ${kiwixFiles.length - KIWIX_ROWS} more`}</Text>
+        </View>
+      )}
+    </View>
+  ) : null;
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
@@ -244,6 +283,7 @@ export const KnowledgeBaseScreen: React.FC = () => {
       )}
 
       {guideLibraryRow}
+      {kiwixSection}
 
       {isLoading ? (
         <View style={styles.centered}>

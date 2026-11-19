@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, SectionList, ActivityIndicator, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Feather';
 import { useTheme, useThemedStyles } from '../theme';
 import { Button } from '../components/Button';
@@ -12,6 +13,8 @@ import {
   isOnPhone, libraryCounts, offersTeach, rowEntry, stateOf, useGuideLibraryStore, type GuideState,
 } from '../features/guideLibrary/guideLibraryStore';
 import { guideLibraryService, SLOW_SEARCH_TAUGHT_GUIDES } from '../features/guideLibrary/guideLibraryService';
+import { useKiwixStore } from '../services/kiwix/kiwixStore';
+import type { RootStackParamList } from '../navigation/types';
 import { createStyles } from './GuideLibraryScreen.styles';
 
 type Styles = ReturnType<typeof createStyles>;
@@ -128,7 +131,7 @@ const GuideRow: React.FC<RowProps> = ({ entry, state, delisted, expanded, onTogg
 
 /** Checked public-domain and CC BY guides by category: download, open in the PDF viewer, remove. */
 export const GuideLibraryScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const catalogue = useGuideLibraryStore(s => s.catalogue);
@@ -136,6 +139,7 @@ export const GuideLibraryScreen: React.FC = () => {
   const delisted = useGuideLibraryStore(s => s.delisted);
   const saved = useGuideLibraryStore(s => s.saved);
   const refreshing = useGuideLibraryStore(s => s.refreshing);
+  const kiwixCount = useKiwixStore(s => Object.keys(s.files).length);
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState<string | null>(null);
   const [alertState, setAlertState] = useState<AlertState>(initialAlertState);
@@ -199,6 +203,17 @@ export const GuideLibraryScreen: React.FC = () => {
               onChangeText={setQuery}
               autoCorrect={false}
             />
+            <TouchableOpacity style={[styles.row, styles.kiwixRow]} testID="guide-library-open-kiwix" accessibilityRole="button"
+              onPress={() => navigation.navigate('KiwixFiles')}>
+              <View style={styles.rowHeader}>
+                <Icon name="archive" size={16} color={colors.textSecondary} />
+                <View style={styles.rowContent}>
+                  <Text style={styles.rowTitle}>Kiwix files</Text>
+                  <Text style={styles.rowMeta}>{`${kiwixCount} added`}</Text>
+                </View>
+                <Icon name="chevron-right" size={16} color={colors.textMuted} />
+              </View>
+            </TouchableOpacity>
             <Text style={styles.summary}>{`${total} ${total === 1 ? 'guide' : 'guides'} · ${onPhone} downloaded · ${taught} taught`}</Text>
             {taught >= SLOW_SEARCH_TAUGHT_GUIDES && (
               <Text style={styles.note}>The assistant searches every guide it has learned. More guides make answers slower.</Text>

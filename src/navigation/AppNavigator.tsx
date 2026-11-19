@@ -29,6 +29,7 @@ import {
   ProjectChatsScreen,
   KnowledgeBaseScreen,
   GuideLibraryScreen,
+  KiwixFilesScreen,
   DocumentPreviewScreen,
   DownloadManagerScreen,
   ModelSettingsScreen,
@@ -233,6 +234,7 @@ export const AppNavigator: React.FC = () => {
         />
         <RootStack.Screen name="KnowledgeBase" component={KnowledgeBaseScreen} />
         <RootStack.Screen name="GuideLibrary" component={GuideLibraryScreen} />
+        <RootStack.Screen name="KiwixFiles" component={KiwixFilesScreen} />
         <RootStack.Screen name="DocumentPreview" component={DocumentPreviewScreen} />
         <RootStack.Screen name="ModelSettings" component={ModelSettingsScreen} />
         <RootStack.Screen name="RemoteServers" component={RemoteServersScreen} />

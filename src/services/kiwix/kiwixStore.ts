@@ -15,7 +15,7 @@ export interface KiwixFile {
   category: string;
 }
 
-export interface KiwixRefusal { fileName: string; reason: string }
+interface KiwixRefusal { fileName: string; reason: string }
 
 interface KiwixState {
   files: Record<string, KiwixFile>;

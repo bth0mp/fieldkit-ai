@@ -24,7 +24,7 @@ export function libraryCategories(): GuideCategory[] {
   return [...fromCatalogue, ...EXTRA_CATEGORIES.filter(extra => !fromCatalogue.some(c => c.id === extra.id))];
 }
 
-export const categoryName = (categoryId: string): string =>
+const categoryName = (categoryId: string): string =>
   libraryCategories().find(c => c.id === categoryId)?.name ?? categoryId;
 
 export async function projectStoreHydrated(): Promise<void> {
