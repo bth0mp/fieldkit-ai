@@ -4,6 +4,9 @@
  */
 import { oneLine } from '../../../src/utils/oneLine';
 
+/** Invisible characters are written here by number: typed as themselves, nobody could see what a test holds. */
+const cp = String.fromCodePoint;
+
 describe('oneLine', () => {
   it('turns runs of white space, tabs and line breaks into single spaces and trims the ends', () => {
     expect(oneLine('  Day \t hike\r\n\n list  ', 60)).toBe('Day hike list');
@@ -12,24 +15,46 @@ describe('oneLine', () => {
   it('drops control characters without leaving a double space behind', () => {
     expect(oneLine('a \u0007 b', 60)).toBe('a b');
     expect(oneLine('Kit\u0000\u001b[31m', 60)).toBe('Kit[31m');
-    expect(oneLine('caf\u0085e\u009f', 60)).toBe('cafe');
+    expect(oneLine(`caf${cp(0x86)}e${cp(0x9f)}`, 60)).toBe('cafe');
     expect(oneLine('\u0001\u0002\u007f', 60)).toBe('');
   });
 
   it('drops characters that draw nothing or reorder what follows', () => {
     // A name of only a zero-width space would be an invisible row; a right-to-left override would reverse
     // the count printed after the name.
-    expect(oneLine('​', 60)).toBe('');
-    expect(oneLine('‮evil‬', 60)).toBe('evil');
-    expect(oneLine('⁦a⁩﻿b', 60)).toBe('ab');
+    expect(oneLine(cp(0x200b), 60)).toBe('');
+    expect(oneLine(`${cp(0x202e)}evil${cp(0x202c)}`, 60)).toBe('evil');
+    expect(oneLine(`${cp(0x2066)}a${cp(0x2069)}${cp(0xfeff)}b`, 60)).toBe('ab');
+  });
+
+  it('treats a name of nothing but joiners and selectors as empty, and never ends on one', () => {
+    // Joiners and the emoji selector stay inside text, where scripts and emoji need them. Alone they draw
+    // nothing, and a list or a Kiwix title made only of them would be a blank row.
+    expect(oneLine(`${cp(0x200c)}${cp(0x200d)}${cp(0xfe0f)}`, 60)).toBe('');
+    expect(oneLine(` ${cp(0x200d)} ${cp(0x200c)} `, 60)).toBe('');
+    expect(oneLine(`ab${cp(0x200d)}c`, 3)).toBe('ab');
+    expect(oneLine(`${cp(0x200d)}Kit${cp(0x200c)}`, 60)).toBe('Kit');
+  });
+
+  it('drops the other characters that draw nothing', () => {
+    // Combining grapheme joiner, Khmer inherent vowels, the specials block, a lone half of a surrogate pair.
+    for (const code of [0x34f, 0x17b4, 0x17b5, 0xfff0, 0xfff8, 0xfffc]) {
+      expect([code.toString(16), oneLine(`Kit${cp(code)}list`, 60)]).toEqual([code.toString(16), 'Kitlist']);
+    }
+    expect(oneLine(`a${String.fromCharCode(0xd83d)}b`, 60)).toBe('ab');
+    expect(oneLine(`a${String.fromCharCode(0xdc00)}`, 60)).toBe('a');
+  });
+
+  it('reads the next-line control and the braille blank as spaces, which is what they are', () => {
+    expect(oneLine(`a${cp(0x85)}b`, 60)).toBe('a b');
+    expect(oneLine(`${cp(0x2811)}${cp(0x2800)}${cp(0x2811)}`, 60)).toBe(`${cp(0x2811)} ${cp(0x2811)}`);
   });
 
   it('drops every other invisible or formatting character, wherever it sits in Unicode', () => {
-    const cp = String.fromCodePoint;
     // Soft hyphen, Arabic letter mark, Hangul fillers, Mongolian vowel separator, direction marks, word joiner,
-    // invisible operators, deprecated format characters, braille blank, interlinear annotation marks.
+    // invisible operators, deprecated format characters, interlinear annotation marks.
     for (const code of [0xad, 0x61c, 0x115f, 0x1160, 0x180e, 0x200e, 0x200f, 0x2060, 0x2062, 0x2064, 0x206a, 0x206f,
-      0x2800, 0x3164, 0xffa0, 0xfff9, 0xfffb, 0x1bca0, 0x1d173]) {
+      0x3164, 0xffa0, 0xfff9, 0xfffb, 0x1bca0, 0x1d173]) {
       expect([code.toString(16), oneLine(`Kit${cp(code)}list`, 60)]).toEqual([code.toString(16), 'Kitlist']);
     }
     // Tag characters can spell text no one sees, which a title would carry into the assistant's instructions.

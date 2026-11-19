@@ -59,7 +59,7 @@ describe('phonetic_morse', () => {
     it('takes the accent off a letter only: a sign that merely contains another sign is left out', () => {
       // "≠" is "=" with a stroke through it as far as Unicode's decomposition goes. It is not an equals sign.
       expect(run({ text: '2≠1', to: 'morse' })).toBe('2≠1 = ..--- .---- (left out: ≠)');
-      expect(run({ text: 'café', to: 'phonetic' })).toBe('café = Charlie Alfa Foxtrot Echo');
+      expect(run({ text: `cafe${String.fromCodePoint(0x301)}`, to: 'phonetic' })).toBe(`cafe${String.fromCodePoint(0x301)} = Charlie Alfa Foxtrot Echo`);
       expect(run({ text: 'Ångström', to: 'phonetic' })).toBe('Ångström = Alfa November Golf Sierra Tango Romeo Oscar Mike');
     });
 
@@ -127,7 +127,7 @@ describe('phonetic_morse', () => {
       expect(run({ text: 'morse code: ... --- ...' })).toBe('... --- ... = SOS');
       // A phone keyboard turns three full stops into one ellipsis character.
       expect(run({ text: '… --- …' })).toBe('... --- ... = SOS');
-      expect(run({ text: '... --- ...​' })).toBe('... --- ... = SOS');
+      expect(run({ text: `... --- ...${String.fromCodePoint(0x200b)}` })).toBe('... --- ... = SOS');
     });
 
     it('reads Morse whatever "to" says, since "to" is about spelling', () => {
