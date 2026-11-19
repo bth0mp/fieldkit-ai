@@ -34,14 +34,23 @@ const INVISIBLE: ReadonlyArray<readonly [number, number]> = [
 
 const codeOf = (char: string) => char.codePointAt(0) ?? 0;
 const isInvisible = (code: number) => INVISIBLE.some(([first, last]) => code >= first && code <= last);
-/** Blanks the engine's own white-space class does not know: the next-line control and the braille blank. */
-const isOtherSpace = (code: number) => code === 0x85 || code === 0x2800;
 const isJoiner = (code: number) => code === 0x200c || code === 0x200d;
 const isSelector = (code: number) => code >= 0xfe00 && code <= 0xfe0f;
 
-/** The text without its invisible characters, white space left as it is. */
+/**
+ * Two blanks the engine's own white-space class does not know, as the white space they stand for: the
+ * next-line control is a line break and the braille blank a space. Every caller gets them this way, so none
+ * can carry a blank it cannot see or split on.
+ */
+function asWhiteSpace(char: string): string {
+  const code = codeOf(char);
+  if (code === 0x85) return '\n';
+  return code === 0x2800 ? ' ' : char;
+}
+
+/** The text without its invisible characters. White space is left as it is, in a form the engine knows. */
 export function stripInvisible(text: string): string {
-  return [...text].filter(char => !isInvisible(codeOf(char))).join('');
+  return [...text].filter(char => !isInvisible(codeOf(char))).map(asWhiteSpace).join('');
 }
 
 /**
@@ -50,8 +59,7 @@ export function stripInvisible(text: string): string {
  * Used for names shown in rows and for file titles that go into the assistant's system prompt.
  */
 export function oneLine(text: string, max: number): string {
-  const spaced = [...stripInvisible(text)].map(char => (isOtherSpace(codeOf(char)) ? ' ' : char)).join('');
-  const chars = [...spaced.replace(/\s+/g, ' ').trim()].slice(0, max);
+  const chars = [...stripInvisible(text).replace(/\s+/g, ' ').trim()].slice(0, max);
   // Joiners and selectors mean something only beside what they join or select: text that is nothing else is
   // empty, and a joiner left at either end by the cut or the typist joins nothing.
   if (chars.every(char => char === ' ' || isJoiner(codeOf(char)) || isSelector(codeOf(char)))) return '';

@@ -130,6 +130,13 @@ describe('phonetic_morse', () => {
       expect(run({ text: `... --- ...${String.fromCodePoint(0x200b)}` })).toBe('... --- ... = SOS');
     });
 
+    it('takes a next-line control between two runs of Morse as the line break it is', () => {
+      const nextLine = String.fromCodePoint(0x85);
+      expect(run({ text: `... --- ...${nextLine}.... . .-.. .--.` })).toBe('... --- ... / .... . .-.. .--. = SOS HELP');
+      // A braille blank is a space: here, the gap between two letters.
+      expect(run({ text: `.-${String.fromCodePoint(0x2800)}-...` })).toBe('.- -... = AB');
+    });
+
     it('reads Morse whatever "to" says, since "to" is about spelling', () => {
       expect(run({ text: '... --- ...', to: 'text' })).toBe('... --- ... = SOS');
       expect(run({ text: '... --- ...', to: 'english' })).toBe('... --- ... = SOS');

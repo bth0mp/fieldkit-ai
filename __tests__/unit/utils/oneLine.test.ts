@@ -2,7 +2,7 @@
  * oneLine: typed or file-supplied text as one line of plain text. It is used for names shown in rows and for
  * Kiwix file titles that go into the system prompt, so nothing invisible may ride along.
  */
-import { oneLine } from '../../../src/utils/oneLine';
+import { oneLine, stripInvisible } from '../../../src/utils/oneLine';
 
 /** Invisible characters are written here by number: typed as themselves, nobody could see what a test holds. */
 const cp = String.fromCodePoint;
@@ -48,6 +48,20 @@ describe('oneLine', () => {
   it('reads the next-line control and the braille blank as spaces, which is what they are', () => {
     expect(oneLine(`a${cp(0x85)}b`, 60)).toBe('a b');
     expect(oneLine(`${cp(0x2811)}${cp(0x2800)}${cp(0x2811)}`, 60)).toBe(`${cp(0x2811)} ${cp(0x2811)}`);
+  });
+
+  describe('stripInvisible, which other callers use without the rest', () => {
+    it('leaves ordinary white space as it is', () => {
+      expect(stripInvisible('a\tb  c\nd')).toBe('a\tb  c\nd');
+    });
+
+    it('never hands back a blank the caller cannot see or split on', () => {
+      // The next-line control is a line break and the braille blank a space: a caller that splits on white
+      // space must find them, not carry them through.
+      expect(stripInvisible(`a${cp(0x85)}b`)).toBe('a\nb');
+      expect(stripInvisible(`a${cp(0x2800)}b`)).toBe('a b');
+      expect(/^[\x20-\x7e\n]*$/.test(stripInvisible(`x${cp(0x85)}${cp(0x2800)}${cp(0x200b)}${cp(0xe0041)}${cp(0x9f)}y`))).toBe(true);
+    });
   });
 
   it('drops every other invisible or formatting character, wherever it sits in Unicode', () => {
