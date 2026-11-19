@@ -25,6 +25,8 @@ export interface ZimFixture {
   zstdTrailer?: Buffer;
   /** Bytes between the last cluster and the directory entries: a big file's directory, in a test-sized file. */
   directoryPadding?: number;
+  /** How the file's type list spells the article type; some writers add a character set ("text/html; charset=utf-8"). */
+  htmlMime?: string;
 }
 
 type Entry = { ns: string; path: string; title: string; mime: string; data?: Buffer; redirect?: string; cluster?: number; blob?: number };
@@ -89,7 +91,7 @@ export function buildZim(opts: ZimFixture): Uint8Array {
     return Buffer.concat([head, Buffer.from(`${e.path}\0${e.title}\0`)]);
   });
 
-  const mimeList = Buffer.from(`${MIMES.join('\0')}\0\0`);
+  const mimeList = Buffer.from(`${MIMES.map(m => (m === 'text/html' ? opts.htmlMime ?? m : m)).join('\0')}\0\0`);
   const allTitles = entries.map((e, i) => ({ e, i })).sort((a, b) => Buffer.compare(titleKey(a.e), titleKey(b.e)));
   const mimeListPos = 80;
   let at = mimeListPos + mimeList.length;

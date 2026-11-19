@@ -348,7 +348,9 @@ export async function openZim(read: ReadRange): Promise<ZimArchive> {
     tags: await metadata('Tags'), language: await metadata('Language'),
   };
   const titles = await titleIndex();
-  const isArticle = (e: Dirent) => e.ns === articleNs && (e.mime === REDIRECT || mimes[e.mime] === 'text/html');
+  // The type list may give the article type bare or with a character set ("text/html; charset=utf-8").
+  const isHtml = (e: Dirent) => /^text\/html\s*(;|$)/i.test(mimes[e.mime] ?? '');
+  const isArticle = (e: Dirent) => e.ns === articleNs && (e.mime === REDIRECT || isHtml(e));
 
   async function findTitles(query: string, limit = 6): Promise<string[]> {
     const q = query.trim();
@@ -390,7 +392,7 @@ export async function openZim(read: ReadRange): Promise<ZimArchive> {
     index ??= await indexOfPath(articleNs, title.replace(/ /g, '_'));
     if (index === null) return null;
     const entry = await resolve(await direntAt(index));
-    if (entry.cluster === undefined || mimes[entry.mime] !== 'text/html') return null;
+    if (entry.cluster === undefined || !isHtml(entry)) return null;
     const html = decodeUtf8(await blob(entry.cluster, entry.blob!));
     return { title: entry.title, text: zimHtmlToText(html, maxChars) };
   }

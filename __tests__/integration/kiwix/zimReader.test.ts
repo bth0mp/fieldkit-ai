@@ -45,6 +45,14 @@ describe('ZIM reader', () => {
     expect((await zim.readArticle('Bursitis', 500))?.text).toContain('inflammation of a bursa');
   });
 
+  it('reads a file whose type list gives the article type with a character set', async () => {
+    // Some ZIM writers list "text/html; charset=utf-8". Matched exactly against "text/html", such a file opens
+    // and then seems to hold no articles at all.
+    const zim = await open({ htmlMime: 'text/html; charset=utf-8' });
+    expect((await zim.findTitles('burn'))[0]).toBe('Burn');
+    expect((await zim.readArticle('Burn', 200))?.text).toContain('Cool the burn under cool running water');
+  });
+
   it('reads uncompressed clusters', async () => {
     const zim = await open({ compression: 'none' });
     expect((await zim.readArticle('Burn', 500))?.text).toContain('Cool the burn');
