@@ -34,12 +34,12 @@ describe('Quick reference (rendered)', () => {
     expect(mockNavigate).toHaveBeenCalledWith('QuickReference');
     library.unmount();
 
-    // Five cards, all closed.
+    // Six cards, all closed.
     const screen = rtl.render(React.createElement(QuickReferenceScreen, {}));
     expect(screen.getByText('Signals, codes and scales to read at a glance. Nothing here needs a model, a download or a signal.')).toBeTruthy();
     const { StyleSheet } = require('react-native');
     const { TYPOGRAPHY } = require('../../../src/constants');
-    for (const title of ['Distress signals', 'Ground-to-air signals', 'Radio alphabet', 'Morse code', 'Wind force (Beaufort scale)']) {
+    for (const title of ['Distress signals', 'Ground-to-air signals', 'Radio alphabet', 'Morse code', 'Wind force (Beaufort scale)', 'Radio channels (United States)']) {
       // A card's title is the thing to tap: body text, not a small label.
       expect(StyleSheet.flatten(screen.getByText(title).props.style).fontSize).toBe(TYPOGRAPHY.body.fontSize);
     }
@@ -130,5 +130,27 @@ describe('Quick reference (rendered)', () => {
     expect(screen.getByText('These are the signs on land. At sea the scale is read from the waves, which this card leaves out.')).toBeTruthy();
     expect(screen.getByText('US National Weather Service: Beaufort Wind Scale (Miami office) and Estimating Wind Speed (Portland office), as read on 19 November 2026.')).toBeTruthy();
     expect(screen.getByLabelText('Force 8: Gale, 39 to 46 mph (34 to 40 knots). Breaks twigs off trees; generally impedes progress')).toBeTruthy();
+    rtl.fireEvent.press(screen.getByText('Wind force (Beaufort scale)'));
+
+    // Radio channels: the frequencies a radio or scanner is set to, in the United States. Typed from the
+    // sources as read on 19 November 2026: NOAA's Weather Radio page (weather.gov/nwr), and the FCC's rules in
+    // the electronic Code of Federal Regulations, 47 CFR 95.563 (the FRS channel table), 95.567 (FRS power),
+    // 95.931 (what CB channel 9 is for) and 95.963 (the CB channel table).
+    rtl.fireEvent.press(screen.getByText('Radio channels (United States)'));
+    expect(meaningOf('radio-channels', 'Weather radio'))
+      .toBe('NOAA Weather Radio broadcasts on seven frequencies: 162.400, 162.425, 162.450, 162.475, 162.500, 162.525 and 162.550 MHz. Listening only');
+    expect(meaningOf('radio-channels', 'CB channel 9')).toBe('27.065 MHz. For emergencies and traveler assistance only');
+    const FRS = [
+      '462.5625', '462.5875', '462.6125', '462.6375', '462.6625', '462.6875', '462.7125',
+      '467.5625', '467.5875', '467.6125', '467.6375', '467.6625', '467.6875', '467.7125',
+      '462.5500', '462.5750', '462.6000', '462.6250', '462.6500', '462.6750', '462.7000', '462.7250',
+    ];
+    FRS.forEach((mhz, index) => { expect(meaningOf('radio-channels', `FRS ${index + 1}`)).toBe(`${mhz} MHz`); });
+    expect(screen.queryByTestId('quick-reference-radio-channels-FRS 23')).toBeNull();
+    expect(screen.getByText('Any CB channel may be used in an emergency, and emergency calls come first on every channel.')).toBeTruthy();
+    expect(screen.getByText('An FRS radio may put out 2 watts on channels 1 to 7 and 15 to 22, and half a watt on channels 8 to 14.')).toBeTruthy();
+    expect(screen.getByText('Marine VHF channel 16 and the aircraft emergency frequency are on the Distress signals card.')).toBeTruthy();
+    expect(screen.getByText('These are United States channels and rules. They do not hold in other countries.')).toBeTruthy();
+    expect(screen.getByText('NOAA Weather Radio (weather.gov/nwr). FCC rules: 47 CFR 95.563 and 95.567 for FRS, 95.931 and 95.963 for CB. All as read on 19 November 2026.')).toBeTruthy();
   });
 });

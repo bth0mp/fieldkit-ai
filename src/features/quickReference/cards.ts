@@ -34,6 +34,13 @@ const MARK_NAMES = new Map([
   ['+', 'plus sign'], ['@', 'at sign'],
 ]);
 
+/** The centre frequency of each Family Radio Service channel, 1 to 22, as 47 CFR 95.563 tabulates them. */
+const FRS_MHZ = [
+  '462.5625', '462.5875', '462.6125', '462.6375', '462.6625', '462.6875', '462.7125',
+  '467.5625', '467.5875', '467.6125', '467.6375', '467.6625', '467.6875', '467.7125',
+  '462.5500', '462.5750', '462.6000', '462.6250', '462.6500', '462.6750', '462.7000', '462.7250',
+];
+
 export const QUICK_REFERENCE_CARDS: ReferenceCard[] = [
   {
     id: 'distress',
@@ -120,5 +127,24 @@ export const QUICK_REFERENCE_CARDS: ReferenceCard[] = [
       'The two tables used here put the start of force 12 at 72 and at 75 miles an hour, so it is given in knots only.',
     ],
     source: 'US National Weather Service: Beaufort Wind Scale (Miami office) and Estimating Wind Speed (Portland office), as read on 19 November 2026.',
+  },
+  {
+    // Read 19 November 2026: weather.gov/nwr for the weather frequencies; the electronic Code of Federal
+    // Regulations for the rest (47 CFR 95.563 the FRS channel table, 95.567 FRS power, 95.931(a) emergencies on
+    // CB and what channel 9 is for, 95.963 the CB channel table).
+    id: 'radio-channels',
+    title: 'Radio channels (United States)',
+    rows: [
+      { sign: 'Weather radio', meaning: 'NOAA Weather Radio broadcasts on seven frequencies: 162.400, 162.425, 162.450, 162.475, 162.500, 162.525 and 162.550 MHz. Listening only' },
+      { sign: 'CB channel 9', meaning: '27.065 MHz. For emergencies and traveler assistance only' },
+      ...FRS_MHZ.map((mhz, index) => ({ sign: `FRS ${index + 1}`, meaning: `${mhz} MHz` })),
+    ],
+    notes: [
+      'Any CB channel may be used in an emergency, and emergency calls come first on every channel.',
+      'An FRS radio may put out 2 watts on channels 1 to 7 and 15 to 22, and half a watt on channels 8 to 14.',
+      'Marine VHF channel 16 and the aircraft emergency frequency are on the Distress signals card.',
+      'These are United States channels and rules. They do not hold in other countries.',
+    ],
+    source: 'NOAA Weather Radio (weather.gov/nwr). FCC rules: 47 CFR 95.563 and 95.567 for FRS, 95.931 and 95.963 for CB. All as read on 19 November 2026.',
   },
 ];

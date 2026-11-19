@@ -33,7 +33,7 @@ export const QuickReferenceScreen: React.FC = () => {
         <Text style={styles.headerTitle} accessibilityRole="header">Quick reference</Text>
         <View style={styles.headerButton} />
       </View>
-      {/* ponytail: a plain scroll view; the five cards hold about 140 short rows in all. */}
+      {/* ponytail: a plain scroll view; the six cards hold about 170 short rows in all. */}
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.note}>Signals, codes and scales to read at a glance. Nothing here needs a model, a download or a signal.</Text>
         {QUICK_REFERENCE_CARDS.map(card => {
