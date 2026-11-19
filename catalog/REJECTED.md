@@ -390,3 +390,54 @@ A search for guides on the thin topics (first aid, food, weather, fieldcraft, di
 ### Not found as a whole file
 
 - Aviation Weather, Advisory Circular 00-6A, 1975 (FAA and National Weather Service): faa.gov offers it only as separate chapter-group files; no single official file was found. A staff-written weather primer, worth another look if a whole-book copy turns up on an allowed archive.
+
+## Seventh batch, 18 November 2026 (night): old USDA handbooks and bulletins
+
+Two more searches, aimed at old federal publications written by agency staff, since every recent sheet in the sixth batch ended in doubt. Three guides were listed: Beekeeping for Beginners (Home and Garden Bulletin 158, 1974), Methods for Evaluating Irrigation Systems (Agriculture Handbook 82, 1956) and Farming and Maintaining Terraces (Leaflet 570, 1987, read only). Where the files are: govinfo.gov serves a run of old USDA handbooks at `https://www.govinfo.gov/content/pkg/GOVPUB-A-PURL-<id>/pdf/GOVPUB-A-PURL-<id>.pdf` and answers the app's request, but it re-stamps files, so a hash can change; the National Agricultural Library's old download addresses survive only as 2015 and 2016 Wayback captures (later captures are cut off at one megabyte); the UNT Digital Library holds the Farmers' Bulletins as page images only. Food still has no guide: every food title opened fails on old chemical or food-handling advice.
+
+Unless marked "looked at", the quotes below were found in the text by the researchers and the pictures were not looked at; one quote is enough to keep a title out.
+
+### Held for the owner
+
+- Forest Products Laboratory titles, for example Nailing Better Wood Boxes and Crates, Agriculture Handbook 160, 1959 (US Forest Service, govinfo.gov): each prints 'In Cooperation with the University of Wisconsin' on its cover or the footnote 'Maintained at Madison, Wis., in cooperation with the University of Wisconsin'. Read as a credit to a State body it keeps every Laboratory title out, and they are out. If the owner reads it as a standing line about where the Laboratory sits, and not a credit on the work, these become worth a full audit.
+
+### Out: outdated safety advice
+
+- Storing Vegetables and Fruits in Basements, Cellars, Outbuildings, and Pits, Home and Garden Bulletin 119, December 1966 (USDA Agricultural Research Service, Wayback capture of naldc.nal.usda.gov): staff-prepared and uncredited, all 20 pages looked at on contact sheets, but page 11 offers carbon tetrachloride fumigation of dry beans. Later editions (1970, 1973, 1978) were not found as whole files.
+- Culture of Sweet Sorghum for Sirup Production, Agriculture Handbook 441, May 1973 (USDA Agricultural Research Service, https://www.govinfo.gov/content/pkg/GOVPUB-A-PURL-gpo25995/pdf/GOVPUB-A-PURL-gpo25995.pdf): staff-written and uncredited, all 35 pages looked at, but it tells the reader to 'crush and bury' pesticide containers (page 2), gives 1973 herbicide rates (page 29) and suggests 'galvanized-iron, or copper evaporators' for the sirup (page 32).
+- Vegetable Gardening in the Caribbean Area, Agriculture Handbook 323, 1967 (USDA Agricultural Research Service, govinfo.gov): its pest chapter is built on DDT, chlordane and toxaphene, with dose tables.
+- Culture of Sugarcane for Sirup Production, Agriculture Handbook 209, 1961 (USDA, govinfo.gov): page 16, 'applying 2 pounds of chlordane per acre'.
+- A Manual on Conservation of Soil and Water, Agriculture Handbook 61, 1954 (USDA Soil Conservation Service, govinfo.gov): page 152 advises sodium arsenite and arsenic pentoxide, and pouring kerosene at the base of a tree.
+- Wood-Frame House Construction, Agriculture Handbook 73, 1955 (US Forest Service, govinfo.gov): page 89, 'all edges should be protected with white lead paint'; asbestos-cement siding.
+- Wood Floors for Dwellings, Agriculture Handbook 204, 1961 (US Forest Service, govinfo.gov): asbestos on pages 24 and 29; also the Forest Products Laboratory line above.
+- A House-Framing System for Low-Cost Construction, Miscellaneous Publication 1020, 1966 (USDA, govinfo.gov): posts treated with 'chlordane and pentachlorophenol' (page 13).
+- Snow-Survey Safety Guide, Agriculture Handbook 137, 1958 (USDA Soil Conservation Service, govinfo.gov): 1958 first aid, page 41 'apply tourniquet close to the wound'.
+- Food for Families with School Children, AIS-71, May 1948 (USDA Bureau of Human Nutrition and Home Economics, govinfo.gov): 1948 food handling and prices; page 1 is an added sheet reading 'Historic, archived document. Do not assume content reflects current scientific knowledge, policies, or practices.' All 26 pages looked at.
+
+### Out: an outside credit, thanks or co-author
+
+- Growing Vegetables in Town and City, Home and Garden Bulletin 7, revised 1962 (USDA Agricultural Research Service, govinfo.gov): page 13 footnote, 'The authors gratefully acknowledge the assistance of workers in a number of experiment stations and elsewhere in developing tables 2 and 3'; page 1 is an added cover sheet with another body's logo.
+- Aviation Weather, Advisory Circular 00-6A, 1975 (FAA and National Weather Service, Wayback capture of rosap.ntl.bts.gov): Figure 91 '(Courtesy Dean T. Bowden, General Dynamics/Convair.)' and Figure 93 '(Photo by Norman Hoffman, Mooney Aircraft, Inc., courtesy the A.O.P.A. Pilot Magazine.)'; the only whole-book scan stops at Figure 155.
+- Principles and Practices of Seed Storage, Agriculture Handbook 506, 1978 (USDA, govinfo.gov): figures 'Courtesy of J. F. Harrington' and a table used 'With permission of Microform Internatl. Mktg. Corp. exclusive copyright license of Pergamon Press'.
+- Maple Sirup Producers Manual, Agriculture Handbook 134, 1958 (USDA, govinfo.gov): acknowledgments thank Cornell and University of Wisconsin people and evaporator makers.
+- First Aid for Flooded Homes and Farms, Agriculture Handbook 38, 1952 (USDA, govinfo.gov): photograph '[Courtesy Missouri Extension Service.]'; State colleges 'have contributed information'.
+- New Life for Old Dwellings, Agriculture Handbook 481, 1975 (US Forest Service, govinfo.gov): thanks an outside firm of architects and a university professor; sketches 'adapted from' a Weyerhaeuser Sales Company booklet; pentachlorophenol finish.
+- Small Sawmill Operator's Manual, Agriculture Handbook 27, 1952 (US Forest Service, govinfo.gov): page 3, 'Acknowledgment is made of the assistance given by the following individuals and firms ... many of the photographs and drawings'.
+- Commercial Storage of Fruits, Vegetables, and Florist and Nursery Stocks, Agriculture Handbook 66, 1954 (USDA, govinfo.gov): page 2, 'Acknowledgment is also due J. M. Kelley, Fruit Dispatch Co. ... J. R. Kamp, University of Illinois'.
+- Sweetpotato Storage, Agriculture Handbook 358, 1969 (USDA, govinfo.gov): cover, 'in cooperation with North Carolina Agricultural Experiment Station'; DDT on page 15.
+- Tree Windbreaks for the Central Great Plains, Agriculture Handbook 250, 1964 (USDA, govinfo.gov): page 12, '(Photo courtesy of W. T. Bagley, University of Nebraska.)'; strychnine baits on page 50.
+- Farm Planners' Engineering Handbook for the Upper Mississippi Region, Agriculture Handbook 57, 1953 (USDA Soil Conservation Service, govinfo.gov): page 8, '(ILLUSTRATIONS COURTESY K&E CO.)'.
+- Conservation Irrigation in Humid Areas, Agriculture Handbook 107, 1957 (USDA Soil Conservation Service, govinfo.gov): page 13, '(Photos courtesy Connecticut Agricultural Experiment Station.)'.
+- Harvesting and Cleaning Grass and Legume Seed in the Western Gulf Region, Agriculture Handbook 24, 1951 (USDA, govinfo.gov): page 2, 'The University of Wisconsin Press kindly gave permission to use certain figures'.
+- Fig Growing in the South, Agriculture Handbook 196, 1961 (USDA, govinfo.gov): page 2, pictures 'were furnished by Dr. E. N. O'Rourke, Jr., of the Louisiana Agricultural Experiment Station'; its authors are university staff.
+- Culture and Use of Grain Sorghum, Agriculture Handbook 385, 1970 (USDA, govinfo.gov): page 11, '(Courtesy of Kansas Agricultural Experiment Station.)'.
+- Farmhouse Design and Equipment for Summer Comfort, 1963 (USDA, govinfo.gov): page 3, 'The copyright illustrations are used with permission.'
+- Fire-Weather Observers' Handbook, Agriculture Handbook 494, 1976 (US Forest Service, govinfo.gov): uncredited cut-out photographs of named commercial instruments and a maker's chart form (pages 1 to 24 looked at).
+
+### Out: not practical, or not a whole file
+
+- Farmers' Handbook of Financial Calculations and Physical Measurements, Agriculture Handbook 230, 1962 (USDA Economic Research Service, govinfo.gov): licence is fine (staff-written, uncredited, all 58 pages looked at on contact sheets), but 35 of its 58 pages are 1962 loan, Social Security and life-insurance tables.
+- Cheese Varieties and Descriptions, Agriculture Handbook 54, 1953 (USDA, govinfo.gov): its preface says 'It is not intended as a guide for making cheese'.
+- A Method of Seasoning Small Quantities of Lumber, Forest Products Laboratory Report 1608, 1958 (US Forest Service, govinfo.gov): the file ends before the figures its text cites; also the Laboratory's university line above.
+- Livestock Sun Shelter and Small Animal Water Catchment, Technical Note, 1969 (Bureau of Land Management, govinfo.gov): two pages; the design was 'submitted as a suggestion from Daniel B. Rathbun', whose position is not stated.
+- Food for the Family with Young Children; Pots and Pans for Your Kitchen; Tools for Food Preparation and Dishwashing, 1950 to 1951 (USDA, govinfo.gov): each has an added cover sheet from another body.
