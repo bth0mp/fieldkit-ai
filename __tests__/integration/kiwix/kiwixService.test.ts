@@ -83,6 +83,36 @@ describe('Kiwix service', () => {
     expect(useKiwixStore.getState().refused).toEqual([oldFile]);
   });
 
+  it('one file reached through its folder and picked by itself is one file, and stays removed either way', async () => {
+    const { kiwixService, docs, picker, files } = setup();
+    // Android gives one document two addresses: under the granted folder's tree, and on its own.
+    const documentId = 'primary%3AAndroid%2Fmedia%2Forg.kiwix.kiwixmobile%2Fifixit.zim';
+    const inFolder = `${TREE}/document/${documentId}`;
+    const byItself = `content://com.android.externalstorage.documents/document/${documentId}`;
+    const bytes = buildZim({ ...WIKIMED, name: 'ifixit_en_all', title: 'iFixit test', description: 'Repair guides', tags: 'ifixit' });
+    docs.seed(inFolder, bytes);
+    docs.seed(byItself, bytes);
+    const picked = [{ uri: byItself, name: 'ifixit.zim', size: bytes.length, bookmarkStatus: 'success', bookmark: 'b' }];
+    const ifixit = () => files().filter(f => f.title === 'iFixit test');
+
+    await kiwixService.addFolder();
+    expect(ifixit()).toHaveLength(1);
+    picker.pick.mockResolvedValueOnce(picked);
+    await kiwixService.addFiles();
+    expect(ifixit()).toHaveLength(1);
+
+    // Removed after being picked, it is not brought back by the folder it also sits in.
+    const { useKiwixStore } = require('../../../src/services/kiwix/kiwixStore');
+    const id = Object.entries(useKiwixStore.getState().files as Record<string, { title: string }>).find(([, f]) => f.title === 'iFixit test')![0];
+    await kiwixService.remove(id);
+    await kiwixService.checkForNewFiles();
+    expect(ifixit()).toHaveLength(0);
+    // Picking it again is the way back.
+    picker.pick.mockResolvedValueOnce(picked);
+    await kiwixService.addFiles();
+    expect(ifixit()).toHaveLength(1);
+  });
+
   it('a second check or pick while one is running does not add the same files again', async () => {
     const { kiwixService, picker, files, useKiwixStore } = setup();
     useKiwixStore.setState({ folders: [TREE] });

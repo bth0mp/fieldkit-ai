@@ -83,7 +83,21 @@ function rank(title: string | undefined, query: string): number {
 const errorOf = (e: unknown) => (e instanceof ZimError ? e.message : UNREADABLE);
 
 const isCancel = (e: unknown) => isErrorWithCode(e) && e.code === errorCodes.OPERATION_CANCELED;
-const isKnown = (uri: string) => Object.values(store.getState().files).some(f => f.uri === uri);
+/**
+ * Android gives one document two uris, one under a granted folder's tree and one of its own. What they share is
+ * the provider and the document id, so a file picked by itself and found again in its folder is one file.
+ */
+function documentKey(uri: string): string {
+  const match = /^content:\/\/([^/]+)\/(?:tree\/[^/]+\/)?document\/([^/?#]+)/.exec(uri);
+  if (!match) return uri;
+  try {
+    return `${match[1]}/${decodeURIComponent(match[2])}`;
+  } catch {
+    return uri;
+  }
+}
+const sameDocument = (a: string, b: string) => documentKey(a) === documentKey(b);
+const isKnown = (uri: string) => Object.values(store.getState().files).some(f => sameDocument(f.uri, uri));
 const nameOf = (uri: string) => decodeURIComponent(uri.slice(uri.lastIndexOf('/') + 1)).replace(/^.*[:/]/, '');
 
 function refuse(fileName: string, reason: string) {
@@ -113,7 +127,7 @@ async function addDocuments(docs: TreeDocument[]): Promise<void> {
         store.setState(s => ({
           files: { ...s.files, [file.id]: file },
           refused: s.refused.filter(r => r.fileName !== doc.name),
-          removed: s.removed.filter(uri => uri !== doc.uri),
+          removed: s.removed.filter(uri => !sameDocument(uri, doc.uri)),
         }));
       } catch (e) {
         refuse(doc.name, errorOf(e));
@@ -147,7 +161,7 @@ async function checkFolders(): Promise<void> {
       refuse(nameOf(folder), FOLDER_GONE);
     }
   }
-  await addDocuments(found.filter(d => isListed(d.name) && !isKnown(d.uri) && !removed.includes(d.uri)));
+  await addDocuments(found.filter(d => isListed(d.name) && !isKnown(d.uri) && !removed.some(uri => sameDocument(uri, d.uri))));
 }
 
 async function dropFile(id: string): Promise<void> {
@@ -156,7 +170,7 @@ async function dropFile(id: string): Promise<void> {
   readers.delete(id);
   store.setState(s => {
     const { [id]: _gone, ...files } = s.files;
-    return { files, removed: [...s.removed.filter(uri => uri !== file.uri), file.uri] };
+    return { files, removed: [...s.removed.filter(uri => !sameDocument(uri, file.uri)), file.uri] };
   });
   // A file from a granted folder has no grant of its own; releasing it is a no-op there.
   await releaseLongTermAccess([file.uri]).catch(e => logger.warn('[Kiwix] release failed', e));
