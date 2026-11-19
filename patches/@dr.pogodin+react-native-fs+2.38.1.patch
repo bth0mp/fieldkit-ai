@@ -1,0 +1,28 @@
+diff --git a/node_modules/@dr.pogodin/react-native-fs/android/src/main/java/com/drpogodin/reactnativefs/ReactNativeFsModule.kt b/node_modules/@dr.pogodin/react-native-fs/android/src/main/java/com/drpogodin/reactnativefs/ReactNativeFsModule.kt
+index c5973a050..0880f703a 100644
+--- a/node_modules/@dr.pogodin/react-native-fs/android/src/main/java/com/drpogodin/reactnativefs/ReactNativeFsModule.kt
++++ b/node_modules/@dr.pogodin/react-native-fs/android/src/main/java/com/drpogodin/reactnativefs/ReactNativeFsModule.kt
+@@ -480,9 +480,21 @@ class ReactNativeFsModule(reactContext: ReactApplicationContext) :
+     ) {
+         try {
+             getInputStream(filepath).use { inputStream ->
++                // Fieldkit patch: positions past 2 GB (toInt() saturated them) and short skips and reads.
+                 val buffer = ByteArray(length.toInt())
+-                inputStream.skip(position.toInt().toLong())
+-                val bytesRead = inputStream.read(buffer, 0, length.toInt())
++                var toSkip = position.toLong()
++                while (toSkip > 0) {
++                    val skipped = inputStream.skip(toSkip)
++                    if (skipped > 0) { toSkip -= skipped; continue }
++                    if (inputStream.read() == -1) break
++                    toSkip -= 1
++                }
++                var bytesRead = 0
++                while (toSkip == 0L && bytesRead < buffer.size) {
++                    val n = inputStream.read(buffer, bytesRead, buffer.size - bytesRead)
++                    if (n == -1) break
++                    bytesRead += n
++                }
+                 val base64Content = Base64.encodeToString(buffer, 0, bytesRead, Base64.NO_WRAP)
+                 promise.resolve(base64Content)
+             }
