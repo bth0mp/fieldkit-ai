@@ -69,6 +69,14 @@ describe('Kiwix service', () => {
     expect(files()).toHaveLength(3);
   });
 
+  it('a second check or pick while one is running does not add the same files again', async () => {
+    const { kiwixService, picker, files, useKiwixStore } = setup();
+    useKiwixStore.setState({ folders: [TREE] });
+    picker.pick.mockResolvedValueOnce([{ uri: `${TREE}/wikimed.zim`, name: 'wikimed.zim', size: 1, bookmarkStatus: 'success', bookmark: 'b' }]);
+    await Promise.all([kiwixService.checkForNewFiles(), kiwixService.checkForNewFiles(), kiwixService.addFiles()]);
+    expect(files().map(f => f.title).sort()).toEqual(['WikiMed test', 'Wikivoyage test']);
+  });
+
   it('a search in a project reads the best article from its files', async () => {
     const { kiwixService } = setup();
     await kiwixService.addFolder();

@@ -114,6 +114,30 @@ async function addDocuments(docs: TreeDocument[]): Promise<void> {
   }
 }
 
+// One add or check at a time, claimed before the first await: a second tap while one is picking or listing
+// waits for it instead of adding the same files again.
+let running: Promise<void> | null = null;
+function oneAtATime(work: () => Promise<void>): Promise<void> {
+  running ??= work().finally(() => { running = null; });
+  return running;
+}
+
+async function checkFolders(): Promise<void> {
+  await hydrated();
+  const module = tree();
+  if (!module) return;
+  const { folders, removed } = store.getState();
+  const found: TreeDocument[] = [];
+  for (const folder of folders) {
+    try {
+      found.push(...await module.listFiles(folder));
+    } catch {
+      refuse(nameOf(folder), FOLDER_GONE);
+    }
+  }
+  await addDocuments(found.filter(d => d.name.toLowerCase().endsWith('.zim') && !isKnown(d.uri) && !removed.includes(d.uri)));
+}
+
 async function dropFile(id: string): Promise<void> {
   const file = store.getState().files[id];
   if (!file) return;
@@ -129,7 +153,7 @@ async function dropFile(id: string): Promise<void> {
 export const kiwixService = {
   canAddFolder: (): boolean => !!tree(),
 
-  async addFolder(): Promise<void> {
+  addFolder: (): Promise<void> => oneAtATime(async () => {
     await hydrated();
     let uri: string;
     try {
@@ -139,28 +163,13 @@ export const kiwixService = {
       throw e;
     }
     if (!store.getState().folders.includes(uri)) store.setState(s => ({ folders: [...s.folders, uri] }));
-    await kiwixService.checkForNewFiles();
-  },
+    await checkFolders();
+  }),
 
-  async checkForNewFiles(): Promise<void> {
-    await hydrated();
-    const module = tree();
-    if (!module || store.getState().adding) return;
-    const { folders, removed } = store.getState();
-    const found: TreeDocument[] = [];
-    for (const folder of folders) {
-      try {
-        found.push(...await module.listFiles(folder));
-      } catch {
-        refuse(nameOf(folder), FOLDER_GONE);
-      }
-    }
-    await addDocuments(found.filter(d => d.name.toLowerCase().endsWith('.zim') && !isKnown(d.uri) && !removed.includes(d.uri)));
-  },
+  checkForNewFiles: (): Promise<void> => oneAtATime(checkFolders),
 
-  async addFiles(): Promise<void> {
+  addFiles: (): Promise<void> => oneAtATime(async () => {
     await hydrated();
-    if (store.getState().adding) return;
     let picked;
     try {
       picked = await pick({ mode: 'open', requestLongTermAccess: true, allowMultiSelection: true, type: [types.allFiles] });
@@ -169,7 +178,7 @@ export const kiwixService = {
       throw e;
     }
     await addDocuments(picked.map(p => ({ uri: p.uri, name: p.name ?? nameOf(p.uri), size: p.size ?? 0 })));
-  },
+  }),
 
   async move(id: string, categoryId: string): Promise<void> {
     if (!store.getState().files[id]) return;
