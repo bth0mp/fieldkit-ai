@@ -246,6 +246,16 @@ export const SettingsScreen: React.FC = () => {
               </View>
               <Icon name="chevron-right" size={16} color={colors.textMuted} />
             </TouchableOpacity>
+            <TouchableOpacity style={styles.navItem} testID="settings-quick-reference" onPress={() => navigation.navigate('QuickReference')}>
+              <View style={styles.navItemIcon}>
+                <Icon name="zap" size={16} color={colors.textSecondary} />
+              </View>
+              <View style={styles.navItemContent}>
+                <Text style={styles.navItemTitle}>Quick reference</Text>
+                <Text style={styles.navItemDesc}>Signals, codes and scales at a glance</Text>
+              </View>
+              <Icon name="chevron-right" size={16} color={colors.textMuted} />
+            </TouchableOpacity>
             <TouchableOpacity style={styles.navItem} testID="settings-checklists" onPress={() => navigation.navigate('Checklists')}>
               <View style={styles.navItemIcon}>
                 <Icon name="check-square" size={16} color={colors.textSecondary} />
