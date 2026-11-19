@@ -128,6 +128,20 @@
       "hasText": true
     },
     {
+      "id": "usgs-gip-ground-water-1999",
+      "title": "Ground Water",
+      "category": "water",
+      "publisher": "USGS",
+      "year": 1999,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105); the proof rests on staff authorship. A U.S. Geological Survey general-interest booklet with no personal author; page 18 says it is 'one of a series of general interest publications prepared by the U.S. Geological Survey'. No outside author, photographer, illustrator, university or company is credited, there are no acknowledgements and there is no copyright notice. The document prints no public-domain statement of its own and no date: 1999 is the year in the Survey's own publications catalogue, its water-use figures are for 1995, and the file was made in January 2001. USGS policy at https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits says USGS-authored information is in the U.S. public domain. Explains where ground water is found and how aquifers, the water table, wells, springs and artesian flow work, what hardness, iron, salt and acidity mean for well water, and what signs point to shallow ground water. It explains and does not give treatment steps; its two drinking-water figures (dissolved minerals, pH) are looser than current guidance, so judge a well by a current test.",
+      "url": "https://pubs.usgs.gov/gip/gw/gwgip.pdf",
+      "bytes": 1509131,
+      "sha256": "0a9439ce2dc5efabf0db3302f107b49e61344deac692a63c01a81b8ee5883992",
+      "pages": 18,
+      "hasText": true
+    },
+    {
       "id": "usda-nrcs-ah-590-ponds",
       "title": "Ponds: Planning, Design, Construction",
       "category": "water",
@@ -321,6 +335,20 @@
       "bytes": 8355749,
       "sha256": "6b30ad48fd05573b3dd7da1bd45bdee651047e2d4f85c757428d97a22187dd29",
       "pages": 136,
+      "hasText": true
+    },
+    {
+      "id": "usgs-suggestions-for-prospecting-1989",
+      "title": "Suggestions for Prospecting",
+      "category": "fieldcraft",
+      "publisher": "USGS",
+      "year": 1989,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105); the proof rests on staff authorship. A U.S. Geological Survey general-interest booklet published under the U.S. Geological Survey / Department of the Interior name alone, with no personal author; page 26 says it is 'one of a series of general interest publications prepared by the U.S. Geological Survey'. No outside author, photographer, illustrator, university or company is credited, there are no acknowledgements and there is no copyright notice. The document prints no public-domain statement of its own. USGS policy at https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits says USGS-authored information is in the U.S. public domain. Covers reading weathered rock and float for signs of ore, panning, building a simple sluice box, and what geochemical and geophysical prospecting can and cannot tell you. Its mining-claim rules and postal addresses are as of 1989 (the Bureau of Mines it names closed in 1996); check current Bureau of Land Management rules before staking a claim.",
+      "url": "https://pubs.usgs.gov/gip/70039396/report.pdf",
+      "bytes": 5859239,
+      "sha256": "11cc134479c21532ce11dcb24c0e0f0c4f08d0469980690a1339c7d6f1e5e37c",
+      "pages": 27,
       "hasText": true
     },
     {

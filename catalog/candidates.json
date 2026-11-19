@@ -665,5 +665,33 @@
     "creditsReviewed": true,
     "readOnly": true,
     "readOnlyNote": "No page has a text layer: all 20 pages are page images, so a program cannot read any of it."
+  },
+  {
+    "id": "usgs-suggestions-for-prospecting-1989",
+    "title": "Suggestions for Prospecting",
+    "category": "fieldcraft",
+    "publisher": "USGS",
+    "year": 1989,
+    "licence": "Public domain",
+    "licenceNote": "US government work (17 U.S.C. 105); the proof rests on staff authorship. A U.S. Geological Survey general-interest booklet published under the U.S. Geological Survey / Department of the Interior name alone, with no personal author; page 26 says it is 'one of a series of general interest publications prepared by the U.S. Geological Survey'. No outside author, photographer, illustrator, university or company is credited, there are no acknowledgements and there is no copyright notice. The document prints no public-domain statement of its own. USGS policy at https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits says USGS-authored information is in the U.S. public domain. Covers reading weathered rock and float for signs of ore, panning, building a simple sluice box, and what geochemical and geophysical prospecting can and cannot tell you. Its mining-claim rules and postal addresses are as of 1989 (the Bureau of Mines it names closed in 1996); check current Bureau of Land Management rules before staking a claim.",
+    "url": "https://pubs.usgs.gov/gip/70039396/report.pdf",
+    "evidence": "Page 1 (cover): 'U.S. Geological Survey / Department of the Interior' and 'Suggestions for Prospecting'. Page 3: 'For sale by the Superintendent of Documents, U.S. Government Printing Office Washington, D.C. 20402'. Page 26: 'This publication is one of a series of general interest publications prepared by the U.S. Geological Survey to provide information about the earth sciences, natural resources, and the environment.' and 'U.S. GOVERNMENT PRINTING OFFICE: 1989 237-025'. No copyright notice. USGS copyrights page: 'USGS-authored or produced data and information are considered to be in the U.S. Public Domain.' The booklet gives no mercury, cyanide or blasting instructions and no first-aid advice; it says analysis 'employing hazardous chemical or complicated procedures' is 'best done in an established laboratory' (page 10).",
+    "approxBytes": 5859239,
+    "creditsNote": "Citations, not reproductions: page 5 quotes a one-sentence definition from the U.S. Bureau of Mines' 'Dictionary of Mining, Mineral, and Related Terms' (a federal work) and names two commercial handbooks as further reading; page 18 quotes the 'prudent man' test from a Department of the Interior land decision; pages 20 and 26 name the ASTM 'Directory of Testing Laboratories' as a place to find a laboratory; pages 23 to 25 are a reference list. Nothing is marked as taken, adapted or reprinted from any of them. Picture audit, 18 November 2026: all 27 pages were looked at by eye (12 carry a picture). Every picture is a line drawing in one house style: prospectors at work, a panner at a stream, a claim marker, and five instruments labelled only 'Scintillometer', 'Silver detector', 'X-ray spectrograph', 'Magnetometer' and 'Geiger counter', drawn with no maker's name. There are no photographs and no credit on any picture. The back cover carries the Department of the Interior seal. No ownership wording in the file's image or metadata streams.",
+    "creditsReviewed": true
+  },
+  {
+    "id": "usgs-gip-ground-water-1999",
+    "title": "Ground Water",
+    "category": "water",
+    "publisher": "USGS",
+    "year": 1999,
+    "licence": "Public domain",
+    "licenceNote": "US government work (17 U.S.C. 105); the proof rests on staff authorship. A U.S. Geological Survey general-interest booklet with no personal author; page 18 says it is 'one of a series of general interest publications prepared by the U.S. Geological Survey'. No outside author, photographer, illustrator, university or company is credited, there are no acknowledgements and there is no copyright notice. The document prints no public-domain statement of its own and no date: 1999 is the year in the Survey's own publications catalogue, its water-use figures are for 1995, and the file was made in January 2001. USGS policy at https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits says USGS-authored information is in the U.S. public domain. Explains where ground water is found and how aquifers, the water table, wells, springs and artesian flow work, what hardness, iron, salt and acidity mean for well water, and what signs point to shallow ground water. It explains and does not give treatment steps; its two drinking-water figures (dissolved minerals, pH) are looser than current guidance, so judge a well by a current test.",
+    "url": "https://pubs.usgs.gov/gip/gw/gwgip.pdf",
+    "evidence": "Page 18: 'This publication is one of a series of general interest publications prepared by the U.S. Geological Survey to provide information about the earth sciences, natural resources, and the environment.' and 'ISBN 0-607-90082-2'. Page 3, under the table: 'Source: U.S. Geological Survey Circular 1200 - Estimated use of water in the United States in 1995'. The file's own properties give the title 'Ground Water', the author 'USGS' and the subject 'General Interest Publication on ground water'. No copyright notice. USGS copyrights page: 'USGS-authored or produced data and information are considered to be in the U.S. Public Domain.' Page 13: 'freedom from bacterial pollution alone does not mean that the water is fit to drink'.",
+    "approxBytes": 1509131,
+    "creditsNote": "Mentions that are not credits: page 16 says the Survey works 'in cooperation with other Federal, State, and local agencies' on its water-data network, which describes the Survey's programme and not who made this booklet; page 14 cites U.S. Environmental Protection Agency criteria (federal); page 2 quotes Genesis and Exodus. Picture audit, 18 November 2026: all 18 pages were looked at by eye (9 carry a picture, chart or table). Three colour photographs carry no credit: springs in the Snake River Plain, Idaho (page 1), and a pumped well and a flowing artesian well at a drilling rig (page 11). They are field photographs with no branding, taken as the Survey's own. The five diagrams (fresh water in storage, how ground water occurs in rocks, recharge of an aquifer, an artesian aquifer, salt-water intrusion) are in one house style with no credit; the page 4 chart and page 3 table are the Survey's own water-use data. No ownership wording in the file's image or metadata streams.",
+    "creditsReviewed": true
   }
 ]
