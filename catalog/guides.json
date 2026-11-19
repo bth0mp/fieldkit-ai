@@ -170,6 +170,34 @@
       "hasText": true
     },
     {
+      "id": "usda-fsis-food-safety-while-hiking-camping-boating-2011",
+      "title": "Food Safety While Hiking, Camping & Boating",
+      "category": "food",
+      "publisher": "USDA",
+      "year": 2011,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105); the proof rests on staff authorship and the sheet's own reprint line. A Food Safety and Inspection Service fact sheet published under the United States Department of Agriculture name alone, with no personal author; page 4 prints 'FSIS encourages the reprint and distribution of this publication for food safety education purposes.' No outside author, photographer, illustrator, university or company is credited and there is no copyright notice. Copy served by govinfo.gov (GPO), which has added its authentication seal to page 1. USDA's site notice (usda.gov, Policies and Links, read 18 November 2026): 'Most information presented on the USDA Web site is considered public domain information.' Keeping food cold or hot on a hike, at a camp or on a boat: what to pack, the two-hour rule, cooking temperatures by thermometer, handling fish and shellfish, and making stream or lake water safe by boiling, or by tablets together with a filter. Revised May 2011. Two side remarks are dated: it tells campers to burn leftover food (pack it out instead), and it names halazone among water tablets.",
+      "url": "https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo11760/pdf/GOVPUB-A110-PURL-gpo11760.pdf",
+      "bytes": 629755,
+      "sha256": "83f1192e92537dca6c4222656faa2e21aa7a872d289ade33bc936ff9ca4df1eb",
+      "pages": 4,
+      "hasText": true
+    },
+    {
+      "id": "usda-fsis-keeping-food-safe-during-an-emergency-2006",
+      "title": "Keeping Food Safe During an Emergency",
+      "category": "food",
+      "publisher": "USDA",
+      "year": 2006,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105); the proof rests on staff authorship and the sheet's own reprint line. A Food Safety and Inspection Service fact sheet published under the United States Department of Agriculture name alone, with no personal author; page 7 prints 'FSIS encourages the reprint and distribution of this publication for food safety education purposes.' No outside author, photographer, illustrator, university or company is credited and there is no copyright notice. Copy served by govinfo.gov (GPO), which has added its authentication seal to page 1. USDA's site notice (usda.gov, Policies and Links, read 18 November 2026): 'Most information presented on the USDA Web site is considered public domain information.' What to keep and what to throw out after a power cut, flood or fire: how long a closed refrigerator and freezer hold, save-or-discard tables for refrigerated and frozen food, cleaning cans and kitchenware after a flood, and making drinking water safe by boiling or with bleach. Revised September 2006.",
+      "url": "https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo85724/pdf/GOVPUB-A110-PURL-gpo85724.pdf",
+      "bytes": 238792,
+      "sha256": "42dd5b0fbcd603950aafadbee642894f65abc61a12246f6ee45ba0e9a81936e0",
+      "pages": 7,
+      "hasText": true
+    },
+    {
       "id": "army-tm-3-34-47",
       "title": "Carpentry",
       "category": "building",
