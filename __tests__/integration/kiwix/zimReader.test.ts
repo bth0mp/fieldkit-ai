@@ -75,6 +75,27 @@ describe('ZIM reader', () => {
     await expect(zim.readArticle('Burn', 100)).rejects.toMatchObject({ code: 'unreadable' });
   });
 
+  it('says a file cut short is damaged, not that it has gone', async () => {
+    const whole = buildZim(WIKIMED);
+    // A download that stopped part way: the header is there and the file runs out somewhere after it.
+    const outcome = async (bytes: Uint8Array) => {
+      try {
+        const zim = await openZim(rangeReader(bytes));
+        await zim.findTitles('burn');
+        await zim.readArticle('Burn', 100);
+        return 'read';
+      } catch (e) {
+        const { code, message } = e as { code?: string; message?: string };
+        return `${code}: ${message}`;
+      }
+    };
+    for (const kept of [0.9, 0.6, 0.3]) {
+      expect(await outcome(whole.subarray(0, Math.floor(whole.length * kept))))
+        .toBe('damaged: This Kiwix file is damaged or incomplete. Download it again in Kiwix.');
+    }
+    expect(await outcome(whole)).toBe('read');
+  });
+
   it('refuses a damaged file whose cluster pointer runs far past the end, without asking for a huge read', async () => {
     const bytes = buildZim(WIKIMED);
     const view = Buffer.from(bytes.buffer, bytes.byteOffset, bytes.length);
@@ -82,14 +103,15 @@ describe('ZIM reader', () => {
     view.writeBigUInt64LE(2n ** 40n, clusterPtrPos + 8); // the articles' cluster "starts" a terabyte in
     let longest = 0;
     const read = async (offset: number, length: number) => { longest = Math.max(longest, length); return rangeReader(bytes)(offset, length); };
-    await expect(openZim(read)).rejects.toMatchObject({ code: 'unreadable' });
+    await expect(openZim(read)).rejects.toMatchObject({ code: 'damaged' });
     expect(longest).toBeLessThanOrEqual(16 * 1024 * 1024);
   });
 
   it('refuses a cluster that would decompress to more than 16 MB, declared or not', async () => {
     const articles = [...WIKIMED.articles, { path: 'Huge', title: 'Huge', html: 'a'.repeat(17 * 1024 * 1024) }];
-    await expect(open({ articles })).rejects.toMatchObject({ code: 'unreadable' });
-    await expect(open({ articles, zstdParams: { [constants.ZSTD_c_contentSizeFlag]: 0 } })).rejects.toMatchObject({ code: 'unreadable' });
+    // Real files use clusters of about 2 MB, so one this size is read as damage.
+    await expect(open({ articles })).rejects.toMatchObject({ code: 'damaged' });
+    await expect(open({ articles, zstdParams: { [constants.ZSTD_c_contentSizeFlag]: 0 } })).rejects.toMatchObject({ code: 'damaged' });
   }, 30000);
 
   it('reads the last cluster of a big file, whose directory after it runs past 16 MB', async () => {

@@ -12,11 +12,14 @@ export type ReadRange = (offset: number, length: number) => Promise<Uint8Array>;
 
 export interface ZimMetadata { name: string; title: string; description: string; tags: string; language: string }
 
-type ZimErrorCode = 'not-zim' | 'xz' | 'compression' | 'unreadable';
+type ZimErrorCode = 'not-zim' | 'xz' | 'compression' | 'damaged' | 'unreadable';
 const MESSAGES: Record<ZimErrorCode, string> = {
   'not-zim': "This isn't a Kiwix file.",
   xz: "This Kiwix file uses an older compression Fieldkit can't read. Download a newer copy in Kiwix.",
   compression: "This Kiwix file uses a compression Fieldkit can't read.",
+  // The file is there but its contents don't hold together: a download cut short, or a cluster no real file has.
+  damaged: 'This Kiwix file is damaged or incomplete. Download it again in Kiwix.',
+  // The file itself could not be read: deleted, moved, or its permission withdrawn.
   unreadable: "This Kiwix file can't be opened any more.",
 };
 
@@ -166,11 +169,11 @@ function inflate(frame: Uint8Array): Uint8Array {
   try {
     new Decompress(chunk => {
       total += chunk.length;
-      if (total > MAX_CLUSTER_BYTES) throw new ZimError('unreadable');
+      if (total > MAX_CLUSTER_BYTES) throw new ZimError('damaged');
       parts.push(chunk);
     }).push(frame, true);
   } catch {
-    throw new ZimError('unreadable');
+    throw new ZimError('damaged');
   }
   const out = new Uint8Array(total);
   let at = 0;
@@ -228,12 +231,18 @@ export async function openZim(read: ReadRange): Promise<ZimArchive> {
     at = end + 1;
   }
 
-  const u32At = async (pos: number) => u32(await bytes(pos, 4), 0);
-  const u64At = async (pos: number) => u64(await bytes(pos, 8), 0);
+  // A read that comes back short means the file ends before its own pointers say it should.
+  const whole = async (pos: number, length: number) => {
+    const got = await bytes(pos, length);
+    if (got.length < length) throw new ZimError('damaged');
+    return got;
+  };
+  const u32At = async (pos: number) => u32(await whole(pos, 4), 0);
+  const u64At = async (pos: number) => u64(await whole(pos, 8), 0);
   async function direntAt(index: number): Promise<Dirent> {
     const pos = await u64At(pathPtrPos + 8 * index);
     const entry = parseDirent(await bytes(pos, DIRENT_READ)) ?? parseDirent(await bytes(pos, DIRENT_READ_LONG));
-    if (!entry) throw new ZimError('unreadable');
+    if (!entry) throw new ZimError('damaged');
     return entry;
   }
   async function resolve(entry: Dirent): Promise<Dirent> {
@@ -277,7 +286,7 @@ export async function openZim(read: ReadRange): Promise<ZimArchive> {
     let raw: Uint8Array;
     if (index + 1 < clusterCount) {
       const end = await clusterStart(index + 1);
-      if (!(start < end && end - start <= MAX_CLUSTER_BYTES)) throw new ZimError('unreadable');
+      if (!(start < end && end - start <= MAX_CLUSTER_BYTES)) throw new ZimError('damaged');
       raw = await bytes(start, end - start);
     } else {
       raw = await lastCluster(start);
@@ -285,7 +294,7 @@ export async function openZim(read: ReadRange): Promise<ZimArchive> {
     const compression = raw[0] & 0x0f;
     if (compression > 1 && compression !== 5) refuse(compression);
     const end = clusterEnd(raw);
-    if (end === null || end < 0) throw new ZimError('unreadable');
+    if (end === null || end < 0) throw new ZimError('damaged');
     const body = raw.subarray(1, end);
     cached = { index, data: compression === 5 ? inflate(body) : body, offsetSize: raw[0] & 0x10 ? 8 : 4 };
     return cached;

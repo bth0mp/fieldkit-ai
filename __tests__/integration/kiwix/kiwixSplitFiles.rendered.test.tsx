@@ -58,4 +58,21 @@ describe('Kiwix files (rendered): a download split into parts', () => {
     expect(screen.getByText(SPLIT)).toBeTruthy();
     expect(screen.queryByText("This Kiwix file can't be opened any more.")).toBeNull();
   });
+
+  it('a file whose download stopped part way is named as damaged, with what to do about it', async () => {
+    const h = await setupChatScreen({ engine: 'llama', sqlite: true, documents: true });
+    const { React, rtl, boundary } = h;
+    const whole = buildZim(WIKIMED);
+    boundary.documents!.seed(`${TREE}/wikimed.zim`, whole);
+    boundary.documents!.seed(`${TREE}/half.zim`, whole.subarray(0, Math.floor(whole.length / 2)));
+    require('@react-native-documents/picker').pickDirectory.mockResolvedValue({ uri: TREE, bookmarkStatus: 'success', bookmark: 'b' });
+    const { KiwixFilesScreen } = require('../../../src/screens/KiwixFilesScreen');
+
+    const screen = rtl.render(React.createElement(KiwixFilesScreen, {}));
+    rtl.fireEvent.press(screen.getByText('Add Kiwix folder'));
+    await rtl.waitFor(() => { expect(screen.getByText('First aid and medical (1)')).toBeTruthy(); }, { timeout: 4000 });
+    await rtl.waitFor(() => { expect(screen.getByText('half.zim')).toBeTruthy(); });
+    expect(screen.getByText('This Kiwix file is damaged or incomplete. Download it again in Kiwix.')).toBeTruthy();
+    expect(screen.queryByText("This Kiwix file can't be opened any more.")).toBeNull();
+  });
 });
