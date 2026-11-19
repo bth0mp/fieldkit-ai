@@ -42,8 +42,8 @@ const NONE = 0xffffffff;
 const DIRENT_READ = 512;
 const DIRENT_READ_LONG = 4096;
 const MAX_REDIRECTS = 5;
-/** Largest cluster read or decompressed. Real files use clusters of a few MB; a damaged file is refused, not read. */
-const MAX_CLUSTER_BYTES = 64 * 1024 * 1024;
+/** Largest cluster read or decompressed. Real files use 2 MB clusters; a damaged file is refused, not read. */
+const MAX_CLUSTER_BYTES = 16 * 1024 * 1024;
 /** Words too common to look up as a title on their own. */
 const STOP_WORDS = new Set(['how', 'what', 'why', 'when', 'where', 'who', 'the', 'and', 'for', 'with', 'does', 'can', 'should', 'about', 'from', 'into', 'your', 'you']);
 
@@ -73,26 +73,45 @@ export function zimHtmlToText(html: string, maxChars: number): string {
   return body.structuredText.replace(/[ \t]+/g, ' ').replace(/^ | $/gm, '').replace(/\n\s*\n+/g, '\n\n').trim().slice(0, maxChars);
 }
 
-/** The window a zstd frame asks the decoder to allocate (RFC 8878 frame header); 0 for anything else. */
-function zstdWindowSize(frame: Uint8Array): number {
-  if (frame.length < 6 || u32(frame, 0) !== 0xfd2fb528) return 0;
-  const flags = frame[4];
-  if (!(flags & 0x20)) {
-    const base = 2 ** (10 + (frame[5] >> 3));
-    return base + (base / 8) * (frame[5] & 7);
+/** Every frame of a zstd payload is well formed and asks for a window under the cap (RFC 8878 frame layout). */
+function zstdFramesFit(data: Uint8Array): boolean {
+  for (let at = 0; at < data.length;) {
+    if (at + 6 > data.length) return false;
+    const magic = u32(data, at);
+    if (magic >= 0x184d2a50 && magic <= 0x184d2a5f) { at += 8 + u32(data, at + 4); continue; } // skippable frame
+    if (magic !== 0xfd2fb528) return false;
+    const flags = data[at + 4];
+    const single = (flags & 0x20) !== 0;
+    const fcf = flags >> 6;
+    let p = at + 5 + (single ? 0 : 1) + [0, 1, 2, 4][flags & 3];
+    const sizeBytes = fcf ? [0, 2, 4, 8][fcf] : single ? 1 : 0;
+    let window: number;
+    if (single) {
+      let size = 0;
+      for (let i = sizeBytes - 1; i >= 0; i--) size = size * 256 + (data[p + i] ?? 0);
+      window = fcf === 1 ? size + 256 : size;
+    } else {
+      const base = 2 ** (10 + (data[at + 5] >> 3));
+      window = base + (base / 8) * (data[at + 5] & 7);
+    }
+    if (window > MAX_CLUSTER_BYTES) return false;
+    p += sizeBytes;
+    for (let last = false; !last;) {
+      if (p + 3 > data.length) return false;
+      const head = u16(data, p) + data[p + 2] * 0x10000;
+      const type = (head >> 1) & 3;
+      if (type === 3) return false;
+      last = (head & 1) === 1;
+      p += 3 + (type === 1 ? 1 : head >>> 3);
+    }
+    at = p + (flags & 4 ? 4 : 0);
   }
-  // Single segment: the window is the content size, after the dictionary id.
-  const fcf = flags >> 6;
-  const at = 5 + [0, 1, 2, 4][flags & 3];
-  let size = 0;
-  for (let i = [1, 2, 4, 8][fcf] - 1; i >= 0; i--) size = size * 256 + (frame[at + i] ?? 0);
-  return fcf === 1 ? size + 256 : size;
+  return true;
 }
 
 /** zstd with a ceiling on both the window it allocates and the bytes it writes. */
 function inflate(frame: Uint8Array): Uint8Array {
-  // ponytail: only the first frame's window is checked; libzim writes one frame per cluster.
-  if (zstdWindowSize(frame) > MAX_CLUSTER_BYTES) throw new ZimError('unreadable');
+  if (!zstdFramesFit(frame)) throw new ZimError('unreadable');
   const parts: Uint8Array[] = [];
   let total = 0;
   try {

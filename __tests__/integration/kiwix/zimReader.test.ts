@@ -75,12 +75,18 @@ describe('ZIM reader', () => {
     let longest = 0;
     const read = async (offset: number, length: number) => { longest = Math.max(longest, length); return rangeReader(bytes)(offset, length); };
     await expect(openZim(read)).rejects.toMatchObject({ code: 'unreadable' });
-    expect(longest).toBeLessThanOrEqual(64 * 1024 * 1024);
+    expect(longest).toBeLessThanOrEqual(16 * 1024 * 1024);
   });
 
-  it('refuses a cluster that would decompress to more than 64 MB, declared or not', async () => {
-    const articles = [...WIKIMED.articles, { path: 'Huge', title: 'Huge', html: 'a'.repeat(65 * 1024 * 1024) }];
+  it('refuses a cluster that would decompress to more than 16 MB, declared or not', async () => {
+    const articles = [...WIKIMED.articles, { path: 'Huge', title: 'Huge', html: 'a'.repeat(17 * 1024 * 1024) }];
     await expect(open({ articles })).rejects.toMatchObject({ code: 'unreadable' });
     await expect(open({ articles, zstdParams: { [constants.ZSTD_c_contentSizeFlag]: 0 } })).rejects.toMatchObject({ code: 'unreadable' });
   }, 30000);
+
+  it('refuses a cluster whose second zstd frame asks for a 128 MB window', async () => {
+    // Frame magic, no single segment, window descriptor 2^27, then one empty last raw block.
+    const frame = Buffer.from([0x28, 0xb5, 0x2f, 0xfd, 0x00, 0x88, 0x01, 0x00, 0x00]);
+    await expect(open({ zstdTrailer: frame })).rejects.toMatchObject({ code: 'unreadable' });
+  });
 });
