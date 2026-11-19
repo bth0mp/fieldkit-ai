@@ -160,7 +160,7 @@ describe('Checklists (rendered)', () => {
     await answer(again, 'Delete list?', 'Delete');
     await rtl.waitFor(() => { expect(again.queryByText('Day hike (0 of 2)')).toBeNull(); });
     expect(again.getByText('Car kit (0 of 0)')).toBeTruthy();
-  }, 30000);
+  }, 60000); // ten seconds alone; over thirty when the pre-push hook runs every heavy suite at once
 
   it("starts a list from Ready.gov's basic kit and says where it comes from", async () => {
     const { React, rtl } = await setupChatScreen({ engine: 'llama', sqlite: true });
