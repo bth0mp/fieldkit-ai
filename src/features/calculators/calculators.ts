@@ -90,9 +90,11 @@ export async function workOut(id: string, typed: Record<string, string>): Promis
   const notNumber = calculator.fields.find(field => field.numeric && filled.get(field.key) !== '' && !isNumber(filled.get(field.key) ?? ''));
   if (notNumber) return { answer: '', problem: `"${notNumber.label}" must be a plain number, for example 5.5 or -5.` };
   // A number goes to the tool written one way ("5." and "+5" as 5, ".5" as 0.5): the tools' own patterns differ.
+  // One that JavaScript would write with an exponent (0.0000001 as 1e-7) stays as typed.
   for (const field of calculator.fields) {
     const value = filled.get(field.key) ?? '';
-    if (field.numeric && value !== '') filled.set(field.key, String(Number(value)));
+    const written = String(Number(value));
+    if (field.numeric && value !== '' && !written.includes('e')) filled.set(field.key, written);
   }
   const given = Object.fromEntries([...filled].filter(([, value]) => value !== ''));
   const result = await executeToolCall({ name: calculator.id, arguments: given });

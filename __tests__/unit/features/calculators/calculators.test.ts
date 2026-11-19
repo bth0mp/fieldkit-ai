@@ -53,6 +53,8 @@ describe('calculators', () => {
     expect(await sunAt('.5')).toContain('(UTC+00:30)');
     expect(await sunAt('+5')).toContain('(UTC+05:00)');
     expect((await workOut('date_math', { start: '2026-11-19', add_days: '45.' })).answer).toContain('2027-01-03');
+    // A very small number stays as typed: written "1e-7" the sun tool would refuse it as not between -14 and 14.
+    expect(await sunAt('0.0000001')).toContain('(UTC+00:00)');
     // A number too big to be one is not passed on to be called a missing parameter.
     expect(await problem('convert_units', { value: '1e999', from: 'mi', to: 'km' })).toBe(plain('Value'));
   });
