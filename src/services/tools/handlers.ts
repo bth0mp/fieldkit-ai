@@ -181,14 +181,30 @@ function evaluateExpression(expr: string): number {
   let pos = 0;
   const str = expr.replaceAll(/\s/g, '');
 
+  // Whole numbers and binary fractions (halves, quarters, down to 1/1024ths) are held exactly, so a small
+  // difference between two of them is real. A decimal fraction such as 0.1 is not, and sums of those leave dust.
+  const exact = (x: number) => Number.isInteger(x * 1024);
+  const bothExact = (a: number, b: number) => exact(a) && exact(b);
+
   function parseExpr(): number {
     let left = parseTerm();
     while (pos < str.length && (str[pos] === '+' || str[pos] === '-')) {
       const op = str[pos++];
       const right = parseTerm();
-      left = op === '+' ? left + right : left - right;
+      const sum = op === '+' ? left + right : left - right;
+      // 0.1+0.2-0.3 is 5.55e-17 in binary. A result that small beside what made it has no real digits: it is 0.
+      const dust = !bothExact(left, right) && Math.abs(sum) < 1e-14 * Math.max(Math.abs(left), Math.abs(right));
+      left = dust ? 0 : sum;
     }
     return left;
+  }
+
+  /** The remainder, with the binary dust taken off: 1 % 0.1 is 0, not 0.09999999999999995. */
+  function remainder(left: number, right: number): number {
+    const rest = left % right;
+    if (bothExact(left, right)) return rest;
+    const size = Math.abs(right);
+    return Math.abs(rest) < 1e-12 * size || Math.abs(Math.abs(rest) - size) < 1e-12 * size ? 0 : rest;
   }
 
   function parseTerm(): number {
@@ -196,9 +212,11 @@ function evaluateExpression(expr: string): number {
     while (pos < str.length && (str[pos] === '*' || str[pos] === '/' || str[pos] === '%')) {
       const op = str[pos++];
       const right = parseUnary();
+      // Refused here, not only when the whole sum is infinite: 1/(1/0) would otherwise come out as 0.
+      if (op !== '*' && right === 0) throw new Error('Cannot divide by zero.');
       if (op === '*') left *= right;
       else if (op === '/') left /= right;
-      else left %= right;
+      else left = remainder(left, right);
     }
     return left;
   }
@@ -231,7 +249,10 @@ function evaluateExpression(expr: string): number {
     const start = pos;
     while (pos < str.length && (str[pos] >= '0' && str[pos] <= '9' || str[pos] === '.')) pos++;
     if (pos === start) throw new Error('Unexpected character');
-    return Number(str.substring(start, pos));
+    const digits = str.substring(start, pos);
+    // "1.2.3" and a lone "." are not numbers; Number() would make them NaN and the message would be about infinity.
+    if (!/^(\d+\.?\d*|\.\d+)$/.test(digits)) throw new Error(`That is not a number: ${digits}`);
+    return Number(digits);
   }
 
   const result = parseExpr();
@@ -240,17 +261,22 @@ function evaluateExpression(expr: string): number {
 }
 
 /**
- * A result as people expect to read it. Fifteen significant digits is all a double holds for certain, and it
- * drops the dust of binary fractions (0.1+0.2 is 0.3, not 0.30000000000000004). Past the largest exact whole
- * number the last digits are not known, and the answer says "about".
+ * A result as people expect to read it. A whole number that a double holds exactly is printed as it is. Anything
+ * else under a hundred million million is rounded to fifteen significant digits, which drops the dust of binary
+ * fractions (0.1+0.2 is 0.3, not 0.30000000000000004). From there up fifteen digits no longer reach the units,
+ * so the number is printed as held, unrounded, and the answer says "about".
  */
 function formatCalculated(result: number): string {
   if (Number.isSafeInteger(result)) return String(result);
-  const rounded = Number(result.toPrecision(15));
-  return Math.abs(rounded) > Number.MAX_SAFE_INTEGER ? `about ${rounded}` : String(rounded);
+  if (Math.abs(result) >= 1e14) return `about ${result}`;
+  return String(Number(result.toPrecision(15)));
 }
 
-function handleCalculator(expression: string): string {
+/** The multiply, divide and minus signs a phone keyboard offers, by code point, as the ones the parser knows. */
+const KEYBOARD_SIGNS: Array<[number, string]> = [[0xd7, '*'], [0xf7, '/'], [0x2212, '-']];
+
+function handleCalculator(typed: string): string {
+  const expression = KEYBOARD_SIGNS.reduce((text, [code, sign]) => text.replaceAll(String.fromCodePoint(code), sign), typed);
   // A space is not an operator: "1 1/2" must not be read as 11/2. A person typing into the Calculators screen
   // writes it; a model rarely did.
   if (/[\d.)]\s+[\d.(]/.test(expression)) throw new Error('Put an operator between the numbers: a space is not one.');
@@ -266,7 +292,7 @@ function handleCalculator(expression: string): string {
     throw new TypeError('Expression did not evaluate to a finite number');
   }
 
-  return `${expression.trim()} = ${formatCalculated(result)}`;
+  return `${typed.trim()} = ${formatCalculated(result)}`;
 }
 
 function handleGetDatetime(timezone?: string): string {
