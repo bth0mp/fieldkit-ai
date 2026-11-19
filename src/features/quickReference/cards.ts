@@ -151,22 +151,35 @@ export const QUICK_REFERENCE_CARDS: ReferenceCard[] = [
   },
 ];
 
+/** Lower case with no white space: "FRS 1" and "frs1", "... --- ..." and "...---..." are one search. */
+const tight = (text: string) => text.toLowerCase().replace(/\s+/g, '');
+/** For words: also no hyphens, and "ph" as "f", so "pan pan" finds Pan-pan and "alpha" finds Alfa. */
+const loose = (text: string) => tight(text).replace(/-/g, '').replace(/ph/g, 'f');
+
 /**
- * What a search of the cards finds, card by card: the rows whose sign or meaning holds the words typed, and the
- * notes that do. One character finds only a sign that is exactly it ("s" is S in the radio alphabet and in
- * Morse, not every row with an s in it).
+ * What a search finds, card by card: the rows whose sign or meaning holds what was typed, the exact sign or
+ * code first. A card found only by its name, its source or one of its notes gives all its rows. The screen
+ * shows every result with its card's notes and source: a row without its card's warning, or a warning without
+ * the row it is about, can mislead (the ground-to-air X, which the Army's code reads differently).
+ *
+ * One character finds a sign that is it or has it as a word, and a Morse code that is exactly it: "s" is S in
+ * the radio alphabet and in Morse, not every row with an s in it.
  */
-export function searchCards(query: string) {
-  const wanted = query.trim().toLowerCase();
+export function searchCards(query: string): { card: ReferenceCard; rows: ReferenceCard['rows'] }[] {
+  const wanted = tight(query);
   if (!wanted) return [];
-  const holds = (text: string) => wanted.length > 1 && text.toLowerCase().includes(wanted);
-  return QUICK_REFERENCE_CARDS
-    .map(card => ({
-      card,
-      rows: card.rows.filter(row => row.sign.toLowerCase() === wanted || holds(row.sign) || holds(row.meaning)),
-      notes: card.notes.filter(holds),
-    }))
-    .filter(found => found.rows.length > 0 || found.notes.length > 0);
+  const isWord = /[a-z0-9]/.test(wanted);
+  const holds = (text: string) => tight(text).includes(wanted) || (isWord && loose(text).includes(loose(wanted)));
+  const isIt = (row: ReferenceRow) => tight(row.sign) === wanted || tight(row.meaning) === wanted;
+  const matches = wanted.length === 1
+    ? (row: ReferenceRow) => row.sign.toLowerCase().split(' ').includes(wanted) || row.meaning === wanted
+    : (row: ReferenceRow) => holds(row.sign) || holds(row.meaning);
+  return QUICK_REFERENCE_CARDS.flatMap(card => {
+    const matched = card.rows.filter(matches);
+    if (matched.length > 0) return [{ card, rows: [...matched.filter(isIt), ...matched.filter(row => !isIt(row))] }];
+    const named = wanted.length > 1 && [card.title, card.source, ...card.notes].some(holds);
+    return named ? [{ card, rows: card.rows }] : [];
+  });
 }
 
 /**

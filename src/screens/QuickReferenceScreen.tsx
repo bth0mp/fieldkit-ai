@@ -47,7 +47,7 @@ export const QuickReferenceScreen: React.FC = () => {
         <Text style={styles.headerTitle} accessibilityRole="header">Quick reference</Text>
         <View style={styles.headerButton} />
       </View>
-      {/* ponytail: a plain scroll view; the six cards hold about 170 short rows in all. */}
+      {/* ponytail: a plain scroll view; the six cards hold about 140 short rows in all. */}
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <Text style={styles.note}>Signals, codes and scales to read at a glance. Nothing here needs a model, a download or a signal.</Text>
         <TextInput testID="quick-reference-search" style={styles.search} value={query} onChangeText={setQuery}
@@ -64,14 +64,18 @@ export const QuickReferenceScreen: React.FC = () => {
             ))}
           </View>
         )}
-        {searching && found.length === 0 && spelled.length === 0 && <Text style={styles.empty}>No card has that.</Text>}
-        {searching && found.map(({ card, rows, notes }) => (
+        {searching && found.length === 0 && spelled.length === 0 && (
+          <Text style={styles.empty} accessibilityLiveRegion="polite">No card has that.</Text>
+        )}
+        {/* Every result carries all of its card's notes and its source, never the bare rows. */}
+        {searching && found.map(({ card, rows }) => (
           <View key={card.id}>
             <View style={styles.groupHeader}>
               <Text style={styles.cardTitle} accessibilityRole="header">{card.title}</Text>
             </View>
             {rowsOf(card, rows)}
-            {notes.map(note => <Text key={note} style={styles.note}>{note}</Text>)}
+            {card.notes.map(note => <Text key={note} style={styles.note}>{note}</Text>)}
+            <Text style={styles.source}>{card.source}</Text>
           </View>
         ))}
         {!searching && QUICK_REFERENCE_CARDS.map(card => {

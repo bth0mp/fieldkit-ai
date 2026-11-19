@@ -209,12 +209,14 @@ describe('Quick reference (rendered)', () => {
     expect(meaning('radio-channels', 'FRS 1')).toBe('462.5625 MHz');
     expect(rowsShown()).toBe(1);
 
-    // A card's notes are searched too: 121.5 MHz is only in a note.
+    // A card's notes are searched too: 121.5 MHz is only in a note. A card found by a note alone is shown
+    // whole, because a note read without the rows it is about can mislead.
     rtl.fireEvent.changeText(search, '121.5');
-    expect(rowsShown()).toBe(0);
+    expect(rowsShown()).toBe(8);
     expect(screen.getByText('Distress signals')).toBeTruthy();
     expect(screen.getByText(/Aircraft emergency frequency: 121\.5 MHz/)).toBeTruthy();
     expect(screen.queryByText('Radio alphabet')).toBeNull();
+    expect(screen.queryByText('No card has that.')).toBeNull();
 
     // Nothing found says so. Clearing the field brings the six closed cards back.
     rtl.fireEvent.changeText(search, '§§');
@@ -224,6 +226,86 @@ describe('Quick reference (rendered)', () => {
     expect(screen.getByText('Wind force (Beaufort scale)')).toBeTruthy();
     expect(screen.getByText('Radio alphabet')).toBeTruthy();
     expect(rowsShown()).toBe(0);
+  });
+
+  it('never shows a result without its card\'s notes and source, and is forgiving about how a thing is typed', async () => {
+    const h = await setupChatScreen({ engine: 'llama', sqlite: true });
+    const { React, rtl } = h;
+    const { QuickReferenceScreen } = require('../../../src/screens/QuickReferenceScreen');
+    const screen = rtl.render(React.createElement(QuickReferenceScreen, {}));
+    const search = screen.getByTestId('quick-reference-search');
+    const meaning = (card: string, sign: string) =>
+      String(rtl.within(screen.getByTestId(`quick-reference-${card}-${sign}`)).getByTestId('quick-reference-meaning').props.children);
+    const rowsShown = () => screen.queryAllByTestId('quick-reference-meaning').length;
+    const ARMY = 'Some military manuals print a longer code. In the United States Army\'s, X means "unable to proceed" and a single upright stroke means a doctor is needed. The five symbols here are the international civil code.';
+
+    // The ground-to-air X is never shown without the warning that the Army's code gives X another meaning, nor
+    // without the standard it comes from. Found by an independent review: a result used to be the bare row.
+    rtl.fireEvent.changeText(search, 'medical');
+    expect(meaning('ground-to-air', 'X')).toBe('Require medical assistance');
+    expect(screen.getByText(ARMY)).toBeTruthy();
+    expect(screen.getByText(/at least 2\.5 m \(8 ft\) long/)).toBeTruthy();
+    expect(screen.getByText(/ICAO Annex 12/)).toBeTruthy();
+    // And the warning is never shown without the row it warns about: a card found by a note alone is shown whole.
+    rtl.fireEvent.changeText(search, 'army');
+    expect(screen.getByText(ARMY)).toBeTruthy();
+    expect(meaning('ground-to-air', 'X')).toBe('Require medical assistance');
+    expect(rowsShown()).toBe(7);
+    // The same for the other cards: FRS 8 comes with the half-watt note.
+    rtl.fireEvent.changeText(search, 'frs 8');
+    expect(meaning('radio-channels', 'FRS 8')).toBe('467.5625 MHz');
+    expect(rowsShown()).toBe(1);
+    expect(screen.getByText(/no more than half a watt on channels 8 to 14/)).toBeTruthy();
+
+    // A card is found by its own name, and by the standard it names, and is then shown whole.
+    rtl.fireEvent.changeText(search, 'morse code');
+    expect(meaning('morse', 'S')).toBe('...');
+    expect(meaning('morse', '9')).toBe('----.');
+    rtl.fireEvent.changeText(search, 'beaufort');
+    expect(rowsShown()).toBe(13);
+    rtl.fireEvent.changeText(search, 'annex 10');
+    expect(meaning('radio-alphabet', 'A')).toBe('Alfa');
+    expect(screen.queryByText('No card has that.')).toBeNull();
+
+    // A sign is found by its own letters, and two letters are enough.
+    rtl.fireEvent.changeText(search, 'frs 10');
+    expect(meaning('radio-channels', 'FRS 10')).toBe('467.6125 MHz');
+    expect(rowsShown()).toBe(1);
+    rtl.fireEvent.changeText(search, 'cb');
+    expect(meaning('radio-channels', 'CB channel 9')).toMatch(/^27\.065 MHz/);
+
+    // Spaces and hyphens do not matter, and "ph" finds the alphabet's "f".
+    rtl.fireEvent.changeText(search, 'pan pan');
+    expect(meaning('distress', 'Pan-pan')).toMatch(/^By voice, when it is urgent/);
+    rtl.fireEvent.changeText(search, 'xray');
+    expect(meaning('radio-alphabet', 'X')).toBe('X-ray');
+    rtl.fireEvent.changeText(search, 'alpha');
+    expect(meaning('radio-alphabet', 'A')).toBe('Alfa');
+    rtl.fireEvent.changeText(search, 'frs1');
+    expect(meaning('radio-channels', 'FRS 1')).toBe('462.5625 MHz');
+    rtl.fireEvent.changeText(search, '...---...');
+    expect(screen.getByTestId('quick-reference-distress-SOS')).toBeTruthy();
+
+    // One character also finds a Morse code that is exactly it, and a sign that has it as a word.
+    rtl.fireEvent.changeText(search, '.');
+    expect(meaning('morse', 'E')).toBe('.');
+    expect(meaning('morse', '.')).toBe('.-.-.-');
+    expect(rowsShown()).toBe(2);
+    rtl.fireEvent.changeText(search, '9');
+    expect(meaning('radio-channels', 'CB channel 9')).toMatch(/^27\.065 MHz/);
+    expect(meaning('radio-channels', 'FRS 9')).toBe('467.5875 MHz');
+    expect(meaning('radio-alphabet', '9')).toBe('Nine, said "niner"');
+    expect(meaning('morse', '9')).toBe('----.');
+    expect(meaning('wind-force', 'Force 9')).toMatch(/^Strong gale/);
+    expect(rowsShown()).toBe(5);
+
+    // The exact code comes first: "..." is S before it is part of B, H or V.
+    rtl.fireEvent.changeText(search, '...');
+    expect(screen.getAllByTestId(/^quick-reference-morse-/)[0].props.testID).toBe('quick-reference-morse-S');
+
+    // A screen reader is told when nothing is found.
+    rtl.fireEvent.changeText(search, '§§');
+    expect(screen.getByText('No card has that.').props.accessibilityLiveRegion).toBe('polite');
   });
 
   it('spells what is typed for the radio and in Morse, and reads Morse back, with no model', async () => {
