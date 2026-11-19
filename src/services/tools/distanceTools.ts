@@ -65,7 +65,7 @@ function lineBetween(from: Place, to: Place): Line | null {
 }
 
 function distanceText(metres: number): string {
-  if (metres < 1000) return `${Math.round(metres)} m (${Math.round(metres / 0.3048)} ft)`;
+  if (Math.round(metres) < 1000) return `${Math.round(metres)} m (${Math.round(metres / 0.3048)} ft)`;
   const decimals = metres < 100000 ? 2 : 1;
   return `${(metres / 1000).toFixed(decimals)} km (${(metres / 1609.344).toFixed(decimals)} mi)`;
 }
@@ -85,12 +85,22 @@ function readPlace(call: ToolCall, name: 'from' | 'to'): Place {
   }
 }
 
+/** At a pole a bearing means nothing: every direction from it is the same. */
+function poleSentence(place: Place): string | null {
+  if (Math.abs(place.lat) < 89.99999) return null;
+  return place.lat > 0 ? 'From the North Pole every direction is south' : 'From the South Pole every direction is north';
+}
+
 export function distanceBearing(call: ToolCall): string {
   const from = readPlace(call, 'from');
   const to = readPlace(call, 'to');
   const line = lineBetween(from, to);
-  if (!line) return `${placeText(from)} and ${placeText(to)} are the same place.`;
-  return `From ${placeText(from)} to ${placeText(to)}: ${distanceText(line.metres)}, `
-    + `bearing ${figures(line.bearing)} true (${point(line.bearing)}). `
-    + `Bearing back: ${figures(line.bearingBack)} (${point(line.bearingBack)}).`;
+  // Under half a metre apart the two print as the same position, and a bearing between them is rounding noise.
+  if (!line || line.metres < 0.5) return `${placeText(from)} and ${placeText(to)} are the same place to within a metre.`;
+  const head = `From ${placeText(from)} to ${placeText(to)}: ${distanceText(line.metres)}`;
+  const out = poleSentence(from);
+  const back = poleSentence(to);
+  const outText = out ? `. ${out}, so no bearing is given.` : `, bearing ${figures(line.bearing)} true (${point(line.bearing)}).`;
+  const backText = back ? ` ${back}, so no bearing back is given.` : ` Bearing back: ${figures(line.bearingBack)} (${point(line.bearingBack)}).`;
+  return `${head}${outText}${backText}`;
 }

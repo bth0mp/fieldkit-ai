@@ -47,8 +47,45 @@ describe('distance_bearing', () => {
     expect(result).toContain('bearing 054° true (north-east)');
   });
 
+  // More GeodSolve pairs, fetched by the reviewer: s12, azi1 and azi2 + 180 beside each.
+  it.each([
+    ['30, 0', '-29.6, 179.2', '19930.5 km', '044° true (north-east)', '316° (north-west)'], // 19930525.591, 43.800, 316.417: half a degree short of the far side, still answered
+    ['0, 0', '0, 179.25', '19954.0 km', '090° true (east)', '270° (west)'], // 19954018.725, 90, 270
+    ['85, 10', '85, -170', '1116.9 km', '000° true (north)', '000° (north)'], // straight over the pole: 1116911.177, 0, 0
+    ['0, 10', '0, -25', '3896.2 km', '270° true (west)', '090° (east)'], // 3896182.178, 270, 90
+    ['-33.9, 18.4', '-34.6, -58.4', '6885.5 km', '245° true (south-west)', '114° (south-east)'], // 6885481.264, 245.417, 113.520
+  ])('%s to %s', (from, to, distance, bearing, back) => {
+    const result = run(from, to);
+    expect(result).toContain(`: ${distance} (`);
+    expect(result).toContain(`, bearing ${bearing}. Bearing back: ${back}.`);
+  });
+
   it('says so when the two places are the same', () => {
-    expect(run('51.4778, -0.0015', '51.4778, -0.0015')).toBe('51.47780, -0.00150 and 51.47780, -0.00150 are the same place.');
+    expect(run('51.4778, -0.0015', '51.4778, -0.0015')).toBe('51.47780, -0.00150 and 51.47780, -0.00150 are the same place to within a metre.');
+  });
+
+  it('gives no bearing between two places it prints as the same', () => {
+    // A grid reference and its own latitude and longitude; two spellings of the North Pole.
+    expect(run('18T WL 80735 04695', '40.68920, -74.04451')).toMatch(/ are the same place to within a metre\.$/);
+    expect(run('90, 0', '90, 120')).toMatch(/ are the same place to within a metre\.$/);
+    expect(run('40.6892, -74.0445', '40.689200001, -74.0445')).not.toContain('bearing');
+  });
+
+  it('does not name a compass point at a pole, where every direction is the same', () => {
+    // GeodSolve: 90 0 to 60 30 is 3347892.910 m; its azimuth there only records which meridian was typed for the pole.
+    const fromPole = run('90, 0', '60, 30');
+    expect(fromPole).toContain(': 3347.9 km (');
+    expect(fromPole).toContain('From the North Pole every direction is south');
+    expect(fromPole).not.toMatch(/bearing \d{3}° true/);
+    expect(fromPole).toContain('Bearing back: 000° (north).');
+    const toPole = run('-45, 120', '-90, 0');
+    expect(toPole).toContain('bearing 180° true (south)');
+    expect(toPole).toContain('From the South Pole every direction is north');
+  });
+
+  it('never prints "1000 m"', () => {
+    // 0.00898 degrees along the equator is 999.6 m.
+    expect(run('0, 0', '0, 0.00898')).toContain(': 1.00 km (0.62 mi), ');
   });
 
   it('does not invent a direction between places on opposite sides of the Earth', () => {
