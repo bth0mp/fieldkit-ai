@@ -632,3 +632,23 @@ has to be an archived raw capture of its download address, as Beekeeping for Beg
   pages were looked at by the search helper, not by me.
 - Home Canning of Meat and Poultry and How to Make Jellies, Jams, and Preserves at Home have captures but were not
   opened: processing times from before 1988.
+
+## Eleventh batch, 19 November 2026 (night): two Army manuals on signals and radio
+
+The catalogue's radio guides are all electronics theory, so two Army Publishing Directorate titles on signalling and
+on running a radio were looked at. Neither was listed.
+
+- Techniques for Tactical Radios and Retransmission, ATP 6-02.53, July 2025 (US Army,
+  https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN44497-ATP_6-02.53-000-WEB-1.pdf): scope, under the owner's ruling 5.
+  Distribution A ('Approved for public release; distribution is unlimited', pages 1 and 3); all 206 pages looked at
+  on contact sheets by the search helper, every figure the Army's own line drawing, no credit. But about 145 pages
+  are doctrine, tactics, administration and radios a civilian cannot have (Appendix B includes 'BATTLE DRILL 3: REACT
+  TO AMBUSH (NEAR)'), and it holds no net procedure at all: the words 'phonetic', 'proword', 'call sign' and 'say
+  again' do not occur. The useful part, antennas and propagation, repeats the listed theory guides. It supersedes the
+  February 2020 Techniques for Tactical Radio Operations, which the Army host no longer serves.
+- Visual Signals, TC 3-21.60, March 2017: looked at again by mistake; it was already out on scope (see 'tactics:
+  hand-and-arm signals' above), and the older note that calls it 'worth a second pass' was about a failed download.
+  The second look adds a reason. Page 82, Figure 3-31 'Emergency codes', prints the old eighteen-symbol ground-to-air
+  code, in which X is 'Unable to proceed' and I is 'Require doctor serious injury'; in the code ICAO Annex 12 prints
+  now, X means medical assistance is required. A reader taught from it would lay out the wrong symbol. Page 83 also
+  tells the reader to put strobe lights 'in holes so they can only be viewed from above', which is concealment.
