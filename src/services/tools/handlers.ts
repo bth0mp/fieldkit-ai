@@ -8,6 +8,7 @@ import { emailTool } from './emailTool';
 import { createCalendarEvent, readCalendarEvents } from './calendarTools';
 import { convertUnits } from './unitTools';
 import { convertCoordinates } from './coordinateTools';
+import { sunTimes } from './sunTools';
 import logger from '../../utils/logger';
 
 function makeResult(call: ToolCall, start: number, opts: { content: string; error?: string }): ToolResult {
@@ -57,6 +58,7 @@ async function dispatchTool(call: ToolCall): Promise<string> {
     case 'create_calendar_event': return createCalendarEvent(call);
     case 'convert_units': return convertUnits(call);
     case 'convert_coordinates': return convertCoordinates(call);
+    case 'sun_times': return sunTimes(call);
     default:
       throw new Error(`Unknown tool: ${call.name}`);
   }

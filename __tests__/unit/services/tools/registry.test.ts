@@ -16,8 +16,8 @@ describe('Tool Registry', () => {
   // AVAILABLE_TOOLS
   // ========================================================================
   describe('AVAILABLE_TOOLS', () => {
-    it('has exactly 11 tools with correct IDs', () => {
-      expect(AVAILABLE_TOOLS).toHaveLength(11);
+    it('has exactly 12 tools with correct IDs', () => {
+      expect(AVAILABLE_TOOLS).toHaveLength(12);
 
       const ids = AVAILABLE_TOOLS.map(t => t.id);
       expect(ids).toEqual([
@@ -32,7 +32,17 @@ describe('Tool Registry', () => {
         'create_calendar_event',
         'convert_units',
         'convert_coordinates',
+        'sun_times',
       ]);
+    });
+
+    it('sun_times says what it gives within the 100 characters the LiteRT tool router reads', () => {
+      const tool = AVAILABLE_TOOLS.find(t => t.id === 'sun_times')!;
+      const routed = tool.description.split('\n')[0].slice(0, 100);
+      for (const word of ['Sunrise', 'sunset', 'twilight']) expect(routed).toContain(word);
+      // Only the place is required: the day and the clock offset default to the phone's own.
+      expect(Object.entries(tool.parameters).filter(([, p]) => p.required).map(([k]) => k)).toEqual(['position']);
+      expect(Object.keys(tool.parameters)).toEqual(['position', 'date', 'utc_offset']);
     });
 
     it('convert_coordinates names its three forms within the 100 characters the LiteRT tool router reads', () => {
@@ -65,6 +75,7 @@ describe('Tool Registry', () => {
         create_calendar_event: true,
         convert_units: false,
         convert_coordinates: false,
+        sun_times: false,
       });
     });
 

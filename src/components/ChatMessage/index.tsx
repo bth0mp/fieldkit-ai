@@ -31,6 +31,7 @@ function getToolIcon(toolName?: string): string {
     case 'create_calendar_event': return 'calendar';
     case 'convert_units': return 'repeat';
     case 'convert_coordinates': return 'map-pin';
+    case 'sun_times': return 'sun';
     default: return 'tool';
   }
 }
@@ -50,6 +51,7 @@ function getToolLabel(toolName?: string, content?: string): string {
     case 'create_calendar_event': return 'New event';
     case 'convert_units': return content || 'Converted';
     case 'convert_coordinates': return content || 'Grid reference';
+    case 'sun_times': return content || 'Sun times';
     default: return toolName || 'Tool result';
   }
 }

@@ -337,7 +337,8 @@ function tidy(text: string): string {
   return unwrap(unwrap(text.toUpperCase()).replace(/^(?:MGRS|USNG|UTM)(?:\s*ZONE\b)?\s*[:=]?\s*/, ''));
 }
 
-function readPosition(text: string): Reading[] {
+/** A grid position (one reading, or two), or a plain latitude and longitude, which may lie outside the grid. */
+function read(text: string): Reading[] | LatLon {
   const upper = tidy(text);
   const utm = UTM_PATTERN.exec(upper);
   if (utm) return readUtm(utm);
@@ -347,11 +348,31 @@ function readPosition(text: string): Reading[] {
   if (!position) throw new Error(`Could not read "${text}". ${EXAMPLES}`);
   if (Math.abs(position.lat) > 90) throw new Error('Latitude must be between -90 and 90. Give the latitude first.');
   if (Math.abs(position.lon) > 180) throw new Error('Longitude must be between -180 and 180');
-  if (position.lat < -80 || position.lat > 84) {
+  return position;
+}
+
+function readPosition(text: string): Reading[] {
+  const found = read(text);
+  if (Array.isArray(found)) return found;
+  if (found.lat < -80 || found.lat > 84) {
     throw new Error(`${text} is outside the area UTM and MGRS cover here (80 S to 84 N)`);
   }
-  const grid = toUtm(position);
-  return [{ ...position, utm: grid, digits: 5, mgrsBand: grid.band }];
+  const grid = toUtm(found);
+  return [{ ...found, utm: grid, digits: 5, mgrsBand: grid.band }];
+}
+
+/** The latitude and longitude of a position written any of the three ways, for tools that need only that. */
+export function positionOf(text: string): LatLon {
+  const found = read(text);
+  if (!Array.isArray(found)) return found;
+  if (found.length > 1) {
+    throw new Error(`${text.trim()} can be read two ways, as latitude band S or as the southern hemisphere. `
+      + 'Give the latitude and longitude instead.');
+  }
+  if (found[0].digits === 0) {
+    throw new Error(`${text.trim()} is a 100 km square, too coarse to stand for one place. Give a finer position.`);
+  }
+  return { lat: found[0].lat, lon: found[0].lon };
 }
 
 /** Five decimals is about a metre. Never "-0.00000". */
