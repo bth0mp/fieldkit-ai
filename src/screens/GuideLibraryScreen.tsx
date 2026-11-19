@@ -220,7 +220,7 @@ export const GuideLibraryScreen: React.FC = () => {
                 <Icon name="zap" size={16} color={colors.textSecondary} />
                 <View style={styles.rowContent}>
                   <Text style={styles.rowTitle}>Quick reference</Text>
-                  <Text style={styles.rowMeta}>Distress signals, radio alphabet and Morse</Text>
+                  <Text style={styles.rowMeta}>Distress signals, radio alphabet, Morse and wind force</Text>
                 </View>
                 <Icon name="chevron-right" size={16} color={colors.textMuted} />
               </View>

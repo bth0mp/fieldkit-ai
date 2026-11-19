@@ -1,7 +1,8 @@
 /**
- * Quick reference cards: signals and codes to read at a glance, with no model, download or network. The wording
- * is ours; the facts are published standards, named on each card. Nothing medical and nothing with a dose or a
- * quantity belongs here: a wrong number on a card is worse than no card.
+ * Quick reference cards: signals, codes and scales to read at a glance, with no model, download or network. The
+ * wording is ours; the facts are published standards, named on each card. Nothing medical and nothing with a
+ * dose belongs here, and a number goes on a card only as its source prints it: a wrong number on a card is
+ * worse than no card.
  */
 import { MORSE_CODES, RADIO_WORDS } from '../../services/tools/spellTools';
 
@@ -93,5 +94,31 @@ export const QUICK_REFERENCE_CARDS: ReferenceCard[] = [
     rows: MORSE_CODES.map(([sign, meaning]) => ({ sign, meaning, spoken: speakMorse(meaning), spokenSign: MARK_NAMES.get(sign) })),
     notes: ['A dash lasts three dots. Leave one dot of silence inside a letter, three between letters and seven between words.'],
     source: 'International Morse code, ITU-R M.1677-1.',
+  },
+  {
+    // Two National Weather Service tables, read 19 November 2026: weather.gov/mfl/beaufort (the land signs and
+    // the knots) and weather.gov/pqr/wind. A figure is given only where the two agree or only one prints it.
+    id: 'wind-force',
+    title: 'Wind force (Beaufort scale)',
+    rows: [
+      { sign: 'Force 0', meaning: 'Calm. Smoke rises vertically' },
+      { sign: 'Force 1', meaning: 'Light air, 1 to 3 mph (1 to 3 knots). Direction of wind shown by smoke drift, but not by wind vanes' },
+      { sign: 'Force 2', meaning: 'Light breeze, 4 to 7 mph (4 to 6 knots). Wind felt on face; leaves rustle; ordinary vanes moved by wind' },
+      { sign: 'Force 3', meaning: 'Gentle breeze, 8 to 12 mph (7 to 10 knots). Leaves and small twigs in constant motion; wind extends light flag' },
+      { sign: 'Force 4', meaning: 'Moderate breeze, 13 to 18 mph (11 to 16 knots). Raises dust and loose paper; small branches are moved' },
+      { sign: 'Force 5', meaning: 'Fresh breeze, 19 to 24 mph (17 to 21 knots). Small trees in leaf begin to sway; crested wavelets form on inland waters' },
+      { sign: 'Force 6', meaning: 'Strong breeze, 25 to 31 mph (22 to 27 knots). Large branches in motion; whistling heard in telegraph wires; umbrellas used with difficulty' },
+      { sign: 'Force 7', meaning: 'Near gale, 32 to 38 mph (28 to 33 knots). Whole trees in motion; inconvenience felt when walking against the wind' },
+      { sign: 'Force 8', meaning: 'Gale, 39 to 46 mph (34 to 40 knots). Breaks twigs off trees; generally impedes progress' },
+      { sign: 'Force 9', meaning: 'Strong gale, also called severe gale, 47 to 54 mph (41 to 47 knots). Slight structural damage occurs (chimney-pots and slates removed)' },
+      { sign: 'Force 10', meaning: 'Storm, also called whole gale, 55 to 63 mph (48 to 55 knots). Seldom experienced inland; trees uprooted; considerable structural damage occurs' },
+      { sign: 'Force 11', meaning: 'Violent storm, from 64 mph (56 knots). Very rarely experienced; accompanied by wide-spread damage' },
+      { sign: 'Force 12', meaning: 'Hurricane, from 64 knots. Severe and extensive damage' },
+    ],
+    notes: [
+      'These are the signs on land. At sea the scale is read from the waves, which this card leaves out.',
+      'The two tables used here put the start of force 12 at 72 and at 75 miles an hour, so it is given in knots only.',
+    ],
+    source: 'US National Weather Service: Beaufort Wind Scale (Miami office) and Estimating Wind Speed (Portland office), as read on 19 November 2026.',
   },
 ];
