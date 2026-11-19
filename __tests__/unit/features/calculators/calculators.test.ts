@@ -46,17 +46,33 @@ describe('calculators', () => {
     expect(await problem('sun_times', { position: '51.4778, -0.0015', utc_offset: '99' }))
       .toBe('UTC offset must be a number of hours between -14 and 14, for example -5 or 5.5');
     expect((await workOut('convert_units', { value: ' -40 ', from: 'F', to: 'C' })).answer).toBe('-40 °F = -40 °C');
+    // "5.", ".5" and "+5" are plain numbers, and reach the tool as 5, 0.5 and 5: its own pattern is narrower.
+    const sunAt = async (offset: string) =>
+      (await workOut('sun_times', { position: '51.4778, -0.0015', date: '2026-11-18', utc_offset: offset })).answer;
+    expect(await sunAt('5.')).toContain('(UTC+05:00)');
+    expect(await sunAt('.5')).toContain('(UTC+00:30)');
+    expect(await sunAt('+5')).toContain('(UTC+05:00)');
+    expect((await workOut('date_math', { start: '2026-11-19', add_days: '45.' })).answer).toContain('2027-01-03');
+    // A number too big to be one is not passed on to be called a missing parameter.
+    expect(await problem('convert_units', { value: '1e999', from: 'mi', to: 'km' })).toBe(plain('Value'));
   });
 
   it('names boxes by their labels in what a tool says', async () => {
     // Nothing in the Date Calculator is marked as needed, but it needs one of two boxes.
     expect(await problem('date_math', { start: '2026-11-19' }))
-      .toBe('Give either end (to count the days between two dates) or Add days (to find a date some days away).');
+      .toBe('Give either End (to count the days between two dates) or Add days (to find a date some days away).');
+    // A sentence that tells a model what to do with the answer is not for the person who typed the question.
+    const twoWays = (await workOut('convert_coordinates', { position: '33S 500000 4000000' })).answer;
+    expect(twoWays).toMatch(/^33S 500000 4000000 can be read two ways\.\n/);
+    expect(twoWays).not.toContain('Ask which is meant');
     expect(await problem('date_math', { start: '19/11/2026', add_days: '1' })).toMatch(/^Start must be a date written YYYY-MM-DD/);
     expect(await problem('phonetic_morse', { text: 'SOS', to: 'semaphore' })).toBe('To must be "phonetic" or "morse", or left out for both.');
     // The same inside an answer: Fairbanks asked about on a clock nine hours ahead of UTC.
     const far = (await workOut('sun_times', { position: '64.8378, -147.7164', date: '2026-03-20', utc_offset: '9' })).answer;
     expect(far).toContain('Give UTC offset for the place to get its local times.');
     expect(far).not.toContain('utc_offset');
+    // An answer repeats what was typed, and that is left as typed even where it looks like a box's name.
+    expect((await workOut('phonetic_morse', { text: 'to: bob' })).answer).toMatch(/^to: bob = Tango Oscar/);
+    expect((await workOut('phonetic_morse', { text: 'go to (x)', to: 'phonetic' })).answer).toMatch(/^go to \(x\) = /);
   });
 });

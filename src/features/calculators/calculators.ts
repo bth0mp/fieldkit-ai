@@ -58,10 +58,18 @@ export const CALCULATORS: Calculator[] = IDS.flatMap(id => {
  * A tool's words with its boxes called what the screen calls them. The tools speak to a model and name their
  * parameters: "add_days must be a whole number", "Give utc_offset for the place".
  */
-function inScreenWords(text: string, calculator: Calculator): string {
-  let said = text;
+function inScreenWords(text: string, calculator: Calculator, refusal: boolean): string {
+  // What to do with the answer is said to the model; the person who typed the question needs no telling.
+  let said = text.replace(' Ask which is meant before using either.', '');
   for (const field of calculator.fields) {
     if (field.key.includes('_')) said = said.replaceAll(field.key, field.label);
+  }
+  // An answer repeats what was typed, which may look like a box's name ("to: bob"): only a refusal is reworded
+  // where the name is an ordinary word.
+  if (!refusal) return said;
+  for (const field of calculator.fields) {
+    // "Give either end (to count ...)": a box named in passing, followed by what it is for.
+    said = said.replaceAll(` ${field.key} (`, ` ${field.label} (`);
   }
   const first = calculator.fields.find(field => said.startsWith(`${field.key} must`) || said.startsWith(`${field.key}: `));
   return first ? first.label + said.slice(first.key.length) : said;
@@ -78,11 +86,17 @@ export async function workOut(id: string, typed: Record<string, string>): Promis
   const filled = new Map(calculator.fields.map(field => [field.key, (typed[field.key] ?? '').trim()]));
   const missing = calculator.fields.find(field => field.required && filled.get(field.key) === '');
   if (missing) return { answer: '', problem: `Fill in "${missing.label}".` };
-  const notNumber = calculator.fields.find(field => field.numeric && filled.get(field.key) !== '' && !PLAIN_NUMBER.test(filled.get(field.key) ?? ''));
+  const isNumber = (text: string) => PLAIN_NUMBER.test(text) && Number.isFinite(Number(text));
+  const notNumber = calculator.fields.find(field => field.numeric && filled.get(field.key) !== '' && !isNumber(filled.get(field.key) ?? ''));
   if (notNumber) return { answer: '', problem: `"${notNumber.label}" must be a plain number, for example 5.5 or -5.` };
+  // A number goes to the tool written one way ("5." and "+5" as 5, ".5" as 0.5): the tools' own patterns differ.
+  for (const field of calculator.fields) {
+    const value = filled.get(field.key) ?? '';
+    if (field.numeric && value !== '') filled.set(field.key, String(Number(value)));
+  }
   const given = Object.fromEntries([...filled].filter(([, value]) => value !== ''));
   const result = await executeToolCall({ name: calculator.id, arguments: given });
   return result.error
-    ? { answer: '', problem: inScreenWords(result.error, calculator) }
-    : { answer: inScreenWords(result.content, calculator), problem: '' };
+    ? { answer: '', problem: inScreenWords(result.error, calculator, true) }
+    : { answer: inScreenWords(result.content, calculator, false), problem: '' };
 }
