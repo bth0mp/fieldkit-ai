@@ -7,6 +7,7 @@ import type { KiwixFile } from '../kiwix/kiwixStore';
 import { emailTool } from './emailTool';
 import { createCalendarEvent, readCalendarEvents } from './calendarTools';
 import { convertUnits } from './unitTools';
+import { convertCoordinates } from './coordinateTools';
 import logger from '../../utils/logger';
 
 function makeResult(call: ToolCall, start: number, opts: { content: string; error?: string }): ToolResult {
@@ -55,6 +56,7 @@ async function dispatchTool(call: ToolCall): Promise<string> {
     case 'read_calendar_events': return readCalendarEvents(call);
     case 'create_calendar_event': return createCalendarEvent(call);
     case 'convert_units': return convertUnits(call);
+    case 'convert_coordinates': return convertCoordinates(call);
     default:
       throw new Error(`Unknown tool: ${call.name}`);
   }

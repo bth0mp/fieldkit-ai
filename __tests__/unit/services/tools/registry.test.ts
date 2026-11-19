@@ -16,8 +16,8 @@ describe('Tool Registry', () => {
   // AVAILABLE_TOOLS
   // ========================================================================
   describe('AVAILABLE_TOOLS', () => {
-    it('has exactly 10 tools with correct IDs', () => {
-      expect(AVAILABLE_TOOLS).toHaveLength(10);
+    it('has exactly 11 tools with correct IDs', () => {
+      expect(AVAILABLE_TOOLS).toHaveLength(11);
 
       const ids = AVAILABLE_TOOLS.map(t => t.id);
       expect(ids).toEqual([
@@ -31,7 +31,15 @@ describe('Tool Registry', () => {
         'read_calendar_events',
         'create_calendar_event',
         'convert_units',
+        'convert_coordinates',
       ]);
+    });
+
+    it('convert_coordinates names its three forms within the 100 characters the LiteRT tool router reads', () => {
+      const tool = AVAILABLE_TOOLS.find(t => t.id === 'convert_coordinates')!;
+      const routed = tool.description.split('\n')[0].slice(0, 100);
+      for (const form of ['latitude', 'UTM', 'MGRS']) expect(routed).toContain(form);
+      expect(Object.entries(tool.parameters).filter(([, p]) => p.required).map(([k]) => k)).toEqual(['position']);
     });
 
     it('convert_units says what it converts within the 100 characters the LiteRT tool router reads', () => {
@@ -56,6 +64,7 @@ describe('Tool Registry', () => {
         read_calendar_events: false,
         create_calendar_event: true,
         convert_units: false,
+        convert_coordinates: false,
       });
     });
 

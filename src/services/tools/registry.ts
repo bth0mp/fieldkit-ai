@@ -196,6 +196,22 @@ export const AVAILABLE_TOOLS: ToolDefinition[] = [
       },
     },
   },
+  {
+    id: 'convert_coordinates',
+    name: 'convert_coordinates',
+    displayName: 'Grid Reference',
+    // The LiteRT tool router reads only the first 100 characters of a description.
+    description: 'Convert a map position between latitude/longitude, UTM and MGRS grid references. Pass the position as the user wrote it; the result gives all three forms. Never work a grid reference out yourself.',
+    icon: 'map-pin',
+    userNote: 'Works out the grid on this phone from a position you type. It does not use your location.',
+    parameters: {
+      position: {
+        type: 'string',
+        description: 'The position as written, e.g. "40.6892, -74.0445", "18T 580736 4504695" or "18TWL8073504695"',
+        required: true,
+      },
+    },
+  },
 ];
 
 export function getToolsAsOpenAISchema(enabledToolIds: string[]) {

@@ -30,6 +30,7 @@ function getToolIcon(toolName?: string): string {
     case 'read_calendar_events': return 'calendar';
     case 'create_calendar_event': return 'calendar';
     case 'convert_units': return 'repeat';
+    case 'convert_coordinates': return 'map-pin';
     default: return 'tool';
   }
 }
@@ -48,6 +49,7 @@ function getToolLabel(toolName?: string, content?: string): string {
     case 'read_calendar_events': return 'Calendar';
     case 'create_calendar_event': return 'New event';
     case 'convert_units': return content || 'Converted';
+    case 'convert_coordinates': return content || 'Grid reference';
     default: return toolName || 'Tool result';
   }
 }
