@@ -399,6 +399,8 @@ jest.mock('@react-native-documents/picker', () => ({
     csv: 'text/csv',
     pdf: 'application/pdf',
   },
+  pickDirectory: jest.fn(() => Promise.resolve({ uri: 'content://mock/tree' })),
+  releaseLongTermAccess: jest.fn(() => Promise.resolve([])),
   isErrorWithCode: jest.fn(() => false),
   errorCodes: {
     OPERATION_CANCELED: 'OPERATION_CANCELED',

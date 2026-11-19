@@ -4,6 +4,7 @@
  */
 import { closeSync, openSync, readSync } from 'fs';
 import { openZim } from '../../../src/services/kiwix/zimReader';
+import { categoryFor } from '../../../src/services/kiwix/kiwixCategory';
 
 const sample = process.env.ZIM_SAMPLE;
 
@@ -17,6 +18,7 @@ const sample = process.env.ZIM_SAMPLE;
       });
       expect(zim.metadata.title).toBe('WikiCiv');
       expect(zim.metadata.tags).toContain('preppers');
+      expect(categoryFor(zim.metadata)).toBe('fieldcraft');
       expect((await zim.findTitles('abacus'))[0]).toBe('Abacus');
       const article = await zim.readArticle('Abacus', 2000);
       expect(article!.text.length).toBeGreaterThan(200);

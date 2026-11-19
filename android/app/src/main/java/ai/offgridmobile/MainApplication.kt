@@ -13,6 +13,7 @@ import ai.offgridmobile.litert.LiteRTPackage
 import ai.offgridmobile.devicememory.DeviceMemoryPackage
 import ai.offgridmobile.speech.FieldkitSpeechPackage
 import ai.offgridmobile.calendar.FieldkitCalendarPackage
+import ai.offgridmobile.kiwix.FieldkitDocumentTreePackage
 
 class MainApplication : Application(), ReactApplication {
 
@@ -29,6 +30,7 @@ class MainApplication : Application(), ReactApplication {
           add(DeviceMemoryPackage())
           add(FieldkitSpeechPackage())
           add(FieldkitCalendarPackage())
+          add(FieldkitDocumentTreePackage())
         },
     )
   }

@@ -993,6 +993,39 @@ function makeFsFake(): FsFake {
 // installNativeBoundary — seed the set, then freshly require services/stores on top.
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Fake: documents the user grants through the Storage Access Framework (content:// uris) and the
+// FieldkitDocumentTree folder listing. Seeded bytes are served by the fs fake's read(path, length, position,
+// encoding) as Android's content resolver would; an unknown uri rejects ENOENT (revoked or deleted).
+// listFiles(treeUri) lists the seeded documents under the tree. Opt-in (installNativeBoundary({ documents })).
+// ---------------------------------------------------------------------------
+
+export interface DocumentsFake {
+  module: Record<string, jest.Mock>;
+  seed(uri: string, bytes: Uint8Array): void;
+  remove(uri: string): void;
+  read(uri: string, length: number, position: number, encoding?: string): Promise<string>;
+}
+
+function makeDocumentsFake(): DocumentsFake {
+  const docs = new Map<string, Uint8Array>();
+  return {
+    seed: (uri, bytes) => { docs.set(uri, bytes); },
+    remove: (uri) => { docs.delete(uri); },
+    read: async (uri, length, position, encoding = 'utf8') => {
+      const bytes = docs.get(uri);
+      if (!bytes) throw Object.assign(new Error(`ENOENT: no such file or directory, open '${uri}'`), { code: 'ENOENT' });
+      const slice = Buffer.from(bytes.subarray(position, position + length));
+      return slice.toString(encoding === 'base64' ? 'base64' : encoding === 'ascii' ? 'ascii' : 'utf8');
+    },
+    module: {
+      listFiles: jest.fn(async (treeUri: string) => [...docs.entries()]
+        .filter(([uri]) => uri.startsWith(`${treeUri}/`))
+        .map(([uri, bytes]) => ({ uri, name: decodeURIComponent(uri.slice(uri.lastIndexOf('/') + 1)), size: bytes.length }))),
+    },
+  };
+}
+
 export interface InstallOpts {
   /** RAM profile seeded at the DeviceMemoryModule + device-info leaf. */
   ram?: RamProfile;
@@ -1016,6 +1049,9 @@ export interface InstallOpts {
   /** Install the FieldkitCalendar native module and the READ_CALENDAR prompt (boundary.calendar). Omit it to
    *  model a device without the module. */
   calendar?: CalendarFakeOptions;
+  /** Serve seeded content:// documents and install the FieldkitDocumentTree folder module (boundary.documents).
+   *  Needs { fs: true }. */
+  documents?: boolean;
 }
 
 export interface NativeBoundary {
@@ -1036,6 +1072,8 @@ export interface NativeBoundary {
   speech?: SpeechFake;
   /** FieldkitCalendar native fake — present only when installed with { calendar }. */
   calendar?: CalendarFake;
+  /** Granted content:// documents and the folder module — present only when installed with { documents: true }. */
+  documents?: DocumentsFake;
   /** RN Linking (its jest mock): openURL records the URL handed to the OS (e.g. a mailto: draft). */
   linking: { openURL: jest.Mock; canOpenURL: jest.Mock };
   /** RN Clipboard (its jest mock): setString records what was copied. */
@@ -1080,6 +1118,12 @@ export function installNativeBoundary(opts: InstallOpts = {}): NativeBoundary {
   // Stateful FS: override the dumb global react-native-fs stub BEFORE any service requires it.
   const fsFake = opts.fs ? makeFsFake() : undefined;
   if (fsFake) jest.doMock('react-native-fs', () => fsFake.module);
+  const documentsFake = opts.documents && fsFake ? makeDocumentsFake() : undefined;
+  if (documentsFake && fsFake) {
+    const readFile = fsFake.module.read as (...args: unknown[]) => Promise<string>;
+    fsFake.module.read = jest.fn((path: string, length: number, position: number, encoding?: string) =>
+      (path.startsWith('content://') ? documentsFake.read(path, length, position, encoding) : readFile(path, length, position, encoding)));
+  }
 
   // Diffusion writes its rendered PNG to the (memfs) disk when fs is present, like the native module.
   const diffusion = makeDiffusionFake(fsFake?.seedFile);
@@ -1125,6 +1169,7 @@ export function installNativeBoundary(opts: InstallOpts = {}): NativeBoundary {
     RN.PermissionsAndroid.request = calendarFake.permissions.request;
     RN.PermissionsAndroid.check = calendarFake.permissions.check;
   }
+  if (documentsFake) RN.NativeModules.FieldkitDocumentTree = documentsFake.module;
   RN.NativeModules.DeviceMemoryModule = {
     // Live read from memState so a context release (freeModelMemory) is reflected — the reclaim barrier
     // must be able to SEE the footprint drop, exactly as it does on device.
@@ -1180,5 +1225,5 @@ export function installNativeBoundary(opts: InstallOpts = {}): NativeBoundary {
     Object.defineProperty(RN.Platform, 'Version', { value: profile.platform === 'android' ? 34 : '17.0', configurable: true });
   };
 
-  return { litert, litertEvents: handle, diffusion, fs: fsFake, llama: llamaFake, download: downloadFake, whisper: whisperFake, speech: speechFake, calendar: calendarFake, linking: RN.Linking, clipboard: RN.Clipboard, share: shareModule, setRam, emitMemoryWarning: () => appState.handle.emit('memoryWarning'), emitAppStateChange: (state) => appState.handle.emit('change', state) };
+  return { litert, litertEvents: handle, diffusion, fs: fsFake, llama: llamaFake, download: downloadFake, whisper: whisperFake, speech: speechFake, calendar: calendarFake, documents: documentsFake, linking: RN.Linking, clipboard: RN.Clipboard, share: shareModule, setRam, emitMemoryWarning: () => appState.handle.emit('memoryWarning'), emitAppStateChange: (state) => appState.handle.emit('change', state) };
 }

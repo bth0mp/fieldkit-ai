@@ -1,0 +1,213 @@
+/**
+ * Kiwix files the user granted (a folder or single files): adds them, sorts each into its library category
+ * project, and looks things up in a project's files for the chat. Owns every reader; kiwixStore is the screen's
+ * read-only copy. Files are read by byte range through react-native-fs (content:// uris), never whole.
+ */
+import { NativeModules } from 'react-native';
+import RNFS from 'react-native-fs';
+import { errorCodes, isErrorWithCode, pick, pickDirectory, releaseLongTermAccess, types } from '@react-native-documents/picker';
+import { ensureCategoryProject, libraryProjectId, libraryProjectIds, projectStoreHydrated } from '../../features/library/libraryProjects';
+import { generateId } from '../../utils/generateId';
+import logger from '../../utils/logger';
+import { categoryFor } from './kiwixCategory';
+import { type KiwixFile, useKiwixStore } from './kiwixStore';
+import { openZim, type ZimArchive, ZimError } from './zimReader';
+
+interface TreeDocument { uri: string; name: string; size: number }
+interface DocumentTreeModule { listFiles(treeUri: string): Promise<TreeDocument[]> }
+
+export interface KiwixHit {
+  file: KiwixFile;
+  article: { title: string; text: string } | null;
+  otherTitles: string[];
+  error?: string;
+}
+
+const UNREADABLE = new ZimError('unreadable').message;
+const FOLDER_GONE = "This folder can't be opened any more. Add it again.";
+// ponytail: the 8 most recently used readers stay open (each keeps one decompressed cluster of about 2 MB).
+const MAX_OPEN_READERS = 8;
+/** Kiwix files named in a project chat's system prompt; the rest are counted. */
+const PROMPT_FILES = 20;
+
+const tree = (): DocumentTreeModule | undefined => NativeModules.FieldkitDocumentTree;
+const store = useKiwixStore;
+const readers = new Map<string, Promise<ZimArchive>>();
+
+function hydrated(): Promise<void> {
+  if (store.persist.hasHydrated()) return Promise.resolve();
+  return new Promise(resolve => { const off = store.persist.onFinishHydration(() => { off(); resolve(); }); });
+}
+
+function base64ToBytes(base64: string): Uint8Array {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+const openUri = (uri: string) => openZim(async (offset, length) => base64ToBytes(await RNFS.read(uri, length, offset, 'base64')));
+
+function readerFor(file: KiwixFile): Promise<ZimArchive> {
+  let reader = readers.get(file.id);
+  if (reader) readers.delete(file.id);
+  else reader = openUri(file.uri);
+  readers.set(file.id, reader);
+  if (readers.size > MAX_OPEN_READERS) readers.delete(readers.keys().next().value!);
+  return reader;
+}
+
+const isCancel = (e: unknown) => isErrorWithCode(e) && e.code === errorCodes.OPERATION_CANCELED;
+const isKnown = (uri: string) => Object.values(store.getState().files).some(f => f.uri === uri);
+const nameOf = (uri: string) => decodeURIComponent(uri.slice(uri.lastIndexOf('/') + 1)).replace(/^.*[:/]/, '');
+
+function refuse(fileName: string, reason: string) {
+  store.setState(s => ({ refused: [...s.refused.filter(r => r.fileName !== fileName), { fileName, reason }] }));
+}
+
+/** Adds each document in turn, saving it at once, so a long add cut short keeps every file already added. */
+async function addDocuments(docs: TreeDocument[]): Promise<void> {
+  if (docs.length === 0) return;
+  store.setState({ adding: { done: 0, total: docs.length } });
+  try {
+    for (const [done, doc] of docs.entries()) {
+      store.setState({ adding: { done, total: docs.length } });
+      if (isKnown(doc.uri)) continue;
+      try {
+        const zim = await openUri(doc.uri);
+        const category = categoryFor(zim.metadata);
+        await ensureCategoryProject(category);
+        const file: KiwixFile = {
+          id: generateId(), uri: doc.uri, fileName: doc.name, title: zim.metadata.title || doc.name,
+          description: zim.metadata.description, bytes: doc.size, category,
+        };
+        store.setState(s => ({
+          files: { ...s.files, [file.id]: file },
+          refused: s.refused.filter(r => r.fileName !== doc.name),
+          removed: s.removed.filter(uri => uri !== doc.uri),
+        }));
+      } catch (e) {
+        refuse(doc.name, e instanceof ZimError ? e.message : UNREADABLE);
+      }
+    }
+  } finally {
+    store.setState({ adding: null });
+  }
+}
+
+async function dropFile(id: string): Promise<void> {
+  const file = store.getState().files[id];
+  if (!file) return;
+  readers.delete(id);
+  store.setState(s => {
+    const { [id]: _gone, ...files } = s.files;
+    return { files, removed: [...s.removed.filter(uri => uri !== file.uri), file.uri] };
+  });
+  // A file from a granted folder has no grant of its own; releasing it is a no-op there.
+  await releaseLongTermAccess([file.uri]).catch(e => logger.warn('[Kiwix] release failed', e));
+}
+
+export const kiwixService = {
+  canAddFolder: (): boolean => !!tree(),
+
+  async addFolder(): Promise<void> {
+    await hydrated();
+    let uri: string;
+    try {
+      ({ uri } = await pickDirectory({ requestLongTermAccess: true }));
+    } catch (e) {
+      if (isCancel(e)) return;
+      throw e;
+    }
+    if (!store.getState().folders.includes(uri)) store.setState(s => ({ folders: [...s.folders, uri] }));
+    await kiwixService.checkForNewFiles();
+  },
+
+  async checkForNewFiles(): Promise<void> {
+    await hydrated();
+    const module = tree();
+    if (!module || store.getState().adding) return;
+    const { folders, removed } = store.getState();
+    const found: TreeDocument[] = [];
+    for (const folder of folders) {
+      try {
+        found.push(...await module.listFiles(folder));
+      } catch {
+        refuse(nameOf(folder), FOLDER_GONE);
+      }
+    }
+    await addDocuments(found.filter(d => d.name.toLowerCase().endsWith('.zim') && !isKnown(d.uri) && !removed.includes(d.uri)));
+  },
+
+  async addFiles(): Promise<void> {
+    await hydrated();
+    if (store.getState().adding) return;
+    let picked;
+    try {
+      picked = await pick({ mode: 'open', requestLongTermAccess: true, allowMultiSelection: true, type: [types.allFiles] });
+    } catch (e) {
+      if (isCancel(e)) return;
+      throw e;
+    }
+    await addDocuments(picked.map(p => ({ uri: p.uri, name: p.name ?? nameOf(p.uri), size: p.size ?? 0 })));
+  },
+
+  async move(id: string, categoryId: string): Promise<void> {
+    if (!store.getState().files[id]) return;
+    await ensureCategoryProject(categoryId);
+    store.setState(s => ({ files: { ...s.files, [id]: { ...s.files[id], category: categoryId } } }));
+  },
+
+  remove: (id: string): Promise<void> => dropFile(id),
+
+  filesInProject: (projectId: string): KiwixFile[] =>
+    Object.values(store.getState().files)
+      .filter(f => libraryProjectId(f.category) === projectId)
+      .sort((a, b) => a.title.localeCompare(b.title)),
+
+  /** The system prompt's lines naming the project's Kiwix files (at most 20), or '' when it has none. */
+  promptListing(projectId: string): string {
+    const titles = kiwixService.filesInProject(projectId).map(f => f.title);
+    if (titles.length === 0) return '';
+    const more = titles.length > PROMPT_FILES ? ` and ${titles.length - PROMPT_FILES} more` : '';
+    return `Kiwix files: ${titles.slice(0, PROMPT_FILES).join(', ')}${more}.\nUse the search_knowledge_base tool to look up articles in them.`;
+  },
+
+  /**
+   * The best article per file in the project and its other matching titles. Article text shares budgetChars
+   * across files; files left when timeBudgetMs runs out are not searched (searched < total). A file that can't
+   * be read is a hit with an error, not a failure.
+   */
+  async search(projectId: string, query: string, opts: { budgetChars: number; timeBudgetMs: number }): Promise<{ hits: KiwixHit[]; searched: number; total: number }> {
+    await hydrated();
+    const files = kiwixService.filesInProject(projectId);
+    const started = Date.now();
+    const hits: KiwixHit[] = [];
+    let budget = opts.budgetChars;
+    // ponytail: files are searched one after another inside a time budget; batched native reads if the phone is slow.
+    for (const file of files) {
+      if (Date.now() - started > opts.timeBudgetMs) break;
+      try {
+        const zim = await readerFor(file);
+        const titles = await zim.findTitles(query);
+        const article = titles.length > 0 && budget > 0 ? await zim.readArticle(titles[0], budget) : null;
+        if (article) budget -= article.text.length;
+        hits.push({ file, article, otherTitles: titles.filter(t => t !== article?.title) });
+      } catch (e) {
+        readers.delete(file.id);
+        hits.push({ file, article: null, otherTitles: [], error: e instanceof ZimError ? e.message : UNREADABLE });
+      }
+    }
+    return { hits, searched: hits.length, total: files.length };
+  },
+
+  /** Drops files whose category project the user deleted; adding one again brings its project back. */
+  async reconcile(): Promise<void> {
+    await hydrated();
+    await projectStoreHydrated();
+    const projects = new Set(libraryProjectIds());
+    for (const file of Object.values(store.getState().files)) {
+      if (!projects.has(libraryProjectId(file.category))) await dropFile(file.id);
+    }
+  },
+};

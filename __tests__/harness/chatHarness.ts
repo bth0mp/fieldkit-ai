@@ -42,6 +42,8 @@ export interface ChatHarnessOptions {
   speech?: SpeechFakeOptions;
   /** Install the FieldkitCalendar native fake and the READ_CALENDAR prompt. Omit to model a device without the module. */
   calendar?: CalendarFakeOptions;
+  /** Kiwix files the user can grant through the document picker (boundary.documents). */
+  documents?: boolean;
   /** Install the stateful background-download native fake (drive DownloadProgress/Complete/Error
    *  events through the real backgroundDownloadService — e.g. an in-flight STT model download). */
   download?: boolean;
@@ -72,7 +74,7 @@ export interface ChatHarnessOptions {
 export async function setupChatScreen(opts: ChatHarnessOptions) {
   const platform = opts.platform ?? 'android';
   const ram = opts.ram ?? { platform, totalBytes: 12 * GB, availBytes: 8 * GB };
-  const boundary = installNativeBoundary({ llama: opts.engine === 'llama', llamaChatTemplate: opts.chatTemplate, fs: true, pdf: opts.pdf, ram, whisper: opts.whisper, download: opts.download, speech: opts.speech, calendar: opts.calendar });
+  const boundary = installNativeBoundary({ llama: opts.engine === 'llama', llamaChatTemplate: opts.chatTemplate, fs: true, pdf: opts.pdf, ram, whisper: opts.whisper, download: opts.download, speech: opts.speech, calendar: opts.calendar, documents: opts.documents });
   if (opts.sqlite) require('./sqliteFake').doMockRealSqlite();
 
   // Global boundary polyfill: React 19's error reporter calls window.dispatchEvent; in the node test
