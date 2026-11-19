@@ -153,4 +153,60 @@ describe('Quick reference (rendered)', () => {
     expect(screen.getByText('These are United States channels and rules. They do not hold in other countries.')).toBeTruthy();
     expect(screen.getByText('NOAA Weather Radio (weather.gov/nwr). FCC rules: 47 CFR 95.563 and 95.567 for FRS, 95.931 and 95.963 for CB. All as read on 19 November 2026.')).toBeTruthy();
   });
+
+  it('finds a sign or a word across every card from the search field', async () => {
+    const h = await setupChatScreen({ engine: 'llama', sqlite: true });
+    const { React, rtl } = h;
+    const { QuickReferenceScreen } = require('../../../src/screens/QuickReferenceScreen');
+    const screen = rtl.render(React.createElement(QuickReferenceScreen, {}));
+    const search = screen.getByTestId('quick-reference-search');
+    expect(search.props.placeholder).toBe('Search the cards');
+    const meaning = (card: string, sign: string) =>
+      String(rtl.within(screen.getByTestId(`quick-reference-${card}-${sign}`)).getByTestId('quick-reference-meaning').props.children);
+    const rowsShown = () => screen.queryAllByTestId('quick-reference-meaning').length;
+
+    // One letter finds the sign that is exactly that letter, in every card that has it, and nothing else.
+    rtl.fireEvent.changeText(search, 's');
+    expect(meaning('radio-alphabet', 'S')).toBe('Sierra');
+    expect(meaning('morse', 'S')).toBe('...');
+    expect(rowsShown()).toBe(2);
+    // Each result sits under its card's name; a card with nothing to show is gone.
+    expect(screen.getByText('Radio alphabet')).toBeTruthy();
+    expect(screen.getByText('Morse code')).toBeTruthy();
+    expect(screen.queryByText('Distress signals')).toBeNull();
+
+    rtl.fireEvent.changeText(search, 'X');
+    expect(meaning('ground-to-air', 'X')).toBe('Require medical assistance');
+    expect(meaning('radio-alphabet', 'X')).toBe('X-ray');
+    expect(meaning('morse', 'X')).toBe('-..-');
+    expect(rowsShown()).toBe(3);
+
+    // Two letters or more are looked for inside signs and meanings, whatever their case.
+    rtl.fireEvent.changeText(search, 'GALE');
+    expect(meaning('wind-force', 'Force 7')).toMatch(/^Near gale/);
+    expect(meaning('wind-force', 'Force 8')).toMatch(/^Gale, 39 to 46 mph/);
+    expect(rowsShown()).toBe(4);
+    rtl.fireEvent.changeText(search, ' mayday ');
+    expect(meaning('distress', 'Mayday')).toMatch(/^By voice, when life is in danger/);
+    expect(rowsShown()).toBe(1);
+    rtl.fireEvent.changeText(search, '462.5625');
+    expect(meaning('radio-channels', 'FRS 1')).toBe('462.5625 MHz');
+    expect(rowsShown()).toBe(1);
+
+    // A card's notes are searched too: 121.5 MHz is only in a note.
+    rtl.fireEvent.changeText(search, '121.5');
+    expect(rowsShown()).toBe(0);
+    expect(screen.getByText('Distress signals')).toBeTruthy();
+    expect(screen.getByText(/Aircraft emergency frequency: 121\.5 MHz/)).toBeTruthy();
+    expect(screen.queryByText('Radio alphabet')).toBeNull();
+
+    // Nothing found says so. Clearing the field brings the six closed cards back.
+    rtl.fireEvent.changeText(search, 'zzz');
+    expect(screen.getByText('No card has that.')).toBeTruthy();
+    rtl.fireEvent.changeText(search, '');
+    expect(screen.queryByText('No card has that.')).toBeNull();
+    expect(screen.getByText('Wind force (Beaufort scale)')).toBeTruthy();
+    expect(screen.getByText('Radio alphabet')).toBeTruthy();
+    expect(rowsShown()).toBe(0);
+  });
 });

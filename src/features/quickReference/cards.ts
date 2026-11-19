@@ -148,3 +148,21 @@ export const QUICK_REFERENCE_CARDS: ReferenceCard[] = [
     source: 'NOAA Weather Radio (weather.gov/nwr). FCC rules: 47 CFR 95.563 and 95.567 for FRS, 95.931 and 95.963 for CB. All as read on 19 November 2026.',
   },
 ];
+
+/**
+ * What a search of the cards finds, card by card: the rows whose sign or meaning holds the words typed, and the
+ * notes that do. One character finds only a sign that is exactly it ("s" is S in the radio alphabet and in
+ * Morse, not every row with an s in it).
+ */
+export function searchCards(query: string) {
+  const wanted = query.trim().toLowerCase();
+  if (!wanted) return [];
+  const holds = (text: string) => wanted.length > 1 && text.toLowerCase().includes(wanted);
+  return QUICK_REFERENCE_CARDS
+    .map(card => ({
+      card,
+      rows: card.rows.filter(row => row.sign.toLowerCase() === wanted || holds(row.sign) || holds(row.meaning)),
+      notes: card.notes.filter(holds),
+    }))
+    .filter(found => found.rows.length > 0 || found.notes.length > 0);
+}
