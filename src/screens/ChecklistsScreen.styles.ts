@@ -11,6 +11,8 @@ export const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => {
     // The Guide library's search field, sharing a row with a button.
     field: { ...base.search, marginTop: 0, flex: 1, minHeight: 44 },
     starter: { marginTop: SPACING.md, alignItems: 'flex-start' as const },
+    // The small Button is about 38 high; on this screen every button is a full 44-high touch target.
+    tapTarget: { minHeight: 44 },
     // A list's name is the user's own words and the thing to tap: body text that wraps, not a small label.
     listTitle: { ...TYPOGRAPHY.body, color: colors.text, flex: 1, paddingRight: SPACING.sm },
     itemRow: {

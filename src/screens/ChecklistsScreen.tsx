@@ -89,12 +89,12 @@ export const ChecklistsScreen: React.FC = () => {
           <TextInput testID="checklists-new-name" style={styles.field} value={newName} onChangeText={typing(setNewName)}
             placeholder="New list name" placeholderTextColor={colors.textMuted} accessibilityLabel="New list name"
             maxLength={CHECKLIST_LIMITS.name} returnKeyType="done" onSubmitEditing={addList} />
-          <Button title="Add list" size="small" variant="outline" onPress={addList} testID="checklists-add-list" />
+          <Button title="Add list" size="small" variant="outline" style={styles.tapTarget} onPress={addList} testID="checklists-add-list" />
         </View>
         {problem?.where === 'list' && <Text style={styles.error} accessibilityLiveRegion="polite">{problem.message}</Text>}
         {STARTER_LISTS.map(starter => (
           <View key={starter.id} style={styles.starter}>
-            <Button title={starter.label} size="small" variant="ghost" testID={`checklists-starter-${starter.id}`}
+            <Button title={starter.label} size="small" variant="ghost" style={styles.tapTarget} testID={`checklists-starter-${starter.id}`}
               icon={<Icon name="copy" size={14} color={colors.text} />} onPress={() => startFrom(starter.id)} />
             <Text style={styles.rowMeta}>{starter.source}</Text>
           </View>
@@ -132,16 +132,16 @@ export const ChecklistsScreen: React.FC = () => {
                     <TextInput testID="checklists-new-item" style={styles.field} value={newItem} onChangeText={typing(setNewItem)}
                       placeholder="Add an item" placeholderTextColor={colors.textMuted} accessibilityLabel={`Add an item to ${list.name}`}
                       maxLength={CHECKLIST_LIMITS.item} returnKeyType="done" blurOnSubmit={false} onSubmitEditing={() => addItem(list.id)} />
-                    <Button title="Add" size="small" variant="outline" onPress={() => addItem(list.id)} testID="checklists-add-item" />
+                    <Button title="Add" size="small" variant="outline" style={styles.tapTarget} onPress={() => addItem(list.id)} testID="checklists-add-item" />
                   </View>
                   {problem?.where === 'item' && <Text style={styles.error} accessibilityLiveRegion="polite">{problem.message}</Text>}
                   <View style={styles.listActions}>
-                    <Button title="Untick all" size="small" variant="ghost" disabled={done === 0}
+                    <Button title="Untick all" size="small" variant="ghost" style={styles.tapTarget} testID="checklists-untick-all" disabled={done === 0}
                       onPress={() => ask({
                         title: 'Untick everything?', message: `All ${done} ticked ${done === 1 ? 'item' : 'items'} in ${list.name} will be unticked.`,
                         action: 'Untick', work: () => checklistService.untickAll(list.id),
                       })} />
-                    <Button title="Delete list" size="small" variant="ghost"
+                    <Button title="Delete list" size="small" variant="ghost" style={styles.tapTarget} testID="checklists-delete-list"
                       onPress={() => ask({ title: 'Delete list?', message: deleteMessage(list), action: 'Delete', work: () => checklistService.remove(list.id) })} />
                   </View>
                 </>

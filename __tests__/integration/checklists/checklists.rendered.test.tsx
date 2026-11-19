@@ -58,6 +58,10 @@ describe('Checklists (rendered)', () => {
 
     const screen = rtl.render(React.createElement(ChecklistsScreen, {}));
     expect(screen.getByText('No lists yet.')).toBeTruthy();
+    // Buttons on this screen are full-size touch targets, 44 high at least.
+    const heightOf = (testID: string) => StyleSheet.flatten(screen.getByTestId(testID).props.style).minHeight;
+    expect(heightOf('checklists-add-list')).toBeGreaterThanOrEqual(44);
+    expect(heightOf('checklists-starter-ready-basic-kit')).toBeGreaterThanOrEqual(44);
 
     // An empty name is refused with a reason, and nothing is made; typing clears the reason.
     rtl.fireEvent.press(screen.getByTestId('checklists-add-list'));
@@ -74,6 +78,9 @@ describe('Checklists (rendered)', () => {
     expect(screen.getByTestId('checklists-new-name').props.value).toBe('');
 
     // An empty item is refused under the item field.
+    for (const testID of ['checklists-add-item', 'checklists-untick-all', 'checklists-delete-list']) {
+      expect(heightOf(testID)).toBeGreaterThanOrEqual(44);
+    }
     rtl.fireEvent.press(screen.getByTestId('checklists-add-item'));
     expect(screen.getByText('Type the item first.')).toBeTruthy();
     for (const item of ['Map and compass', 'Water', 'Head torch']) {
