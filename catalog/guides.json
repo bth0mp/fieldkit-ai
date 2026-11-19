@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-11-18",
+  "updated": "2026-11-19",
   "categories": [
     { "id": "medical", "name": "First aid and medical" },
     { "id": "water", "name": "Water and sanitation" },
@@ -335,6 +335,20 @@
       "bytes": 204850,
       "sha256": "bc476fdc38e0949f18941cf361242bce8f0c18583111ce7e10b06eb3fc569922",
       "pages": 2,
+      "hasText": true
+    },
+    {
+      "id": "usda-ah-360-fire-weather",
+      "title": "Fire Weather: A Guide for Application of Meteorological Information to Forest Fire Control Operations",
+      "category": "navigation",
+      "publisher": "US Forest Service",
+      "year": 1970,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105); the proof rests on staff authorship. Agriculture Handbook 360, May 1970, is published under the U.S. Department of Agriculture Forest Service name and written by Mark J. Schroeder, Weather Bureau, Environmental Science Services Administration, U.S. Department of Commerce, and Charles C. Buck, Forest Service, U.S. Department of Agriculture (title page). The preface says all who gave 'original written material, reviews, and suggestions' were members of those two agencies. No outside author, photographer, illustrator, university or company is credited, and there is no copyright notice. The document prints no public-domain statement of its own. Forest Service site notice (fs.usda.gov, Disclaimers and Important Notices, read 18 November 2026): 'Information presented on the Forest Service website is considered public information and may be distributed or copied.' The file is the edition the National Wildfire Coordinating Group issued as PMS 425-1, with the text typed again in 2008 and 2009 and the 1970 pictures scanned. Its training site does not answer the app's request, so the address is the Wayback Machine's raw capture of that file.",
+      "url": "https://web.archive.org/web/20201020211735id_/https://training.nwcg.gov/pre-courses/s290/Fire_Weather_Handbook_pms_425.pdf",
+      "bytes": 17073296,
+      "sha256": "1228c099f42de34a08ed542489e8e8d4f27632f6d1b5527c408b2d0d5019a125",
+      "pages": 236,
       "hasText": true
     },
     {
