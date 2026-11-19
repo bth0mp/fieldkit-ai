@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import DeviceInfo from 'react-native-device-info';
 import { ToolCall, ToolResult } from './types';
 import type { RagSearchResult } from '../rag';
+import type { KiwixHit } from '../kiwix/kiwixService';
 import { emailTool } from './emailTool';
 import { createCalendarEvent, readCalendarEvents } from './calendarTools';
 import logger from '../../utils/logger';
@@ -381,14 +382,35 @@ async function handleReadUrl(rawUrl: string): Promise<string> {
   } finally { clearTimeout(timeout); }
 }
 
+/** Article text shared across a project's Kiwix files, and how long the lookup may take, per search. */
+const KIWIX_SEARCH = { budgetChars: 3000, timeBudgetMs: 10000 };
+
 async function handleSearchKnowledgeBase(query: string, projectId?: string): Promise<string> {
   if (!projectId) return 'No project context. Knowledge base requires an active project.';
   const { ragService } = require('../rag'); // NOSONAR
+  const { kiwixService } = require('../kiwix/kiwixService'); // NOSONAR
   const result = await ragService.searchProject(projectId, query);
-  if (result.chunks.length === 0) return `No results found for "${query}" in the knowledge base.`;
-  return result.chunks
+  const guides = result.chunks
     .map((c: RagSearchResult, i: number) => `[${i + 1}] ${c.name} (part ${c.position + 1}):\n${c.content}`)
     .join('\n\n---\n\n');
+  const kiwix = formatKiwixResult(await kiwixService.search(projectId, query, KIWIX_SEARCH));
+  if (!guides && !kiwix) return `No results found for "${query}" in the knowledge base.`;
+  return [guides, kiwix].filter(Boolean).join('\n\n---\n\n');
+}
+
+/** The "From Kiwix files" part: per file its best article, its other matches, or why it can't be read. */
+function formatKiwixResult({ hits, searched, total }: { hits: KiwixHit[]; searched: number; total: number }): string {
+  const parts: string[] = [];
+  for (const { file, article, otherTitles, error } of hits) {
+    if (error) { parts.push(`[${file.title}] ${error}`); continue; }
+    const lines = article ? [`[${file.title}] ${article.title}`, article.text] : [];
+    if (otherTitles.length > 0) {
+      lines.push(`${article ? 'Other articles' : 'Articles'} in ${file.title}: ${otherTitles.join(', ')}. Search again with an exact title to read one.`);
+    }
+    if (lines.length > 0) parts.push(lines.join('\n'));
+  }
+  if (searched < total) parts.push(`Searched ${searched} of ${total} Kiwix files.`);
+  return parts.length > 0 ? `From Kiwix files:\n${parts.join('\n\n')}` : '';
 }
 
 function formatBytes(bytes: number): string {

@@ -18,6 +18,7 @@ import { abortPreload } from '../../services/modelPreloader';
 import { modelResidencyManager } from '../../services/modelResidency';
 import { reportModelFailure } from '../../services/modelFailureHandler';
 import { embeddingService } from '../../services/rag/embedding';
+import { kiwixService } from '../../services/kiwix/kiwixService';
 import { useChatStore, useProjectStore, useRemoteServerStore, useAppStore } from '../../stores';
 import { callHook, HOOKS } from '../../bootstrap/hookRegistry';
 import { Conversation, Message, MediaAttachment, Project, DownloadedModel, RemoteModel, CacheType } from '../../types';
@@ -327,7 +328,9 @@ async function injectRagContext(projectId: string | undefined, query: string, pr
   try {
     const docs = await ragService.getDocumentsByProject(projectId);
     const enabledDocs = docs.filter((d: import('../../services/rag').RagDocument) => d.enabled);
-    if (enabledDocs.length === 0) return prompt;
+    const kiwix = kiwixService.promptListing(projectId);
+    const kiwixPrompt = kiwix ? `\n\n${kiwix}` : '';
+    if (enabledDocs.length === 0) return prompt + kiwixPrompt;
     // Warm up embedding model in background (non-blocking)
     if (!embeddingService.isLoaded()) {
       embeddingService.load().catch(err => logger.error('[RAG] Embedding warmup failed', err));
@@ -339,7 +342,7 @@ async function injectRagContext(projectId: string | undefined, query: string, pr
     if (r.chunks.length > 0) {
       kbPrompt += `\n\n${retrievalService.formatForPrompt(r)}`;
     }
-    return prompt + kbPrompt;
+    return prompt + kbPrompt + kiwixPrompt;
   } catch (err) {
     logger.error('[RAG] Context injection failed', err);
   }

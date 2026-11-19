@@ -61,7 +61,7 @@ export const AVAILABLE_TOOLS: ToolDefinition[] = [
     id: 'search_knowledge_base',
     name: 'search_knowledge_base',
     displayName: 'Knowledge Base',
-    description: 'Search uploaded project documents',
+    description: "Search this project's guides, documents and Kiwix files",
     icon: 'book-open',
     parameters: {
       query: {
