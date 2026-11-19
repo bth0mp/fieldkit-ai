@@ -204,6 +204,12 @@ export function sunTimes(call: ToolCall, now: Date = new Date()): string {
     ? ` These are ${zone} clock times, not this place's own local time, and its date there may differ. Give utc_offset for the place to get its local times.`
     : '';
   const head = `Sun at ${place.lat.toFixed(5)}, ${place.lon.toFixed(5)} on ${day.year}-${pad(day.month)}-${pad(day.day)} (${zone}): `;
-  // The moon's events are those inside the calendar day asked about, on the clock shown.
-  return `${head}${describe(events, clock)}${moonPhrase(noon)}${moonEvents(place, midnight - offsetMs, clock)}${elsewhere}`;
+  // The moon's events are those whose time, to the minute, is inside the calendar day asked about on the clock
+  // shown. The day is counted from half a minute before its midnight, so a rising at 23:59:50 is 00:00 of the
+  // next day, where the Naval Observatory lists it too, and not "00:00 (+1 day)" here and missing there.
+  // ponytail: with utc_offset left out, the day is 24 hours on the phone's offset at noon. On the two days a year
+  // the clocks change, a moon event in the hour gained or lost lands in neither day or in both (about one day
+  // in eight years at a place). Use the real local day and per-event offsets if that ever matters.
+  const moonDayStart = midnight - offsetMs - MINUTE_MS / 2;
+  return `${head}${describe(events, clock)}${moonPhrase(noon)}${moonEvents(place, moonDayStart, clock)}${elsewhere}`;
 }

@@ -7,9 +7,12 @@
  * minutes, and its parallax, less its own radius, puts its centre about an eighth of a degree above the true
  * horizon at that moment. Like the sun's times, these know nothing of a real skyline of hills.
  *
- * Against the US Naval Observatory, all 241 risings and settings checked (1950 to 2099, from the equator to 78
- * degrees north and south) came out within a minute, and no day had an event the Observatory lacks or lacked one
- * it has.
+ * Against the US Naval Observatory, 434 risings and settings (1900 to 2100, from the equator to 78 degrees north
+ * and south, 241 picked by the author and 193 by an independent reviewer) all came out within a minute, with no
+ * event missing or extra. The exception is a moon that only grazes the horizon, up or down for under about half
+ * an hour, which happens at high latitudes: there the series' few hundredths of a degree move the times by two
+ * to five minutes, and a brief rising and setting can be missed or reported where the Observatory has none.
+ * A pair less than two minutes apart can also fall between two looks at the sky.
  */
 const RAD = Math.PI / 180;
 const DAY_MS = 86400000;

@@ -239,7 +239,8 @@ describe('sun_times', () => {
 /**
  * Moonrise and moonset. The expected times are the US Naval Observatory's too, read on 2026-11-19 from the same
  * API (its moondata, to the minute): the moon's events inside the calendar day in the zone shown. Grace is one
- * minute, since both sides round to the minute; two where the moon crosses the horizon at a shallow angle.
+ * minute, since both sides round to the minute. Not covered: a moon that only grazes the horizon, up or down
+ * for under half an hour, where the two can differ by a few minutes or by a brief rising and setting.
  */
 type MoonEvent = ['moonrise' | 'moonset', string];
 
@@ -286,6 +287,7 @@ describe('sun_times, moonrise and moonset', () => {
 
   it('gives the events in the order they happen, as one sentence after the phase', () => {
     // 12 November 2026: rise 10:58, set 17:41.
+    expectMoon(at(GREENWICH, '2026-11-12'), [['moonrise', '10:58'], ['moonset', '17:41']]);
     expect(at(GREENWICH, '2026-11-12')).toMatch(/ Moon: waxing crescent, \d+% lit\. Moonrise 1[01]:\d\d, moonset 17:[34]\d\.$/);
     expect(at(GREENWICH, '2026-11-01')).toMatch(/ Moon: waning gibbous, \d+% lit\. Moonset 13:4\d, moonrise 22:[23]\d\.$/);
   });
@@ -326,8 +328,35 @@ describe('sun_times, moonrise and moonset', () => {
     ['McMurdo, the day before it stops rising', MCMURDO, '2026-11-21', [['moonrise', '06:53'], ['moonset', '11:52']]],
     ['Longyearbyen, its first day up', LONGYEARBYEN, '2026-11-18', [['moonrise', '14:18'], ['moonset', '22:13']]],
     ['Longyearbyen, the day before it stops setting', LONGYEARBYEN, '2026-11-21', [['moonset', '04:36'], ['moonrise', '10:07']]],
-  ])('%s (%s) on %s, within two minutes of the Observatory', (_place, position, date, events) => {
-    expectMoon(at(position, date), events, 2);
+  ])('%s (%s) on %s, within a minute of the Observatory', (_place, position, date, events) => {
+    expectMoon(at(position, date), events);
+  });
+
+  it('gives an event in the last seconds of a day to the next day, as the Observatory does', () => {
+    // Each of these risings and settings falls a few seconds before midnight; to the minute it is 00:00 on the
+    // next date, and that is the day the Observatory lists it under. Found by an independent review.
+    // tz=5.5, Delhi: 11 November 2021 "Rise 13:09" and no set; the 12th "Set 00:00, Rise 13:49".
+    const delhi = (date: string) => at('28.6139, 77.209', date, 5.5);
+    expectMoon(delhi('2021-11-11'), [['moonrise', '13:09']]);
+    expect(delhi('2021-11-11')).toMatch(/% lit\. Moonrise 13:\d\d, no moonset this day\.$/);
+    expectMoon(delhi('2021-11-12'), [['moonset', '00:00'], ['moonrise', '13:49']]);
+    // tz=0 at 0 N, 0 E: 30 December 2026 "Set 11:37" and no rise; the 31st "Rise 00:00, Set 12:21".
+    expectMoon(at('0, 0', '2026-12-30'), [['moonset', '11:37']]);
+    expectMoon(at('0, 0', '2026-12-31'), [['moonrise', '00:00'], ['moonset', '12:21']]);
+    // tz=9.5, Adelaide: 23 March 2025 "Set 14:30" and no rise; the 24th "Rise 00:00, Set 15:16".
+    expectMoon(at('-34.9285, 138.6007', '2025-03-23', 9.5), [['moonset', '14:30']]);
+    expectMoon(at('-34.9285, 138.6007', '2025-03-24', 9.5), [['moonrise', '00:00'], ['moonset', '15:16']]);
+    // So no moon time carries "(+1 day)".
+    for (const answer of [delhi('2021-11-11'), at('0, 0', '2026-12-30'), at('-34.9285, 138.6007', '2025-03-23', 9.5)]) {
+      expect(answer).not.toMatch(/moon(rise|set) \d\d:\d\d \(/i);
+    }
+  });
+
+  it('lists three events on a day that holds three', () => {
+    // The Observatory, Reykjavik, 25 July 2021: Rise 00:00, Set 05:21, Rise 23:57.
+    const result = at('64.1466, -21.9426', '2021-07-25');
+    expectMoon(result, [['moonrise', '00:00'], ['moonset', '05:21'], ['moonrise', '23:57']]);
+    expect(result).toMatch(/% lit\. Moonrise 00:00, moonset 05:2\d, moonrise 23:5\d\./);
   });
 
   it('lists the events of the calendar day in the zone shown', () => {
