@@ -96,6 +96,14 @@ describe('ZIM reader', () => {
     expect(await outcome(whole)).toBe('read');
   });
 
+  it('says a file is damaged when its title list cannot be read whole', async () => {
+    // The one-byte read is the header of the cluster that holds the title list; here the file ends before it.
+    const bytes = buildZim({ ...WIKIMED, compression: 'none' });
+    const read = async (offset: number, length: number) => (length === 1 ? new Uint8Array(0) : rangeReader(bytes)(offset, length));
+    const attempt = async () => (await openZim(read)).findTitles('burn');
+    await expect(attempt()).rejects.toMatchObject({ code: 'damaged' });
+  });
+
   it('refuses a damaged file whose cluster pointer runs far past the end, without asking for a huge read', async () => {
     const bytes = buildZim(WIKIMED);
     const view = Buffer.from(bytes.buffer, bytes.byteOffset, bytes.length);

@@ -147,7 +147,8 @@ async function checkFolders(): Promise<void> {
   await hydrated();
   const module = tree();
   if (!module) return;
-  // Rows only a folder check makes are made afresh each time, so one goes when its cause does.
+  // The folder-gone and split-download rows are made afresh by each check, so one goes when its cause does. (A
+  // split part the user picked by hand loses its row here too; picking it again says the same thing.)
   store.setState(s => ({ refused: s.refused.filter(r => r.reason !== FOLDER_GONE && r.reason !== SPLIT) }));
   const { folders, removed } = store.getState();
   const found: TreeDocument[] = [];

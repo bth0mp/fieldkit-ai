@@ -321,12 +321,12 @@ export async function openZim(read: ReadRange): Promise<ZimArchive> {
     const listing = await direntAt(at);
     if (listing.cluster === undefined || listing.blob === undefined) return null;
     const start = await clusterStart(listing.cluster);
-    const info = (await bytes(start, 1))[0];
+    const info = (await whole(start, 1))[0];
     const offsetSize = info & 0x10 ? 8 : 4;
     const keyOf = (e: Dirent) => e.titleBytes;
     const target = (t: string) => encoder.encode(t);
     if ((info & 0x0f) <= 1) {
-      const offsets = await bytes(start + 1 + offsetSize * listing.blob, offsetSize * 2);
+      const offsets = await whole(start + 1 + offsetSize * listing.blob, offsetSize * 2);
       const from = offsetSize === 8 ? u64(offsets, 0) : u32(offsets, 0);
       const to = offsetSize === 8 ? u64(offsets, 8) : u32(offsets, 4);
       return { count: (to - from) / 4, indexAt: k => u32At(start + 1 + from + 4 * k), keyOf, target };
