@@ -20,6 +20,7 @@ import { initDebugLogFile, appendDebugLine } from './src/utils/debugLogFile';
 import { loadProFeatures } from './src/bootstrap/loadProFeatures';
 import { activateFieldkitFeatures } from './src/features';
 import { seedFieldGuides } from './src/features/fieldGuides/fieldGuides';
+import { moveOffFieldGuidesProject } from './src/features/library/moveFieldGuides';
 import { checkProStatus } from './src/services/proLicenseService';
 import { hydrateDownloadStore } from './src/services/downloadHydration';
 import { initActiveDownloadPersistence } from './src/services/activeDownloadPersistence';
@@ -300,9 +301,10 @@ function App() {
       // Show the UI immediately
       setIsInitializing(false);
 
-      // Index the field guides shipped in the APK into the Field guides project, off the boot path.
-      // Only the first launch (or one that was interrupted) has work to do.
-      seedFieldGuides().catch((err) => logger.error('[App] Field guides setup failed:', err));
+      // Index the field guides shipped in the APK into their category projects, off the boot path, after an
+      // older install's Field guides project has been split into those projects. Only the first launch (or one
+      // that was interrupted) has work to do.
+      moveOffFieldGuidesProject().then(seedFieldGuides).catch((err) => logger.error('[App] Field guides setup failed:', err));
 
       // Reconcile downloaded Whisper models against disk at startup. presentModelIds
       // isn't persisted (the filesystem is the source of truth), so it rehydrates

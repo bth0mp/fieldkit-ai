@@ -189,6 +189,12 @@ class RagDatabase {
     return (result.rows ?? []) as unknown as RagDocument[];
   }
 
+  /** Files a document under another project; its chunks and embeddings hang off the document id and come along. */
+  moveDocument(docId: number, projectId: string): void {
+    const db = this.getDb();
+    db.executeSync('UPDATE rag_documents SET project_id = ? WHERE id = ?', [projectId, docId]);
+  }
+
   toggleEnabled(docId: number, enabled: boolean): void {
     const db = this.getDb();
     db.executeSync('UPDATE rag_documents SET enabled = ? WHERE id = ?', [enabled ? 1 : 0, docId]);

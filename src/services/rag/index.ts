@@ -145,6 +145,11 @@ class RagService {
     return ragDatabase.hasEmbeddingsForDocument(docId);
   }
 
+  async moveDocument(docId: number, projectId: string): Promise<void> {
+    await this.ensureReady();
+    ragDatabase.moveDocument(docId, projectId);
+  }
+
   async toggleDocument(docId: number, enabled: boolean): Promise<void> {
     await this.ensureReady();
     ragDatabase.toggleEnabled(docId, enabled);

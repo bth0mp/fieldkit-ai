@@ -1,11 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RNFS from 'react-native-fs';
 import { ragService } from '../../services/rag';
-import { useProjectStore } from '../../stores/projectStore';
 import { copyBundledAsset } from '../../utils/bundledAsset';
 import logger from '../../utils/logger';
-import { ensureCategoryProject, projectStoreHydrated } from '../library/libraryProjects';
+import { ensureCategoryProject } from '../library/libraryProjects';
 
+/** The single project every guide sat in before the library projects (moveFieldGuides moves them out). */
 export const FIELD_GUIDES_PROJECT_ID = 'field-guides';
 
 /**
@@ -21,50 +21,23 @@ const FIELD_GUIDES = [
   { asset: 'neets-1-direct-current.pdf', name: 'Matter, Energy and Direct Current (US Navy NEETS Module 1).pdf', category: 'power' },
 ];
 
-const SYSTEM_PROMPT = `You are a field guide assistant running offline on the user's phone. Answer from the field guides in your knowledge base: give clear, numbered steps and name the guide you used. If the guides do not cover the question, say so before answering from general knowledge. For injuries and illness, say that this is first aid guidance, not a substitute for a medical professional, and that emergency services should be contacted when they can be reached.`;
+/** Each bundled guide's library category, by the name the user and the model see. */
+export const BUNDLED_GUIDE_CATEGORY_BY_NAME: Record<string, string> = Object.fromEntries(FIELD_GUIDES.map(g => [g.name, g.category]));
 
 const STATE_KEY = '@fieldkit/field_guides_seeded';
 
 /** What earlier launches finished, so a guide or project the user deleted stays deleted. */
 interface SeedState {
-  projectCreated: boolean;
-  /** Assets indexed into the project. */
+  /** Assets indexed into their projects. */
   done: string[];
 }
 
 async function readState(): Promise<SeedState> {
   const raw = await AsyncStorage.getItem(STATE_KEY);
-  return raw ? JSON.parse(raw) : { projectCreated: false, done: [] };
+  return { done: raw ? JSON.parse(raw).done ?? [] : [] };
 }
 
 const saveState = (state: SeedState) => AsyncStorage.setItem(STATE_KEY, JSON.stringify(state));
-
-/** Creates the Field guides project unless it exists (createProject would add a second one with the same id). */
-function createFieldGuidesProject(): void {
-  const projects = useProjectStore.getState();
-  if (projects.getProject(FIELD_GUIDES_PROJECT_ID)) return;
-  projects.createProject({
-    id: FIELD_GUIDES_PROJECT_ID,
-    name: 'Field guides',
-    description: 'Public-domain survival, first aid, sanitation and solar power guides',
-    systemPrompt: SYSTEM_PROMPT,
-    icon: '#84CC16', // Lime
-  });
-}
-
-/**
- * If the Field guides project is missing, creates it. When the user had deleted it, every bundled guide is
- * marked as handled in the seed's saved state, so the first-launch seed does not re-add guides they removed;
- * when the seed never got as far as creating it, the seed adds the bundled guides on a later launch.
- */
-export async function ensureFieldGuidesProject(): Promise<void> {
-  await projectStoreHydrated();
-  if (useProjectStore.getState().getProject(FIELD_GUIDES_PROJECT_ID)) return;
-  const state = await readState();
-  createFieldGuidesProject();
-  const done = state.projectCreated ? FIELD_GUIDES.map(g => g.asset) : state.done;
-  await saveState({ projectCreated: true, done });
-}
 
 /** Copy one guide out of the app bundle. A partial copy (app killed mid-copy) never reaches `dest`. */
 async function copyGuide(asset: string, dest: string): Promise<void> {
