@@ -278,21 +278,64 @@ describe('Quick reference (rendered)', () => {
     rtl.fireEvent.changeText(search, 'an');
     expect(screen.queryByTestId('quick-reference-morse-S')).toBeNull();
     expect(screen.queryByText('Morse code')).toBeNull();
-    expect(meaning('distress', 'Pan-pan')).toMatch(/^By voice/);
+    expect(meaning('distress', 'Three of anything')).toMatch(/^In North America/);
+    // "mor" on the way to "morse" finds the card of that name, and not the radio card for its "no more than".
     rtl.fireEvent.changeText(search, 'mor');
     expect(meaning('morse', 'S')).toBe('...');
+    expect(rowsShown()).toBe(49);
 
-    // Spaces and hyphens do not matter, and "ph" finds the alphabet's "f".
+    // A sign or a one-word meaning is found whatever its spaces and hyphens.
     rtl.fireEvent.changeText(search, 'pan pan');
     expect(meaning('distress', 'Pan-pan')).toMatch(/^By voice, when it is urgent/);
+    expect(rowsShown()).toBe(1);
     rtl.fireEvent.changeText(search, 'xray');
     expect(meaning('radio-alphabet', 'X')).toBe('X-ray');
-    rtl.fireEvent.changeText(search, 'alpha');
-    expect(meaning('radio-alphabet', 'A')).toBe('Alfa');
+    expect(rowsShown()).toBe(1);
     rtl.fireEvent.changeText(search, 'frs1');
     expect(meaning('radio-channels', 'FRS 1')).toBe('462.5625 MHz');
+    // The sign that is exactly it comes before the ones that start with it.
+    expect(screen.getAllByTestId(/^quick-reference-radio-channels-/)[0].props.testID).toBe('quick-reference-radio-channels-FRS 1');
+    // "alpha" finds the Radio alphabet by its name: A is "Alfa" there. It does not find the radio channels.
+    rtl.fireEvent.changeText(search, 'alpha');
+    expect(meaning('radio-alphabet', 'A')).toBe('Alfa');
+    expect(rowsShown()).toBe(37);
+    // So does the name most people know it by, which the card gives in a note.
+    rtl.fireEvent.changeText(search, 'phonetic');
+    expect(meaning('radio-alphabet', 'A')).toBe('Alfa');
+    expect(screen.getByText('Often called the NATO phonetic alphabet.')).toBeTruthy();
+    // A sign is found by its words even with one left out: "cb 9" is CB channel 9.
+    rtl.fireEvent.changeText(search, 'cb 9');
+    expect(meaning('radio-channels', 'CB channel 9')).toMatch(/^27\.065 MHz/);
+    expect(rowsShown()).toBe(1);
+
+    // What is typed is looked for at the start of a word, never across two words or in the middle of one.
+    // Each of these used to list rows or whole cards: "signals under", "half a watt", "North America",
+    // "considerable", and the f in every "force" and "FRS" for "ph".
+    for (const typed of ['sun', 'ham', 'a b', 'nope']) {
+      rtl.fireEvent.changeText(search, typed);
+      expect({ typed, rows: rowsShown() }).toEqual({ typed, rows: 0 });
+    }
+    rtl.fireEvent.changeText(search, 'ph');
+    expect(meaning('distress', 'Phone')).toMatch(/^112 across the European Union/);
+    expect(rowsShown()).toBe(1);
+    // A card's notes and source are searched by whole words, and not for words like "and" or "the".
+    for (const typed of ['and', 'the', 'not']) {
+      rtl.fireEvent.changeText(search, typed);
+      expect({ typed, morse: screen.queryByTestId('quick-reference-morse-S') }).toEqual({ typed, morse: null });
+    }
+    // A number is not found inside a longer one: "8 mph" is not in "13 to 18 mph".
+    rtl.fireEvent.changeText(search, '8 mph');
+    expect(rowsShown()).toBe(0);
+    // And the row whose sign holds the number comes first: Force 10 before "7 to 10 knots".
+    rtl.fireEvent.changeText(search, '10');
+    expect(screen.getAllByTestId(/^quick-reference-wind-force-/)[0].props.testID).toBe('quick-reference-wind-force-Force 10');
+
+    // Morse typed without its spaces is read back by the spelling, not hunted for across words.
     rtl.fireEvent.changeText(search, '...---...');
-    expect(screen.getByTestId('quick-reference-distress-SOS')).toBeTruthy();
+    expect(screen.getByText('...---... = SOS')).toBeTruthy();
+    rtl.fireEvent.changeText(search, '.-');
+    expect(meaning('morse', 'A')).toBe('.-');
+    expect(screen.queryByTestId('quick-reference-distress-SOS')).toBeNull();
 
     // One character also finds a Morse code that is exactly it, and a sign that has it as a word.
     rtl.fireEvent.changeText(search, '.');

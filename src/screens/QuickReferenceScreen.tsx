@@ -4,7 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
 import { useTheme, useThemedStyles } from '../theme';
-import { QUICK_REFERENCE_CARDS, ReferenceCard, searchCards, spellTyped } from '../features/quickReference/cards';
+import { QUICK_REFERENCE_CARDS, ReferenceCard, spellTyped } from '../features/quickReference/cards';
+import { searchCards } from '../features/quickReference/search';
 import { createStyles } from './QuickReferenceScreen.styles';
 
 /**

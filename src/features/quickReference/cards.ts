@@ -92,7 +92,7 @@ export const QUICK_REFERENCE_CARDS: ReferenceCard[] = [
       ...RADIO_WORDS.map(([sign, word]) => ({ sign, meaning: SAID.has(sign) ? `${word}, said "${SAID.get(sign)}"` : word })),
       { sign: 'Point', meaning: 'Decimal, in a number' },
     ],
-    notes: ['Spell a word letter by letter: "KD7" is Kilo Delta Seven.'],
+    notes: ['Spell a word letter by letter: "KD7" is Kilo Delta Seven.', 'Often called the NATO phonetic alphabet.'],
     source: 'The ICAO radiotelephony spelling alphabet (Annex 10). NATO and the ITU use the same letter words.',
   },
   {
@@ -150,40 +150,6 @@ export const QUICK_REFERENCE_CARDS: ReferenceCard[] = [
     source: 'NOAA Weather Radio (weather.gov/nwr). FCC rules: 47 CFR 95.563 and 95.567 for FRS, 95.931 and 95.963 for CB. All as read on 19 November 2026.',
   },
 ];
-
-/** Lower case with no white space: "FRS 1" and "frs1", "... --- ..." and "...---..." are one search. */
-const tight = (text: string) => text.toLowerCase().replace(/\s+/g, '');
-/** For words: also no hyphens, and "ph" as "f", so "pan pan" finds Pan-pan and "alpha" finds Alfa. */
-const loose = (text: string) => tight(text).replace(/-/g, '').replace(/ph/g, 'f');
-
-/**
- * What a search finds, card by card: the rows whose sign or meaning holds what was typed, the exact sign or
- * code first. A card found only by its name, its source or one of its notes (three characters or more) gives
- * all its rows. The screen
- * shows every result with its card's notes and source: a row without its card's warning, or a warning without
- * the row it is about, can mislead (the ground-to-air X, which the Army's code reads differently).
- *
- * One character finds a sign that is it or has it as a word, and a Morse code that is exactly it: "s" is S in
- * the radio alphabet and in Morse, not every row with an s in it.
- */
-export function searchCards(query: string): { card: ReferenceCard; rows: ReferenceCard['rows'] }[] {
-  const wanted = tight(query);
-  if (!wanted) return [];
-  const isWord = /[a-z0-9]/.test(wanted);
-  const holds = (text: string) => tight(text).includes(wanted) || (isWord && loose(text).includes(loose(wanted)));
-  const isIt = (row: ReferenceRow) => tight(row.sign) === wanted || tight(row.meaning) === wanted;
-  const matches = wanted.length === 1
-    ? (row: ReferenceRow) => row.sign.toLowerCase().split(' ').includes(wanted) || row.meaning === wanted
-    : (row: ReferenceRow) => holds(row.sign) || holds(row.meaning);
-  return QUICK_REFERENCE_CARDS.flatMap(card => {
-    const matched = card.rows.filter(matches);
-    if (matched.length > 0) return [{ card, rows: [...matched.filter(isIt), ...matched.filter(row => !isIt(row))] }];
-    // Three characters before a card's name, source or notes count: two ("an", "in") are in most of them, and
-    // a card shown whole for that would bury the rows that do hold what was typed.
-    const named = wanted.length > 2 && [card.title, card.source, ...card.notes].some(holds);
-    return named ? [{ card, rows: card.rows }] : [];
-  });
-}
 
 /**
  * What is typed, spelled for the radio and in Morse, or read back if it is Morse: the Phonetic & Morse tool's own
