@@ -595,3 +595,40 @@ overtaken. Its pictures now keep it out (below).
 - Seventeen more FSIS fact sheets on govinfo passed a text search only and were not looked at by eye. They are listed
   in the search's working notes and are mostly about one food each (eggs, rabbit, slow cookers, microwaves, food
   product dating). None is about growing, preserving or foraging food, which the catalogue still lacks.
+
+## Tenth batch, 18 November 2026 (night): growing and keeping food, from the National Agricultural Library
+
+The night's seventh search. Nothing was listed. The library's own site refuses the app's request, so a guide from it
+has to be an archived raw capture of its download address, as Beekeeping for Beginners is. The Wayback Machine holds
+1,524 such captures, without titles; about 55 were titled and two opened.
+
+### Not found as a usable file
+
+- Raising Rabbits (FB 2131), Farm Poultry Management (FB 2197), Raising Ducks (FB 2215), Raising Geese (FB 2251),
+  Raising Livestock on Small Farms (FB 2224), the pork, beef and lamb slaughtering bulletins (FB 2265, 2263, 2264),
+  Home Freezing of Fruits and Vegetables (HG 10), Storing Perishable Foods in the Home (HG 78) and Suburban and Farm
+  Vegetable Gardens (HG 9): the library has each, but no capture of any of their download addresses exists.
+- Drying Foods at Home (HG 217), Minigardens for Vegetables (HG 163), Growing Vegetables in the Home Garden (HG 202),
+  Growing Tomatoes in the Home Garden (HG 180), Freezing Meat and Fish in the Home (HG 93) and Keeping Food Safe to Eat
+  (HG 162): no library record was found for them in the time allowed.
+
+### Out: outdated safety advice
+
+- Family Food Stockpile for Survival, HG 77, 1961, slightly revised 1963 (USDA with the Office of Civil and Defense
+  Mobilization, https://web.archive.org/web/20210616025112id_/https://naldc.nal.usda.gov/download/CAT87213591/PDF):
+  all 16 pages looked at by the search helper; no credit anywhere. Page 12, 'Add 3 drops of tincture of iodine to
+  each quart of clear water', with no waiting time; pages 10 and 11, water in 'home hot-water tanks and toilet tanks
+  ... would be safe to use'; page 6, 'Home-canned meats and vegetables may be eaten without cooking if you are sure
+  the home canning equipment used was in good working order.'
+
+### Not listed
+
+- Making Cottage Cheese at Home, HG 129, revised December 1975 (USDA Agricultural Research Service,
+  https://web.archive.org/web/20230725061102id_/https://naldc.nal.usda.gov/download/CAT87214629/PDF): staff-written
+  ('Prepared by Eastern Marketing and Nutrition Research Division') with only the Department's own negative numbers
+  under its photographs, and nothing in it found outdated. Left out all the same: page 3 lists four companies by name
+  and address as places to buy culture and rennet, addresses now fifty years old; the file's text layer misreads the
+  recipe's fractions ('Yg to 1/4 cup'), which the assistant would learn wrong; and it only brushes the gap. Its picture
+  pages were looked at by the search helper, not by me.
+- Home Canning of Meat and Poultry and How to Make Jellies, Jams, and Preserves at Home have captures but were not
+  opened: processing times from before 1988.
