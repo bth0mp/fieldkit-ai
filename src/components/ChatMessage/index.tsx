@@ -39,17 +39,18 @@ function getToolIcon(toolName?: string): string {
 }
 
 /** Tools whose answer is one short line: the row shows the answer itself, or these words if it came back empty. */
-const ANSWER_IS_THE_LABEL: Record<string, string> = {
-  calculator: 'Calculated',
-  convert_units: 'Converted',
-  convert_coordinates: 'Grid reference',
-  sun_times: 'Sun times',
-  distance_bearing: 'Distance and bearing',
-  date_math: 'Date worked out',
-};
+// A Map, not a plain object: the model picks the tool name, and "constructor" or "__proto__" must not find anything.
+const ANSWER_IS_THE_LABEL = new Map([
+  ['calculator', 'Calculated'],
+  ['convert_units', 'Converted'],
+  ['convert_coordinates', 'Grid reference'],
+  ['sun_times', 'Sun times'],
+  ['distance_bearing', 'Distance and bearing'],
+  ['date_math', 'Date worked out'],
+]);
 
 function getToolLabel(toolName?: string, content?: string): string {
-  const whenEmpty = toolName ? ANSWER_IS_THE_LABEL[toolName] : undefined;
+  const whenEmpty = toolName ? ANSWER_IS_THE_LABEL.get(toolName) : undefined;
   if (whenEmpty) return content || whenEmpty;
   switch (toolName) {
     case 'web_search': {

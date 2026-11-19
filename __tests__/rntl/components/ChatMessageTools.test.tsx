@@ -70,6 +70,16 @@ describe('ChatMessage — Tool message rendering', () => {
       expect(getByText('Calculated')).toBeTruthy();
     });
 
+    // A model can name a tool anything. These names are keys every plain object inherits,
+    // so a table lookup that follows the prototype chain hands React a function or an object.
+    it.each(['constructor', 'toString', '__proto__'])(
+      'shows a tool the model named "%s" under that name, like any unknown tool',
+      name => {
+        const { getByText } = renderToolResult(name, '');
+        expect(getByText(name)).toBeTruthy();
+      },
+    );
+
     it('shows duration when generationTimeMs is set', () => {
       const { getByText } = renderToolResult('web_search', 'Result data', { generationTimeMs: 350 });
       expect(getByText(/350ms/)).toBeTruthy();
