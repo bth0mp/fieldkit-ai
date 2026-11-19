@@ -21,10 +21,11 @@ Fieldkit AI is free and non-commercial. See [Credits and licenses](#credits-and-
   `catalog/`.
 - Kiwix files: add `.zim` files, such as an offline Wikipedia, and the knowledge-base
   search reads them too.
-- Tools the assistant can call, each off until you switch it on. Among them: a
-  calculator, a unit converter, grid references (latitude/longitude, UTM, MGRS), sunrise,
-  sunset and moon times, distance and bearing, date sums, and the radio spelling alphabet
-  and Morse code. These work the answer out on the phone from what you type.
+- Tools the assistant can call. Seven of them work the answer out on the phone from what
+  you type, and are off until you switch them on: a calculator, a unit converter, grid
+  references (latitude/longitude, UTM, MGRS), sunrise, sunset and moon times, distance and
+  bearing, date sums, and the radio spelling alphabet and Morse code. The same seven can
+  be used with no model at all, from Calculators in Settings.
 - Quick reference: cards that need no model at all. Distress and ground-to-air signals,
   the radio alphabet, Morse code, the Beaufort wind scale and United States radio
   channels, with a search field.
