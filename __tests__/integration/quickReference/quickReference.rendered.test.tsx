@@ -51,6 +51,9 @@ describe('Quick reference (rendered)', () => {
     expect(screen.getByText(/at least 2\.5 m \(8 ft\) long/)).toBeTruthy();
     expect(screen.getByText(/rocks its wings by day, or flashes its landing or navigation lights twice at night/)).toBeTruthy();
     expect(screen.getByText(/ICAO Annex 12/)).toBeTruthy();
+    // The United States Army prints a longer code that disagrees on X; a reader of both must be told.
+    expect(screen.getByText('Some military manuals print a longer code. In the United States Army\'s, X means "unable to proceed" and a single upright stroke means a doctor is needed. The five symbols here are the international civil code.')).toBeTruthy();
+    expect(screen.getByText(/The longer code is in US Army TC 21-3 \(2025\), Appendix C\./)).toBeTruthy();
     // A screen reader hears a row as one line.
     expect(screen.getByLabelText('X: Require medical assistance')).toBeTruthy();
 

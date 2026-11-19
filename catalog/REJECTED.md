@@ -648,7 +648,10 @@ on running a radio were looked at. Neither was listed.
   February 2020 Techniques for Tactical Radio Operations, which the Army host no longer serves.
 - Visual Signals, TC 3-21.60, March 2017: looked at again by mistake; it was already out on scope (see 'tactics:
   hand-and-arm signals' above), and the older note that calls it 'worth a second pass' was about a failed download.
-  The second look adds a reason. Page 82, Figure 3-31 'Emergency codes', prints the old eighteen-symbol ground-to-air
-  code, in which X is 'Unable to proceed' and I is 'Require doctor serious injury'; in the code ICAO Annex 12 prints
-  now, X means medical assistance is required. A reader taught from it would lay out the wrong symbol. Page 83 also
+  The second look adds a note, not a new reason. Page 82, Figure 3-31 'Emergency codes', prints the Army's
+  eighteen-symbol ground-to-air code, in which X is 'Unable to proceed' and I is 'Require doctor serious injury'.
+  The international civil code in ICAO Annex 12 has five symbols, and there X means medical assistance is required.
+  The Army's chart is current Army practice, not a superseded one: the listed Soldier's Handbook for cold weather,
+  TC 21-3 of September 2025, prints the same chart as its Figure C-1 (PDF page 121, looked at). The two codes differ
+  on X, which the app's Quick reference card now says. Page 83 also
   tells the reader to put strobe lights 'in holes so they can only be viewed from above', which is concealment.

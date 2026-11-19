@@ -72,8 +72,10 @@ export const QUICK_REFERENCE_CARDS: ReferenceCard[] = [
     notes: [
       'Lay the symbols out on open ground, at least 2.5 m (8 ft) long, in a colour that stands out from the ground.',
       'An aircraft that has understood rocks its wings by day, or flashes its landing or navigation lights twice at night. No such answer means it has not understood.',
+      // The two codes disagree on X, and a guide in the library prints the Army's: a reader of both must be told.
+      'Some military manuals print a longer code. In the United States Army\'s, X means "unable to proceed" and a single upright stroke means a doctor is needed. The five symbols here are the international civil code.',
     ],
-    source: 'Symbols and aircraft answers from ICAO Annex 12 (Search and Rescue), the ground-air visual signal code for survivors. The arm signals are the usual mountain-rescue convention.',
+    source: 'Symbols and aircraft answers from ICAO Annex 12 (Search and Rescue), the ground-air visual signal code for survivors. The arm signals are the usual mountain-rescue convention. The longer code is in US Army TC 21-3 (2025), Appendix C.',
   },
   {
     id: 'radio-alphabet',
