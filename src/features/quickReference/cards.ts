@@ -103,8 +103,10 @@ export const QUICK_REFERENCE_CARDS: ReferenceCard[] = [
     source: 'International Morse code, ITU-R M.1677-1.',
   },
   {
-    // Two National Weather Service tables, read 19 November 2026: weather.gov/mfl/beaufort (the land signs and
-    // the knots) and weather.gov/pqr/wind. A figure is given only where the two agree or only one prints it.
+    // Two National Weather Service tables, read 19 November 2026: weather.gov/mfl/beaufort (the knots, and the
+    // land signs of forces 0 to 11) and weather.gov/pqr/wind (force 12's land sign; the other table only points to
+    // the hurricane scale there). A figure is given only where the two agree or only one prints it, and a name
+    // the two give differently is given both ways.
     id: 'wind-force',
     title: 'Wind force (Beaufort scale)',
     rows: [
@@ -119,12 +121,12 @@ export const QUICK_REFERENCE_CARDS: ReferenceCard[] = [
       { sign: 'Force 8', meaning: 'Gale, 39 to 46 mph (34 to 40 knots). Breaks twigs off trees; generally impedes progress' },
       { sign: 'Force 9', meaning: 'Strong gale, also called severe gale, 47 to 54 mph (41 to 47 knots). Slight structural damage occurs (chimney-pots and slates removed)' },
       { sign: 'Force 10', meaning: 'Storm, also called whole gale, 55 to 63 mph (48 to 55 knots). Seldom experienced inland; trees uprooted; considerable structural damage occurs' },
-      { sign: 'Force 11', meaning: 'Violent storm, from 64 mph (56 knots). Very rarely experienced; accompanied by wide-spread damage' },
+      { sign: 'Force 11', meaning: 'Violent storm, also called storm force, from 64 mph (56 knots). Very rarely experienced; accompanied by wide-spread damage' },
       { sign: 'Force 12', meaning: 'Hurricane, from 64 knots. Severe and extensive damage' },
     ],
     notes: [
       'These are the signs on land. At sea the scale is read from the waves, which this card leaves out.',
-      'The two tables used here put the start of force 12 at 72 and at 75 miles an hour, so it is given in knots only.',
+      'The two tables used here start force 12 at 72 miles an hour and above 75, so it is given in knots only.',
     ],
     source: 'US National Weather Service: Beaufort Wind Scale (Miami office) and Estimating Wind Speed (Portland office), as read on 19 November 2026.',
   },
@@ -135,15 +137,15 @@ export const QUICK_REFERENCE_CARDS: ReferenceCard[] = [
     id: 'radio-channels',
     title: 'Radio channels (United States)',
     rows: [
-      { sign: 'Weather radio', meaning: 'NOAA Weather Radio broadcasts on seven frequencies: 162.400, 162.425, 162.450, 162.475, 162.500, 162.525 and 162.550 MHz. Listening only' },
+      { sign: 'Weather radio', meaning: 'NOAA Weather Radio broadcasts on seven frequencies: 162.400, 162.425, 162.450, 162.475, 162.500, 162.525 and 162.550 MHz. It needs a receiver or scanner that can pick them up' },
       { sign: 'CB channel 9', meaning: '27.065 MHz. For emergencies and traveler assistance only' },
       ...FRS_MHZ.map((mhz, index) => ({ sign: `FRS ${index + 1}`, meaning: `${mhz} MHz` })),
     ],
     notes: [
       'Any CB channel may be used in an emergency, and emergency calls come first on every channel.',
-      'An FRS radio may put out 2 watts on channels 1 to 7 and 15 to 22, and half a watt on channels 8 to 14.',
+      'An FRS radio puts out no more than 2 watts on channels 1 to 7 and 15 to 22, and no more than half a watt on channels 8 to 14.',
       'Marine VHF channel 16 and the aircraft emergency frequency are on the Distress signals card.',
-      'These are United States channels and rules. They do not hold in other countries.',
+      'These are United States channels and rules.',
     ],
     source: 'NOAA Weather Radio (weather.gov/nwr). FCC rules: 47 CFR 95.563 and 95.567 for FRS, 95.931 and 95.963 for CB. All as read on 19 November 2026.',
   },

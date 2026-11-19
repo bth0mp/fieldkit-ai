@@ -119,8 +119,8 @@ describe('Quick reference (rendered)', () => {
 
     // Wind force: what to look for on land at each Beaufort number. Typed from two US National Weather
     // Service tables as read on 19 November 2026: "Beaufort Wind Scale" (weather.gov/mfl/beaufort), whose
-    // land signs and knots these are, and "Estimating Wind Speed" (weather.gov/pqr/wind). Both print the same
-    // miles an hour for forces 1 to 10 and start force 11 at 64.
+    // knots these are and whose land signs they are for forces 0 to 11, and "Estimating Wind Speed"
+    // (weather.gov/pqr/wind). Both print the same miles an hour for forces 1 to 10 and start force 11 at 64.
     rtl.fireEvent.press(screen.getByText('Wind force (Beaufort scale)'));
     expect(meaningOf('wind-force', 'Force 0')).toBe('Calm. Smoke rises vertically');
     expect(meaningOf('wind-force', 'Force 1')).toBe('Light air, 1 to 3 mph (1 to 3 knots). Direction of wind shown by smoke drift, but not by wind vanes');
@@ -134,10 +134,12 @@ describe('Quick reference (rendered)', () => {
     // The two tables name forces 9 and 10 differently; the card gives both names.
     expect(meaningOf('wind-force', 'Force 9')).toBe('Strong gale, also called severe gale, 47 to 54 mph (41 to 47 knots). Slight structural damage occurs (chimney-pots and slates removed)');
     expect(meaningOf('wind-force', 'Force 10')).toBe('Storm, also called whole gale, 55 to 63 mph (48 to 55 knots). Seldom experienced inland; trees uprooted; considerable structural damage occurs');
-    expect(meaningOf('wind-force', 'Force 11')).toBe('Violent storm, from 64 mph (56 knots). Very rarely experienced; accompanied by wide-spread damage');
-    // They disagree on where force 12 starts in miles an hour, so the card gives knots only and says why.
+    // Force 11 has two names as well. Portland's "Storm Force" is not the card's "Storm", which is force 10.
+    expect(meaningOf('wind-force', 'Force 11')).toBe('Violent storm, also called storm force, from 64 mph (56 knots). Very rarely experienced; accompanied by wide-spread damage');
+    // They disagree on where force 12 starts in miles an hour (Miami prints 72-83, Portland "over 75 mph"), so
+    // the card gives knots only and says why. Its land sign is Portland's; Miami only points to another scale.
     expect(meaningOf('wind-force', 'Force 12')).toBe('Hurricane, from 64 knots. Severe and extensive damage');
-    expect(screen.getByText('The two tables used here put the start of force 12 at 72 and at 75 miles an hour, so it is given in knots only.')).toBeTruthy();
+    expect(screen.getByText('The two tables used here start force 12 at 72 miles an hour and above 75, so it is given in knots only.')).toBeTruthy();
     expect(screen.getByText('These are the signs on land. At sea the scale is read from the waves, which this card leaves out.')).toBeTruthy();
     expect(screen.getByText('US National Weather Service: Beaufort Wind Scale (Miami office) and Estimating Wind Speed (Portland office), as read on 19 November 2026.')).toBeTruthy();
     expect(screen.getByLabelText('Force 8: Gale, 39 to 46 mph (34 to 40 knots). Breaks twigs off trees; generally impedes progress')).toBeTruthy();
@@ -149,7 +151,7 @@ describe('Quick reference (rendered)', () => {
     // 95.931 (what CB channel 9 is for) and 95.963 (the CB channel table).
     rtl.fireEvent.press(screen.getByText('Radio channels (United States)'));
     expect(meaningOf('radio-channels', 'Weather radio'))
-      .toBe('NOAA Weather Radio broadcasts on seven frequencies: 162.400, 162.425, 162.450, 162.475, 162.500, 162.525 and 162.550 MHz. Listening only');
+      .toBe('NOAA Weather Radio broadcasts on seven frequencies: 162.400, 162.425, 162.450, 162.475, 162.500, 162.525 and 162.550 MHz. It needs a receiver or scanner that can pick them up');
     expect(meaningOf('radio-channels', 'CB channel 9')).toBe('27.065 MHz. For emergencies and traveler assistance only');
     const FRS = [
       '462.5625', '462.5875', '462.6125', '462.6375', '462.6625', '462.6875', '462.7125',
@@ -159,9 +161,12 @@ describe('Quick reference (rendered)', () => {
     FRS.forEach((mhz, index) => { expect(meaningOf('radio-channels', `FRS ${index + 1}`)).toBe(`${mhz} MHz`); });
     expect(screen.queryByTestId('quick-reference-radio-channels-FRS 23')).toBeNull();
     expect(screen.getByText('Any CB channel may be used in an emergency, and emergency calls come first on every channel.')).toBeTruthy();
-    expect(screen.getByText('An FRS radio may put out 2 watts on channels 1 to 7 and 15 to 22, and half a watt on channels 8 to 14.')).toBeTruthy();
+    // 47 CFR 95.567 sets ceilings ("does not exceed"), so the card says "no more than".
+    expect(screen.getByText('An FRS radio puts out no more than 2 watts on channels 1 to 7 and 15 to 22, and no more than half a watt on channels 8 to 14.')).toBeTruthy();
     expect(screen.getByText('Marine VHF channel 16 and the aircraft emergency frequency are on the Distress signals card.')).toBeTruthy();
-    expect(screen.getByText('These are United States channels and rules. They do not hold in other countries.')).toBeTruthy();
+    // The sources are United States ones. They say nothing of other countries, so neither does the card.
+    expect(screen.getByText('These are United States channels and rules.')).toBeTruthy();
+    expect(screen.queryByText(/other countries/)).toBeNull();
     expect(screen.getByText('NOAA Weather Radio (weather.gov/nwr). FCC rules: 47 CFR 95.563 and 95.567 for FRS, 95.931 and 95.963 for CB. All as read on 19 November 2026.')).toBeTruthy();
   });
 
