@@ -26,6 +26,11 @@ export interface KiwixHit {
 
 const UNREADABLE = new ZimError('unreadable').message;
 const FOLDER_GONE = "This folder can't be opened any more. Add it again.";
+const SPLIT = "Fieldkit can't read a Kiwix file that is split into parts (.zimaa, .zimab and so on). Use the single .zim file instead.";
+/** One part of a download split for a 4 GB file-size limit: name.zimaa, name.zimab ... */
+const isSplitPart = (name: string) => /\.zim[a-z]{2}$/i.test(name);
+/** What a folder check adds or explains: whole files, and the first part of each split download. */
+const isListed = (name: string) => /\.zim(aa)?$/i.test(name);
 // ponytail: the 8 most recently used readers stay open (each keeps one decompressed cluster of about 2 MB).
 const MAX_OPEN_READERS = 8;
 /** Kiwix files named in a project chat's system prompt; the rest are counted. */
@@ -93,6 +98,10 @@ async function addDocuments(docs: TreeDocument[]): Promise<void> {
     for (const [done, doc] of docs.entries()) {
       store.setState({ adding: { done, total: docs.length } });
       if (isKnown(doc.uri)) continue;
+      if (isSplitPart(doc.name)) {
+        refuse(doc.name, SPLIT);
+        continue;
+      }
       try {
         const zim = await openUri(doc.uri);
         const category = categoryFor(zim.metadata);
@@ -127,6 +136,8 @@ async function checkFolders(): Promise<void> {
   await hydrated();
   const module = tree();
   if (!module) return;
+  // Rows only a folder check makes are made afresh each time, so one goes when its cause does.
+  store.setState(s => ({ refused: s.refused.filter(r => r.reason !== FOLDER_GONE && r.reason !== SPLIT) }));
   const { folders, removed } = store.getState();
   const found: TreeDocument[] = [];
   for (const folder of folders) {
@@ -136,7 +147,7 @@ async function checkFolders(): Promise<void> {
       refuse(nameOf(folder), FOLDER_GONE);
     }
   }
-  await addDocuments(found.filter(d => d.name.toLowerCase().endsWith('.zim') && !isKnown(d.uri) && !removed.includes(d.uri)));
+  await addDocuments(found.filter(d => isListed(d.name) && !isKnown(d.uri) && !removed.includes(d.uri)));
 }
 
 async function dropFile(id: string): Promise<void> {
