@@ -52,8 +52,12 @@ const UTF8_MIN = [0, 0x80, 0x800, 0x10000];
 
 /** UTF-8 bytes as a string. Hermes, the phone's engine, has TextEncoder but no TextDecoder. Bad bytes become U+FFFD. */
 function decodeUtf8(b: Uint8Array): string {
+  // Joined 8 K code units at a time, so a 16 MB blob never becomes a 16-million-entry array.
+  let out = '';
   const units: number[] = [];
+  const flush = () => { out += String.fromCharCode(...units); units.length = 0; };
   for (let i = 0; i < b.length;) {
+    if (units.length >= 8192) flush();
     const c = b[i++];
     const need = c < 0x80 ? 0 : c >= 0xc2 && c <= 0xdf ? 1 : c >= 0xe0 && c <= 0xef ? 2 : c >= 0xf0 && c <= 0xf4 ? 3 : -1;
     let cp = need === 0 ? c : 0xfffd;
@@ -66,8 +70,7 @@ function decodeUtf8(b: Uint8Array): string {
     }
     if (cp > 0xffff) units.push(0xd7c0 + (cp >> 10), 0xdc00 + (cp & 0x3ff)); else units.push(cp);
   }
-  let out = '';
-  for (let at = 0; at < units.length; at += 8192) out += String.fromCharCode(...units.slice(at, at + 8192));
+  flush();
   return out;
 }
 
