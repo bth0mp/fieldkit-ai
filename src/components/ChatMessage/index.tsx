@@ -29,6 +29,7 @@ function getToolIcon(toolName?: string): string {
     case 'draft_email': return 'mail';
     case 'read_calendar_events': return 'calendar';
     case 'create_calendar_event': return 'calendar';
+    case 'convert_units': return 'repeat';
     default: return 'tool';
   }
 }
@@ -46,6 +47,7 @@ function getToolLabel(toolName?: string, content?: string): string {
     case 'draft_email': return 'Email draft';
     case 'read_calendar_events': return 'Calendar';
     case 'create_calendar_event': return 'New event';
+    case 'convert_units': return content || 'Converted';
     default: return toolName || 'Tool result';
   }
 }

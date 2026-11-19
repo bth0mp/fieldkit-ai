@@ -171,6 +171,31 @@ export const AVAILABLE_TOOLS: ToolDefinition[] = [
       },
     },
   },
+  {
+    id: 'convert_units',
+    name: 'convert_units',
+    displayName: 'Unit Converter',
+    // The LiteRT tool router reads only the first 100 characters of a description.
+    description: 'Convert a value between units: length, mass, volume, temperature, speed, pressure, area, energy. Use this instead of converting in your head, e.g. miles to km, °F to °C, psi to kPa, gallons to litres.',
+    icon: 'repeat',
+    parameters: {
+      value: {
+        type: 'number',
+        description: 'The number to convert',
+        required: true,
+      },
+      from: {
+        type: 'string',
+        description: 'Unit to convert from, e.g. mi, lb, gal, F, psi',
+        required: true,
+      },
+      to: {
+        type: 'string',
+        description: 'Unit to convert to, e.g. km, kg, L, C, kPa',
+        required: true,
+      },
+    },
+  },
 ];
 
 export function getToolsAsOpenAISchema(enabledToolIds: string[]) {

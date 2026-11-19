@@ -16,8 +16,8 @@ describe('Tool Registry', () => {
   // AVAILABLE_TOOLS
   // ========================================================================
   describe('AVAILABLE_TOOLS', () => {
-    it('has exactly 9 tools with correct IDs', () => {
-      expect(AVAILABLE_TOOLS).toHaveLength(9);
+    it('has exactly 10 tools with correct IDs', () => {
+      expect(AVAILABLE_TOOLS).toHaveLength(10);
 
       const ids = AVAILABLE_TOOLS.map(t => t.id);
       expect(ids).toEqual([
@@ -30,7 +30,17 @@ describe('Tool Registry', () => {
         'draft_email',
         'read_calendar_events',
         'create_calendar_event',
+        'convert_units',
       ]);
+    });
+
+    it('convert_units says what it converts within the 100 characters the LiteRT tool router reads', () => {
+      const tool = AVAILABLE_TOOLS.find(t => t.id === 'convert_units')!;
+      const routed = tool.description.split('\n')[0].slice(0, 100);
+      for (const kind of ['length', 'mass', 'volume', 'temperature', 'speed', 'pressure', 'area', 'energy']) {
+        expect(routed).toContain(kind);
+      }
+      expect(Object.entries(tool.parameters).filter(([, p]) => p.required).map(([k]) => k)).toEqual(['value', 'from', 'to']);
     });
 
     it('only draft_email and create_calendar_event require approval of every call', () => {
@@ -45,6 +55,7 @@ describe('Tool Registry', () => {
         draft_email: true,
         read_calendar_events: false,
         create_calendar_event: true,
+        convert_units: false,
       });
     });
 
