@@ -11,6 +11,7 @@ import { convertCoordinates } from './coordinateTools';
 import { sunTimes } from './sunTools';
 import { distanceBearing } from './distanceTools';
 import { dateMath } from './dateTools';
+import { spellOut } from './spellTools';
 import logger from '../../utils/logger';
 
 function makeResult(call: ToolCall, start: number, opts: { content: string; error?: string }): ToolResult {
@@ -63,6 +64,7 @@ async function dispatchTool(call: ToolCall): Promise<string> {
     case 'sun_times': return sunTimes(call);
     case 'distance_bearing': return distanceBearing(call);
     case 'date_math': return dateMath(call);
+    case 'phonetic_morse': return spellOut(call);
     default:
       throw new Error(`Unknown tool: ${call.name}`);
   }

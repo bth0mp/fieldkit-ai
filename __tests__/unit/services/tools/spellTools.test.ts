@@ -1,0 +1,135 @@
+/**
+ * phonetic_morse: text spelled in the radio alphabet and in International Morse code, and Morse read back.
+ *
+ * Expected values are the published tables, typed here independently of the code: the ICAO spelling alphabet
+ * and the ITU-R M.1677-1 Morse code (both checked against a second source on 18 November 2026), plus the
+ * well-known anchors SOS and PARIS.
+ */
+import { spellOut } from '../../../../src/services/tools/spellTools';
+
+type Args = Record<string, unknown>;
+const run = (args: Args) => spellOut({ name: 'phonetic_morse', arguments: args });
+
+const MORSE: Array<[string, string]> = [
+  ['A', '.-'], ['B', '-...'], ['C', '-.-.'], ['D', '-..'], ['E', '.'], ['F', '..-.'], ['G', '--.'], ['H', '....'],
+  ['I', '..'], ['J', '.---'], ['K', '-.-'], ['L', '.-..'], ['M', '--'], ['N', '-.'], ['O', '---'], ['P', '.--.'],
+  ['Q', '--.-'], ['R', '.-.'], ['S', '...'], ['T', '-'], ['U', '..-'], ['V', '...-'], ['W', '.--'], ['X', '-..-'],
+  ['Y', '-.--'], ['Z', '--..'],
+  ['0', '-----'], ['1', '.----'], ['2', '..---'], ['3', '...--'], ['4', '....-'], ['5', '.....'], ['6', '-....'],
+  ['7', '--...'], ['8', '---..'], ['9', '----.'],
+  ['.', '.-.-.-'], [',', '--..--'], [':', '---...'], ['?', '..--..'], ["'", '.----.'], ['-', '-....-'],
+  ['/', '-..-.'], ['(', '-.--.'], [')', '-.--.-'], ['"', '.-..-.'], ['=', '-...-'], ['+', '.-.-.'], ['@', '.--.-.'],
+];
+
+describe('phonetic_morse', () => {
+  describe('the radio alphabet', () => {
+    it('spells every letter with its ICAO word', () => {
+      expect(run({ text: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', to: 'phonetic' })).toBe(
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZ = Alfa Bravo Charlie Delta Echo Foxtrot Golf Hotel India Juliett Kilo Lima Mike '
+        + 'November Oscar Papa Quebec Romeo Sierra Tango Uniform Victor Whiskey X-ray Yankee Zulu',
+      );
+    });
+
+    it('spells digits as words and the point in a number as Decimal', () => {
+      expect(run({ text: '146.52', to: 'phonetic' })).toBe('146.52 = One Four Six Decimal Five Two');
+      expect(run({ text: '0123456789', to: 'phonetic' })).toBe('0123456789 = Zero One Two Three Four Five Six Seven Eight Nine');
+      expect(run({ text: '.5', to: 'phonetic' })).toBe('.5 = Decimal Five');
+      // A full stop that is not a decimal point has no radio word.
+      expect(run({ text: 'v2. ok', to: 'phonetic' })).toBe('v2. ok = Victor Two / Oscar Kilo (left out: .)');
+    });
+
+    it('spells a number the model passed as a number', () => {
+      expect(run({ text: 73, to: 'phonetic' })).toBe('73 = Seven Three');
+    });
+
+    it('reads lower case, marks the gap between words, and says Slash and Dash', () => {
+      expect(run({ text: 'kd7 abc', to: 'phonetic' })).toBe('kd7 abc = Kilo Delta Seven / Alfa Bravo Charlie');
+      expect(run({ text: 'W1AW/P', to: 'phonetic' })).toBe('W1AW/P = Whiskey One Alfa Whiskey Slash Papa');
+      expect(run({ text: 'X-1', to: 'phonetic' })).toBe('X-1 = X-ray Dash One');
+    });
+
+    it('spells an accented letter as its plain letter', () => {
+      expect(run({ text: 'café', to: 'phonetic' })).toBe('café = Charlie Alfa Foxtrot Echo');
+    });
+
+    it('names what it left out instead of dropping it silently', () => {
+      expect(run({ text: 'OK! #2', to: 'phonetic' })).toBe('OK! #2 = Oscar Kilo / Two (left out: ! #)');
+    });
+  });
+
+  describe('into Morse', () => {
+    it('gives the well-known anchors', () => {
+      expect(run({ text: 'SOS', to: 'morse' })).toBe('SOS = ... --- ...');
+      expect(run({ text: 'PARIS', to: 'morse' })).toBe('PARIS = .--. .- .-. .. ...');
+      // A small model may capitalise the choice.
+      expect(run({ text: 'SOS', to: ' Morse ' })).toBe('SOS = ... --- ...');
+    });
+
+    it.each(MORSE)('codes %s as %s', (char, code) => {
+      expect(run({ text: `E${char}E`, to: 'morse' })).toBe(`E${char}E = . ${code} .`);
+    });
+
+    it('puts one space between letters and a slash between words', () => {
+      expect(run({ text: 'sos help', to: 'morse' })).toBe('sos help = ... --- ... / .... . .-.. .--.');
+    });
+
+    it('names a character that has no code in the international set', () => {
+      expect(run({ text: 'GO! NOW', to: 'morse' })).toBe('GO! NOW = --. --- / -. --- .-- (left out: !)');
+    });
+  });
+
+  describe('both at once', () => {
+    it('gives the radio words and the Morse when not told which', () => {
+      expect(run({ text: 'KD7ABC' })).toBe('KD7ABC = Kilo Delta Seven Alfa Bravo Charlie\nMorse: -.- -.. --... .- -... -.-.');
+    });
+  });
+
+  describe('reading Morse', () => {
+    it('reads letters and words back', () => {
+      expect(run({ text: '... --- ... / .... . .-.. .--.' })).toBe('... --- ... / .... . .-.. .--. = SOS HELP');
+    });
+
+    it.each(MORSE)('reads %s from %s', (char, code) => {
+      expect(run({ text: `. ${code} .` })).toBe(`. ${code} . = E${char}E`);
+    });
+
+    it('reads Morse whichever spelling was asked for', () => {
+      expect(run({ text: '.--. .- .-. .. ...', to: 'morse' })).toBe('.--. .- .-. .. ... = PARIS');
+      expect(run({ text: '.--. .- .-. .. ...', to: 'phonetic' })).toBe('.--. .- .-. .. ... = PARIS');
+    });
+
+    it('reads the distress signal sent as one run', () => {
+      expect(run({ text: '...---...' })).toBe('...---... = SOS');
+    });
+
+    it('reads typed dots and dashes of other kinds, and wide gaps between words', () => {
+      expect(run({ text: '··· ——— ···' })).toBe('... --- ... = SOS');
+      expect(run({ text: '•• –– __' })).toBe('.. -- -- = IMM');
+      expect(run({ text: '-. ---   --. ---' })).toBe('-. --- / --. --- = NO GO');
+      expect(run({ text: '-. --- | --. ---' })).toBe('-. --- / --. --- = NO GO');
+    });
+
+    it('marks a code it does not know and says how many', () => {
+      expect(run({ text: '... ........ ...' })).toBe('... ........ ... = S?S (1 code not recognised, shown as ?)');
+      expect(run({ text: '........ ---------' })).toBe('........ --------- = ?? (2 codes not recognised, shown as ?)');
+    });
+  });
+
+  describe('what it refuses', () => {
+    it.each([
+      [{}, 'Give the text to spell, or the Morse code to read.'],
+      [{ text: '   ' }, 'Give the text to spell, or the Morse code to read.'],
+      [{ text: { a: 1 } }, 'Give the text to spell, or the Morse code to read.'],
+      [{ text: 'x'.repeat(201) }, 'That is too long to spell out: 200 characters at most.'],
+      [{ text: '.- '.repeat(401) }, 'That is too long to read: 1200 characters of Morse at most.'],
+      [{ text: 'SOS', to: 'semaphore' }, 'to must be "phonetic" or "morse", or left out for both.'],
+      [{ text: '!!!', to: 'morse' }, 'Nothing in that can be spelled: use letters and digits.'],
+    ])('%j', (args, message) => {
+      expect(() => run(args as Args)).toThrow(message);
+    });
+
+    it('keeps control characters out of its answer', () => {
+      expect(run({ text: 'A\u0007B\nC', to: 'phonetic' })).toBe('AB C = Alfa Bravo / Charlie');
+    });
+  });
+});

@@ -34,6 +34,7 @@ function getToolIcon(toolName?: string): string {
     case 'sun_times': return 'sun';
     case 'distance_bearing': return 'compass';
     case 'date_math': return 'calendar';
+    case 'phonetic_morse': return 'radio';
     default: return 'tool';
   }
 }
@@ -47,6 +48,7 @@ const ANSWER_IS_THE_LABEL = new Map([
   ['sun_times', 'Sun times'],
   ['distance_bearing', 'Distance and bearing'],
   ['date_math', 'Date worked out'],
+  ['phonetic_morse', 'Spelled out'],
 ]);
 
 function getToolLabel(toolName?: string, content?: string): string {

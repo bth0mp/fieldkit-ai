@@ -281,6 +281,27 @@ export const AVAILABLE_TOOLS: ToolDefinition[] = [
       },
     },
   },
+  {
+    id: 'phonetic_morse',
+    name: 'phonetic_morse',
+    displayName: 'Phonetic & Morse',
+    // The LiteRT tool router reads only the first 100 characters of a description.
+    description: 'Spell text in the NATO phonetic alphabet or Morse code, or read Morse code back into text. Never spell or decode these yourself. Write Morse with a space between letters and / between words.',
+    icon: 'radio',
+    userNote: 'Try: "spell KD7ABC for the radio" or "what does ... --- ... mean in Morse?"',
+    parameters: {
+      text: {
+        type: 'string',
+        description: 'The text to spell, e.g. "KD7ABC", or the Morse code to read, e.g. "... --- ..."',
+        required: true,
+      },
+      to: {
+        type: 'string',
+        description: 'Which spelling to give. Leave out for both.',
+        enum: ['phonetic', 'morse'],
+      },
+    },
+  },
 ];
 
 export function getToolsAsOpenAISchema(enabledToolIds: string[]) {

@@ -16,8 +16,8 @@ describe('Tool Registry', () => {
   // AVAILABLE_TOOLS
   // ========================================================================
   describe('AVAILABLE_TOOLS', () => {
-    it('has exactly 14 tools with correct IDs', () => {
-      expect(AVAILABLE_TOOLS).toHaveLength(14);
+    it('has exactly 15 tools with correct IDs', () => {
+      expect(AVAILABLE_TOOLS).toHaveLength(15);
 
       const ids = AVAILABLE_TOOLS.map(t => t.id);
       expect(ids).toEqual([
@@ -35,7 +35,16 @@ describe('Tool Registry', () => {
         'sun_times',
         'distance_bearing',
         'date_math',
+        'phonetic_morse',
       ]);
+    });
+
+    it('phonetic_morse says what it does within the 100 characters the LiteRT tool router reads', () => {
+      const tool = AVAILABLE_TOOLS.find(t => t.id === 'phonetic_morse')!;
+      const routed = tool.description.split('\n')[0].slice(0, 100);
+      for (const word of ['phonetic alphabet', 'Morse code', 'read Morse']) expect(routed).toContain(word);
+      expect(Object.entries(tool.parameters).filter(([, p]) => p.required).map(([k]) => k)).toEqual(['text']);
+      expect(tool.parameters.to.enum).toEqual(['phonetic', 'morse']);
     });
 
     it('date_math says what it does within the 100 characters the LiteRT tool router reads', () => {
@@ -96,6 +105,7 @@ describe('Tool Registry', () => {
         sun_times: false,
         distance_bearing: false,
         date_math: false,
+        phonetic_morse: false,
       });
     });
 

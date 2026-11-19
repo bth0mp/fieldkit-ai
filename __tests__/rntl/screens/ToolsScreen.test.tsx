@@ -88,6 +88,8 @@ describe('ToolsScreen', () => {
       convert_coordinates: /Try: "what is the grid reference for 40\.6892, -74\.0445\?"/,
       sun_times: /Try: "when is sunset at 51\.48, 0\.00 on 21 June\?"/,
       distance_bearing: /Try: "how far and which way is 78\.22, 15\.65 from 78, 15\?"/,
+      date_math: /Try: "we have food for 45 days from today, what date does it run out\?"/,
+      phonetic_morse: /Try: "spell KD7ABC for the radio" or "what does \.\.\. --- \.\.\. mean in Morse\?"/,
     };
     for (const [id, example] of Object.entries(examples)) {
       expect(within(getByTestId(`tool-picker-row-${id}`)).getByText(example)).toBeTruthy();
