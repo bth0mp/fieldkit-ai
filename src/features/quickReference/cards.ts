@@ -158,7 +158,8 @@ const loose = (text: string) => tight(text).replace(/-/g, '').replace(/ph/g, 'f'
 
 /**
  * What a search finds, card by card: the rows whose sign or meaning holds what was typed, the exact sign or
- * code first. A card found only by its name, its source or one of its notes gives all its rows. The screen
+ * code first. A card found only by its name, its source or one of its notes (three characters or more) gives
+ * all its rows. The screen
  * shows every result with its card's notes and source: a row without its card's warning, or a warning without
  * the row it is about, can mislead (the ground-to-air X, which the Army's code reads differently).
  *
@@ -177,7 +178,9 @@ export function searchCards(query: string): { card: ReferenceCard; rows: Referen
   return QUICK_REFERENCE_CARDS.flatMap(card => {
     const matched = card.rows.filter(matches);
     if (matched.length > 0) return [{ card, rows: [...matched.filter(isIt), ...matched.filter(row => !isIt(row))] }];
-    const named = wanted.length > 1 && [card.title, card.source, ...card.notes].some(holds);
+    // Three characters before a card's name, source or notes count: two ("an", "in") are in most of them, and
+    // a card shown whole for that would bury the rows that do hold what was typed.
+    const named = wanted.length > 2 && [card.title, card.source, ...card.notes].some(holds);
     return named ? [{ card, rows: card.rows }] : [];
   });
 }

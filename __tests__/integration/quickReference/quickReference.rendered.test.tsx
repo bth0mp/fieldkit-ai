@@ -273,6 +273,14 @@ describe('Quick reference (rendered)', () => {
     expect(rowsShown()).toBe(1);
     rtl.fireEvent.changeText(search, 'cb');
     expect(meaning('radio-channels', 'CB channel 9')).toMatch(/^27\.065 MHz/);
+    // Two letters look in the rows only. "an" is in the Morse card's note ("letters and seven"), and a card
+    // shown whole for that would bury the rows that do hold it; three letters reach names, notes and sources.
+    rtl.fireEvent.changeText(search, 'an');
+    expect(screen.queryByTestId('quick-reference-morse-S')).toBeNull();
+    expect(screen.queryByText('Morse code')).toBeNull();
+    expect(meaning('distress', 'Pan-pan')).toMatch(/^By voice/);
+    rtl.fireEvent.changeText(search, 'mor');
+    expect(meaning('morse', 'S')).toBe('...');
 
     // Spaces and hyphens do not matter, and "ph" finds the alphabet's "f".
     rtl.fireEvent.changeText(search, 'pan pan');
