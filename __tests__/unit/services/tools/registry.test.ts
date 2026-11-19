@@ -16,8 +16,8 @@ describe('Tool Registry', () => {
   // AVAILABLE_TOOLS
   // ========================================================================
   describe('AVAILABLE_TOOLS', () => {
-    it('has exactly 13 tools with correct IDs', () => {
-      expect(AVAILABLE_TOOLS).toHaveLength(13);
+    it('has exactly 14 tools with correct IDs', () => {
+      expect(AVAILABLE_TOOLS).toHaveLength(14);
 
       const ids = AVAILABLE_TOOLS.map(t => t.id);
       expect(ids).toEqual([
@@ -34,7 +34,17 @@ describe('Tool Registry', () => {
         'convert_coordinates',
         'sun_times',
         'distance_bearing',
+        'date_math',
       ]);
+    });
+
+    it('date_math says what it does within the 100 characters the LiteRT tool router reads', () => {
+      const tool = AVAILABLE_TOOLS.find(t => t.id === 'date_math')!;
+      const routed = tool.description.split('\n')[0].slice(0, 100);
+      for (const word of ['Days between two dates', 'day of the week']) expect(routed).toContain(word);
+      // Nothing is required: the start defaults to today, and one of end and add_days says which sum is wanted.
+      expect(Object.entries(tool.parameters).filter(([, p]) => p.required).map(([k]) => k)).toEqual([]);
+      expect(Object.keys(tool.parameters)).toEqual(['start', 'end', 'add_days']);
     });
 
     it('distance_bearing says what it gives within the 100 characters the LiteRT tool router reads', () => {
@@ -85,6 +95,7 @@ describe('Tool Registry', () => {
         convert_coordinates: false,
         sun_times: false,
         distance_bearing: false,
+        date_math: false,
       });
     });
 

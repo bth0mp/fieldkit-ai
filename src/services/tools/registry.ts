@@ -258,6 +258,29 @@ export const AVAILABLE_TOOLS: ToolDefinition[] = [
       },
     },
   },
+  {
+    id: 'date_math',
+    name: 'date_math',
+    displayName: 'Date Calculator',
+    // The LiteRT tool router reads only the first 100 characters of a description.
+    description: 'Days between two dates, the date a number of days on or back, and the day of the week. Use this instead of counting days yourself. Give end to count the days from start to end, or add_days to find the date that many days after start (negative for before).',
+    icon: 'calendar',
+    userNote: 'Try: "we have food for 45 days from today, what date does it run out?" or "how many days until 25 December?"',
+    parameters: {
+      start: {
+        type: 'string',
+        description: 'The date to start from, as YYYY-MM-DD. Leave out for today.',
+      },
+      end: {
+        type: 'string',
+        description: 'A second date, as YYYY-MM-DD, to count the days to',
+      },
+      add_days: {
+        type: 'number',
+        description: 'A whole number of days to add to start; negative to go back; 0 for just the day of the week',
+      },
+    },
+  },
 ];
 
 export function getToolsAsOpenAISchema(enabledToolIds: string[]) {

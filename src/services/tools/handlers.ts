@@ -10,6 +10,7 @@ import { convertUnits } from './unitTools';
 import { convertCoordinates } from './coordinateTools';
 import { sunTimes } from './sunTools';
 import { distanceBearing } from './distanceTools';
+import { dateMath } from './dateTools';
 import logger from '../../utils/logger';
 
 function makeResult(call: ToolCall, start: number, opts: { content: string; error?: string }): ToolResult {
@@ -61,6 +62,7 @@ async function dispatchTool(call: ToolCall): Promise<string> {
     case 'convert_coordinates': return convertCoordinates(call);
     case 'sun_times': return sunTimes(call);
     case 'distance_bearing': return distanceBearing(call);
+    case 'date_math': return dateMath(call);
     default:
       throw new Error(`Unknown tool: ${call.name}`);
   }

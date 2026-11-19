@@ -33,27 +33,35 @@ function getToolIcon(toolName?: string): string {
     case 'convert_coordinates': return 'map-pin';
     case 'sun_times': return 'sun';
     case 'distance_bearing': return 'compass';
+    case 'date_math': return 'calendar';
     default: return 'tool';
   }
 }
 
+/** Tools whose answer is one short line: the row shows the answer itself, or these words if it came back empty. */
+const ANSWER_IS_THE_LABEL: Record<string, string> = {
+  calculator: 'Calculated',
+  convert_units: 'Converted',
+  convert_coordinates: 'Grid reference',
+  sun_times: 'Sun times',
+  distance_bearing: 'Distance and bearing',
+  date_math: 'Date worked out',
+};
+
 function getToolLabel(toolName?: string, content?: string): string {
+  const whenEmpty = toolName ? ANSWER_IS_THE_LABEL[toolName] : undefined;
+  if (whenEmpty) return content || whenEmpty;
   switch (toolName) {
     case 'web_search': {
       const queryMatch = content ? /^No results found for "([^"]+)"/.exec(content) : null;
       if (queryMatch) return `Searched: "${queryMatch[1]}" (no results)`;
       return 'Web search result';
     }
-    case 'calculator': return content || 'Calculated';
     case 'get_current_datetime': return 'Retrieved date/time';
     case 'get_device_info': return 'Retrieved device info';
     case 'draft_email': return 'Email draft';
     case 'read_calendar_events': return 'Calendar';
     case 'create_calendar_event': return 'New event';
-    case 'convert_units': return content || 'Converted';
-    case 'convert_coordinates': return content || 'Grid reference';
-    case 'sun_times': return content || 'Sun times';
-    case 'distance_bearing': return content || 'Distance and bearing';
     default: return toolName || 'Tool result';
   }
 }
