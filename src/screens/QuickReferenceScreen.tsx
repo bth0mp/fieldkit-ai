@@ -49,7 +49,7 @@ export const QuickReferenceScreen: React.FC = () => {
                 <>
                   {card.rows.map(row => (
                     <View key={row.sign} style={styles.referenceRow} testID={`quick-reference-${card.id}-${row.sign}`}
-                      accessible accessibilityLabel={`${row.sign}: ${row.spoken ?? row.meaning}`}>
+                      accessible accessibilityLabel={`${row.spokenSign ?? row.sign}: ${row.spoken ?? row.meaning}`}>
                       <Text style={styles.sign}>{row.sign}</Text>
                       <Text style={styles.meaning} testID="quick-reference-meaning">{row.meaning}</Text>
                     </View>

@@ -10,6 +10,8 @@ interface ReferenceRow {
   meaning: string;
   /** How a screen reader should say the meaning, where the printed form is not words. */
   spoken?: string;
+  /** How a screen reader should say the sign, where it is a bare mark it would pass over. */
+  spokenSign?: string;
 }
 
 export interface ReferenceCard {
@@ -24,13 +26,23 @@ export interface ReferenceCard {
 const SAID = new Map([['3', 'tree'], ['4', 'fower'], ['5', 'fife'], ['9', 'niner']]);
 /** ".-" read out as "dot dash": a screen reader would skip or mangle the marks. */
 const speakMorse = (code: string) => [...code].map(mark => (mark === '.' ? 'dot' : 'dash')).join(' ');
+/** The punctuation marks Morse has codes for, by name. */
+const MARK_NAMES = new Map([
+  ['.', 'full stop'], [',', 'comma'], [':', 'colon'], ['?', 'question mark'], ["'", 'apostrophe'], ['-', 'hyphen'],
+  ['/', 'slash'], ['(', 'opening bracket'], [')', 'closing bracket'], ['"', 'quotation mark'], ['=', 'equals sign'],
+  ['+', 'plus sign'], ['@', 'at sign'],
+]);
 
 export const QUICK_REFERENCE_CARDS: ReferenceCard[] = [
   {
     id: 'distress',
     title: 'Distress signals',
     rows: [
-      { sign: 'SOS', meaning: '... --- ... by light, sound or radio, sent as one run: three short, three long, three short, then a pause' },
+      {
+        sign: 'SOS',
+        meaning: '... --- ... by light, sound or radio, sent as one run: three short, three long, three short, then a pause',
+        spoken: 'three dots, three dashes, three dots, by light, sound or radio, sent as one run, then a pause',
+      },
       { sign: 'Mayday', meaning: 'By voice, when life is in danger: "Mayday, Mayday, Mayday", then who you are, where you are and what is wrong' },
       { sign: 'Pan-pan', meaning: 'By voice, when it is urgent but no life is in immediate danger: "Pan-pan" three times, then the same details' },
       { sign: 'Whistle or light', meaning: "The Alpine signal, used in Europe's mountains: six blasts or flashes in a minute, then a minute's pause, repeated. The answer is three in a minute" },
@@ -76,7 +88,7 @@ export const QUICK_REFERENCE_CARDS: ReferenceCard[] = [
   {
     id: 'morse',
     title: 'Morse code',
-    rows: MORSE_CODES.map(([sign, meaning]) => ({ sign, meaning, spoken: speakMorse(meaning) })),
+    rows: MORSE_CODES.map(([sign, meaning]) => ({ sign, meaning, spoken: speakMorse(meaning), spokenSign: MARK_NAMES.get(sign) })),
     notes: ['A dash lasts three dots. Leave one dot of silence inside a letter, three between letters and seven between words.'],
     source: 'International Morse code, ITU-R M.1677-1.',
   },

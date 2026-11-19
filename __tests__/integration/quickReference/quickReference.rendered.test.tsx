@@ -61,6 +61,7 @@ describe('Quick reference (rendered)', () => {
     // Distress: SOS and the mountain whistle signal.
     rtl.fireEvent.press(screen.getByText('Distress signals'));
     expect(meaningOf('distress', 'SOS')).toMatch(/^\.\.\. --- \.\.\./);
+    expect(screen.getByLabelText('SOS: three dots, three dashes, three dots, by light, sound or radio, sent as one run, then a pause')).toBeTruthy();
     expect(screen.getByText(/Mayday, Mayday, Mayday/)).toBeTruthy();
     // Each regional signal says where it holds: "three" is the call for help in one and the answer in the other.
     expect(meaningOf('distress', 'Whistle or light'))
@@ -88,6 +89,10 @@ describe('Quick reference (rendered)', () => {
     expect(meaningOf('morse', '?')).toBe('..--..');
     // Dots and dashes are spoken as words, not skipped as punctuation.
     expect(screen.getByLabelText('S: dot dot dot')).toBeTruthy();
+    // A punctuation mark is named: a screen reader would pass over the bare mark.
+    expect(screen.getByLabelText('question mark: dot dot dash dash dot dot')).toBeTruthy();
+    expect(screen.getByLabelText('full stop: dot dash dot dash dot dash')).toBeTruthy();
+    expect(screen.queryByLabelText('?: dot dot dash dash dot dot')).toBeNull();
     expect(screen.getByLabelText('A: dot dash')).toBeTruthy();
     expect(screen.getByText(/A dash lasts three dots/)).toBeTruthy();
     expect(screen.getByText(/ITU-R M\.1677-1/)).toBeTruthy();
