@@ -84,6 +84,23 @@ describe('ZIM reader', () => {
     await expect(open({ articles, zstdParams: { [constants.ZSTD_c_contentSizeFlag]: 0 } })).rejects.toMatchObject({ code: 'unreadable' });
   }, 30000);
 
+  it('works without TextDecoder, which the phone engine (Hermes) does not have', async () => {
+    const saved = globalThis.TextDecoder;
+    // @ts-expect-error -- remove it the way Hermes lacks it
+    delete globalThis.TextDecoder;
+    try {
+      let reader!: typeof import('../../../src/services/kiwix/zimReader');
+      jest.isolateModules(() => { reader = require('../../../src/services/kiwix/zimReader'); });
+      const zim = await reader.openZim(rangeReader(buildZim(WIKIMED)));
+      expect(zim.metadata.title).toBe('WikiMed test');
+      expect(await zim.findTitles('café')).toEqual(['Café']);
+      expect((await zim.readArticle('Café', 500))?.title).toBe('Café');
+      expect((await zim.readArticle('Burns', 500))?.text).toContain('Cool the burn');
+    } finally {
+      globalThis.TextDecoder = saved;
+    }
+  });
+
   it('refuses a cluster whose second zstd frame asks for a 128 MB window', async () => {
     // Frame magic, no single segment, window descriptor 2^27, then one empty last raw block.
     const frame = Buffer.from([0x28, 0xb5, 0x2f, 0xfd, 0x00, 0x88, 0x01, 0x00, 0x00]);

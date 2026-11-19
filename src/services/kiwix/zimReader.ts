@@ -47,8 +47,29 @@ const MAX_CLUSTER_BYTES = 16 * 1024 * 1024;
 /** Words too common to look up as a title on their own. */
 const STOP_WORDS = new Set(['how', 'what', 'why', 'when', 'where', 'who', 'the', 'and', 'for', 'with', 'does', 'can', 'should', 'about', 'from', 'into', 'your', 'you']);
 
-const utf8 = new TextDecoder();
 const encoder = new TextEncoder();
+const UTF8_MIN = [0, 0x80, 0x800, 0x10000];
+
+/** UTF-8 bytes as a string. Hermes, the phone's engine, has TextEncoder but no TextDecoder. Bad bytes become U+FFFD. */
+function decodeUtf8(b: Uint8Array): string {
+  const units: number[] = [];
+  for (let i = 0; i < b.length;) {
+    const c = b[i++];
+    const need = c < 0x80 ? 0 : c >= 0xc2 && c <= 0xdf ? 1 : c >= 0xe0 && c <= 0xef ? 2 : c >= 0xf0 && c <= 0xf4 ? 3 : -1;
+    let cp = need === 0 ? c : 0xfffd;
+    if (need > 0) {
+      let v = c & (0x3f >> need);
+      let k = 0;
+      while (k < need && (b[i + k] & 0xc0) === 0x80) v = (v << 6) | (b[i + k++] & 0x3f);
+      i += k;
+      if (k === need && v >= UTF8_MIN[need] && v <= 0x10ffff && (v < 0xd800 || v > 0xdfff)) cp = v;
+    }
+    if (cp > 0xffff) units.push(0xd7c0 + (cp >> 10), 0xdc00 + (cp & 0x3ff)); else units.push(cp);
+  }
+  let out = '';
+  for (let at = 0; at < units.length; at += 8192) out += String.fromCharCode(...units.slice(at, at + 8192));
+  return out;
+}
 
 interface Dirent { mime: number; ns: string; titleBytes: Uint8Array; title: string; path: string; redirect?: number; cluster?: number; blob?: number }
 
@@ -140,7 +161,7 @@ function parseDirent(b: Uint8Array): Dirent | null {
   const pathBytes = b.subarray(headLength, pathEnd);
   // An empty title means the title is the path.
   const titleBytes = titleEnd > pathEnd + 1 ? b.subarray(pathEnd + 1, titleEnd) : pathBytes;
-  const entry: Dirent = { mime, ns, titleBytes, title: utf8.decode(titleBytes), path: utf8.decode(pathBytes) };
+  const entry: Dirent = { mime, ns, titleBytes, title: decodeUtf8(titleBytes), path: decodeUtf8(pathBytes) };
   if (mime === REDIRECT) entry.redirect = u32(b, 8);
   else if (headLength === 16) { entry.cluster = u32(b, 8); entry.blob = u32(b, 12); }
   return entry;
@@ -176,7 +197,7 @@ export async function openZim(read: ReadRange): Promise<ZimArchive> {
   for (let at = 0; at < mimeBytes.length;) {
     const end = mimeBytes.indexOf(0, at);
     if (end <= at) break;
-    mimes.push(utf8.decode(mimeBytes.subarray(at, end)));
+    mimes.push(decodeUtf8(mimeBytes.subarray(at, end)));
     at = end + 1;
   }
 
@@ -272,7 +293,7 @@ export async function openZim(read: ReadRange): Promise<ZimArchive> {
     const at = await indexOfPath('M', name);
     if (at === null) return '';
     const entry = await direntAt(at);
-    return entry.cluster === undefined ? '' : utf8.decode(await blob(entry.cluster, entry.blob!));
+    return entry.cluster === undefined ? '' : decodeUtf8(await blob(entry.cluster, entry.blob!));
   }
 
   // Refuse at once a file whose articles cannot be decompressed: the main page's cluster says how they are stored.
@@ -333,7 +354,7 @@ export async function openZim(read: ReadRange): Promise<ZimArchive> {
     if (index === null) return null;
     const entry = await resolve(await direntAt(index));
     if (entry.cluster === undefined || mimes[entry.mime] !== 'text/html') return null;
-    const html = utf8.decode(await blob(entry.cluster, entry.blob!));
+    const html = decodeUtf8(await blob(entry.cluster, entry.blob!));
     return { title: entry.title, text: zimHtmlToText(html, maxChars) };
   }
 
