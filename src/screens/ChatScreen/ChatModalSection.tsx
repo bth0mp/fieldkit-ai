@@ -6,6 +6,7 @@ import {
 import { createStyles } from './styles';
 import { useTheme } from '../../theme';
 import { ImageViewerModal } from './ChatScreenComponents';
+import { canShareConversation, shareConversation } from '../../services/conversationShare';
 
 type StylesType = ReturnType<typeof createStyles>;
 type ColorsType = ReturnType<typeof useTheme>['colors'];
@@ -83,6 +84,7 @@ export const ChatModalSection: React.FC<ChatModalSectionProps> = ({
       onClose={() => setShowSettingsPanel(false)}
       onOpenProject={() => setShowProjectSelector(true)}
       onOpenGallery={imageCount > 0 ? () => navigation.navigate('Gallery', { conversationId: activeConversationId }) : undefined}
+      onShareConversation={canShareConversation(activeConversation) ? () => { shareConversation(activeConversation); } : undefined}
       onDeleteConversation={activeConversation ? handleDeleteConversation : undefined}
       conversationImageCount={imageCount}
       activeProjectName={activeProject?.name || null}

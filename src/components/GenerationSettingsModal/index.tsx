@@ -33,6 +33,7 @@ interface GenerationSettingsModalProps {
   onClose: () => void;
   onOpenProject?: () => void;
   onOpenGallery?: () => void;
+  onShareConversation?: () => void;
   onDeleteConversation?: () => void;
   onOpenTTSSettings?: () => void;
   conversationImageCount?: number;
@@ -45,6 +46,7 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
   onClose,
   onOpenProject,
   onOpenGallery,
+  onShareConversation,
   onDeleteConversation,
   onOpenTTSSettings,
   conversationImageCount = 0,
@@ -73,7 +75,7 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
     updateSettings(DEFAULT_SETTINGS);
   };
 
-  const hasConversationActions = !!(onOpenProject || onOpenGallery || onDeleteConversation);
+  const hasConversationActions = !!(onOpenProject || onOpenGallery || onShareConversation || onDeleteConversation);
 
   return (
     <AppSheet
@@ -108,6 +110,7 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
           onClose={onClose}
           onOpenProject={onOpenProject}
           onOpenGallery={onOpenGallery}
+          onShareConversation={onShareConversation}
           onDeleteConversation={onDeleteConversation}
           conversationImageCount={conversationImageCount}
           activeProjectName={activeProjectName}

@@ -8,6 +8,8 @@ interface ConversationActionsSectionProps {
   onClose: () => void;
   onOpenProject?: () => void;
   onOpenGallery?: () => void;
+  /** Present once the conversation has something in it to share. */
+  onShareConversation?: () => void;
   onDeleteConversation?: () => void;
   conversationImageCount: number;
   activeProjectName?: string | null;
@@ -17,6 +19,7 @@ export const ConversationActionsSection: React.FC<ConversationActionsSectionProp
   onClose,
   onOpenProject,
   onOpenGallery,
+  onShareConversation,
   onDeleteConversation,
   conversationImageCount,
   activeProjectName,
@@ -24,10 +27,16 @@ export const ConversationActionsSection: React.FC<ConversationActionsSectionProp
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
 
-  const hasActions = onOpenProject || onOpenGallery || onDeleteConversation;
+  const hasActions = onOpenProject || onOpenGallery || onShareConversation || onDeleteConversation;
   if (!hasActions) {
     return null;
   }
+
+  const handleShareConversation = () => {
+    onClose();
+    // The settings sheet has to be gone before the system share sheet comes up over it.
+    setTimeout(onShareConversation!, 350);
+  };
 
   const handleOpenProject = () => {
     onClose();
@@ -62,6 +71,12 @@ export const ConversationActionsSection: React.FC<ConversationActionsSectionProp
             Gallery ({conversationImageCount})
           </Text>
           <Icon name="chevron-right" size={16} color={colors.textMuted} />
+        </TouchableOpacity>
+      )}
+      {onShareConversation && (
+        <TouchableOpacity style={styles.actionRow} onPress={handleShareConversation} testID="share-conversation-row">
+          <Icon name="share-2" size={16} color={colors.textSecondary} />
+          <Text style={styles.actionText}>Share Conversation</Text>
         </TouchableOpacity>
       )}
       {onDeleteConversation && (
