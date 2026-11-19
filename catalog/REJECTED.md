@@ -471,3 +471,63 @@ A further 44 titles were opened, which uses up the practical-looking pre-1980 US
 - Window Curtains: Planning and Selection, 1951 (USDA, govinfo.gov): added cover sheet, 'Archive copy of publication, do not use for current recommendations.'
 - Not practical or too slight: three Northeastern station notes of two or three pages (1954 to 1958); A Primer on Waste Water Treatment (1969 and 1971, no text layer, not a household how-to); Protection of Food and Agriculture Against Nuclear Attack (1962); USDA Radiological Monitoring Handbook (1963); A Course in Vegetable Gardening for Teachers (1916, study questions); Equipment Maintenance for Energy Conservation (1977); How to Buy Food: Lesson Aids for Teachers (1975); Information About Bee Culture (1951, a reading list of State publications); Tips on Storing Equipment (Bureau of Land Management, 1970).
 - War Department manuals of the 1940s on govinfo (The Blacksmith and the Welder, Welding, Roofing and others) were not opened: they print no distribution statement, so they wait for the owner's word on how such manuals are to be proved.
+
+## Eighth batch, 18 November 2026 (night): the Geological Survey's general-interest booklets
+
+The night's fifth search, on pubs.usgs.gov only. Two were listed: Suggestions for Prospecting (1989) and Ground Water
+(1999).
+
+### Held for the owner
+
+- Topographic Maps, 1978 (USGS, https://pubs.usgs.gov/gip/70039399/report.pdf): held, with its record and question in
+  `catalog/pending/owner-questions-2026-11-18.json`. All 28 pages were looked at and no picture carries a credit. The
+  title page prints 'by Theodore D. Steger' with no affiliation line, nothing in the booklet says he was a Survey
+  employee, and the Survey's catalogue record refused an automated read, so staff authorship is inferred from the
+  imprint and not shown.
+- A Primer on Ground Water, 1963, fifth printing 1976 (USGS, https://pubs.usgs.gov/gip/7000056/report.pdf): held. 31
+  pages, all line art, and the most practical of the Survey's water booklets (finding water, wells, pumping tests,
+  drawdown). Three figures carry a line naming a commercially published book as the source of their data: page 15
+  under figure 7, '(From ground water data by H. E. Thomas, The Conservation of Ground Water: New York, McGraw Hill
+  Co.)'; page 18 inside the figure 8 map, the same credit; page 26 under figure 14, '(Flood data by W. G. Hoyt and
+  W. B. Langbein, 1955, Floods: Princeton Univ. Press.)'. Question for the owner: is 'data by' a citation for a map
+  the Survey drew itself, which ruling 2 allows, or a credit on a figure carried over from the book? The booklet does
+  not say who drew the maps. Its authors (Helene L. Baldwin, C. L. McGuinness) also have no affiliation line printed.
+- Water Dowsing, 1988 (USGS, https://pubs.usgs.gov/gip/water_dowsing/pdf/water_dowsing.pdf): held with the Primer.
+  Clean by its own wording, but the map on pages 4 and 5 is the Primer's figure 8 printed without the McGraw-Hill
+  line. Eight pages, half of them the history of dowsing.
+
+### Out: an outside credit, thanks or co-author
+
+- The Next Big Earthquake in the Bay Area May Come Sooner Than You Think, 1990 (USGS,
+  https://pubs.usgs.gov/gip/70186988/report.pdf): page 23, 'In cooperation with: American Red Cross Applied
+  Technology Council Association of Bay Area Governments'; page 22, 'Photographs by staff of the USGS and EQE
+  Engineering.'
+- A Primer on Water, 1960 (USGS, https://pubs.usgs.gov/gip/7000045/report.pdf): page 7 thanks five named people, with
+  no affiliation given, for 'the helpful suggestions made on an early draft'.
+- The Geology of Radon, 1992 (USGS, https://pubs.usgs.gov/gip/7000018/report.pdf): page 8, '(photograph by Karen
+  Wenrich)' with no affiliation; an uncredited airbrushed cover in a glossy layout; mostly science. Only 10 of its 32
+  pages were looked at.
+
+### Out: outdated safety advice
+
+- A Primer on Water Quality, 1965 (USGS, https://pubs.usgs.gov/gip/7000057/report.pdf): page 31 prints the 'U.S.
+  Public Health Service, drinking-water standards, 1962', with arsenic and lead at 0.05 parts per million; today's
+  limits are several times lower.
+- Safety and Survival in an Earthquake, 1969 (USGS and the Office of Emergency Preparedness,
+  https://pubs.usgs.gov/gip/70039379/report.pdf): page 5, 'or in a strong doorway'; page 6, emergency water 'from
+  water heaters, toilet tanks'. Neither is advised now.
+
+### Out: not practical, a duplicate, or not finished
+
+- Chart of Conversion Factors, 1976 (USGS, https://pubs.usgs.gov/gip/70039401/report.pdf): passes on rights (tables
+  only, the Survey's name alone, all 5 pages looked at) but is not listed. It is three spreads of faint scanned
+  tables whose text layer was not checked figure by figure, and a wrong digit in a conversion table is worse than no
+  table. The app's Unit Converter does the same sums.
+- Ground Water, 1986 edition (USGS, https://pubs.usgs.gov/unnumbered/70045274/report.pdf): an earlier edition of the
+  listed 1999 booklet; a 14 MB scan with a garbled text layer.
+- Topographic Mapping, 1992, and Types of Maps, 1991 (USGS): not finished, not a rights failure. The text scans found
+  no credit wording (the first prints 'USGS maps are not copyrighted.' on page 6), but no page of either was looked at
+  by eye, and both describe maps more than they teach their use.
+- Collecting Rocks, 1990, and Prospecting for Gold in the United States, 1991 (USGS): the catalogue records list no
+  PDF.
+- The National Park Service and the other Interior bureaus were not reached.
