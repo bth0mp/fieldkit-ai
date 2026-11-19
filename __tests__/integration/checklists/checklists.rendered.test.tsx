@@ -32,10 +32,22 @@ describe('Checklists (rendered)', () => {
     const { ChecklistsScreen } = require('../../../src/screens/ChecklistsScreen');
     const { useChecklistStore } = require('../../../src/features/checklists/checklistStore');
     await rtl.waitFor(() => { expect(useChecklistStore.persist.hasHydrated()).toBe(true); });
-    /** Answer the sheet that asks before work is lost. */
+    /**
+     * Answer the sheet that asks before work is lost. The sheet takes a fifth of a second to slide away, and one
+     * opened again inside that time is closed by the first one's ending. A person is slower than that; a test is
+     * not, so this waits until the sheet has gone before going on. While it slides away the sheet has lost its
+     * question and shows only the alert's default "OK" button, so both must be gone.
+     */
     const answer = async (view: ReturnType<typeof rtl.render>, question: string, button: string) => {
-      await rtl.waitFor(() => { expect(view.getByText(question)).toBeTruthy(); });
+      await rtl.waitFor(() => {
+        expect(view.getByText(question)).toBeTruthy();
+        expect(view.getByText(button)).toBeTruthy();
+      }, { timeout: 4000 });
       rtl.fireEvent.press(view.getByText(button));
+      await rtl.waitFor(() => {
+        expect(view.queryByText(question)).toBeNull();
+        expect(view.queryByText('OK')).toBeNull();
+      }, { timeout: 4000 });
     };
 
     // Settings has a Checklists row.
