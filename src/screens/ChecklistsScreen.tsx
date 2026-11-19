@@ -16,7 +16,7 @@ import { STARTER_LISTS } from '../features/checklists/starterLists';
 import { createStyles } from './ChecklistsScreen.styles';
 
 /** Which field a refused change belongs under, and what the service said. */
-interface Problem { where: 'list' | 'item'; message: string }
+interface Problem { where: 'list' | 'item' | 'rename'; message: string }
 /** A change that loses work, and the words that ask about it first. */
 interface Question { title: string; message: string; action: string; work: () => void }
 
@@ -39,6 +39,8 @@ export const ChecklistsScreen: React.FC = () => {
   const [openId, setOpenId] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
   const [newItem, setNewItem] = useState('');
+  /** The open list's new name while it is being renamed; null when it is not. */
+  const [renaming, setRenaming] = useState<string | null>(null);
   const [problem, setProblem] = useState<Problem | null>(null);
   const [alertState, setAlertState] = useState<AlertState>(initialAlertState);
 
@@ -54,6 +56,7 @@ export const ChecklistsScreen: React.FC = () => {
   const open = (id: string | null) => {
     setOpenId(id);
     setNewItem('');
+    setRenaming(null);
     setProblem(null);
   };
   const typing = (set: (text: string) => void) => (text: string) => {
@@ -68,6 +71,10 @@ export const ChecklistsScreen: React.FC = () => {
   const addItem = (listId: string) => attempt('item', () => {
     checklistService.addItem(listId, newItem);
     setNewItem('');
+  });
+  const saveName = (listId: string) => attempt('rename', () => {
+    checklistService.rename(listId, renaming ?? '');
+    setRenaming(null);
   });
   const ask = ({ title, message, action, work }: Question) => setAlertState(showAlert(title, message, [
     { text: 'Cancel', style: 'cancel' },
@@ -136,6 +143,15 @@ export const ChecklistsScreen: React.FC = () => {
                     <Button title="Add" size="small" variant="outline" style={styles.tapTarget} onPress={() => addItem(list.id)} testID="checklists-add-item" />
                   </View>
                   {problem?.where === 'item' && <Text style={styles.error} accessibilityLiveRegion="polite">{problem.message}</Text>}
+                  {renaming !== null && (
+                    <View style={styles.addRow}>
+                      <TextInput testID="checklists-rename-field" style={styles.field} value={renaming} onChangeText={typing(setRenaming)}
+                        placeholder="List name" placeholderTextColor={colors.textMuted} accessibilityLabel={`New name for ${list.name}`}
+                        maxLength={CHECKLIST_LIMITS.name} returnKeyType="done" onSubmitEditing={() => saveName(list.id)} />
+                      <Button title="Save" size="small" variant="outline" style={styles.tapTarget} onPress={() => saveName(list.id)} testID="checklists-rename-save" />
+                    </View>
+                  )}
+                  {problem?.where === 'rename' && <Text style={styles.error} accessibilityLiveRegion="polite">{problem.message}</Text>}
                   <View style={styles.listActions}>
                     <Button title="Untick all" size="small" variant="ghost" style={styles.tapTarget} testID="checklists-untick-all" disabled={done === 0}
                       onPress={() => ask({
@@ -144,6 +160,8 @@ export const ChecklistsScreen: React.FC = () => {
                       })} />
                     <Button title="Share" size="small" variant="ghost" style={styles.tapTarget} testID="checklists-share"
                       disabled={list.items.length === 0} onPress={() => { checklistService.share(list.id); }} />
+                    <Button title={renaming === null ? 'Rename' : 'Cancel'} size="small" variant="ghost" style={styles.tapTarget} testID="checklists-rename"
+                      onPress={() => { setRenaming(renaming === null ? list.name : null); setProblem(null); }} />
                     <Button title="Delete list" size="small" variant="ghost" style={styles.tapTarget} testID="checklists-delete-list"
                       onPress={() => ask({ title: 'Delete list?', message: deleteMessage(list), action: 'Delete', work: () => checklistService.remove(list.id) })} />
                   </View>

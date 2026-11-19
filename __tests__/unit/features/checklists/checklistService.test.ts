@@ -95,6 +95,21 @@ describe('checklist service', () => {
     expect(lists()).toEqual([]);
   });
 
+  it('renames a list, keeping its items and their ticks', () => {
+    const id = checklistService.create('Day hke');
+    checklistService.addItem(id, 'Map');
+    checklistService.toggle(id, only().items[0].id);
+
+    checklistService.rename(id, '  Day   hike ');
+    expect(only()).toMatchObject({ id, name: 'Day hike', items: [{ text: 'Map', done: true }] });
+
+    expect(() => checklistService.rename(id, ' \n ')).toThrow('Give the list a name.');
+    checklistService.rename(id, 'x'.repeat(100));
+    expect(only().name).toHaveLength(60);
+    expect(() => checklistService.rename('nope', 'Other')).not.toThrow();
+    expect(lists()).toHaveLength(1);
+  });
+
   it('keeps a new list above older ones', () => {
     checklistService.create('First');
     checklistService.create('Second');

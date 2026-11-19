@@ -174,6 +174,28 @@ describe('Checklists (rendered)', () => {
     expect(screen.getByText('Emergency kit (0 of 14)')).toBeTruthy();
     expect(screen.getByLabelText('Whistle (to signal for help)')).toBeTruthy();
     expect(screen.getByLabelText('Water (one gallon per person per day for several days, for drinking and sanitation)')).toBeTruthy();
+
+    // The list can be renamed where it stands. Rename shows its name in a field; Cancel leaves it be.
+    expect(screen.queryByTestId('checklists-rename-field')).toBeNull();
+    rtl.fireEvent.press(screen.getByTestId('checklists-rename'));
+    expect(screen.getByTestId('checklists-rename-field').props.value).toBe('Emergency kit');
+    rtl.fireEvent.changeText(screen.getByTestId('checklists-rename-field'), 'Something else');
+    rtl.fireEvent.press(screen.getByTestId('checklists-rename'));
+    expect(screen.queryByTestId('checklists-rename-field')).toBeNull();
+    expect(screen.getByText('Emergency kit (0 of 14)')).toBeTruthy();
+
+    // An empty name is refused under the field; a real one is saved and the items stay.
+    rtl.fireEvent.press(screen.getByTestId('checklists-rename'));
+    rtl.fireEvent.changeText(screen.getByTestId('checklists-rename-field'), '   ');
+    rtl.fireEvent.press(screen.getByTestId('checklists-rename-save'));
+    expect(screen.getByText('Give the list a name.')).toBeTruthy();
+    expect(screen.getByText('Emergency kit (0 of 14)')).toBeTruthy();
+    rtl.fireEvent.changeText(screen.getByTestId('checklists-rename-field'), '  Car   emergency kit ');
+    rtl.fireEvent.press(screen.getByTestId('checklists-rename-save'));
+    expect(screen.getByText('Car emergency kit (0 of 14)')).toBeTruthy();
+    expect(screen.queryByText('Give the list a name.')).toBeNull();
+    expect(screen.queryByTestId('checklists-rename-field')).toBeNull();
+    expect(screen.getByLabelText('Whistle (to signal for help)')).toBeTruthy();
   }, 30000);
 
   it('says so, and changes nothing, when the saved lists could not be read', async () => {

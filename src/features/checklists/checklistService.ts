@@ -52,6 +52,13 @@ export const checklistService = {
     return list.id;
   },
 
+  /** A new name for a list; its items and their ticks stay as they are. */
+  rename(listId: string, name: string): void {
+    const clean = oneLine(name, CHECKLIST_LIMITS.name);
+    if (!clean) throw new Error('Give the list a name.');
+    change(listId, l => ({ ...l, name: clean }));
+  },
+
   createFromStarter(starterId: string): string {
     const starter = STARTER_LISTS.find(s => s.id === starterId);
     if (!starter) throw new Error('That starter list is not available.');

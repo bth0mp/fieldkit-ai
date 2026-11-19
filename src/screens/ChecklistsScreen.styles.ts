@@ -32,8 +32,10 @@ export const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => {
     },
     itemText: { ...TYPOGRAPHY.body, color: colors.text, flex: 1 },
     itemDone: { color: colors.textMuted, textDecorationLine: 'line-through' as const },
+    // Four buttons: they wrap onto a second line on a narrow screen.
     listActions: {
       flexDirection: 'row' as const,
+      flexWrap: 'wrap' as const,
       justifyContent: 'space-between' as const,
       marginTop: SPACING.sm,
       marginBottom: SPACING.md,
