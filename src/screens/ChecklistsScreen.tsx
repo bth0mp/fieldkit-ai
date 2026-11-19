@@ -28,7 +28,8 @@ function deleteMessage(list: Checklist): string {
 
 /**
  * The user's own checklists, kept on the phone: make a list or start from a public one, tick items off, untick
- * them all for the next trip, remove an item or delete a list after being asked. One list is open at a time.
+ * them all for the next trip, share a list as plain text, remove an item or delete a list after being asked.
+ * One list is open at a time.
  */
 export const ChecklistsScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -141,6 +142,8 @@ export const ChecklistsScreen: React.FC = () => {
                         title: 'Untick everything?', message: `All ${done} ticked ${done === 1 ? 'item' : 'items'} in ${list.name} will be unticked.`,
                         action: 'Untick', work: () => checklistService.untickAll(list.id),
                       })} />
+                    <Button title="Share" size="small" variant="ghost" style={styles.tapTarget} testID="checklists-share"
+                      disabled={list.items.length === 0} onPress={() => { checklistService.share(list.id); }} />
                     <Button title="Delete list" size="small" variant="ghost" style={styles.tapTarget} testID="checklists-delete-list"
                       onPress={() => ask({ title: 'Delete list?', message: deleteMessage(list), action: 'Delete', work: () => checklistService.remove(list.id) })} />
                   </View>

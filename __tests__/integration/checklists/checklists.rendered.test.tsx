@@ -23,8 +23,8 @@ const KEY = '@fieldkit/checklists';
 describe('Checklists (rendered)', () => {
   beforeEach(() => { mockNavigate.mockClear(); });
 
-  it('a list is made, filled, ticked, kept, reset and deleted', async () => {
-    const { React, rtl } = await setupChatScreen({ engine: 'llama', sqlite: true });
+  it('a list is made, filled, ticked, shared, kept, reset and deleted', async () => {
+    const { React, rtl, boundary } = await setupChatScreen({ engine: 'llama', sqlite: true });
     const AsyncStorage = require('@react-native-async-storage/async-storage');
     const { StyleSheet } = require('react-native');
     const { TYPOGRAPHY } = require('../../../src/constants');
@@ -99,12 +99,23 @@ describe('Checklists (rendered)', () => {
     expect(screen.getByLabelText('Water').props.accessibilityState).toEqual({ checked: true });
     expect(screen.getByText('Day hike (1 of 3)')).toBeTruthy();
 
+    // Share hands the list to the phone's share sheet as plain text, ticks and all.
+    expect(heightOf('checklists-share')).toBeGreaterThanOrEqual(44);
+    rtl.fireEvent.press(screen.getByTestId('checklists-share'));
+    await rtl.waitFor(() => { expect(boundary.share.share).toHaveBeenCalledTimes(1); });
+    expect(boundary.share.share.mock.calls[0][0]).toEqual({
+      title: 'Day hike',
+      message: 'Day hike\n[ ] Map and compass\n[x] Water\n[ ] Head torch',
+    });
+
     // A second list opens in place of the first: one list is open at a time.
     rtl.fireEvent.changeText(screen.getByTestId('checklists-new-name'), 'Car kit');
     rtl.fireEvent.press(screen.getByTestId('checklists-add-list'));
     expect(screen.getByText('Car kit (0 of 0)')).toBeTruthy();
     expect(screen.queryByLabelText('Water')).toBeNull();
     expect(screen.getByText('Day hike (1 of 3)')).toBeTruthy();
+    // An empty list has nothing to share.
+    expect(screen.getByTestId('checklists-share').props.accessibilityState).toMatchObject({ disabled: true });
 
     // The app is closed and started again: what was saved is read back from the phone's storage.
     screen.unmount();

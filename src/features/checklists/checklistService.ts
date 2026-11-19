@@ -3,7 +3,9 @@
  * change; checklistStore is the screen's read-only copy. A change that can't be made throws an Error whose
  * message is written for the user.
  */
+import { Share } from 'react-native';
 import { generateId } from '../../utils/generateId';
+import logger from '../../utils/logger';
 import { oneLine } from '../../utils/oneLine';
 import { type Checklist, savedChecklists, useChecklistStore } from './checklistStore';
 import { STARTER_LISTS } from './starterLists';
@@ -80,5 +82,21 @@ export const checklistService = {
 
   remove(listId: string): void {
     write(lists => lists.filter(l => l.id !== listId));
+  },
+
+  /**
+   * Hands the list to the phone's share sheet as plain text: its name, then one item to a line with its tick.
+   * Nothing leaves the phone until the user picks where to send it.
+   */
+  async share(listId: string): Promise<void> {
+    const list = store.getState().lists.find(l => l.id === listId);
+    if (!list) return;
+    const lines = list.items.map(item => `${item.done ? '[x]' : '[ ]'} ${item.text}`);
+    try {
+      await Share.share({ title: list.name, message: [list.name, ...lines].join('\n') });
+    } catch (error) {
+      // The user closing the sheet is not an error on Android; anything that lands here is the sheet failing to open.
+      logger.error('[Checklists] Could not open the share sheet for a list:', error);
+    }
   },
 };
