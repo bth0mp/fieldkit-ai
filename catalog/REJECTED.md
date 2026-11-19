@@ -531,3 +531,67 @@ The night's fifth search, on pubs.usgs.gov only. Two were listed: Suggestions fo
 - Collecting Rocks, 1990, and Prospecting for Gold in the United States, 1991 (USGS): the catalogue records list no
   PDF.
 - The National Park Service and the other Interior bureaus were not reached.
+
+## Ninth batch, 18 November 2026 (night): food, from the Food Safety and Inspection Service on govinfo
+
+The night's sixth search, for food only. Two were listed: Keeping Food Safe During an Emergency (2006) and Food Safety
+While Hiking, Camping & Boating (2011). Both print 'FSIS encourages the reprint and distribution of this publication
+for food safety education purposes.'
+
+One title here was looked at a second time. A Consumer's Guide to Food Safety: Severe Storms and Hurricanes was turned
+down on 17 November only for having no printed public-domain statement, a reason the owner's ruling 1 has since
+overtaken. Its pictures now keep it out (below).
+
+### Held for the owner
+
+- Keep Your Food Safe During Emergencies: Power Outages, Floods & Fires, May 2007, slightly revised February 2013
+  (USDA FSIS, https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo45056/pdf/GOVPUB-A110-PURL-gpo45056.pdf): held,
+  and not needed while the 2006 fact sheet is listed, which covers the same ground and adds the save-or-discard tables
+  and the drinking-water steps. All 13 pages were looked at: the booklet's own two-tone drawings and no
+  photograph. The cover carries a block of four icons (a drop, two arrows, a thermometer, a snowflake) that looks like
+  the federal "Be Food Safe" clean, separate, cook, chill mark; the booklet does not say whose artwork it is. Page 12
+  names the American Red Cross only as someone else to ask. It prints no reprint line.
+- Basics for Handling Food Safely, revised June 2011 (USDA FSIS,
+  https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo26772/pdf/GOVPUB-A110-PURL-gpo26772.pdf): held. Three pages
+  with the refrigerator and freezer storage chart, the same reprint line and a 'USDA Photo' header. Page 1: 'In every
+  step of food preparation, follow the four Fight BAC!(R) guidelines to keep food safe', followed by the campaign's four
+  one-line messages. Fight BAC! is the registered campaign of the Partnership for Food Safety Education, an outside
+  public-private body. Question for the owner: is naming the campaign and listing its four messages a citation, or a
+  passage taken from an outside owner? Looked at by the search helper, not by me.
+- Kitchen Thermometers, revised June 2011 (USDA FSIS,
+  https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo22020/pdf/GOVPUB-A110-PURL-gpo22020.pdf): held under the
+  picture-audit rule. Pages 1 to 4 carry uncredited cut-out photographs of commercial thermometers on blank grounds,
+  with nothing in the pictures to settle whose they are. Otherwise clean.
+
+### Out: an outside credit, licence or co-author
+
+- A Consumer's Guide to Food Safety: Severe Storms, Hurricanes, Power Outages, slightly revised April 2020 (USDA FSIS,
+  https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo140676/pdf/GOVPUB-A110-PURL-gpo140676.pdf): page 1 carries
+  Apple's 'Download on the App Store' badge and the 'Get it on Google Play' badge, which are other organisations'
+  logos. Both pages looked at. It is also a two-page fold-out sheet.
+- The same title, May 2006, revised June 2007 (USDA FSIS,
+  https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo5291/pdf/GOVPUB-A110-PURL-gpo5291.pdf): page 6 has an
+  uncredited, stock-looking photograph of a water bottle, and the cooler, can and refrigerator drawings look like
+  bought clip art. Seen on a contact sheet only. (Page 3's 'Photos Courtesy of National Oceanic & Atmospheric
+  Administration/Department of Commerce' is a federal credit and would not keep it out.)
+- Game from Farm to Table (2011), Shelf-Stable Food Safety (2014), Smoking Meat and Poultry (2011), Barbecue and Food
+  Safety (2011) and Mail Order Food Safety (2008), all USDA FSIS on govinfo: each prints 'the included image from
+  PhotoDisc, used under license, is protected by the copyright laws of the U.S., Canada, and elsewhere'.
+- High Altitude Cooking and Food Safety, 2011 (USDA FSIS, govinfo): page 6, 'Colorado State University Cooperative
+  Extension contributed to the content of this publication.'
+- Cooking for Groups: A Volunteer's Guide to Food Safety, 2001, slightly revised 2006 (USDA FSIS, govinfo): page 37,
+  the storage-times table is sourced in part to 'The Food Marketing Institute'.
+- Fires and Food Safety, 2013, and After a Fire, Is the Food Safe?, 1996 (USDA FSIS, govinfo): 'The American Red Cross
+  recommends that you:' followed by three points of its fire advice.
+- Kitchen Companion: Your Safe Food Handbook, 2008 and 2015 editions (USDA FSIS, govinfo): no credit line, but
+  uncredited, posed, stock-looking photographs (a mother and child, an older couple cooking, a car boot of groceries).
+  Pages 1 to 12 of the 2015 edition were seen on a contact sheet; the rest and the 2008 edition were not looked at.
+
+### Not found, or not finished
+
+- Home and Garden Bulletins on keeping food without canning (drying, freezing, storing, a family food stockpile): not
+  found. govinfo holds only 11 packages in that series, none of them these, and the National Agricultural Library's
+  catalogue could not be searched from here, so no archived download address was tested.
+- Seventeen more FSIS fact sheets on govinfo passed a text search only and were not looked at by eye. They are listed
+  in the search's working notes and are mostly about one food each (eggs, rabbit, slow cookers, microwaves, food
+  product dating). None is about growing, preserving or foraging food, which the catalogue still lacks.
