@@ -9,5 +9,11 @@ shape `scripts/check-guides.js` reads from `catalog/candidates.json`.
   institutional archive needs a second copy with a matching SHA-256. Each still needs the third-party scan, the
   outdated-safety-advice check and the text readability check before it could be listed.
 
+- `owner-questions-2026-11-18.json`: four short civilian and Corps of Engineers guides (sandbags, emergency water
+  disinfection, hand and power tools, backcountry water treatment) whose every page has been looked at by eye. Each
+  is held on one question only the owner can answer, written in its `question` field. On a yes, remove the
+  `question` field, add a `creditsNote` saying every picture page was looked at and what was found, set
+  `creditsReviewed` to true, and move the record into `catalog/candidates.json`.
+
 To add one, copy it into `catalog/candidates.json` and run the checker, then read every third-party hit by eye as
 `catalog/REJECTED.md` and the design doc describe.

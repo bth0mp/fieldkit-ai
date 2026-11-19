@@ -1,0 +1,50 @@
+[
+  {
+    "id": "usace-nww-flood-fighting-how-to-use-sandbags",
+    "title": "Flood Fighting: How To Use Sandbags",
+    "category": "disasters",
+    "publisher": "US Army Corps of Engineers",
+    "year": 2018,
+    "licence": "Public domain",
+    "licenceNote": "US government work (17 U.S.C. 105). U.S. Army Corps of Engineers, Walla Walla District, Readiness Office; page 3 prints 'December 2018 / This document is not copyrighted and can be reproduced as needed.' No author, contractor, university or company is credited anywhere in its 3 pages. The Corps' own host refuses the app's request, so the file is the Wayback Machine's raw capture of the official address.",
+    "url": "https://web.archive.org/web/20201019130122id_/https://www.nww.usace.army.mil/Portals/28/docs/Missions/Flood%20Assistance/20181219_NWW_How-to-use-sandbags.pdf",
+    "evidence": "Page 3, foot of the page: 'December 2018 / This document is not copyrighted and can be reproduced as needed.' Page 1: Corps castle mark and 'U.S. ARMY CORPS OF ENGINEERS'. 445,724 bytes when read on 18 November 2026.",
+    "question": "All 3 pages were looked at by eye on 18 November 2026. The black-and-white levee cross-section on page 2 ('Width: 3 times height', 'Bonding trench 1 sack deep, 2 sacks wide', 'Strip sod before laying bottom layer, if possible') is the same drawing as Figure 2 of the St. Paul District's Flood Fight Handbook, 2016 edition (PDF page 9), and that handbook says of the section holding it: 'Information in the following section was adapted from the North Dakota State University, Extension Service' (PDF page 8). This sheet credits nobody and prints its own not-copyrighted statement. Whether the drawing is the Corps' own or the university's cannot be settled from the two documents. List it?"
+  },
+  {
+    "id": "epa-816-f-15-003-emergency-disinfection-of-drinking-water",
+    "title": "Emergency Disinfection of Drinking Water",
+    "category": "water",
+    "publisher": "EPA",
+    "year": 2017,
+    "licence": "Public domain",
+    "licenceNote": "US government work (17 U.S.C. 105); the proof would rest on staff authorship. EPA 816-F-15-003, Office of Water, September 2017, is published under the Environmental Protection Agency's name alone (file author 'USEPA, OW'). No author, contractor, university, photographer or illustrator is credited and there is no copyright notice. The document prints no public-domain statement of its own. EPA site notice (epa.gov, EPA Disclaimers, Copyright Status, read 18 November 2026): 'These documents may be freely distributed and used for non-commercial, scientific and educational purposes.'",
+    "url": "https://www.epa.gov/sites/default/files/2017-09/documents/emergency_disinfection_of_drinking_water_sept2017.pdf",
+    "evidence": "Footer of both pages: 'OFFICE OF WATER 4606-M / EPA 816-F-15-003 / SEPTEMBER 2017'. The World Health Organization's 2015 boil-water briefing is cited, not reproduced. 754,723 bytes, SHA-256 f404083d00decedc267bf4265eda776bb250ccfe18c1f7b19152aa006ff727c5 when read on 18 November 2026. Its bleach table and boiling times match EPA's live page (last updated 24 February 2026).",
+    "question": "Both pages were looked at by eye on 18 November 2026: four flat step drawings with no branding, and no ownership wording inside the file's five image streams. The doubt is the licence, not the pictures. EPA's own notice goes on: 'Commercial use of the documents available from the EPA websites may be protected under the U.S. and Foreign Copyright Laws.' That is not the hedged public-domain notice ruling 1 had in view, and REJECTED.md keeps every EPA document without its own statement out for this reason. Does ruling 1 (staff authorship is enough) cover an unsigned EPA sheet despite that notice? The app is non-commercial, so its use is inside EPA's terms either way; the question is whether the catalogue may call it public domain."
+  },
+  {
+    "id": "osha-3080-hand-and-power-tools",
+    "title": "Hand and Power Tools",
+    "category": "mechanical",
+    "publisher": "OSHA",
+    "year": 2002,
+    "licence": "Public domain",
+    "licenceNote": "US government work (17 U.S.C. 105). OSHA 3080, 2002 (Revised), U.S. Department of Labor, Occupational Safety and Health Administration; page 2 prints 'Material contained in this publication is in the public domain and may be reproduced, fully or partially, without permission of the Federal Government. Source credit is requested but not required.' OSHA's own host refuses the app's request, so the file is the Wayback Machine's raw capture of the official address.",
+    "url": "https://web.archive.org/web/20201127014658id_/http://www.osha.gov/Publications/osha3080.pdf",
+    "evidence": "Page 2 (inside cover): the public-domain statement quoted in the licence note. Page 3: 'U.S. Department of Labor ... Occupational Safety and Health Administration ... OSHA 3080 2002 (Revised)'. 174,692 bytes when read on 18 November 2026.",
+    "question": "All 32 pages were looked at by eye on 18 November 2026. The only pictures are on the cover: a blue-toned photograph of a worker grinding, and a strip of seven small photographs of people with tools. None is credited, and at least one in the strip (a smiling man in a cap with a tool on his shoulder against open sky) is posed the way stock photography is. Under the rulings an image that is evidently stock keeps a guide out whatever statement it prints; here nothing in the picture settles it. Also for the owner to weigh: pages 17 to 32 are OSHA programme notes and office directories from 2002. List it?"
+  },
+  {
+    "id": "cdc-water-treatment-hiking-camping-traveling",
+    "title": "Water Treatment While Hiking, Camping, and Traveling",
+    "category": "water",
+    "publisher": "CDC",
+    "year": 2021,
+    "licence": "Public domain",
+    "licenceNote": "US government work (17 U.S.C. 105); the proof would rest on staff authorship. One-page chart published under the name of the Centers for Disease Control and Prevention, National Center for Emerging and Zoonotic Infectious Diseases, job number CS326248-A. No author, contractor, university, photographer or illustrator is credited and there is no copyright notice. The document prints no public-domain statement of its own. CDC's own host refuses the app's request, so the file is the Wayback Machine's raw capture of the official address.",
+    "url": "https://web.archive.org/web/20220121151608id_/https://www.cdc.gov/healthywater/pdf/drinking/Backcountry_Water_Treatment-508.pdf",
+    "evidence": "Foot of the page: CDC mark with 'Centers for Disease Control and Prevention, National Center for Emerging and Zoonotic Infectious Diseases' and 'CS326248-A'. File author 'Centers for Disease Control and Prevention'. 926,742 bytes when read on 18 November 2026.",
+    "question": "The page was looked at by eye on 18 November 2026. Two doubts. First, the eight glossy icons (pot, pump filter, purifier bottle, three dropper bottles, filter set, ultraviolet light) are uncredited and could be the agency's own artwork or a licensed icon set; nothing in them settles it, and no ownership wording is inside the file's image streams. Second, the page prints no date: 2021 comes only from the file's own properties, and an undated guide was left out before for having no provable year. List it?"
+  }
+]
