@@ -1,7 +1,7 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, SectionList, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
 import { useTheme, useThemedStyles } from '../theme';
 import { Button } from '../components/Button';
@@ -30,9 +30,6 @@ export const KiwixFilesScreen: React.FC = () => {
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [moving, setMoving] = useState<KiwixFile | null>(null);
   const [alertState, setAlertState] = useState<AlertState>(initialAlertState);
-
-  // Back from another screen: the user may have deleted a category project there.
-  useFocusEffect(useCallback(() => { kiwixService.reconcile(); }, []));
 
   const categories = libraryCategories();
   const groups = useMemo<FileGroup[]>(() => {

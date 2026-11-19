@@ -6,7 +6,8 @@
 import { NativeModules } from 'react-native';
 import RNFS from 'react-native-fs';
 import { errorCodes, isErrorWithCode, pick, pickDirectory, releaseLongTermAccess, types } from '@react-native-documents/picker';
-import { ensureCategoryProject, libraryProjectId, libraryProjectIds, projectStoreHydrated } from '../../features/library/libraryProjects';
+import { ensureCategoryProject, isLibraryProject, libraryProjectId, libraryProjectIds, projectStoreHydrated } from '../../features/library/libraryProjects';
+import { useProjectStore } from '../../stores/projectStore';
 import { generateId } from '../../utils/generateId';
 import logger from '../../utils/logger';
 import { categoryFor } from './kiwixCategory';
@@ -257,3 +258,12 @@ export const kiwixService = {
     }
   },
 };
+
+// A category project deleted anywhere (the Projects screen, its settings) takes its Kiwix files with it at once,
+// before adding a file in that category brings the project back with the old files still in it.
+useProjectStore.subscribe((state, prev) => {
+  const ids = new Set(state.projects.map(p => p.id));
+  if (prev.projects.some(p => isLibraryProject(p.id) && !ids.has(p.id))) {
+    kiwixService.reconcile().catch(e => logger.warn('[Kiwix] reconcile failed', e));
+  }
+});

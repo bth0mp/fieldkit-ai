@@ -157,6 +157,18 @@ describe('Kiwix service', () => {
     expect(files().map(f => f.title).sort()).toEqual(['WikiMed test', 'Wikivoyage test']);
   });
 
+  it('deleting a category project anywhere drops its files, so a new file in that category comes back alone', async () => {
+    const { kiwixService, docs, files, useProjectStore } = setup();
+    await kiwixService.addFolder();
+    useProjectStore.getState().deleteProject('library-travel'); // as the Projects screen does: the Kiwix screen is closed
+    await new Promise(resolve => setImmediate(resolve));
+    expect(files().map(f => f.title)).toEqual(['WikiMed test']);
+
+    docs.seed(`${TREE}/hiking.zim`, buildZim({ ...WIKIVOYAGE, name: 'hiking_en', title: 'Hiking test' }));
+    await kiwixService.checkForNewFiles();
+    expect(kiwixService.filesInProject('library-travel').map((f: { title: string }) => f.title)).toEqual(['Hiking test']);
+  });
+
   it('deleting a category project drops its files, and adding one again brings the project back', async () => {
     const { kiwixService, picker, files, useProjectStore } = setup();
     await kiwixService.addFolder();
