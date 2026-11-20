@@ -145,7 +145,7 @@ export function createElevation(colors: ThemeColors) {
       borderColor: colors.borderLight,
       borderRadius: 16,
       blur: {
-        ios: { blurAmount: 10, blurType: colors.background === '#0A0A0A' ? 'dark' : 'light' },
+        ios: { blurAmount: 10, blurType: colors.background === COLORS_DARK.background ? 'dark' : 'light' },
         android: { overlayColor: colors.overlay },
       },
     },
@@ -155,7 +155,7 @@ export function createElevation(colors: ThemeColors) {
       borderColor: colors.primary,
       borderRadius: 16,
       blur: {
-        ios: { blurAmount: 15, blurType: colors.background === '#0A0A0A' ? 'dark' : 'light' },
+        ios: { blurAmount: 15, blurType: colors.background === COLORS_DARK.background ? 'dark' : 'light' },
         android: { overlayColor: colors.overlay },
       },
     },
