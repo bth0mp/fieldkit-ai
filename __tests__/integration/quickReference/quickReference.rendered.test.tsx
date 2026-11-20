@@ -25,15 +25,15 @@ describe('Quick reference (rendered)', () => {
     const { GuideLibraryScreen } = require('../../../src/screens/GuideLibraryScreen');
     const { QuickReferenceScreen } = require('../../../src/screens/QuickReferenceScreen');
 
-    // Settings has a Quick reference row of its own: the cards are one tap away, not behind the Guide library.
-    const { SettingsScreen } = require('../../../src/screens/SettingsScreen');
-    const settings = rtl.render(React.createElement(SettingsScreen));
-    const settingsRow = settings.getByTestId('settings-quick-reference');
-    expect(rtl.within(settingsRow).getByText('Quick reference')).toBeTruthy();
-    expect(rtl.within(settingsRow).getByText('Signals, codes and scales at a glance')).toBeTruthy();
-    rtl.fireEvent.press(settingsRow);
+    // The Kit tab has a Quick reference row of its own: the cards are one tap away, not behind the Guide library.
+    const { KitScreen } = require('../../../src/screens/KitScreen');
+    const kit = rtl.render(React.createElement(KitScreen));
+    const kitRow = kit.getByTestId('kit-quick-reference');
+    expect(rtl.within(kitRow).getByText('Quick reference')).toBeTruthy();
+    expect(rtl.within(kitRow).getByText('Signals, codes and scales at a glance')).toBeTruthy();
+    rtl.fireEvent.press(kitRow);
     expect(mockNavigate).toHaveBeenCalledWith('QuickReference');
-    settings.unmount();
+    kit.unmount();
     mockNavigate.mockClear();
 
     // The Guide library has a Quick reference row.

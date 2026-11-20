@@ -1,9 +1,9 @@
 /**
  * Calculators (rendered): the sums the assistant's tools do, worked out by the user from boxes on a screen, with
- * no model loaded. From Settings the user opens Calculators, opens one, fills in its boxes and reads the answer
+ * no model loaded. From the Kit tab the user opens Calculators, opens one, fills in its boxes and reads the answer
  * the tool itself gives.
  *
- * Real stack: SettingsScreen, CalculatorsScreen, the real tool registry and the real handlers. The expected
+ * Real stack: KitScreen, CalculatorsScreen, the real tool registry and the real handlers. The expected
  * answers are ones the tools' own tests check against outside references, not this screen's output: 26.2 miles
  * is 42.1648 km by the defined mile; the sun and moon at Greenwich on 18 November 2026 are the US Naval
  * Observatory's; 19 November 2026 plus 45 days is 3 January 2027 by the calendar. Device leaves only: what
@@ -20,20 +20,20 @@ jest.mock('@react-navigation/native', () => ({
 }));
 
 describe('Calculators (rendered)', () => {
-  it('is opened from Settings and works a tool out from the boxes, with no model', async () => {
+  it('is opened from the Kit tab and works a tool out from the boxes, with no model', async () => {
     const h = await setupChatScreen({ engine: 'llama', sqlite: true });
     const { React, rtl } = h;
-    const { SettingsScreen } = require('../../../src/screens/SettingsScreen');
+    const { KitScreen } = require('../../../src/screens/KitScreen');
     const { CalculatorsScreen } = require('../../../src/screens/CalculatorsScreen');
 
-    // Settings has a Calculators row.
-    const settings = rtl.render(React.createElement(SettingsScreen));
-    const row = settings.getByTestId('settings-calculators');
+    // The Kit tab has a Calculators row.
+    const kit = rtl.render(React.createElement(KitScreen));
+    const row = kit.getByTestId('kit-calculators');
     expect(rtl.within(row).getByText('Calculators')).toBeTruthy();
     expect(rtl.within(row).getByText('Units, grid references, sun and moon, distance, dates')).toBeTruthy();
     rtl.fireEvent.press(row);
     expect(mockNavigate).toHaveBeenCalledWith('Calculators');
-    settings.unmount();
+    kit.unmount();
 
     // Seven calculators, all closed: the tools that work an answer out on the phone from what is typed.
     const screen = rtl.render(React.createElement(CalculatorsScreen, {}));

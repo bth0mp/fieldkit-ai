@@ -4,6 +4,7 @@ export { HomeScreen } from './HomeScreen';
 export { ModelsScreen } from './ModelsScreen';
 export { ChatScreen } from './ChatScreen';
 export { SettingsScreen } from './SettingsScreen';
+export { KitScreen } from './KitScreen';
 export { GalleryScreen } from './GalleryScreen';
 export { ProjectsScreen } from './ProjectsScreen';
 export { ProjectDetailScreen } from './ProjectDetailScreen';

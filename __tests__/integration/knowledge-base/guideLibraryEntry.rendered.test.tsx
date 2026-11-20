@@ -1,5 +1,5 @@
 /**
- * Guide library entry points (rendered) — the Field guides knowledge base screen and Settings each carry a
+ * Guide library entry points (rendered) — the Field guides knowledge base screen and the Kit tab each carry a
  * row that opens the Guide library, no other project's knowledge base does, and the licences screen says
  * where downloaded guides are credited. The entry points only navigate: opening them fetches nothing.
  *
@@ -99,12 +99,12 @@ describe('Guide library entry points (rendered)', () => {
     expect(kb.queryByText('Download more free guides')).toBeNull();
   }, 30000);
 
-  it('Settings offers the Guide library and opens it', async () => {
+  it('the Kit tab offers the Guide library and opens it', async () => {
     const { React, rtl } = await setupChatScreen({ engine: 'llama', pdf: true, sqlite: true });
-    const { SettingsScreen } = require('../../../src/screens/SettingsScreen');
-    const view = rtl.render(React.createElement(SettingsScreen));
+    const { KitScreen } = require('../../../src/screens/KitScreen');
+    const view = rtl.render(React.createElement(KitScreen));
     expect(view.queryByText('Free guides to download and use offline')).not.toBeNull();
-    rtl.fireEvent.press(view.getByTestId('settings-guide-library'));
+    rtl.fireEvent.press(view.getByTestId('kit-guide-library'));
     expect(mockNavigate).toHaveBeenCalledWith('GuideLibrary');
   }, 30000);
 

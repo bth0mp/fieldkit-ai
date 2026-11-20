@@ -1,9 +1,9 @@
 /**
- * Checklists (rendered): from Settings the user opens Checklists, makes a list, fills it, ticks items off,
+ * Checklists (rendered): from the Kit tab the user opens Checklists, makes a list, fills it, ticks items off,
  * finds it as they left it after the app restarts, resets it, removes an item and deletes the list, each
  * loss of work after being asked. A starter list comes from Ready.gov's basic kit.
  *
- * Real stack: SettingsScreen and ChecklistsScreen, the checklist service and its store with AsyncStorage
+ * Real stack: KitScreen and ChecklistsScreen, the checklist service and its store with AsyncStorage
  * persistence. Device leaves only: what setupChatScreen installs, and the navigation mock, whose `navigate`
  * is captured here.
  */
@@ -28,7 +28,7 @@ describe('Checklists (rendered)', () => {
     const AsyncStorage = require('@react-native-async-storage/async-storage');
     const { StyleSheet } = require('react-native');
     const { TYPOGRAPHY } = require('../../../src/constants');
-    const { SettingsScreen } = require('../../../src/screens/SettingsScreen');
+    const { KitScreen } = require('../../../src/screens/KitScreen');
     const { ChecklistsScreen } = require('../../../src/screens/ChecklistsScreen');
     const { useChecklistStore } = require('../../../src/features/checklists/checklistStore');
     await rtl.waitFor(() => { expect(useChecklistStore.persist.hasHydrated()).toBe(true); });
@@ -50,11 +50,11 @@ describe('Checklists (rendered)', () => {
       }, { timeout: 4000 });
     };
 
-    // Settings has a Checklists row.
-    const settings = rtl.render(React.createElement(SettingsScreen));
-    rtl.fireEvent.press(settings.getByTestId('settings-checklists'));
+    // The Kit tab has a Checklists row.
+    const kit = rtl.render(React.createElement(KitScreen));
+    rtl.fireEvent.press(kit.getByTestId('kit-checklists'));
     expect(mockNavigate).toHaveBeenCalledWith('Checklists');
-    settings.unmount();
+    kit.unmount();
 
     const screen = rtl.render(React.createElement(ChecklistsScreen, {}));
     expect(screen.getByText('No lists yet.')).toBeTruthy();

@@ -22,6 +22,7 @@ import {
   ModelsScreen,
   ChatScreen,
   SettingsScreen,
+  KitScreen,
   ProjectsScreen,
   ChatsListScreen,
   ProjectDetailScreen,
@@ -59,6 +60,7 @@ const TAB_ICON_MAP: Record<string, string> = {
   HomeTab: 'home',
   ChatsTab: 'message-circle',
   ProjectsTab: 'folder',
+  KitTab: 'compass',
   ModelsTab: 'cpu',
   SettingsTab: 'settings',
 };
@@ -165,6 +167,14 @@ const MainTabs: React.FC = () => {
           name="ProjectsTab"
           component={ProjectsScreen}
           options={{ tabBarLabel: 'Projects', tabBarButtonTestID: 'projects-tab' }}
+          listeners={() => ({
+            tabPress: () => { triggerHaptic('selection'); },
+          })}
+        />
+        <Tab.Screen
+          name="KitTab"
+          component={KitScreen}
+          options={{ tabBarLabel: 'Kit', tabBarButtonTestID: 'kit-tab' }}
           listeners={() => ({
             tabPress: () => { triggerHaptic('selection'); },
           })}

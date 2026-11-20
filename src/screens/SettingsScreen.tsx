@@ -236,46 +236,6 @@ export const SettingsScreen: React.FC = () => {
         {/* About */}
         <AnimatedEntry index={9} staggerMs={40} trigger={focusTrigger}>
           <View style={styles.navSection}>
-            <TouchableOpacity style={styles.navItem} testID="settings-guide-library" onPress={() => navigation.navigate('GuideLibrary')}>
-              <View style={styles.navItemIcon}>
-                <Icon name="book-open" size={16} color={colors.textSecondary} />
-              </View>
-              <View style={styles.navItemContent}>
-                <Text style={styles.navItemTitle}>Guide library</Text>
-                <Text style={styles.navItemDesc}>Free guides to download and use offline</Text>
-              </View>
-              <Icon name="chevron-right" size={16} color={colors.textMuted} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.navItem} testID="settings-quick-reference" onPress={() => navigation.navigate('QuickReference')}>
-              <View style={styles.navItemIcon}>
-                <Icon name="zap" size={16} color={colors.textSecondary} />
-              </View>
-              <View style={styles.navItemContent}>
-                <Text style={styles.navItemTitle}>Quick reference</Text>
-                <Text style={styles.navItemDesc}>Signals, codes and scales at a glance</Text>
-              </View>
-              <Icon name="chevron-right" size={16} color={colors.textMuted} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.navItem} testID="settings-calculators" onPress={() => navigation.navigate('Calculators')}>
-              <View style={styles.navItemIcon}>
-                <Icon name="hash" size={16} color={colors.textSecondary} />
-              </View>
-              <View style={styles.navItemContent}>
-                <Text style={styles.navItemTitle}>Calculators</Text>
-                <Text style={styles.navItemDesc}>Units, grid references, sun and moon, distance, dates</Text>
-              </View>
-              <Icon name="chevron-right" size={16} color={colors.textMuted} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.navItem} testID="settings-checklists" onPress={() => navigation.navigate('Checklists')}>
-              <View style={styles.navItemIcon}>
-                <Icon name="check-square" size={16} color={colors.textSecondary} />
-              </View>
-              <View style={styles.navItemContent}>
-                <Text style={styles.navItemTitle}>Checklists</Text>
-                <Text style={styles.navItemDesc}>Your own packing and check lists</Text>
-              </View>
-              <Icon name="chevron-right" size={16} color={colors.textMuted} />
-            </TouchableOpacity>
             <TouchableOpacity style={[styles.navItem, styles.navItemLast]} onPress={() => navigation.navigate('About')}>
               <View style={styles.navItemIcon}>
                 <Icon name="info" size={16} color={colors.textSecondary} />
