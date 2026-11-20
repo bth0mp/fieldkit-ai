@@ -22,32 +22,32 @@ export const COLORS_LIGHT = {
 
   // Backgrounds
   background: '#FFFFFF',
-  surface: '#F5F5F5',
-  surfaceLight: '#EBEBEB',
-  surfaceHover: '#E0E0E0',
+  surface: '#F4F5F9',
+  surfaceLight: '#E9EBF2',
+  surfaceHover: '#DDE0EA',
 
   // Text hierarchy
-  text: '#0A0A0A',
-  textSecondary: '#525252',
-  textMuted: '#8A8A8A',
-  textDisabled: '#BFBFBF',
+  text: '#0A0B10',
+  textSecondary: '#4E5261',
+  textMuted: '#858A99',
+  textDisabled: '#BCC0CC',
 
   // Borders
-  border: '#E5E5E5',
-  borderLight: '#D4D4D4',
+  border: '#E3E5ED',
+  borderLight: '#D1D4DF',
   borderFocus: '#4F46E5',
 
   // Semantic colors
-  success: '#525252',
-  warning: '#0A0A0A',
+  success: '#4E5261',
+  warning: '#0A0B10',
   error: '#DC2626',
   trending: '#D97706',
   errorBackground: 'rgba(220, 38, 38, 0.10)',
-  info: '#525252',
+  info: '#4E5261',
 
   // Special
   overlay: 'rgba(0, 0, 0, 0.4)',
-  divider: '#EBEBEB',
+  divider: '#E9EBF2',
 };
 
 // ── Dark palette ───────────────────────────────────────────────────
@@ -58,33 +58,33 @@ export const COLORS_DARK = {
   primaryLight: '#A5B4FC',
 
   // Backgrounds
-  background: '#0A0A0A',
-  surface: '#141414',
-  surfaceLight: '#1E1E1E',
-  surfaceHover: '#252525',
+  background: '#0B0D12',
+  surface: '#13151C',
+  surfaceLight: '#1C1F28',
+  surfaceHover: '#242833',
 
   // Text hierarchy
   text: '#FFFFFF',
-  textSecondary: '#B0B0B0',
-  textMuted: '#808080',
-  textDisabled: '#4A4A4A',
+  textSecondary: '#AEB2C0',
+  textMuted: '#7E8394',
+  textDisabled: '#474B59',
 
   // Borders
-  border: '#1E1E1E',
-  borderLight: '#2A2A2A',
+  border: '#1C1F28',
+  borderLight: '#282C38',
   borderFocus: '#818CF8',
 
   // Semantic colors
-  success: '#B0B0B0',
+  success: '#AEB2C0',
   warning: '#FFFFFF',
   error: '#C75050',
   trending: '#F59E0B',
   errorBackground: 'rgba(239, 68, 68, 0.15)',
-  info: '#B0B0B0',
+  info: '#AEB2C0',
 
   // Special
   overlay: 'rgba(0, 0, 0, 0.7)',
-  divider: '#1A1A1A',
+  divider: '#181B23',
 };
 
 // ── Light shadows ────────────────────────────────────────────────────
