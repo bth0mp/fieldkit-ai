@@ -76,3 +76,26 @@ describe('Kiwix files (rendered): a download split into parts', () => {
     expect(screen.queryByText("This Kiwix file can't be opened any more.")).toBeNull();
   });
 });
+
+describe('Kiwix files (rendered): the "Not added" list', () => {
+  it('drops a file the user deleted from the folder at the next check', async () => {
+    const h = await setupChatScreen({ engine: 'llama', sqlite: true, documents: true });
+    const { React, rtl, boundary } = h;
+    // DEVICE BOUNDARY: the granted folder holds one Kiwix file and one that isn't.
+    boundary.documents!.seed(`${TREE}/wikimed.zim`, buildZim(WIKIMED));
+    boundary.documents!.seed(`${TREE}/notes.zim`, new Uint8Array(80));
+    require('@react-native-documents/picker').pickDirectory.mockResolvedValue({ uri: TREE, bookmarkStatus: 'success', bookmark: 'b' });
+    const { KiwixFilesScreen } = require('../../../src/screens/KiwixFilesScreen');
+
+    const screen = rtl.render(React.createElement(KiwixFilesScreen, {}));
+    rtl.fireEvent.press(screen.getByText('Add Kiwix folder'));
+    await rtl.waitFor(() => { expect(screen.getByText('notes.zim')).toBeTruthy(); }, { timeout: 4000 });
+    expect(screen.getByText("This isn't a Kiwix file.")).toBeTruthy();
+
+    // The user deletes it in a file manager and checks the folder again.
+    boundary.documents!.remove(`${TREE}/notes.zim`);
+    rtl.fireEvent.press(screen.getByText('Check for new files'));
+    await rtl.waitFor(() => { expect(screen.queryByText('Not added')).toBeNull(); });
+    expect(screen.getByText('First aid and medical (1)')).toBeTruthy();
+  });
+});

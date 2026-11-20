@@ -69,15 +69,16 @@ describe('Kiwix service', () => {
     expect(files()).toHaveLength(3);
   });
 
-  it('a folder that cannot be listed is named, and its row goes once it can be listed again', async () => {
+  it('a folder that cannot be listed is named in place of its files, until it can be listed again', async () => {
     const { kiwixService, docs, useKiwixStore } = setup();
     await kiwixService.addFolder();
     const oldFile = { fileName: 'old.zim', reason: "This Kiwix file uses an older compression Fieldkit can't read. Download a newer copy in Kiwix." };
     const folderGone = { fileName: 'org.kiwix.kiwixmobile', reason: "This folder can't be opened any more. Add it again." };
+    expect(useKiwixStore.getState().refused).toEqual([oldFile]);
 
     docs.module.listFiles.mockRejectedValueOnce(new Error('SecurityException: the grant was revoked'));
     await kiwixService.checkForNewFiles();
-    expect(useKiwixStore.getState().refused).toEqual([oldFile, folderGone]);
+    expect(useKiwixStore.getState().refused).toEqual([folderGone]);
 
     await kiwixService.checkForNewFiles();
     expect(useKiwixStore.getState().refused).toEqual([oldFile]);
