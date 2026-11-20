@@ -326,6 +326,21 @@ async function download(id: string): Promise<void> {
   setGuideAndDelisted(id, error ? { phase: 'none', error } : { phase: 'downloaded' });
 }
 
+/**
+ * Download every listed guide not on the phone, one after another, so each free-space check sees the guides before
+ * it and the slow government hosts get one request at a time. A failed guide keeps its error and the rest go on.
+ * ponytail: no stop button; add one if people start it on a metered connection by mistake.
+ */
+async function downloadAll(): Promise<void> {
+  if (store.getState().downloadingAll) return;
+  store.setState({ downloadingAll: true });
+  try {
+    for (const { id } of store.getState().catalogue.guides) await download(id);
+  } finally {
+    store.setState({ downloadingAll: false });
+  }
+}
+
 /** Open a downloaded guide in the phone's PDF viewer. */
 async function open(id: string): Promise<void> {
   const phase = phaseOf(id);
@@ -430,4 +445,4 @@ async function remove(id: string): Promise<void> {
 }
 
 /** Owns the guide library: the catalogue, each guide's file on disk and its state in the store. */
-export const guideLibraryService = { init, reconcile, refresh, download, open, remove, teach, unteach };
+export const guideLibraryService = { init, reconcile, refresh, download, downloadAll, open, remove, teach, unteach };

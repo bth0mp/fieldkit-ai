@@ -32,6 +32,7 @@ export const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
     marginTop: SPACING.lg,
   },
   summary: { ...TYPOGRAPHY.bodySmall, color: colors.textSecondary, paddingTop: SPACING.md },
+  downloadAll: { alignSelf: 'flex-start' as const, marginTop: SPACING.sm },
   kiwixRow: { marginTop: SPACING.md, marginBottom: 0 },
   sectionTitle: {
     ...TYPOGRAPHY.label,

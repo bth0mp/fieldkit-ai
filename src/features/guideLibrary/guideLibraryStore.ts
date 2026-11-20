@@ -15,6 +15,8 @@ export interface GuideLibraryState {
   /** Downloaded (or downloading) guides the catalogue no longer lists. */
   delisted: GuideEntry[];
   refreshing: boolean;
+  /** A "Download all" is working through the catalogue. */
+  downloadingAll: boolean;
   /** The guide being indexed right now. Other guides in phase 'teaching' are waiting their turn. */
   learning: string | null;
 }
@@ -50,6 +52,10 @@ export function rowEntry(saved: Record<string, GuideEntry>, listed: GuideEntry, 
 export const offersTeach = (entry: GuideEntry, state: GuideState | undefined, listed: boolean): boolean =>
   !!state && isOnPhone(state) && entry.hasText && (listed || state.phase !== 'downloaded');
 
+/** Listed guides with no file on the phone and no download running: what "Download all" fetches. */
+export const toDownload = ({ catalogue, guides }: Pick<GuideLibraryState, 'catalogue' | 'guides'>): GuideEntry[] =>
+  catalogue.guides.filter(g => (stateOf(guides, g.id)?.phase ?? 'none') === 'none');
+
 /** How many guides the library shows, how many are on the phone and how many are taught, over every guide the
  *  library tracks (the catalogue's and the ones it no longer lists). */
 export function libraryCounts({ catalogue, guides, delisted }: Pick<GuideLibraryState, 'catalogue' | 'guides' | 'delisted'>):
@@ -69,5 +75,6 @@ export const useGuideLibraryStore = create<GuideLibraryState>(() => ({
   saved: {},
   delisted: [],
   refreshing: false,
+  downloadingAll: false,
   learning: null,
 }));

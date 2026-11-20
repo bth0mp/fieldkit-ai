@@ -731,4 +731,31 @@ describe('Guide library (rendered)', () => {
     expect(view.getByText('Open')).toBeTruthy();
     expect(view.getByText('Assistant knows this')).toBeTruthy();
   }, 30000);
+
+  it('Download all asks first, downloads every guide not on the phone, and a failure does not stop the rest', async () => {
+    const h = await openLibrary(f => {
+      f.seedDownload(CATALOGUE_URL, TEST_CATALOGUE);
+      // Test knots comes first and has no connection; Test water downloads.
+      f.seedDownload(WATER.url, WATER_BODY);
+    });
+    const { rtl, view, fs } = h;
+    const { formatBytes } = require('../../../src/utils/formatBytes');
+
+    rtl.fireEvent.press(view.getByText('Download all'));
+    await rtl.waitFor(() => { expect(view.getByText('Download all guides?')).toBeTruthy(); });
+    expect(view.getByText(`2 guides, ${formatBytes(KNOTS.bytes + WATER.bytes)} in all. They download one at a time.`)).toBeTruthy();
+    rtl.fireEvent.press(view.getAllByText('Download').at(-1)!); // the sheet's, drawn after the rows
+
+    await rtl.waitFor(() => { expect(view.getByLabelText('Open Test water')).toBeTruthy(); }, { timeout: 4000 });
+    expect(view.getByText(DIDNT_FINISH)).toBeTruthy();
+    expect(view.getByText('2 guides · 1 downloaded · 0 taught')).toBeTruthy();
+
+    // Once the connection is back, Download all fetches the one that failed and then goes away.
+    fs.seedDownload(KNOTS.url, KNOTS_BODY);
+    rtl.fireEvent.press(view.getByText('Download all'));
+    await rtl.waitFor(() => { expect(view.getByText(`1 guide, ${formatBytes(KNOTS.bytes)} in all. They download one at a time.`)).toBeTruthy(); });
+    rtl.fireEvent.press(view.getAllByText('Download').at(-1)!); // the sheet's, drawn after the rows
+    await rtl.waitFor(() => { expect(view.getByText('2 guides · 2 downloaded · 0 taught')).toBeTruthy(); }, { timeout: 4000 });
+    expect(view.queryByText('Download all')).toBeNull();
+  }, 30000);
 });

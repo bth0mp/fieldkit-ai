@@ -10,7 +10,7 @@ import { CustomAlert, showAlert, hideAlert, initialAlertState, type AlertState }
 import { formatBytes } from '../utils/formatBytes';
 import type { Catalogue, GuideCategory, GuideEntry } from '../features/guideLibrary/catalogue';
 import {
-  isOnPhone, libraryCounts, offersTeach, rowEntry, stateOf, useGuideLibraryStore, type GuideState,
+  isOnPhone, libraryCounts, offersTeach, rowEntry, stateOf, toDownload, useGuideLibraryStore, type GuideState,
 } from '../features/guideLibrary/guideLibraryStore';
 import { guideLibraryService, SLOW_SEARCH_TAUGHT_GUIDES } from '../features/guideLibrary/guideLibraryService';
 import { useKiwixStore } from '../services/kiwix/kiwixStore';
@@ -139,6 +139,7 @@ export const GuideLibraryScreen: React.FC = () => {
   const delisted = useGuideLibraryStore(s => s.delisted);
   const saved = useGuideLibraryStore(s => s.saved);
   const refreshing = useGuideLibraryStore(s => s.refreshing);
+  const downloadingAll = useGuideLibraryStore(s => s.downloadingAll);
   const kiwixCount = useKiwixStore(s => Object.keys(s.files).length);
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState<string | null>(null);
@@ -155,6 +156,20 @@ export const GuideLibraryScreen: React.FC = () => {
     [catalogue, delisted, query, saved, guides],
   );
   const { total, onPhone, taught } = useMemo(() => libraryCounts({ catalogue, guides, delisted }), [catalogue, guides, delisted]);
+  const pending = useMemo(() => toDownload({ catalogue, guides }), [catalogue, guides]);
+
+  // All the guides together are a few hundred MB, so the user sees how much before it starts.
+  const confirmDownloadAll = () => {
+    const bytes = pending.reduce((sum, g) => sum + g.bytes, 0);
+    setAlertState(showAlert(
+      'Download all guides?',
+      `${pending.length} ${pending.length === 1 ? 'guide' : 'guides'}, ${formatBytes(bytes)} in all. They download one at a time.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Download', onPress: () => { guideLibraryService.downloadAll(); } },
+      ],
+    ));
+  };
 
   // A removed guide may not be downloadable again (offline, or no longer listed), so the user confirms first.
   const confirmRemove = (entry: GuideEntry, state: GuideState, isDelisted: boolean) => setAlertState(showAlert(
@@ -226,6 +241,11 @@ export const GuideLibraryScreen: React.FC = () => {
               </View>
             </TouchableOpacity>
             <Text style={styles.summary}>{`${total} ${total === 1 ? 'guide' : 'guides'} · ${onPhone} downloaded · ${taught} taught`}</Text>
+            {(downloadingAll || pending.length > 0) && (
+              <Button title={downloadingAll ? 'Downloading all…' : 'Download all'} size="small" variant="outline"
+                disabled={downloadingAll} testID="guide-library-download-all" style={styles.downloadAll}
+                icon={<Icon name="download" size={14} color={colors.text} />} onPress={confirmDownloadAll} />
+            )}
             {taught >= SLOW_SEARCH_TAUGHT_GUIDES && (
               <Text style={styles.note}>The assistant searches every guide it has learned. More guides make answers slower.</Text>
             )}
