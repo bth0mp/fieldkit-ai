@@ -17,8 +17,9 @@ const MESSAGES: Record<ZimErrorCode, string> = {
   'not-zim': "This isn't a Kiwix file.",
   xz: "This Kiwix file uses an older compression Fieldkit can't read. Download a newer copy in Kiwix.",
   compression: "This Kiwix file uses a compression Fieldkit can't read.",
-  // The file is there but its contents don't hold together: a download cut short, or a cluster no real file has.
-  damaged: 'This Kiwix file is damaged or incomplete. Download it again in Kiwix.',
+  // The file is there but its contents don't hold together: a download cut short, still running or not started
+  // (Kiwix makes a queued download's file empty), or a cluster no real file has.
+  damaged: "This Kiwix file is damaged or incomplete. If Kiwix is still downloading it, check again when it's done. If not, download it again in Kiwix.",
   // The file itself could not be read: deleted, moved, or its permission withdrawn.
   unreadable: "This Kiwix file can't be opened any more.",
 };
@@ -208,7 +209,8 @@ export async function openZim(read: ReadRange): Promise<ZimArchive> {
   };
 
   const header = await bytes(0, 80);
-  if (header.length < 80 || u32(header, 0) !== MAGIC) throw new ZimError('not-zim');
+  if (header.length >= 4 && u32(header, 0) !== MAGIC) throw new ZimError('not-zim');
+  if (header.length < 80) throw new ZimError('damaged');
   const major = u16(header, 4);
   const minor = u16(header, 6);
   const entryCount = u32(header, 24);

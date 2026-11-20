@@ -91,7 +91,7 @@ describe('ZIM reader', () => {
     };
     for (const kept of [0.9, 0.6, 0.3]) {
       expect(await outcome(whole.subarray(0, Math.floor(whole.length * kept))))
-        .toBe('damaged: This Kiwix file is damaged or incomplete. Download it again in Kiwix.');
+        .toBe("damaged: This Kiwix file is damaged or incomplete. If Kiwix is still downloading it, check again when it's done. If not, download it again in Kiwix.");
     }
     expect(await outcome(whole)).toBe('read');
   });
