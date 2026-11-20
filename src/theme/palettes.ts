@@ -16,9 +16,9 @@ export type ThemeShadows = {
 // ── Light palette ──────────────────────────────────────────────────
 export const COLORS_LIGHT = {
   // Primary accent
-  primary: '#059669',
-  primaryDark: '#047857',
-  primaryLight: '#34D399',
+  primary: '#4F46E5',
+  primaryDark: '#4338CA',
+  primaryLight: '#818CF8',
 
   // Backgrounds
   background: '#FFFFFF',
@@ -35,7 +35,7 @@ export const COLORS_LIGHT = {
   // Borders
   border: '#E5E5E5',
   borderLight: '#D4D4D4',
-  borderFocus: '#059669',
+  borderFocus: '#4F46E5',
 
   // Semantic colors
   success: '#525252',
@@ -53,9 +53,9 @@ export const COLORS_LIGHT = {
 // ── Dark palette ───────────────────────────────────────────────────
 export const COLORS_DARK = {
   // Primary accent
-  primary: '#34D399',
-  primaryDark: '#10B981',
-  primaryLight: '#6EE7B7',
+  primary: '#818CF8',
+  primaryDark: '#6366F1',
+  primaryLight: '#A5B4FC',
 
   // Backgrounds
   background: '#0A0A0A',
@@ -72,7 +72,7 @@ export const COLORS_DARK = {
   // Borders
   border: '#1E1E1E',
   borderLight: '#2A2A2A',
-  borderFocus: '#34D399',
+  borderFocus: '#818CF8',
 
   // Semantic colors
   success: '#B0B0B0',
@@ -101,7 +101,7 @@ export const SHADOWS_LIGHT: ThemeShadows = {
     boxShadow: '0px 4px 18px 0px rgba(0,0,0,0.35)',
   },
   glow: {
-    boxShadow: '0px 0px 12px 0px rgba(5,150,105,0.25)',
+    boxShadow: '0px 0px 12px 0px rgba(79,70,229,0.25)',
   },
 };
 
@@ -117,7 +117,7 @@ export const SHADOWS_DARK: ThemeShadows = {
     boxShadow: '0px 0px 10px 0px rgba(255,255,255,0.25)',
   },
   glow: {
-    boxShadow: '0px 0px 8px 0px rgba(52,211,153,0.30)',
+    boxShadow: '0px 0px 8px 0px rgba(129,140,248,0.30)',
   },
 };
 

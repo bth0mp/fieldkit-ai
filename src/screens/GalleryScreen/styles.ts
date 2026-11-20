@@ -98,7 +98,7 @@ const createGridStyles = (colors: ThemeColors) => ({
     alignItems: 'flex-end' as const,
     padding: SPACING.sm - 2,
   },
-  selectionOverlaySelected: { backgroundColor: 'rgba(99, 102, 241, 0.25)' },
+  selectionOverlaySelected: { backgroundColor: `${colors.primary}40` },
   checkbox: {
     width: 22,
     height: 22,
