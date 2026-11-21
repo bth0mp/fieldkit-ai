@@ -17,6 +17,8 @@ import { Card } from '../components';
 import { AnimatedEntry } from '../components/AnimatedEntry';
 import { AnimatedListItem } from '../components/AnimatedListItem';
 import { DebugLogsScreen } from '../components/DebugLogsScreen';
+import { HomePlaceSheet } from '../components/HomePlaceSheet';
+import { useHomePlaceStore } from '../features/home/homePlace';
 import { useSettingsSections } from '../components/settings/sectionRegistry';
 import { useFocusTrigger } from '../hooks/useFocusTrigger';
 import { useTheme, useThemedStyles } from '../theme';
@@ -52,6 +54,8 @@ export const SettingsScreen: React.FC = () => {
   const completeChecklistStep = useAppStore((s) => s.completeChecklistStep);
   const resetChecklist = useAppStore((s) => s.resetChecklist);
   const [showDebugLogs, setShowDebugLogs] = useState(false);
+  const [showHomePlace, setShowHomePlace] = useState(false);
+  const homePlace = useHomePlaceStore((s) => s.place);
   const deviceInfo = useAppStore((s) => s.deviceInfo);
   // Hidden once the user dismisses it, or once Pro is active (the upsell makes no
   // sense to a paid user). hasRegisteredPro only flips true after RC verification
@@ -178,6 +182,23 @@ export const SettingsScreen: React.FC = () => {
         {/* Navigation Items */}
         <AttachStep index={5} fill>
           <View style={styles.navSection}>
+            <AnimatedListItem
+              index={0}
+              staggerMs={40}
+              trigger={focusTrigger}
+              style={styles.navItem}
+              testID="settings-home-place"
+              onPress={() => setShowHomePlace(true)}
+            >
+              <View style={styles.navItemIcon}>
+                <Icon name="map-pin" size={16} color={colors.textSecondary} />
+              </View>
+              <View style={styles.navItemContent}>
+                <Text style={styles.navItemTitle}>Home place</Text>
+                <Text style={styles.navItemDesc}>{homePlace?.typed ?? 'Not set'}</Text>
+              </View>
+              <Icon name="chevron-right" size={16} color={colors.textMuted} />
+            </AnimatedListItem>
             {[
               { icon: 'sliders', title: 'Model Settings', desc: 'System prompt, generation, and performance', screen: 'ModelSettings' as const },
               { icon: 'wifi', title: 'Remote Servers', desc: 'Connect to Ollama, LM Studio, and other servers on your network', screen: 'RemoteServers' as const },
@@ -290,6 +311,7 @@ export const SettingsScreen: React.FC = () => {
           </AnimatedEntry>
         )}
 
+        <HomePlaceSheet visible={showHomePlace} onClose={() => setShowHomePlace(false)} />
         {__DEV__ && <DebugLogsScreen visible={showDebugLogs} onClose={() => setShowDebugLogs(false)} />}
       </ScrollView>
     </SafeAreaView>
