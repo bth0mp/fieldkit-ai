@@ -43,6 +43,9 @@ describe('Home header (rendered)', () => {
     expect(home.queryByTestId('home-date')).toBeNull();
     expect(home.queryByTestId('home-offline')).toBeNull();
     expect(home.getByText('Fieldkit AI')).toBeTruthy();
+    // Between the two thresholds the header stays as it is, so a short page cannot flicker.
+    rtl.fireEvent.scroll(home.getByTestId('home-scroll'), scrollTo(20));
+    expect(home.queryByTestId('home-date')).toBeNull();
     rtl.fireEvent.scroll(home.getByTestId('home-scroll'), scrollTo(0));
     expect(home.getByTestId('home-date')).toBeTruthy();
     expect(home.getByTestId('home-offline')).toHaveTextContent('Offline');

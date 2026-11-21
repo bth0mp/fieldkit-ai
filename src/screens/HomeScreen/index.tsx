@@ -30,8 +30,12 @@ import { WHISPER_MODELS } from '../../services';
 import { useUiModeStore } from '../../stores/uiModeStore';
 import { shownCards, useHomeLayoutStore, type HomeCardId } from '../../features/home/homeLayout';
 
-/** Scrolled further than this (px), the header drops its date line and Offline label. */
+/**
+ * Scrolled further than SLIM_AFTER (px), the header drops its date line and Offline label; it comes back only
+ * once the page is back above FULL_BELOW. Hiding the row grows the viewport, so one threshold could flicker.
+ */
 const SLIM_AFTER = 40;
+const FULL_BELOW = 10;
 
 type HomeScreenProps = {
   navigation: HomeScreenNavigationProp;
@@ -218,7 +222,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           testID="home-scroll"
           style={styles.scrollView}
           contentContainerStyle={styles.content}
-          onScroll={(e) => setSlim(e.nativeEvent.contentOffset.y > SLIM_AFTER)}
+          onScroll={(e) => {
+            const y = e.nativeEvent.contentOffset.y;
+            setSlim((was) => (was ? y >= FULL_BELOW : y > SLIM_AFTER));
+          }}
           scrollEventThrottle={16}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
