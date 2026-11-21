@@ -49,6 +49,5 @@ export function useTodaySky(): TodayClock {
     const now = new Date();
     return { now, sky: place ? todaySky(place, now) : null, tick };
     // tick is only the cue to read the clock again.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [place, tick]);
 }
