@@ -656,6 +656,149 @@ on running a radio were looked at. Neither was listed.
   on X, which the app's Quick reference card now says. Page 83 also
   tells the reader to put strobe lights 'in holes so they can only be viewed from above', which is concealment.
 
+## Twelfth batch, 20 November 2026: the library's captured records, titled
+
+The tenth batch titled about 55 of the National Agricultural Library's 1,524 captured download addresses (1,519
+records). This batch asked the Wayback Machine for the first part of each of the other 1,464, one request at a time,
+and looked for growing, preserving and foraging food, and livestock: 1,166 gave a title from their first page, 90 gave
+only text from a later page, 4 gave no text, and 204 could not be fetched (173 captures answer 'not found' and 31
+redirect in a loop). The full list, one row per record with its raw-capture address, is
+`.superpowers/sdd/2026-11-18-build-loop/guides-batch-7/nal-captured-titles-all.tsv`. Most of the records are research
+bulletins, economic reports, market-news summaries and plant-introduction lists; the practical bulletins are mostly
+Home and Garden Bulletins. A capture made from 2017 on is cut off at one megabyte, so a file larger than that can only
+be listed from an earlier, whole capture.
+
+Eight passed this batch's checks, each staff-written with every picture page looked at, and a second reviewer then
+downloaded and looked at each again. Five were listed: High-Density Apple Orchards (AH 458, 1975), Salt Problems in
+Irrigated Soils (AIB 190, 1958), Tolerance of Crops to Exchangeable Sodium (AIB 216, 1960), Mulches for Your Garden
+(HG 185) and Gardening on the Contour (HG 179), the last two reprinted in 1988. Storing Perishable Foods in the Home
+(HG 78, 1976), which the tenth batch could not find, is out below on outdated advice. Freezing Meat and Poultry
+Products for Home Use (HG 15, 1951) and Supplemental Feeding of Honey Bee Colonies (AIB 413, 1978) are held for the
+owner, one question each, in `catalog/pending/owner-questions-2026-11-20.json`.
+
+### Out: an outside author, partner or picture
+
+- Growing Sour Cherries, Agriculture Handbook 451 (USDA, CAT87208505,
+  https://web.archive.org/web/20150629201657id_/http://naldc.nal.usda.gov:80/download/CAT87208505/PDF): co-author L.
+  C. Cochran of Oregon State University; 'figures 3, 7, 8, and 12 by Cornell University' and 'figure 16 by Friday
+  Tractor Co.'; page 5 says text and illustrations were used from Farmers' Bulletin 2185.
+- Turkey Production, Agriculture Handbook 393, 1971 (USDA, CAT87209191,
+  https://web.archive.org/web/20160207060702id_/http://naldc.nal.usda.gov:80/download/CAT87209191/PDF): photographs
+  credited '(Photo from Colorado State University.)', '(Photo from Turkey World ...)', '(Photo from Petersime
+  Incubator Co. ...)' and to a turkey association.
+- Domestic Rabbits: Diseases and Parasites, Agriculture Handbook 490 (USDA, CAT87208764,
+  https://web.archive.org/web/20161017154107id_/http://naldc.nal.usda.gov:80/download/CAT87208764/PDF): co-author R.
+  E. Flatt of Iowa State University; page 19, 'Photograph courtesy of Academic Press and Co., New York.'
+- Growing Your Own Vegetables, Agriculture Information Bulletin 409, 1977 (USDA, CAT87209981,
+  https://web.archive.org/web/20120817232907id_/http://naldc.nal.usda.gov:80/download/CAT87209981/PDF): a reprint of
+  Part 2 of the 1977 Yearbook of Agriculture, whose chapters are by outside writers, beginning with one 'by George and
+  Katy Abraham' of Naples, N.Y., who 'do a column'.
+- Beekeeping in the United States, Agriculture Handbook 335, 1967 (USDA, CAT87208707,
+  https://web.archive.org/web/20130719222459id_/http://naldc.nal.usda.gov:80/download/CAT87208707/PDF): every chapter
+  is by a Department scientist, but twelve chapters carry the footnote 'In cooperation with' a state agricultural
+  experiment station (Louisiana, Utah, Arizona, Wisconsin), and PDF page 134 gives 'Grateful acknowledgment' to
+  librarians of four universities. Also outdated: PDF page 119 kills blister beetles 'with DDT-treated pollen
+  pellets', and PDF page 98 lists sulfathiazole among drugs approved for bee diseases, which it no longer is in the
+  US.
+- Instrumental Insemination of Queen Bees, Agriculture Handbook 390, December 1970 (USDA, CAT87209055,
+  https://web.archive.org/web/20150713031157id_/http://naldc.nal.usda.gov:80/download/CAT87209055/PDF): the cover
+  reads 'IN COOPERATION WITH LOUISIANA STATE UNIVERSITY'.
+- Perennial Edible Fruits of the Tropics: An Inventory, Agriculture Handbook 642, 1987 (USDA, CAT87886130,
+  https://web.archive.org/web/20130625021634id_/http://naldc.nal.usda.gov:80/download/CAT87886130/PDF): co-author Carl
+  W. Campbell of the University of Florida (title page).
+- Fire Blight: Its Nature, Prevention, and Control, Agriculture Information Bulletin 631, issued September 1992 (USDA,
+  CAT93989704, https://web.archive.org/web/20150702044144id_/http://naldc.nal.usda.gov:80/download/CAT93989704/PDF):
+  the cover reads 'In cooperation with Cornell University', the co-author S. V. Beer is a Cornell professor, and
+  photographs are credited '(Original photo, courtesy of A.L. Jones, Michigan State University, East Lansing.)'.
+- Home Freezing of Fruits and Vegetables, Home and Garden Bulletin 10, July 1951 (USDA, CAT10325114,
+  https://web.archive.org/web/20210623083043id_/https://naldc.nal.usda.gov/download/CAT10325114/PDF, a capture cut off
+  at one megabyte): page 2, 'Acknowledgment is made to specialists in home freezing of foods, from State colleges,
+  universities, experiment stations'.
+- Growing Figs in the South for Home Use, Home and Garden Bulletin 87 (USDA, CAT40000466,
+  https://web.archive.org/web/20210613155746id_/https://naldc.nal.usda.gov/download/CAT40000466/PDF, and an older
+  printing, CAT40000467,
+  https://web.archive.org/web/20160121052209id_/http://naldc.nal.usda.gov:80/download/CAT40000467/PDF): back page of
+  the newer printing, first page of the older, 'Information for this publication was furnished by A. H. Krezdorn,
+  Department of Fruit Crops, University of Florida'.
+- Lining Irrigation Laterals and Farm Ditches, Agriculture Information Bulletin 242 (USDA, CAT87210391,
+  https://web.archive.org/web/20210622235455id_/https://naldc.nal.usda.gov/download/CAT87210391/PDF): the cover reads
+  'In Cooperation With the UTAH AGRICULTURAL EXPERIMENT STATION'.
+- Windbreaks for Conservation, Agriculture Information Bulletin 339, issued October 1969, reprinted 1974 (USDA,
+  CAT77682437, https://web.archive.org/web/20151029013103id_/http://naldc.nal.usda.gov:80/download/CAT77682437/PDF):
+  written by Arthur E. Ferber, a Soil Conservation Service forester, but the drawing on PDF page 9 (printed page 7) of
+  a windbreak sheltering cattle and a barn is signed by its artist ('Don R. Nelson', as far as the scan can be read).
+  Ruling 1 lets no outside illustrator be credited, and nothing in the bulletin shows the artist was staff, so it goes
+  to the owner. Its other pictures were seen only on contact sheets.
+- Beekeeping in the United States, Agriculture Handbook 335, revised October 1980 (USDA, CAT81750530,
+  https://web.archive.org/web/20141022221856id_/http://naldc.nal.usda.gov/download/CAT81750530/PDF): the 1980 revision
+  of the 1967 handbook above. PDF page 176, 'Erickson gratefully acknowledges the following individuals for providing
+  current information essential for this revision', naming librarians of the Universities of Minnesota, Wisconsin,
+  California and Guelph and of Cornell, the A. I. Root Company and Dadant & Sons.
+- Uncultivated Nuts of the United States, Agriculture Information Bulletin 450 (Forest Service, CAT82777192, one
+  capture, cut off at one megabyte): Figure 1 is '(courtesy of the Smithsonian Institution, Neg. No. 55, 445)'.
+
+### Out: outdated safety advice
+
+- Storing Perishable Foods in the Home, Home and Garden Bulletin 78, 1976 revision (USDA, CAT76678308,
+  https://web.archive.org/web/20160419043012id_/http://naldc.nal.usda.gov:80/download/CAT76678308/PDF): out on the
+  second review. PDF page 8, thawed sausage 'use within 3 to 4 days', where today's chart gives 1 to 2 days for raw
+  sausage; PDF page 2 calls slime on meat 'unpalatable but not hazardous to health' and gives off-odours and a sour
+  taste as the signs of dangerous spoilage, which teaches judging safety by smell and taste. Also dated: unopened
+  canned ham up to a year, and mould cut off cheese with no depth given. Pictures clean.
+- Freezing Combination Main Dishes, Home and Garden Bulletin 40, 1954 (USDA, CAT87213399,
+  https://web.archive.org/web/20210622141057id_/https://naldc.nal.usda.gov/download/CAT87213399/PDF): a recipe
+  booklet; page 3, 'Thawing at room temperature may cause dangerous spoilage if it takes more than 3 or 4 hours',
+  where the limit today is two hours.
+- Storing Vegetables and Fruits in Basements, Cellars, Outbuildings, and Pits, Home and Garden Bulletin 119, a second
+  record of the 1966 edition (USDA, CAT87213861,
+  https://web.archive.org/web/20150211051302id_/http://naldc.nal.usda.gov:80/download/CAT87213861/PDF): page 11
+  fumigates stored beans with carbon tetrachloride.
+- Vegetable Gardening in the Caribbean Area, Agriculture Handbook 323, 1967 (USDA, CAT87209120,
+  https://web.archive.org/web/20120817232902id_/http://naldc.nal.usda.gov:80/download/CAT87209120/PDF): its pest
+  tables (pages 92 and 93) and crop sections prescribe DDT, chlordane, toxaphene and dieldrin.
+- Canning in Glass Jars in Community Canning Centers, Agriculture Handbook 44, 1952 (USDA, CAT10310471,
+  https://web.archive.org/web/20130225194752id_/http://naldc.nal.usda.gov:80/download/CAT10310471/PDF): processing
+  times from before 1988; it also thanks university and National Canners Association staff on page iv.
+- Home Canning of Fruits and Vegetables (Home and Garden Bulletin 8, CAT40000299, and a second record, CAT87213449),
+  Making Pickles and Relishes at Home (Home and Garden Bulletin 92, CAT40000476), Jellies, Jams and Preserves at Home
+  (Home and Garden Bulletin 56, CAT40000392, and CAT87213458) and Canning, Freezing, Storing Garden Produce
+  (Agriculture Information Bulletin 410, a 1977 Yearbook reprint, CAT87209982) and Home Canning of Meat and Poultry
+  (CAT78691836, a capture cut off at one megabyte): not opened past the title; processing times from before 1988.
+- Keeping Food Safe to Eat: A Guide for Homemakers, Home and Garden Bulletin 162, revised July 1975 (USDA,
+  CAT75662458, https://web.archive.org/web/20210615082445id_/https://naldc.nal.usda.gov/download/CAT75662458/PDF):
+  staff-written (Consumer and Food Economics Institute, ARS), but PDF pages 5 and 7 let food stand '2 or 3 hours' in a
+  danger zone of 60 to 125 degrees F, where the rule today is two hours between 40 and 140 degrees F.
+- Potato Diseases, Agriculture Handbook 474, issued October 1976, slightly revised December 1979 (USDA, CAT31007970,
+  https://web.archive.org/web/20131216074342id_/http://naldc.nal.usda.gov/download/CAT31007970/PDF): PDF page 69
+  fumigates root-knot nematodes 'with a good nematicide, such as EDB', cancelled for soil use in 1983, and page 31
+  sprays Difolatan (captafol), cancelled since. Also, PDF page 10 says the co-author Avery E. Rich 'is now associate
+  dean, College of Life Sciences and Agriculture, University of New Hampshire'.
+
+### Not listed
+
+- Freezing Meat and Fish in the Home (Home and Garden Bulletin 93, CAT40000479), Home Freezing of Poultry (a Home and
+  Garden Bulletin, CAT40000427) and Suburban and Farm Vegetable Gardens (Home and Garden Bulletin 9, CAT40000301):
+  found, but every capture is cut off at one megabyte (the Wayback Machine's index lists no other), so the app could
+  not fetch a whole file.
+- Control of Insects on Deciduous Fruits and Tree Nuts in the Home Orchard Without Insecticides (Home and Garden
+  Bulletin 211, July 1975, ARS, CAT75663576), Growing Vegetables in the Home Garden (Home and Garden Bulletin 202,
+  CAT88913090) and the 1970 revision of Storing Vegetables and Fruits in Basements, Cellars, Outbuildings, and Pits
+  (Home and Garden Bulletin 119, CAT70298010): the same; each has one capture, cut off at one megabyte. Home and
+  Garden Bulletin 211 is staff-written (P. H. Schwartz Jr. of the Agricultural Research Service) and would be worth
+  listing if a whole copy turns up.
+- General Procedure for Manufacturing Swiss Cheese, Circular 851, 1950 (CAT87217520), Mechanical Seed Cleaning and
+  Handling (Agriculture Handbook 354), Seed Cleaning and Handling (CAT87208830), Principles and Practices of Seed
+  Storage (Agriculture Handbook 506), Harvesting and Cleaning Grass and Legume Seed in the Western Gulf Region
+  (Agriculture Handbook 24), Poultry Grading Manual, Egg-Grading Manual, How to Buy Cheese (Home and Garden Bulletin
+  256), Composition of Foods: Nut and Seed Products (Agriculture Handbook 8-12), Culture of Sugarcane for Sugar
+  Production in the Mississippi Delta (Agriculture Handbook 417), The Anatomy of the Honey Bee (1910), An Outline of a
+  Course of Study in Gardening (1918, for supervisors of the School Garden Army) and the turkey, beef, veal and egg
+  recipe booklets: factory, seed-plant, grading, data, research or kitchen manuals rather than household or small-farm
+  guides; not opened past the first pages.
+- Stored-Grain Insects (Agriculture Handbook 500, CAT86866748) and Fire Blight (Agriculture Handbook 510, CAT79714375,
+  211 pages): not opened; the first has only a capture cut off at one megabyte, and the shorter bulletin on fire
+  blight is out above.
+
 ## Thirteenth batch, 20 November 2026: civilian agencies, Army and Defense Health Agency sheets, Navy manuals
 
 Three searches ran side by side: civilian agencies on their own sites and on govinfo (the Food Safety and Inspection

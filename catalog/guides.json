@@ -1304,6 +1304,34 @@
       "hasText": false
     },
     {
+      "id": "usda-hg-179-gardening-on-the-contour",
+      "title": "Gardening on the Contour",
+      "category": "farming",
+      "publisher": "USDA",
+      "year": 1988,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105); the proof rests on staff authorship. Home and Garden Bulletin No. 179, June 1970, 'Reviewed and approved for reprinting February 1988', is published under the United States Department of Agriculture's name, 'PREPARED BY Soil Conservation Service' (cover) and headed 'By the Soil Conservation Service' (page 2). No personal author, outside author, photographer, illustrator, university or company is credited, there are no acknowledgements and there is no copyright notice. The document prints no public-domain statement of its own. USDA's site notice (usda.gov, Policies and Links, read 18 November 2026): 'Most information presented on the USDA Web site is considered public domain information.' The file is the National Agricultural Library's own scan, with its stamps on the cover. The library's old download address no longer serves it, so the address is the Wayback Machine's raw capture of that address.",
+      "url": "https://web.archive.org/web/20210617080300id_/https://naldc.nal.usda.gov/download/CAT40000561/PDF",
+      "bytes": 285634,
+      "sha256": "70f39bcf7a44a0f559873b0c832a40ec10efb991e78d3bea5729b56159eb4148",
+      "pages": 7,
+      "hasText": true
+    },
+    {
+      "id": "usda-ah-458-high-density-apple-orchards",
+      "title": "High-Density Apple Orchards: Planning, Training, and Pruning",
+      "category": "farming",
+      "publisher": "USDA",
+      "year": 1975,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105); the proof rests on staff authorship. Agriculture Handbook No. 458, issued January 1975, is published under the Agricultural Research Service, United States Department of Agriculture name and written 'By Don R. Heinicke, horticulturist, Agricultural Research Service, Wenatchee, Wash.' (page 1). No outside author, photographer, illustrator, university or company is credited, there are no acknowledgements and there is no copyright notice. The document prints no public-domain statement of its own. USDA's site notice (usda.gov, Policies and Links, read 18 November 2026): 'Most information presented on the USDA Web site is considered public domain information.' The file is the National Agricultural Library's own scan. The library's old download address no longer serves it, so the address is the Wayback Machine's raw capture of that address.",
+      "url": "https://web.archive.org/web/20130407125436id_/http://naldc.nal.usda.gov:80/download/CAT87208509/PDF",
+      "bytes": 2416385,
+      "sha256": "2219cf0768832ad628bec3f3d472133a4828ea4df65651e284af5c6ee6a097d3",
+      "pages": 36,
+      "hasText": true
+    },
+    {
       "id": "usda-ah-82-methods-for-evaluating-irrigation-systems",
       "title": "Methods for Evaluating Irrigation Systems",
       "category": "farming",
@@ -1315,6 +1343,48 @@
       "bytes": 1741525,
       "sha256": "5d24294c46f5c2ae467863fa8a9a063fea18ce053165a596e2487ff33935a4a9",
       "pages": 24,
+      "hasText": true
+    },
+    {
+      "id": "usda-hg-185-mulches-for-your-garden",
+      "title": "Mulches for Your Garden",
+      "category": "farming",
+      "publisher": "USDA",
+      "year": 1988,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105); the proof rests on staff authorship. Home and Garden Bulletin No. 185, January 1971, 'Reviewed and approved for reprinting February 1988', is published under the United States Department of Agriculture's name, 'PREPARED BY Soil Conservation Service' (cover) and headed 'By the Soil Conservation Service' (page 2). No personal author, outside author, photographer, illustrator, university or company is credited, there are no acknowledgements and there is no copyright notice. The document prints no public-domain statement of its own. USDA's site notice (usda.gov, Policies and Links, read 18 November 2026): 'Most information presented on the USDA Web site is considered public domain information.' The file is the National Agricultural Library's own scan, with its shelf mark on the cover. The library's old download address no longer serves it, so the address is the Wayback Machine's raw capture of that address.",
+      "url": "https://web.archive.org/web/20210623031436id_/https://naldc.nal.usda.gov/download/CAT40000572/PDF",
+      "bytes": 233035,
+      "sha256": "dfc315e8caf020ecbf5d838e4ab06991aeee2d6767d7315bc71604ed5dbe092e",
+      "pages": 5,
+      "hasText": true
+    },
+    {
+      "id": "usda-aib-190-salt-problems-in-irrigated-soils",
+      "title": "Salt Problems in Irrigated Soils",
+      "category": "farming",
+      "publisher": "USDA",
+      "year": 1958,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105); the proof rests on staff authorship. Agriculture Information Bulletin No. 190, issued August 1958, is published under the U.S. Department of Agriculture's name and was 'Prepared by the staff of the U. S. Salinity Laboratory (Riverside, Calif.), Soil and Water Conservation Research Division, Agricultural Research Service' (page 2). No outside author, photographer, illustrator, university or company is credited, there are no acknowledgements and there is no copyright notice. The document prints no public-domain statement of its own. USDA's site notice (usda.gov, Policies and Links, read 18 November 2026): 'Most information presented on the USDA Web site is considered public domain information.' The file is the National Agricultural Library's own scan. The library's old download address no longer serves it, so the address is the Wayback Machine's raw capture of that address.",
+      "url": "https://web.archive.org/web/20130324042420id_/http://naldc.nal.usda.gov:80/download/CAT87209914/PDF",
+      "bytes": 739983,
+      "sha256": "0dfe743dcdf5150a97bd8fc4f1d9e0ef8128df3cee10e965c699783dd5b290d6",
+      "pages": 12,
+      "hasText": true
+    },
+    {
+      "id": "usda-aib-216-tolerance-of-crops-to-exchangeable-sodium",
+      "title": "Tolerance of Crops to Exchangeable Sodium",
+      "category": "farming",
+      "publisher": "USDA",
+      "year": 1960,
+      "licence": "Public domain",
+      "licenceNote": "US government work (17 U.S.C. 105); the proof rests on staff authorship. Agriculture Information Bulletin No. 216, issued March 1960, is published under the Agricultural Research Service, United States Department of Agriculture name and written 'By George A. Pearson, Soil and Water Conservation Research Division, Agricultural Research Service' (page 1). No outside author, photographer, illustrator, university or company is credited, there are no acknowledgements and there is no copyright notice. The document prints no public-domain statement of its own. USDA's site notice (usda.gov, Policies and Links, read 18 November 2026): 'Most information presented on the USDA Web site is considered public domain information.' The file is the National Agricultural Library's own scan, with its received stamp on the cover. The library's old download address no longer serves it, so the address is the Wayback Machine's raw capture of that address.",
+      "url": "https://web.archive.org/web/20210622030346id_/https://naldc.nal.usda.gov/download/CAT87210325/PDF",
+      "bytes": 429543,
+      "sha256": "337123480a8c7d606f250c5bfa0ea94dac515eee6afb5c1eba3ea8d00fd5d4a2",
+      "pages": 6,
       "hasText": true
     }
   ]
