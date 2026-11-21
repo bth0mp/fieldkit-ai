@@ -21,13 +21,13 @@ export function downloadSummary(
   { guides, batch }: Pick<GuideLibraryState, 'guides' | 'batch'>,
 ): DownloadSummary | null {
   const running = Object.values(guides).filter(g => g.phase === 'downloading').map(g => g.progress ?? 0);
-  if (models.length === 0 && running.length === 0 && !batch) return null;
-
   const guideCount = batch ? batch.total - batch.done : running.length;
   const parts = [
     models.length > 0 && plural(models.length, 'model'),
     guideCount > 0 && plural(guideCount, 'guide'),
   ].filter(Boolean);
+  // Nothing left to name: no model, and no guide running or waiting in a batch.
+  if (parts.length === 0) return null;
 
   const items = models.length + (batch ? batch.total : running.length);
   const sum = models.reduce((a, m) => a + m.progress, 0) + running.reduce((a, p) => a + p, 0) + (batch?.done ?? 0);

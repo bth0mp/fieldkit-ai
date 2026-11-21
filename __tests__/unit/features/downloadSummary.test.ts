@@ -35,6 +35,11 @@ describe('downloadSummary', () => {
       .toEqual({ title: 'Downloading 2 guides', count: '2 of 4', fraction: 0.5, opens: 'GuideLibrary' });
   });
 
+  it('is null when a batch has nothing left to fetch', () => {
+    expect(downloadSummary([], { guides: {}, batch: { total: 2, done: 2 } })).toBeNull();
+    expect(downloadSummary([], { guides: {}, batch: { total: 0, done: 0 } })).toBeNull();
+  });
+
   it('pluralises models and a single guide', () => {
     expect(downloadSummary([model(0), model(0)], { guides: { a: dl(0) }, batch: null })?.title)
       .toBe('Downloading 2 models and 1 guide');
