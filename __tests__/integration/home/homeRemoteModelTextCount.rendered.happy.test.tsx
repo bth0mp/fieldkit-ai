@@ -1,20 +1,15 @@
 /**
- * T097 (checklist Area 14, rendered) — Home with a remote model active: the "Text" count must reflect
- * LOCAL reality (the literal local-download count) WITHOUT reading as a broken desync.
+ * T097 (checklist Area 14, rendered) — Home with a remote model active and no local text models: the model chip
+ * names the remote model and marks it as remote, so Home never reads as "no model" next to a working chat.
  *
  * DEVICE FINDING (DEVICE_TEST_FINDINGS.md, UX FINDINGS): "'Text says 0' on home while a remote model is
  * active + selected. Likely '0 local text models' (correct literal) but reads as a desync next to an active
  * remote model. Confirm the chat works despite the 0." Also B18: a remote model can be active with no local
  * models present.
  *
- * PRODUCT-CORRECT OUTCOME (OGAM user's view): with a remote text model active and ZERO local text models,
- * the Home "Text" summary must show BOTH truths at once so it is not a misleading desync —
- *   (a) the count numeral is the LITERAL local count (0), not the remote model (it is a LOCAL-download count);
- *   (b) the "Text" type still reads ACTIVE (a text model IS represented / usable — the remote one), i.e. it is
- *       NOT the dimmed "no model" state. That active-but-0 pair is what makes the 0 correct rather than broken.
- * Verdict: GREEN / verify (checklist marks it ✅ happy/verify). If the Text type instead read as INACTIVE
- * (dimmed, "—") while a remote model was active, THAT would be the misleading desync — so the assertion below
- * pins active===true, and the falsification proves it flips.
+ * PRODUCT-CORRECT OUTCOME: with a remote text model active and ZERO local text models, the Assistant card's model
+ * chip reads the remote model's name ("llama-3-8b"), not "No model", and shows the server icon that says it runs
+ * on a remote server. The old per-type local-download count is gone from Home, so there is no "0" to misread.
  *
  * ARRIVAL IS REAL (not seeded state-under-test): a remote model becomes active the way a user reaches it —
  *   1. On the REAL RemoteServersScreen: tap "Add Server", type name + endpoint, tap "Test Connection". The
@@ -28,25 +23,22 @@
  *
  * Boundary faked: ONLY global.fetch (the network/LAN transport) + the native leaves via installNativeBoundary.
  * Everything we own — both screens, useHomeScreen, useActiveTextModel, remoteServerStore/manager, the picker —
- * runs for real. Assertion is on the rendered ModelsSummaryRow (the Home "Text" surface the finding names).
+ * runs for real. Assertion is on the rendered model chip.
  *
- * Falsify (shown in the transcript): drop the remote-model-select gesture → no remote model active → the
- * "Text" type renders INACTIVE (active===false) → the pinned assertion fails. That inactive-while-0 IS the
- * misleading-desync state the finding warns about, so the failing case is the device-wrong value.
+ * Falsify: drop the remote-model-select gesture → no remote model active → the chip reads "No model" with no
+ * server icon → the pinned assertions fail.
  */
 import { installNativeBoundary, requireRTL } from '../../harness/nativeBoundary';
 
-describe('T097 (rendered) — Home Text count with a remote model active is not a misleading desync', () => {
+describe('T097 (rendered) — Home with a remote model active names it on the model chip', () => {
   const setup = (opts: { selectRemoteModel: boolean }) => {
     installNativeBoundary();
 
-    /* eslint-disable @typescript-eslint/no-var-requires */
     const React = require('react');
     const rtl = requireRTL();
     const { RemoteServersScreen } = require('../../../src/screens/RemoteServersScreen');
     const { HomeScreen } = require('../../../src/screens/HomeScreen');
     const { useRemoteServerStore, useAppStore } = require('../../../src/stores');
-    /* eslint-enable @typescript-eslint/no-var-requires */
 
     // Fresh remote store (no servers) + ZERO local text models — the exact device precondition (0 local).
     useRemoteServerStore.setState({ servers: [], serverHealth: {}, discoveredModels: {}, activeServerId: null, activeRemoteTextModelId: null, activeRemoteImageModelId: null });
@@ -79,7 +71,7 @@ describe('T097 (rendered) — Home Text count with a remote model active is not 
     srv.unmount();
   };
 
-  it('shows Text count = 0 (literal local count) while the Text type reads ACTIVE (remote model represented)', async () => {
+  it('names the remote model on the chip and marks it remote, with no local text models', async () => {
     const env = setup({ selectRemoteModel: true });
     const { React, rtl, HomeScreen, useRemoteServerStore, nav } = env;
 
@@ -97,16 +89,9 @@ describe('T097 (rendered) — Home Text count with a remote model active is not 
     // The real store now reports a remote model active (EMERGENT from the gesture, not setState).
     await rtl.waitFor(() => { expect(useRemoteServerStore.getState().activeRemoteTextModelId).toBe('llama-3-8b'); }, { timeout: 4000 });
 
-    // ── Assert the rendered Home "Text" surface (ModelsSummaryRow) — the finding's exact surface ──
-    // (a) The count numeral is the LITERAL local count: 0. It is a LOCAL-download count, not the remote model.
-    const textCount = await rtl.waitFor(() => home.getByTestId('model-summary-count-text'), { timeout: 4000 });
-    expect(textCount.props.children).toBe(0);
-
-    // (b) The "Text" type reads ACTIVE (a remote text model IS represented/usable) — NOT the dimmed "no model"
-    // state. This is what makes the 0 correct rather than a misleading desync.
-    await rtl.waitFor(() => {
-      expect(home.getByTestId('model-summary-text').props.accessibilityState.selected).toBe(true);
-    }, { timeout: 4000 });
+    // ── Assert the rendered model chip: the remote model's name, with the server icon ──
+    await rtl.waitFor(() => { expect(home.getByTestId('model-chip-label')).toHaveTextContent('llama-3-8b'); }, { timeout: 4000 });
+    expect(home.getByTestId('model-chip-remote')).toBeTruthy();
 
     home.unmount();
   });

@@ -132,9 +132,6 @@ export async function setupChatScreen(opts: ChatHarnessOptions) {
   rtl.fireEvent.press(rows[0]);
   await rtl.waitFor(() => { expect(useAppStore.getState().activeModelId).toBe('m'); }, { timeout: 4000 });
 
-  // GESTURE: with the model now selected, tap "New Chat" on Home — the real way a user starts a chat. A new
-  // chat has NO conversation yet; it is created on the first message (real app behavior). No createConversation.
-  rtl.fireEvent.press(await rtl.waitFor(() => home.getByTestId('new-chat-button')));
   home.unmount();
 
   // Load via the REAL load path (the app loads lazily on the first send; we trigger the same path so the
@@ -143,7 +140,9 @@ export async function setupChatScreen(opts: ChatHarnessOptions) {
   // can assert nothing is eager-warmed; the first send then triggers the real lazy load.
   if (!opts.deferInitialLoad) await activeModelService.loadTextModel('m');
 
-  routeHolder.params = {}; // new chat — the first send() creates the conversation
+  // A new chat, as navigation hands it (a New chat tap): it has NO conversation yet; the first send() creates it
+  // (real app behavior). No createConversation.
+  routeHolder.params = {};
 
   return {
     boundary, React, rtl, useAppStore, useChatStore,
@@ -380,11 +379,11 @@ export async function setupChatScreen(opts: ChatHarnessOptions) {
     },
 
     /**
-     * Arrive-via-UI at another chat: leave this one (going back to Home pops the chat screen, so it unmounts),
-     * then either start a new chat (null) or tap that conversation's `conversation-item-N` row on the real
-     * Home screen (its continueChat sets it active), and mount the chat screen again with the route params
-     * navigation hands it. A fresh mount, not a rerender: the screen applies its route params in an effect
-     * keyed on `params.conversationId`, so a rerender from `{}` to `{}` would leave the old chat active.
+     * Arrive-via-UI at another chat: leave this one (going back pops the chat screen, so it unmounts), then
+     * either start a new chat (null) or tap that conversation's `conversation-item-N` row on the real Chats
+     * list (its row press sets it active), and mount the chat screen again with the route params navigation
+     * hands it. A fresh mount, not a rerender: the screen applies its route params in an effect keyed on
+     * `params.conversationId`, so a rerender from `{}` to `{}` would leave the old chat active.
      */
     async openChat(conversationId: string | null) {
       // The navigation mock's useRoute requires this module AFTER setupChatScreen's jest.resetModules, so the
@@ -392,13 +391,16 @@ export async function setupChatScreen(opts: ChatHarnessOptions) {
       const route: typeof routeHolder = require('./chatHarness').routeHolder;
       this.view?.unmount();
       if (conversationId) {
-        const recent: Array<{ id: string }> = useChatStore.getState().conversations.slice(0, 4); // Home's Recent list
-        const index = recent.findIndex((c) => c.id === conversationId);
-        if (index < 0) throw new Error(`openChat: conversation ${conversationId} is not in Home's Recent list`);
-        const homeView = rtl.render(React.createElement(HomeScreen, { navigation: { navigate: () => {}, goBack: () => {}, setOptions: () => {}, addListener: () => () => {} } }));
-        rtl.fireEvent.press(await rtl.waitFor(() => homeView.getByTestId(`conversation-item-${index}`)));
+        // The Chats list shows every chat, most recently updated first.
+        const listed: Array<{ id: string; updatedAt: string }> = [...useChatStore.getState().conversations]
+          .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        const index = listed.findIndex((c) => c.id === conversationId);
+        if (index < 0) throw new Error(`openChat: conversation ${conversationId} is not in the Chats list`);
+        const { ChatsListScreen } = require('../../src/screens/ChatsListScreen');
+        const chatsView = rtl.render(React.createElement(ChatsListScreen, {}));
+        rtl.fireEvent.press(await rtl.waitFor(() => chatsView.getByTestId(`conversation-item-${index}`)));
         await rtl.waitFor(() => { expect(useChatStore.getState().activeConversationId).toBe(conversationId); });
-        homeView.unmount();
+        chatsView.unmount();
         route.params = { conversationId };
       } else {
         route.params = {};

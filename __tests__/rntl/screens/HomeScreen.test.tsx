@@ -2,14 +2,13 @@
  * HomeScreen Tests
  *
  * Tests for the home dashboard including:
- * - Model cards display
+ * - The Assistant card's model chip and ask box
  * - Model selection and loading
  * - Memory management
  * - Quick navigation
  * - Recent conversations
  * - Stats display
  * - Gallery link
- * - New chat button
  * - Eject all button
  * - Model picker sheet interactions
  * - Delete conversation
@@ -17,7 +16,7 @@
  */
 
 import React from 'react';
-import { render, fireEvent, act, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, act, waitFor, within } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { useAppStore } from '../../../src/stores/appStore';
 import { useChatStore } from '../../../src/stores/chatStore';
@@ -95,6 +94,8 @@ jest.mock('../../../src/services/activeModelService', () => ({
     })),
     syncWithNativeState: jest.fn(),
     getLoadedModelIds: jest.fn(() => ({ textModelId: null, imageModelId: null })),
+    // Read by the Assistant card's ask box (dictation) once a model is active.
+    supportsAudioInput: () => false,
   },
 }));
 
@@ -335,53 +336,34 @@ describe('HomeScreen', () => {
       const { getByText } = renderHomeScreen();
       expect(getByText(BRAND.name)).toBeTruthy();
     });
-
-    it('shows Text and Image model card labels', () => {
-      const { getByText } = renderHomeScreen();
-      expect(getByText('Text')).toBeTruthy();
-      expect(getByText('Image')).toBeTruthy();
-    });
   });
 
   // ============================================================================
-  // Models Summary Row
+  // Model chip
   //
-  // The per-type model cards were replaced by a single collapsed control
-  // (ModelsSummaryRow, testID "models-summary"). It renders a "Models" label,
-  // a chevron, and four captioned type icons: Text, Image, Voice, Speech.
-  // Active types use the primary color; inactive ones are dimmed. There is no
-  // per-model name text on the home screen anymore — the active model name now
-  // lives inside the ModelsManagerSheet rows.
+  // The Assistant card's model chip (testID "models-summary") names the loaded
+  // text model and opens the ModelsManagerSheet, whose rows name each type's
+  // active model.
   // ============================================================================
-  describe('models summary row', () => {
-    it('renders the collapsed models summary control', () => {
+  describe('model chip', () => {
+    it('renders the model chip', () => {
       const { getByTestId } = renderHomeScreen();
       expect(getByTestId('models-summary')).toBeTruthy();
     });
 
-    it('shows the Models label and the four type captions', () => {
-      const { getByText } = renderHomeScreen();
-      expect(getByText('Models')).toBeTruthy();
-      expect(getByText('Text')).toBeTruthy();
-      expect(getByText('Image')).toBeTruthy();
-      expect(getByText('Voice')).toBeTruthy();
-      expect(getByText('Speech')).toBeTruthy();
-    });
-
-    it('shows the active text model name inside the manager sheet (not on the home screen)', () => {
+    it('names the active text model on the chip and in the manager sheet', () => {
       const model = createDownloadedModel({ name: 'Llama-3.2-3B' });
       useAppStore.setState({
         downloadedModels: [model],
         activeModelId: model.id,
       });
 
-      const { getByText, getByTestId, queryByText } = renderHomeScreen();
-      // The name is not rendered directly on the home screen.
-      expect(queryByText('Llama-3.2-3B')).toBeNull();
+      const { getByTestId } = renderHomeScreen();
+      expect(getByTestId('model-chip-label')).toHaveTextContent('Llama-3.2-3B');
 
       // Open the manager sheet — the text row shows the active model name.
       fireEvent.press(getByTestId('models-summary'));
-      expect(getByText('Llama-3.2-3B')).toBeTruthy();
+      expect(within(getByTestId('models-row-text')).getByText('Llama-3.2-3B')).toBeTruthy();
     });
 
     it('shows the active image model name inside the manager sheet', () => {
@@ -410,18 +392,19 @@ describe('HomeScreen', () => {
   });
 
   // ============================================================================
-  // New Chat Button / Setup Card
+  // Ask box / Setup Card
   // ============================================================================
-  describe('new chat button', () => {
-    it('shows New Chat button when text model is active', () => {
+  describe('ask box', () => {
+    it('shows the ask box when a text model is active', () => {
       const model = createDownloadedModel();
       useAppStore.setState({
         downloadedModels: [model],
         activeModelId: model.id,
       });
 
-      const { getByTestId } = renderHomeScreen();
-      expect(getByTestId('new-chat-button')).toBeTruthy();
+      const { getByTestId, queryByTestId } = renderHomeScreen();
+      expect(getByTestId('home-ask-input')).toBeTruthy();
+      expect(queryByTestId('setup-card')).toBeNull();
     });
 
     it('shows setup card when no text model active and models exist', () => {
@@ -458,7 +441,7 @@ describe('HomeScreen', () => {
       expect(getByText('Browse Models')).toBeTruthy();
     });
 
-    it('navigates to Chat when New Chat pressed', () => {
+    it('opens a new chat with the question when one is asked', () => {
       const model = createDownloadedModel();
       useAppStore.setState({
         downloadedModels: [model],
@@ -466,12 +449,13 @@ describe('HomeScreen', () => {
       });
 
       const { getByTestId } = renderHomeScreen();
-      fireEvent.press(getByTestId('new-chat-button'));
+      fireEvent.changeText(getByTestId('home-ask-input'), '  Where is north?  ');
+      fireEvent.press(getByTestId('home-ask-send'));
 
-      expect(mockNavigate).toHaveBeenCalledWith('Chat', {});
+      expect(mockNavigate).toHaveBeenCalledWith('Chat', { firstMessage: 'Where is north?' });
     });
 
-    it('does not create a conversation eagerly when New Chat pressed', () => {
+    it('does not create a conversation eagerly when a question is asked', () => {
       const model = createDownloadedModel();
       useAppStore.setState({
         downloadedModels: [model],
@@ -479,9 +463,10 @@ describe('HomeScreen', () => {
       });
 
       const { getByTestId } = renderHomeScreen();
-      fireEvent.press(getByTestId('new-chat-button'));
+      fireEvent.changeText(getByTestId('home-ask-input'), 'Where is north?');
+      fireEvent.press(getByTestId('home-ask-send'));
 
-      // Conversation is created lazily on first send, not on navigation
+      // The chat screen creates the conversation when it sends the question, not Home
       const conversations = useChatStore.getState().conversations;
       expect(conversations.length).toBe(0);
     });
@@ -529,11 +514,11 @@ describe('HomeScreen', () => {
       expect(getByText(/See all \(1\)/)).toBeTruthy();
     });
 
-    it('limits recent conversations to 4', () => {
+    it('limits recent conversations to 2', () => {
       createMultipleConversations(6);
 
       const { queryAllByTestId } = renderHomeScreen();
-      expect(queryAllByTestId(/^conversation-item-/).length).toBe(4);
+      expect(queryAllByTestId(/^conversation-item-/).length).toBe(2);
     });
 
     it('opens conversation when tapped', () => {
@@ -761,46 +746,12 @@ describe('HomeScreen', () => {
   // Stats Display
   // ============================================================================
   describe('stats display', () => {
-    // The old stats row was removed: per-type counts now live in the Models card,
-    // and the conversation count sits next to "See all".
-    it('shows the text-model count in the Models card', () => {
-      useAppStore.setState({
-        downloadedModels: [
-          createDownloadedModel(),
-          createDownloadedModel(),
-          createDownloadedModel(),
-        ],
-      });
-
-      const { getByText } = renderHomeScreen();
-      expect(getByText('Text')).toBeTruthy();
-      expect(getByText('3')).toBeTruthy();
-    });
-
-    it('shows the image-model count in the Models card', () => {
-      useAppStore.setState({
-        downloadedImageModels: [
-          createONNXImageModel(),
-          createONNXImageModel(),
-        ],
-      });
-
-      const { getByText } = renderHomeScreen();
-      expect(getByText('Image')).toBeTruthy();
-      expect(getByText('2')).toBeTruthy();
-    });
-
+    // The conversation count sits next to "See all".
     it('shows the conversation count next to See all', () => {
       createMultipleConversations(5);
 
       const { getByText } = renderHomeScreen();
       expect(getByText(/See all \(5\)/)).toBeTruthy();
-    });
-
-    it('shows zero per-type counts by default in the Models card', () => {
-      // Four model types (text/image/voice/speech), each 0 by default.
-      const { getAllByText } = renderHomeScreen();
-      expect(getAllByText('0').length).toBe(4);
     });
   });
 

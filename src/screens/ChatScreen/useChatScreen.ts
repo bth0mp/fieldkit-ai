@@ -83,6 +83,21 @@ export function computePendingSettings(
   );
 }
 
+/**
+ * A question asked on Home arrives as the new chat's `firstMessage` and is sent once, as if typed here. It waits
+ * until the route's new chat is in place (no conversation active yet): the chat open before stays active until the
+ * route effect clears it, and a send in that render would land in it.
+ */
+function useSendFirstMessage(firstMessage: string | undefined, activeConversationId: string | null, send: (text: string) => void) {
+  const sentRef = useRef(false);
+  useEffect(() => {
+    if (!firstMessage || sentRef.current || activeConversationId) return;
+    sentRef.current = true;
+    send(firstMessage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firstMessage, activeConversationId]);
+}
+
 export const useChatScreen = () => {
   const navigation = useNavigation();
   const route = useRoute<ChatScreenRouteProp>();
@@ -357,6 +372,7 @@ export const useChatScreen = () => {
 
   const handleSend = (text: string, attachments?: MediaAttachment[], imageMode?: 'auto' | 'force' | 'disabled') =>
     handleSendFn(genDeps, { text, attachments, imageMode, startGeneration, setDebugInfo });
+  useSendFirstMessage(route.params?.firstMessage, activeConversationId, handleSend);
 
   // After picking a text model, replay the stashed message (no retype needed).
   const handleModelSelect = async (model: DownloadedModel) => {

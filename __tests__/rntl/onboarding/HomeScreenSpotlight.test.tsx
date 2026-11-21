@@ -48,6 +48,8 @@ jest.mock('../../../src/services/activeModelService', () => ({
       memoryAvailable: 4 * 1024 * 1024 * 1024,
     })),
     syncWithNativeState: jest.fn(),
+    // Read by the Assistant card's ask box (dictation) once a model is active.
+    supportsAudioInput: () => false,
   },
 }));
 

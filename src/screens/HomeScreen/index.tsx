@@ -1,23 +1,22 @@
 import React from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Card, CustomAlert, hideAlert } from '../../components';
+import { Button, CustomAlert, hideAlert } from '../../components';
 import { AnimatedEntry } from '../../components/AnimatedEntry';
 import { AnimatedPressable } from '../../components/AnimatedPressable';
 import { OnboardingSheet } from '../../components/onboarding/OnboardingSheet';
 import { PulsatingIcon } from '../../components/onboarding/PulsatingIcon';
 import { useOnboardingSheet } from '../../components/onboarding/useOnboardingSheet';
 import { useFocusTrigger } from '../../hooks/useFocusTrigger';
-import { AttachStep } from 'react-native-spotlight-tour';
 import Icon from 'react-native-vector-icons/Feather';
 import { useThemedStyles, useTheme } from '../../theme';
 import { createStyles } from './styles';
 import { useHomeScreen, HomeScreenNavigationProp } from './hooks/useHomeScreen';
 import { useHomeScreenSpotlight } from './hooks/useHomeScreenSpotlight';
 import { RecentConversations } from './components/RecentConversations';
+import { AssistantCard } from './cards/AssistantCard';
 import { ModelPickerSheet } from './components/ModelPickerSheet';
 import { LoadingOverlay } from './components/LoadingOverlay';
-import { ModelsSummaryRow } from '../../components/models/ModelsSummaryRow';
 import { ModelsManagerSheet, ModelRowType } from '../../components/models/ModelsManagerSheet';
 import { WhisperPickerSheet } from '../../components/models/WhisperPickerSheet';
 import { VoiceModelsSheet } from '../../components/models/VoiceModelsSheet';
@@ -29,10 +28,6 @@ import { BRAND } from '../../config/branding';
 type HomeScreenProps = {
   navigation: HomeScreenNavigationProp;
 };
-
-// AttachStep wraps children in a View that otherwise shrinks to content width;
-// stretch it so the Models summary row fills the column like the other cards.
-const stretchStyle = { alignSelf: 'stretch' as const };
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const focusTrigger = useFocusTrigger();
@@ -72,7 +67,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     handleSelectRemoteImageModel,
     handleUnloadRemoteImageModel,
     handleEjectAll,
-    startNewChat,
     continueChat,
     handleDeleteConversation,
   } = useHomeScreen(navigation);
@@ -93,7 +87,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [whisperOpen, setWhisperOpen] = React.useState(false);
   const [voiceOpen, setVoiceOpen] = React.useState(false);
   const whisperModelId = useWhisperStore((s) => s.downloadedModelId);
-  const whisperPresentCount = useWhisperStore((s) => s.presentModelIds?.length ?? 0);
   const voiceSummary = useUiModeStore((s) => s.voiceSummary);
 
   const modelLabels: Record<ModelRowType, string> = {
@@ -103,13 +96,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     speech: WHISPER_MODELS.find((m) => m.id === whisperModelId)?.name ?? '—',
   };
 
-  // Downloaded-model counts shown in the Models card (replaces the old stats row).
-  const modelCounts: Partial<Record<ModelRowType, number>> = {
-    text: downloadedModels.length,
-    image: downloadedImageModels.length,
-    speech: whisperPresentCount,
-    voice: voiceSummary ? 1 : 0,
-  };
+  // The Assistant card's model chip names the loaded text model; with only an image model it says so.
+  const chipLabel = activeTextModel?.name ?? (activeImageModelId ? 'Image model loaded' : 'No model');
+  const hasModelsToPick = downloadedModels.length > 0 || remoteTextModels.length > 0;
 
   // Stash an action and close the manager; the action runs from the manager's
   // onClosed once it has fully dismissed — so opening a picker or the eject
@@ -134,6 +123,33 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     action?.();
   };
 
+  // In place of the ask box while no model is active.
+  const setupCard = (
+    <View style={styles.setupCard} testID="setup-card">
+      <Text style={styles.setupText}>
+        {hasModelsToPick
+          ? 'Select a text or image model to start'
+          : 'Add a remote server or download a model to start chatting'}
+      </Text>
+      <View style={styles.setupActions}>
+        <Button
+          title="Add Remote Server"
+          variant="outline"
+          size="small"
+          onPress={() => navigation.navigate('RemoteServers')}
+          testID="add-server-button"
+        />
+        <Button
+          title={hasModelsToPick ? 'Select Model' : 'Browse Models'}
+          variant="outline"
+          size="small"
+          onPress={() => hasModelsToPick ? setPickerType('text') : navigation.navigate('ModelsTab', { initialTab: 'text' })}
+          testID="browse-models-button"
+        />
+      </View>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View testID="home-screen" style={styles.scrollView}>
@@ -145,61 +161,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             </View>
           </View>
 
-          {/* Collapsed Models summary — tap to open the manager sheet. Both the
-              text (1) and image (13) tour steps anchor here now. */}
           <AnimatedEntry index={0} staggerMs={50} trigger={focusTrigger}>
-            <AttachStep index={1} style={stretchStyle}>
-              <AttachStep index={13} style={stretchStyle}>
-                <ModelsSummaryRow
-                  labels={modelLabels}
-                  counts={modelCounts}
-                  isLoading={loadingState.isLoading}
-                  onPress={() => setModelsManagerOpen(true)}
-                />
-              </AttachStep>
-            </AttachStep>
-          </AnimatedEntry>
-
-          {/* New Chat Button */}
-          {
-            (activeTextModel || activeImageModelId) ? (
-              <Button
-                title="New Chat"
-                onPress={startNewChat}
-                style={styles.newChatButton}
-                testID="new-chat-button"
-              />
-            ) : (
-              <Card style={styles.setupCard} testID="setup-card">
-                <Text style={styles.setupText}>
-                  {downloadedModels.length > 0 || remoteTextModels.length > 0
-                    ? 'Select a text or image model to start'
-                    : 'Add a remote server or download a model to start chatting'}
-                </Text>
-                <View style={styles.setupActions}>
-                  <Button
-                    title="Add Remote Server"
-                    variant="outline"
-                    size="small"
-                    onPress={() => navigation.navigate('RemoteServers')}
-                    testID="add-server-button"
-                  />
-                  <Button
-                    title={downloadedModels.length > 0 || remoteTextModels.length > 0 ? 'Select Model' : 'Browse Models'}
-                    variant="outline"
-                    size="small"
-                    onPress={() => downloadedModels.length > 0 || remoteTextModels.length > 0 ? setPickerType('text') : navigation.navigate('ModelsTab', { initialTab: 'text' })}
-                    testID="browse-models-button"
-                  />
-                </View>
-              </Card>
-            )
-          }
-
-          {/* Recent Conversations */}
-          {
-            recentConversations.length > 0 && (
-              <AnimatedEntry index={2} staggerMs={50} trigger={focusTrigger}>
+            <AssistantCard
+              chip={{ label: chipLabel, remote: !!(activeTextModel && activeRemoteTextModelId), loading: loadingState.isLoading }}
+              onOpenModels={() => setModelsManagerOpen(true)}
+              canChat={!!(activeTextModel || activeImageModelId)}
+              setup={setupCard}
+              onAsk={(firstMessage) => navigation.navigate('Chat', { firstMessage })}
+              recent={recentConversations.length > 0 && (
                 <RecentConversations
                   conversations={recentConversations}
                   totalCount={conversations.length}
@@ -208,9 +177,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   onDeleteConversation={handleDeleteConversation}
                   onSeeAll={() => navigation.navigate('ChatsTab')}
                 />
-              </AnimatedEntry>
-            )
-          }
+              )}
+            />
+          </AnimatedEntry>
 
           {/* Image Gallery */}
           <AnimatedPressable
@@ -227,9 +196,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             </View>
             <Icon name="chevron-right" size={16} color={colors.textMuted} />
           </AnimatedPressable>
-
-          {/* Model Stats row removed — the per-type counts now live in the Models
-              card above, and the chat count sits next to "See all". */}
         </ScrollView >
       </View >
 

@@ -100,9 +100,6 @@ const createModelCardStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
     color: colors.error,
     fontWeight: '500' as const,
   },
-  newChatButton: {
-    marginBottom: 20,
-  },
 });
 const createSectionStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
   galleryCard: {
@@ -190,10 +187,10 @@ const createSectionStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
     ...TYPOGRAPHY.bodySmall,
     color: colors.textSecondary,
   },
+  // Inside the Assistant card, in place of the ask box.
   setupCard: {
     alignItems: 'center' as const,
-    padding: 20,
-    marginBottom: 20,
+    paddingVertical: SPACING.sm,
     gap: 12,
   },
   setupActions: {

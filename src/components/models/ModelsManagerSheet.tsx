@@ -10,7 +10,7 @@ import { useResidentRows, ejectResident, type ModelRowType } from './useResident
 import logger from '../../utils/logger';
 
 // Defined in useResidentRows (breaks the sheet<->hook import cycle); re-exported here so existing
-// consumers (Home, Chat, ModelsSummaryRow) keep importing it from the sheet.
+// consumers (Home, Chat) keep importing it from the sheet.
 export type { ModelRowType };
 
 /** Minimal loading shape so this sheet is screen-agnostic (home + chat). */

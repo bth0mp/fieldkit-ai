@@ -6,8 +6,8 @@
  *
  * SURFACE NOTE (grounded in the real code): ModelsScreen has NO aggregate "solid downloaded-count badge".
  * The only count badge in the header (`downloads-badge-count`) is the IN-FLIGHT/active-download count
- * (that is T001, not this row). The per-type downloaded count numeral (`model-summary-count-{type}`) lives
- * on the HOME ModelsSummaryRow and is covered by T097 — it is NOT a ModelsScreen surface. The genuine
+ * (that is T001, not this row). Home's old per-type downloaded count numeral (`model-summary-count-{type}`)
+ * is gone, and it was never a ModelsScreen surface. The genuine
  * surface on ModelsScreen that reflects "N models are downloaded" is the per-card DOWNLOADED indicator: a
  * downloaded recommended-model card renders the `check-circle` "downloaded" mark instead of a download
  * button. So the downloaded-count == N is asserted as: exactly N rendered cards show the downloaded mark.

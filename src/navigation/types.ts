@@ -5,7 +5,7 @@ export type RootStackParamList = {
   ModelDownload: undefined;
   Main: NavigatorScreenParams<MainTabParamList> | undefined;
   // Former ChatsStack
-  Chat: { conversationId?: string; projectId?: string };
+  Chat: { conversationId?: string; projectId?: string; firstMessage?: string };
   // Former ProjectsStack
   ProjectDetail: { projectId: string };
   ProjectEdit: { projectId?: string };

@@ -221,7 +221,10 @@ export const useHomeScreen = (navigation: HomeScreenNavigationProp) => {
     : null;
 
   const activeImageModel = activeRemoteImageModel || downloadedImageModels.find((m) => m.id === activeImageModelId) || null;
-  const recentConversations = conversations.slice(0, 4);
+  // The two most recently updated chats, newest first (the order the Chats tab lists them in).
+  const recentConversations = [...conversations]
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    .slice(0, 2);
 
   // Get all remote text models — includes vision-language models since they do text generation too
   const remoteTextModels: RemoteModel[] = remoteServers.flatMap(server =>
