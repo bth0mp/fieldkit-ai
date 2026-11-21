@@ -369,7 +369,10 @@ describe('Guide library (rendered)', () => {
       },
     });
     const fs = h.boundary.fs!;
-    const failedReads = () => getItem.mock.calls.filter(([key]) => key === '@fieldkit/guide_library').length;
+    const readsOfSavedState = () => getItem.mock.calls.filter(([key]) => key === '@fieldkit/guide_library').length;
+    // Counted from here, after Home (which started the library at launch) has unmounted.
+    const readsBeforeScreen = readsOfSavedState();
+    const failedReads = () => readsOfSavedState() - readsBeforeScreen;
 
     const { GuideLibraryScreen } = require('../../../src/screens/GuideLibraryScreen');
     const first = h.rtl.render(h.React.createElement(GuideLibraryScreen, {}));
@@ -495,11 +498,14 @@ describe('Guide library (rendered)', () => {
       });
       const fs = h.boundary.fs!;
       const mkdir = fs.module.mkdir as jest.Mock;
+      const mkdirsOfLibrary = () => mkdir.mock.calls.filter(([p]) => p === DIR).length;
+      // Counted from here, after Home (which started the library at launch) has unmounted.
+      const mkdirsBeforeScreen = mkdirsOfLibrary();
       const { GuideLibraryScreen } = require('../../../src/screens/GuideLibraryScreen');
       const view = h.rtl.render(h.React.createElement(GuideLibraryScreen, {}));
       // The screen's start and its refresh each tried, and failed, to start the library.
       await h.rtl.waitFor(() => {
-        expect(mkdir.mock.calls.filter(([p]) => p === DIR).length).toBeGreaterThanOrEqual(2);
+        expect(mkdirsOfLibrary() - mkdirsBeforeScreen).toBeGreaterThanOrEqual(2);
         expect(view.getByTestId('guide-library-refresh')).not.toBeBusy();
       }, { timeout: 4000 });
       return { ...h, fs, view, allow: () => { failing = false; } };
