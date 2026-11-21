@@ -20,7 +20,7 @@ export const TodayCard: React.FC<Props> = ({ sky }) => {
 
   const sun = !sky ? '' : sky.sunAllDay
     ? `Sun ${sky.sunAllDay} all day`
-    : [sky.sunrise && `sunrise ${sky.sunrise}`, sky.sunset && `sunset ${sky.sunset}`].filter(Boolean).join('  ');
+    : [sky.sunrise ? `sunrise ${sky.sunrise}` : 'No sunrise today', sky.sunset ? `sunset ${sky.sunset}` : 'No sunset today'].join('  ');
   const moon = sky?.moonrise ? `moonrise ${sky.moonrise}` : 'No moonrise today';
 
   return (

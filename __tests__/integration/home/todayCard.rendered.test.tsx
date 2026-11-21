@@ -8,6 +8,7 @@
  * leaves only: what setupChatScreen installs, and the navigation mock.
  */
 import { setupChatScreen } from '../../harness/chatHarness';
+import { installNativeBoundary, requireRTL } from '../../harness/nativeBoundary';
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: () => {}, goBack: () => {}, setOptions: () => {}, addListener: () => () => {} }),
@@ -40,6 +41,21 @@ describe('Home Today card (rendered)', () => {
     expect(home.getByTestId('today-sun')).toHaveTextContent('sunset 16:03', { exact: false });
     expect(home.getByTestId('today-moon')).toHaveTextContent('moonrise 14:04');
     expect(home.getByTestId('home-date')).toHaveTextContent('Sat 21 Nov · sunset 16:03');
+  }, 30000);
+
+  it('says which of sunrise or sunset is missing on a day the sun only rises or only sets', async () => {
+    installNativeBoundary();
+    const React = require('react');
+    const rtl = requireRTL();
+    const { TodayCard } = require('../../../src/screens/HomeScreen/cards/TodayCard');
+    const sky = (sunrise: string | null, sunset: string | null) => ({ sunrise, sunset, sunAllDay: null, moonrise: null });
+
+    const noSunrise = rtl.render(React.createElement(TodayCard, { sky: sky(null, '23:10') }));
+    expect(noSunrise.getByTestId('today-sun')).toHaveTextContent('No sunrise today  sunset 23:10');
+    noSunrise.unmount();
+    const noSunset = rtl.render(React.createElement(TodayCard, { sky: sky('01:20', null) }));
+    expect(noSunset.getByTestId('today-sun')).toHaveTextContent('sunrise 01:20  No sunset today');
+    noSunset.unmount();
   }, 30000);
 
   it('says so in words, and leaves the sunset out of the header, where the sun never sets', async () => {
