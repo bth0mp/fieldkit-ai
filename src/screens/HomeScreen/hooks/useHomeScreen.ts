@@ -106,7 +106,7 @@ export const useHomeScreen = (navigation: HomeScreenNavigationProp) => {
     [_handleUnloadTextModel],
   );
 
-  const { model: activeTextModel } = useActiveTextModel();
+  const { model: activeTextModel, isRemote: activeTextModelIsRemote } = useActiveTextModel();
 
   const { runLANDiscovery } = useLANDiscovery({ navigation, setAlertState });
 
@@ -244,6 +244,7 @@ export const useHomeScreen = (navigation: HomeScreenNavigationProp) => {
     generatedImages,
     conversations,
     activeTextModel,
+    activeTextModelIsRemote,
     activeImageModel,
     recentConversations,
     // Remote model state

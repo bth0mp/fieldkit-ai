@@ -59,6 +59,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     generatedImages,
     conversations,
     activeTextModel,
+    activeTextModelIsRemote,
     activeImageModel,
     recentConversations,
     // Remote model state
@@ -166,7 +167,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const cards: Record<HomeCardId, React.ReactNode> = {
     assistant: (
       <AssistantCard
-        chip={{ label: chipLabel, remote: !!(activeTextModel && activeRemoteTextModelId), loading: loadingState.isLoading }}
+        chip={{ label: chipLabel, remote: activeTextModelIsRemote, loading: loadingState.isLoading }}
         onOpenModels={() => setModelsManagerOpen(true)}
         canChat={!!(activeTextModel || activeImageModelId)}
         setup={setupCard}
