@@ -270,7 +270,7 @@ describe('checklist service', () => {
 
       deliver();
       await settle();
-      expect(store.getState().lists).toEqual([OLD]);
+      expect(store.getState().lists).toEqual([{ ...OLD, changedAt: 0 }]);
       service.create('In time');
       expect(store.getState().lists.map(l => l.name)).toEqual(['In time', 'Saved list']);
       await settle();
@@ -297,14 +297,14 @@ describe('checklist service', () => {
           null,
           { id: 7, name: 'Bad id', items: [] },
           { id: 'no-items', name: 'No items' },
-          { id: 'mixed', name: 'Mixed', items: [{ id: 'm-1', text: 'Stove' }, 7, null, { id: 'm-2', text: 9, done: true }, { id: 'm-3', text: 'Fuel', done: 'yes' }] },
+          { id: 'mixed', name: 'Mixed', changedAt: 1234, items: [{ id: 'm-1', text: 'Stove' }, 7, null, { id: 'm-2', text: 9, done: true }, { id: 'm-3', text: 'Fuel', done: 'yes' }] },
         ],
       }));
       const { store } = restart();
       await settle();
       expect(store.getState().lists).toEqual([
-        OLD,
-        { id: 'mixed', name: 'Mixed', items: [{ id: 'm-1', text: 'Stove', done: false }, { id: 'm-3', text: 'Fuel', done: false }] },
+        { ...OLD, changedAt: 0 },
+        { id: 'mixed', name: 'Mixed', items: [{ id: 'm-1', text: 'Stove', done: false }, { id: 'm-3', text: 'Fuel', done: false }], changedAt: 1234 },
       ]);
     });
 
