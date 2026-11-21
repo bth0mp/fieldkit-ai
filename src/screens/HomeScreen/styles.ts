@@ -12,25 +12,6 @@ const createLayoutStyles = (colors: ThemeColors) => ({
     padding: 20,
     paddingBottom: 32,
   },
-  header: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'space-between' as const,
-    marginBottom: 20,
-  },
-  headerLeft: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: 8,
-  },
-  title: {
-    ...TYPOGRAPHY.h2,
-    color: colors.text,
-  },
-  date: {
-    ...TYPOGRAPHY.bodySmall,
-    color: colors.textMuted,
-  },
 });
 const createModelCardStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
   modelsRow: {

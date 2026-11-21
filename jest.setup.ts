@@ -538,6 +538,9 @@ jest.mock('react-native-zip-archive', () => ({
 }));
 
 
+// NetInfo reads the device's connectivity; the harness fake stands in for it.
+jest.mock('@react-native-community/netinfo', () => require('./__tests__/harness/netInfoFake'));
+
 // Mock react-native-vector-icons
 jest.mock('react-native-vector-icons/Feather', () => 'Icon');
 

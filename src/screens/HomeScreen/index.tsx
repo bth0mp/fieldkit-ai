@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, CustomAlert, hideAlert } from '../../components';
 import { AnimatedEntry } from '../../components/AnimatedEntry';
 import { OnboardingSheet } from '../../components/onboarding/OnboardingSheet';
-import { PulsatingIcon } from '../../components/onboarding/PulsatingIcon';
 import { useOnboardingSheet } from '../../components/onboarding/useOnboardingSheet';
 import { useFocusTrigger } from '../../hooks/useFocusTrigger';
 import { useThemedStyles } from '../../theme';
@@ -20,7 +19,7 @@ import { ChecklistsCard } from './cards/ChecklistsCard';
 import { TodayCard } from './cards/TodayCard';
 import { PhoneCard } from './cards/PhoneCard';
 import { useTodaySky } from './hooks/useTodaySky';
-import { formatDay } from '../../features/home/todaySky';
+import { HomeHeader } from './HomeHeader';
 import { ModelPickerSheet } from './components/ModelPickerSheet';
 import { LoadingOverlay } from './components/LoadingOverlay';
 import { ModelsManagerSheet, ModelRowType } from '../../components/models/ModelsManagerSheet';
@@ -29,7 +28,9 @@ import { VoiceModelsSheet } from '../../components/models/VoiceModelsSheet';
 import { useWhisperStore } from '../../stores/whisperStore';
 import { WHISPER_MODELS } from '../../services';
 import { useUiModeStore } from '../../stores/uiModeStore';
-import { BRAND } from '../../config/branding';
+
+/** Scrolled further than this (px), the header drops its date line and Offline label. */
+const SLIM_AFTER = 40;
 
 type HomeScreenProps = {
   navigation: HomeScreenNavigationProp;
@@ -38,7 +39,8 @@ type HomeScreenProps = {
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const focusTrigger = useFocusTrigger();
   const styles = useThemedStyles(createStyles);
-  const sky = useTodaySky(focusTrigger);
+  const { now, sky } = useTodaySky(focusTrigger);
+  const [slim, setSlim] = React.useState(false);
   const { sheetVisible, openSheet, closeSheet, showIcon } = useOnboardingSheet();
 
   const {
@@ -159,18 +161,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View testID="home-screen" style={styles.scrollView}>
-        <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-          <View style={styles.header}>
-            <View>
-              <View style={styles.headerLeft}>
-                <Text style={styles.title}>{BRAND.name}</Text>
-                {showIcon && <PulsatingIcon onPress={openSheet} />}
-              </View>
-              <Text testID="home-date" style={styles.date}>
-                {sky?.sunset ? `${formatDay(new Date())} · sunset ${sky.sunset}` : formatDay(new Date())}
-              </Text>
-            </View>
-          </View>
+        <HomeHeader now={now} sunset={sky?.sunset ?? null} slim={slim} showIcon={showIcon} onOpenOnboarding={openSheet} />
+        <ScrollView
+          testID="home-scroll"
+          style={styles.scrollView}
+          contentContainerStyle={styles.content}
+          onScroll={(e) => setSlim(e.nativeEvent.contentOffset.y > SLIM_AFTER)}
+          scrollEventThrottle={16}
+        >
 
           <AnimatedEntry index={0} staggerMs={50} trigger={focusTrigger}>
             <View testID="home-card-assistant">
