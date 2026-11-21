@@ -30,6 +30,11 @@ describe('downloadSummary', () => {
       .toEqual({ title: 'Downloading 1 model and 3 guides', count: '1 of 4', fraction: 0.4, opens: 'DownloadManager' });
   });
 
+  it('stays up between two guides of a batch', () => {
+    expect(downloadSummary([], { guides: {}, batch: { total: 4, done: 2 } }))
+      .toEqual({ title: 'Downloading 2 guides', count: '2 of 4', fraction: 0.5, opens: 'GuideLibrary' });
+  });
+
   it('pluralises models and a single guide', () => {
     expect(downloadSummary([model(0), model(0)], { guides: { a: dl(0) }, batch: null })?.title)
       .toBe('Downloading 2 models and 1 guide');

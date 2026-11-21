@@ -14,14 +14,14 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 /**
  * What Home's Downloads card says about the downloads running: model downloads and guides. During "Download all"
- * every guide in the batch counts, those done as full and those still waiting as empty. Null when nothing downloads.
+ * every guide in the batch counts, those done as full and those still waiting as empty. Null when nothing downloads and no batch is running.
  */
 export function downloadSummary(
   models: DownloadEntry[],
   { guides, batch }: Pick<GuideLibraryState, 'guides' | 'batch'>,
 ): DownloadSummary | null {
   const running = Object.values(guides).filter(g => g.phase === 'downloading').map(g => g.progress ?? 0);
-  if (models.length === 0 && running.length === 0) return null;
+  if (models.length === 0 && running.length === 0 && !batch) return null;
 
   const guideCount = batch ? batch.total - batch.done : running.length;
   const parts = [
