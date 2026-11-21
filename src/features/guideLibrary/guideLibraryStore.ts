@@ -17,6 +17,8 @@ export interface GuideLibraryState {
   refreshing: boolean;
   /** A "Download all" is working through the catalogue. */
   downloadingAll: boolean;
+  /** While "Download all" runs: how many guides it set out to fetch and how many have finished (failed ones too). */
+  batch: { total: number; done: number } | null;
   /** The guide being indexed right now. Other guides in phase 'teaching' are waiting their turn. */
   learning: string | null;
 }
@@ -76,5 +78,6 @@ export const useGuideLibraryStore = create<GuideLibraryState>(() => ({
   delisted: [],
   refreshing: false,
   downloadingAll: false,
+  batch: null,
   learning: null,
 }));

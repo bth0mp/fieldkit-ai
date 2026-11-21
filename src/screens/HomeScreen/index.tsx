@@ -13,6 +13,7 @@ import { useHomeScreen, HomeScreenNavigationProp } from './hooks/useHomeScreen';
 import { useHomeScreenSpotlight } from './hooks/useHomeScreenSpotlight';
 import { RecentConversations } from './components/RecentConversations';
 import { AssistantCard } from './cards/AssistantCard';
+import { DownloadsCard } from './cards/DownloadsCard';
 import { FieldKitCard } from './cards/FieldKitCard';
 import { LibraryCard } from './cards/LibraryCard';
 import { ChecklistsCard } from './cards/ChecklistsCard';
@@ -192,6 +193,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             />
             </View>
           </AnimatedEntry>
+
+          <DownloadsCard onOpen={(screen) => navigation.navigate(screen)} />
 
           <AnimatedEntry index={1} staggerMs={50} trigger={focusTrigger}>
             <View testID="home-card-fieldKit">

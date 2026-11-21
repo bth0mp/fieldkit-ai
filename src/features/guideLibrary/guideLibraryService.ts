@@ -4,7 +4,7 @@ import logger from '../../utils/logger';
 import { ragService, type RagDocument } from '../../services/rag';
 import { ensureCategoryProject, libraryProjectIds } from '../library/libraryProjects';
 import { bundledCatalogue, CATALOGUE_URL, parseCatalogue, type Catalogue, type GuideEntry } from './catalogue';
-import { offersTeach, ownEntry, stateOf, useGuideLibraryStore, type GuidePhase, type GuideState } from './guideLibraryStore';
+import { offersTeach, ownEntry, stateOf, toDownload, useGuideLibraryStore, type GuidePhase, type GuideState } from './guideLibraryStore';
 
 import {
   deleteFromKnowledgeBase, GUIDE_LIBRARY_DIR, guidePath, reconcileDisk, removeQuietly, saveRecords,
@@ -333,11 +333,15 @@ async function download(id: string): Promise<void> {
  */
 async function downloadAll(): Promise<void> {
   if (store.getState().downloadingAll) return;
-  store.setState({ downloadingAll: true });
+  const wanted = new Set(toDownload(store.getState()).map(g => g.id));
+  store.setState({ downloadingAll: true, batch: { total: wanted.size, done: 0 } });
   try {
-    for (const { id } of store.getState().catalogue.guides) await download(id);
+    for (const { id } of store.getState().catalogue.guides) {
+      await download(id);
+      if (wanted.has(id)) store.setState(s => (s.batch ? { batch: { ...s.batch, done: s.batch.done + 1 } } : s));
+    }
   } finally {
-    store.setState({ downloadingAll: false });
+    store.setState({ downloadingAll: false, batch: null });
   }
 }
 
