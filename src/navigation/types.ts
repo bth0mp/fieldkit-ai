@@ -31,14 +31,16 @@ export type RootStackParamList = {
   OpenSourceLicenses: undefined;
   About: undefined;
   Tools: undefined;
+  // Opened from Home's Phone and Your library cards (no longer tabs)
+  Models: { initialTab?: 'text' | 'image' | 'voice' | 'transcription'; repairModelId?: string; initialSearchQuery?: string } | undefined;
+  Projects: undefined;
 };
 
-// Tab navigator — simple, no sub-stacks
+// Tab navigator — simple, no sub-stacks. NewChatTab has no screen: its place is the raised New chat button.
 export type MainTabParamList = {
   HomeTab: undefined;
   ChatsTab: undefined;
-  ProjectsTab: undefined;
+  NewChatTab: undefined;
   KitTab: undefined;
-  ModelsTab: { initialTab?: 'text' | 'image' | 'voice' | 'transcription'; repairModelId?: string; initialSearchQuery?: string } | undefined;
   SettingsTab: undefined;
 };

@@ -18,9 +18,13 @@ appId: ai.offgridmobile
 
 - waitForAnimationToEnd
 
-# ── Navigate to Models screen ─────────────────────────────────────────────
+# ── Navigate to Models screen (the Phone card on Home) ────────────────────
+- scrollUntilVisible:
+    element:
+      id: "home-phone-models"
+    direction: DOWN
 - tapOn:
-    id: "models-tab"
+    id: "home-phone-models"
 
 - assertVisible:
     id: "import-local-model"

@@ -152,7 +152,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           title={hasModelsToPick ? 'Select Model' : 'Browse Models'}
           variant="outline"
           size="small"
-          onPress={() => hasModelsToPick ? setPickerType('text') : navigation.navigate('ModelsTab', { initialTab: 'text' })}
+          onPress={() => hasModelsToPick ? setPickerType('text') : navigation.navigate('Models', { initialTab: 'text' })}
           testID="browse-models-button"
         />
       </View>
@@ -188,7 +188,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       <LibraryCard
         onOpenGuides={() => navigation.navigate('GuideLibrary')}
         onOpenKiwix={() => navigation.navigate('KiwixFiles')}
-        onOpenProjects={() => navigation.navigate('ProjectsTab')}
+        onOpenProjects={() => navigation.navigate('Projects')}
       />
     ),
     checklists: (
@@ -203,7 +203,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         downloadedModelCount={downloadedModels.length}
         imageModelCount={downloadedImageModels.length}
         imageCount={generatedImages.length}
-        onOpenModels={() => navigation.navigate('ModelsTab')}
+        onOpenModels={() => navigation.navigate('Models')}
         onOpenGallery={() => navigation.navigate('Gallery')}
       />
     ),
@@ -266,7 +266,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         onUnloadRemoteImageModel={handleUnloadRemoteImageModel}
         onBrowseModels={(tab) => {
           setPickerType(null);
-          navigation.navigate('ModelsTab', { initialTab: tab });
+          navigation.navigate('Models', { initialTab: tab });
         }}
         onAddServer={() => navigation.navigate('RemoteServers')}
       />

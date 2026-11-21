@@ -71,13 +71,14 @@ export const IMAGE_SETTINGS_STEP_INDEX = 16;
 // First recommended image model card spotlight (continuation of triedImageGen flow)
 export const IMAGE_DOWNLOAD_STEP_INDEX = 17;
 
+// Where each checklist step's tour starts: a tab, or a screen Home opens (Models, Projects).
 export const STEP_TAB_MAP: Record<string, string> = {
-  downloadedModel: 'ModelsTab',
+  downloadedModel: 'Models',
   loadedModel: 'HomeTab',
   sentMessage: 'ChatsTab',
   exploredSettings: 'SettingsTab',
-  createdProject: 'ProjectsTab',
-  triedImageGen: 'ModelsTab',
+  createdProject: 'Projects',
+  triedImageGen: 'Models',
 };
 
 export function createSpotlightSteps(): TourStep[] {

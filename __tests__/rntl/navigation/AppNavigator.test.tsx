@@ -3,7 +3,7 @@
  *
  * Tests for the main navigation setup including:
  * - Tab bar safe area inset handling
- * - Tab bar renders all tabs
+ * - Tab bar renders all five places (Home, Chats, New chat, Kit, Settings)
  * - Dynamic height based on device navigation mode
  */
 
@@ -71,6 +71,8 @@ jest.mock('../../../src/services/activeModelService', () => ({
       memoryAvailable: 4 * 1024 * 1024 * 1024,
     })),
     syncWithNativeState: jest.fn(),
+    // Home's ask box asks whether the loaded model takes audio directly (for its mic).
+    supportsAudioInput: jest.fn(() => false),
   },
 }));
 
@@ -90,6 +92,8 @@ jest.mock('../../../src/services/hardware', () => ({
     })),
     formatBytes: jest.fn((bytes: number) => `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`),
     formatModelSize: jest.fn(() => '4.0 GB'),
+    // Home's Phone card reads the phone's storage.
+    getStorage: jest.fn(() => Promise.resolve({ freeBytes: 41 * 1024 * 1024 * 1024, totalBytes: 256 * 1024 * 1024 * 1024 })),
   },
 }));
 
@@ -179,26 +183,25 @@ describe('AppNavigator', () => {
   });
 
   describe('Tab bar rendering', () => {
-    it('renders all six tab labels', () => {
+    it('renders the four tab labels', () => {
       const { getAllByText } = renderAppNavigator();
 
       expect(getAllByText('Home').length).toBeGreaterThanOrEqual(1);
       expect(getAllByText('Chats').length).toBeGreaterThanOrEqual(1);
-      expect(getAllByText('Projects').length).toBeGreaterThanOrEqual(1);
       expect(getAllByText('Kit').length).toBeGreaterThanOrEqual(1);
-      expect(getAllByText('Models').length).toBeGreaterThanOrEqual(1);
       expect(getAllByText('Settings').length).toBeGreaterThanOrEqual(1);
     });
 
-    it('renders all tab buttons with testIDs', () => {
-      const { getByTestId } = renderAppNavigator();
+    it('renders all tab buttons with testIDs, and no Projects or Models tab', () => {
+      const { getByTestId, queryByTestId } = renderAppNavigator();
 
       expect(getByTestId('home-tab')).toBeTruthy();
       expect(getByTestId('chats-tab')).toBeTruthy();
-      expect(getByTestId('projects-tab')).toBeTruthy();
+      expect(getByTestId('new-chat-button')).toBeTruthy();
       expect(getByTestId('kit-tab')).toBeTruthy();
-      expect(getByTestId('models-tab')).toBeTruthy();
       expect(getByTestId('settings-tab')).toBeTruthy();
+      expect(queryByTestId('projects-tab')).toBeNull();
+      expect(queryByTestId('models-tab')).toBeNull();
     });
   });
 
@@ -279,15 +282,14 @@ describe('AppNavigator', () => {
       // All tab labels should be visible
       expect(getAllByText('Home').length).toBeGreaterThanOrEqual(1);
       expect(getAllByText('Chats').length).toBeGreaterThanOrEqual(1);
-      expect(getAllByText('Projects').length).toBeGreaterThanOrEqual(1);
-      expect(getAllByText('Models').length).toBeGreaterThanOrEqual(1);
+      expect(getAllByText('Kit').length).toBeGreaterThanOrEqual(1);
       expect(getAllByText('Settings').length).toBeGreaterThanOrEqual(1);
 
       // All tab buttons should be pressable
       expect(getByTestId('home-tab')).toBeTruthy();
       expect(getByTestId('chats-tab')).toBeTruthy();
-      expect(getByTestId('projects-tab')).toBeTruthy();
-      expect(getByTestId('models-tab')).toBeTruthy();
+      expect(getByTestId('new-chat-button')).toBeTruthy();
+      expect(getByTestId('kit-tab')).toBeTruthy();
       expect(getByTestId('settings-tab')).toBeTruthy();
     });
   });

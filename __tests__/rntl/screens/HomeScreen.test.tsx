@@ -472,11 +472,11 @@ describe('HomeScreen', () => {
       expect(conversations.length).toBe(0);
     });
 
-    it('navigates to ModelsTab when Browse Models pressed', () => {
+    it('navigates to Models when Browse Models pressed', () => {
       const { getByTestId } = renderHomeScreen();
       fireEvent.press(getByTestId('browse-models-button'));
 
-      expect(mockNavigate).toHaveBeenCalledWith('ModelsTab', { initialTab: 'text' });
+      expect(mockNavigate).toHaveBeenCalledWith('Models', { initialTab: 'text' });
     });
   });
 
@@ -942,7 +942,7 @@ describe('HomeScreen', () => {
       expect(result.getByText('Browse more models')).toBeTruthy();
     });
 
-    it('navigates to ModelsTab when "Browse more models" pressed', () => {
+    it('navigates to Models when "Browse more models" pressed', () => {
       const model = createDownloadedModel();
       useAppStore.setState({ downloadedModels: [model] });
 
@@ -950,7 +950,7 @@ describe('HomeScreen', () => {
       openTextPicker(result);
       fireEvent.press(result.getByText('Browse more models'));
 
-      expect(mockNavigate).toHaveBeenCalledWith('ModelsTab', { initialTab: 'text' });
+      expect(mockNavigate).toHaveBeenCalledWith('Models', { initialTab: 'text' });
     });
 
     it('shows memory estimate per model in picker', () => {
@@ -1362,7 +1362,7 @@ describe('HomeScreen', () => {
   // Empty Picker Browse Models Navigation
   // ============================================================================
   describe('empty picker browse navigation', () => {
-    it('navigates to ModelsTab from empty text picker Browse Models button', () => {
+    it('navigates to Models from empty text picker Browse Models button', () => {
       // No text models downloaded
       const result = renderHomeScreen();
 
@@ -1375,10 +1375,10 @@ describe('HomeScreen', () => {
       // The last one is in the picker.
       fireEvent.press(browseButtons[browseButtons.length - 1]);
 
-      expect(mockNavigate).toHaveBeenCalledWith('ModelsTab', { initialTab: 'text' });
+      expect(mockNavigate).toHaveBeenCalledWith('Models', { initialTab: 'text' });
     });
 
-    it('navigates to ModelsTab from empty image picker Browse Models button', () => {
+    it('navigates to Models from empty image picker Browse Models button', () => {
       // No image models downloaded
       const result = renderHomeScreen();
 
@@ -1389,7 +1389,7 @@ describe('HomeScreen', () => {
       const browseButtons = result.getAllByText('Browse Models');
       fireEvent.press(browseButtons[browseButtons.length - 1]);
 
-      expect(mockNavigate).toHaveBeenCalledWith('ModelsTab', { initialTab: 'image' });
+      expect(mockNavigate).toHaveBeenCalledWith('Models', { initialTab: 'image' });
     });
   });
 

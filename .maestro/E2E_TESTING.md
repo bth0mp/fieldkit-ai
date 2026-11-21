@@ -92,8 +92,9 @@ Required test IDs:
 - `chat-screen`
 - `models-screen`
 - `tab-bar`
-- `new-chat-button`
-- `models-tab`
+- `new-chat-button` (the raised button in the middle of the tab bar)
+- `home-phone-models` (the Models row on Home's Phone card; Models is no longer a tab)
+- `models-back`, `projects-back`
 
 ### Chat Screen
 - `chat-input`
@@ -247,7 +248,7 @@ The following testIDs need to be added to screen components for E2E tests to wor
 **Navigation**
 ```tsx
 <View testID="tab-bar">
-<TouchableOpacity testID="models-tab">
+<TouchableOpacity testID="new-chat-button">  // NewChatTabButton, middle of the tab bar
 ```
 
 **ConversationList (drawer or modal)**

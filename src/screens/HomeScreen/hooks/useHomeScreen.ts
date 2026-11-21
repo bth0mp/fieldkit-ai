@@ -106,7 +106,7 @@ export const useHomeScreen = (navigation: HomeScreenNavigationProp) => {
     [_handleUnloadTextModel],
   );
 
-  const { model: activeTextModel, modelId: activeTextModelId } = useActiveTextModel();
+  const { model: activeTextModel } = useActiveTextModel();
 
   const { runLANDiscovery } = useLANDiscovery({ navigation, setAlertState });
 
@@ -202,12 +202,6 @@ export const useHomeScreen = (navigation: HomeScreenNavigationProp) => {
     ));
   };
 
-  const startNewChat = () => {
-    // Allow image-only users to start a chat; conversation is lazily created in useChatScreen
-    if (!activeTextModelId && !activeImageModelId) { return; }
-    navigation.navigate('Chat', {});
-  };
-
   const continueChat = (conversationId: string) => {
     setActiveConversation(conversationId);
     navigation.navigate('Chat', { conversationId });
@@ -267,7 +261,6 @@ export const useHomeScreen = (navigation: HomeScreenNavigationProp) => {
     handleSelectRemoteImageModel,
     handleUnloadRemoteImageModel,
     handleEjectAll,
-    startNewChat,
     continueChat,
     handleDeleteConversation,
   };

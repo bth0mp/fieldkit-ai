@@ -1,8 +1,6 @@
-import { CompositeNavigationProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { ModelSource, ONNXImageModel } from '../../types';
-import { RootStackParamList, MainTabParamList } from '../../navigation/types';
+import { RootStackParamList } from '../../navigation/types';
 import type { AlertState } from '../../utils/alertState';
 
 /** Injected deps for the standalone image-download handlers. Lives here (not in
@@ -56,7 +54,4 @@ export interface FilterState {
   expandedDimension: FilterDimension;
 }
 
-export type NavigationProp = CompositeNavigationProp<
-  BottomTabNavigationProp<MainTabParamList, 'ModelsTab'>,
-  NativeStackNavigationProp<RootStackParamList>
->;
+export type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Models'>;

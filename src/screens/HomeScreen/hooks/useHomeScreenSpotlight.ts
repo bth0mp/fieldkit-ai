@@ -34,9 +34,9 @@ export function useHomeScreenSpotlight({ navigation, closeSheet, activeImageMode
         markSpotlightShown('imageLoad');
         setTimeout(() => goTo(IMAGE_LOAD_STEP_INDEX), 600);
       } else {
-        // No image model yet → navigate to ModelsTab and spotlight Image Models tab
+        // No image model yet → open the Models screen and spotlight its Image Models tab
         setPendingSpotlight(IMAGE_DOWNLOAD_STEP_INDEX);
-        navigation.navigate('ModelsTab' as any);
+        navigation.navigate('Models');
         const idx = STEP_INDEX_MAP[stepId];
         if (idx !== undefined) setTimeout(() => goTo(idx), 800);
       }

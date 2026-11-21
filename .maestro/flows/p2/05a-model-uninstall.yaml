@@ -2,7 +2,7 @@
 # Tests deleting a downloaded model
 #
 # Precondition: At least one model downloaded
-# Test: Go to Models tab → Delete model → Verify removed
+# Test: Open Models from Home → Delete model → Verify removed
 # Postcondition: Model removed from downloaded list
 
 appId: ${APP_ID}
@@ -68,11 +68,15 @@ tags:
 - runFlow: 00-setup-model.yaml
 
 # ==============================
-# Navigate to Models screen
+# Open Models from the Phone card on Home
 # ==============================
 - evalScript: "${console.log('UNINSTALL - Go to Models')}"
+- scrollUntilVisible:
+    element:
+      id: "home-phone-models"
+    direction: DOWN
 - tapOn:
-    text: "Models"
+    id: "home-phone-models"
 
 - extendedWaitUntil:
     visible:

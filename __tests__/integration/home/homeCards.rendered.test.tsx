@@ -101,7 +101,7 @@ describe('Home cards (rendered)', () => {
     expect(home.getByTestId('home-library-guides')).toHaveTextContent('Plus 6 that come with the app', PARTIAL);
     expect(home.getByTestId('home-library-kiwix')).toHaveTextContent('3 files', PARTIAL);
     expect(home.getByTestId('home-library-projects')).toHaveTextContent(String(useProjectStore.getState().projects.length), PARTIAL);
-    for (const [id, route] of [['guides', 'GuideLibrary'], ['kiwix', 'KiwixFiles'], ['projects', 'ProjectsTab']]) {
+    for (const [id, route] of [['guides', 'GuideLibrary'], ['kiwix', 'KiwixFiles'], ['projects', 'Projects']]) {
       rtl.fireEvent.press(home.getByTestId(`home-library-${id}`));
       expect(nav.navigate).toHaveBeenLastCalledWith(route);
     }
@@ -117,7 +117,7 @@ describe('Home cards (rendered)', () => {
     expect(home.getByTestId('home-phone-models')).toHaveTextContent('1 downloaded', PARTIAL);
     expect(home.queryByTestId('home-phone-gallery')).toBeNull();
     h.rtl.fireEvent.press(home.getByTestId('home-phone-models'));
-    expect(nav.navigate).toHaveBeenLastCalledWith('ModelsTab');
+    expect(nav.navigate).toHaveBeenLastCalledWith('Models');
   }, 30000);
 
   it('drops only the storage line when the phone cannot report its storage', async () => {

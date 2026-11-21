@@ -188,7 +188,7 @@ describe('HomeScreen Spotlight Integration', () => {
   // Flow 1: Download a Model
   // ========================================================================
   describe('Flow 1: downloadedModel', () => {
-    it('queues pending spotlight 9, navigates to ModelsTab, fires goTo(0)', () => {
+    it('queues pending spotlight 9, navigates to Models, fires goTo(0)', () => {
       const { getByTestId } = renderHomeScreen();
 
       act(() => {
@@ -196,7 +196,7 @@ describe('HomeScreen Spotlight Integration', () => {
       });
 
       expect(peekPendingSpotlight()).toBe(9);
-      expect(mockNavigate).toHaveBeenCalledWith('ModelsTab');
+      expect(mockNavigate).toHaveBeenCalledWith('Models');
       expect(mockGoTo).not.toHaveBeenCalled();
 
       act(() => { jest.advanceTimersByTime(800); });
@@ -247,7 +247,7 @@ describe('HomeScreen Spotlight Integration', () => {
   // Flow 4: Try Image Generation
   // ========================================================================
   describe('Flow 4: triedImageGen', () => {
-    it('no image model: queues step 17, navigates to ModelsTab, fires goTo(4)', () => {
+    it('no image model: queues step 17, navigates to Models, fires goTo(4)', () => {
       const { getByTestId } = renderHomeScreen();
 
       act(() => {
@@ -255,7 +255,7 @@ describe('HomeScreen Spotlight Integration', () => {
       });
 
       expect(peekPendingSpotlight()).toBe(17);
-      expect(mockNavigate).toHaveBeenCalledWith('ModelsTab');
+      expect(mockNavigate).toHaveBeenCalledWith('Models');
 
       act(() => { jest.advanceTimersByTime(800); });
       expect(mockGoTo).toHaveBeenCalledWith(4);
@@ -320,7 +320,7 @@ describe('HomeScreen Spotlight Integration', () => {
   // Flow 6: Create a Project
   // ========================================================================
   describe('Flow 6: createdProject', () => {
-    it('queues pending spotlight 8, navigates to ProjectsTab, fires goTo(7)', () => {
+    it('queues pending spotlight 8, navigates to Projects, fires goTo(7)', () => {
       const { getByTestId } = renderHomeScreen();
 
       act(() => {
@@ -328,7 +328,7 @@ describe('HomeScreen Spotlight Integration', () => {
       });
 
       expect(peekPendingSpotlight()).toBe(8);
-      expect(mockNavigate).toHaveBeenCalledWith('ProjectsTab');
+      expect(mockNavigate).toHaveBeenCalledWith('Projects');
 
       act(() => { jest.advanceTimersByTime(800); });
       expect(mockGoTo).toHaveBeenCalledWith(7);

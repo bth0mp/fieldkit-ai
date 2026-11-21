@@ -2,7 +2,7 @@
  * useHomeScreen Hook Unit Tests
  *
  * Tests for the HomeScreen orchestration hook covering:
- * - startNewChat / continueChat navigation
+ * - continueChat navigation
  * - handleDeleteConversation alert flow
  * - handleEjectAll (no-op, success, remote, error)
  * - handleSelectRemoteTextModel / handleUnloadRemoteTextModel
@@ -154,40 +154,6 @@ describe('useHomeScreen', () => {
   // ==========================================================================
   // Navigation
   // ==========================================================================
-  describe('startNewChat', () => {
-    it('does nothing when no active model', () => {
-      const { result } = renderHook(() => useHomeScreen(mockNavigation));
-      act(() => { result.current.startNewChat(); });
-      expect(mockNavigate).not.toHaveBeenCalled();
-    });
-
-    it('creates conversation and navigates when local model is active', () => {
-      (useAppStore as unknown as jest.Mock).mockImplementation((sel?: any) => { const st = {
-        downloadedModels: [{ id: 'local-model-1', name: 'Local' }], setDownloadedModels: jest.fn(),
-        activeModelId: 'local-model-1', setActiveModelId: jest.fn(),
-        downloadedImageModels: [], setDownloadedImageModels: jest.fn(),
-        activeImageModelId: null, setActiveImageModelId: jest.fn(),
-        deviceInfo: null, setDeviceInfo: jest.fn(),
-        generatedImages: [], settings: { contextLength: 4096 },
-      }; return sel ? sel(st) : st; });
-      const { result } = renderHook(() => useHomeScreen(mockNavigation));
-      act(() => { result.current.startNewChat(); });
-      expect(mockNavigate).toHaveBeenCalledWith('Chat', {});
-    });
-
-    it('uses remote text model id when no local model is active', () => {
-      (useRemoteServerStore as unknown as jest.Mock).mockImplementation((sel?: any) => { const st = {
-        servers: [], discoveredModels: { 'server-1': [{ id: 'remote-model-1', name: 'Remote' }] },
-        activeRemoteTextModelId: 'remote-model-1',
-        activeRemoteImageModelId: null,
-        activeServerId: 'server-1',
-      }; return sel ? sel(st) : st; });
-      const { result } = renderHook(() => useHomeScreen(mockNavigation));
-      act(() => { result.current.startNewChat(); });
-      expect(mockNavigate).toHaveBeenCalledWith('Chat', {});
-    });
-  });
-
   describe('continueChat', () => {
     it('sets active conversation and navigates', () => {
       const { result } = renderHook(() => useHomeScreen(mockNavigation));

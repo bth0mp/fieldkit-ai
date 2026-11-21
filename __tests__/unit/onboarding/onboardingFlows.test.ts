@@ -77,12 +77,12 @@ describe('Onboarding Flows', () => {
 
     it('maps all checklist step IDs to correct tabs', () => {
       expect(STEP_TAB_MAP).toEqual({
-        downloadedModel: 'ModelsTab',
+        downloadedModel: 'Models',
         loadedModel: 'HomeTab',
         sentMessage: 'ChatsTab',
         exploredSettings: 'SettingsTab',
-        createdProject: 'ProjectsTab',
-        triedImageGen: 'ModelsTab',
+        createdProject: 'Projects',
+        triedImageGen: 'Models',
       });
     });
 

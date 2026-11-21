@@ -194,7 +194,7 @@ describe('Onboarding Spotlight Flow Integration', () => {
       // handleStepPress('triedImageGen') fires goTo(4) after navigation
       // No pending spotlight queued — reactive parts handle the rest
       expect(STEP_INDEX_MAP.triedImageGen).toBe(4);
-      expect(STEP_TAB_MAP.triedImageGen).toBe('ModelsTab');
+      expect(STEP_TAB_MAP.triedImageGen).toBe('Models');
 
       // User dismisses step 4, switches to Image Models tab, downloads a model
       addDownloadedImageModel(createONNXImageModel());

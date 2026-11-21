@@ -1,5 +1,6 @@
 # P0 E2E: 20.1 All 5 tabs
-# Verifies all tab bar tabs are tappable and show correct screens
+# Verifies all tab bar tabs are tappable and show correct screens, and that Projects and Models
+# (no longer tabs) open from their Home cards and return with their back arrows
 # QA_TEST_PLAN §20.1
 
 appId: ${APP_ID}
@@ -49,21 +50,37 @@ tags:
       text: "Chats"
     timeout: 5000
 
-# 3. Projects tab
+# 3. Projects, opened from the Your library card on Home, and back
 - tapOn:
-    id: "projects-tab"
+    id: "home-tab"
+- scrollUntilVisible:
+    element:
+      id: "home-library-projects"
+    direction: DOWN
+- tapOn:
+    id: "home-library-projects"
 - extendedWaitUntil:
     visible:
-      text: "Projects"
+      id: "projects-back"
     timeout: 5000
-
-# 4. Models tab
+- assertVisible:
+    text: "Projects"
 - tapOn:
-    id: "models-tab"
+    id: "projects-back"
+
+# 4. Models, opened from the Phone card on Home, and back
+- scrollUntilVisible:
+    element:
+      id: "home-phone-models"
+    direction: DOWN
+- tapOn:
+    id: "home-phone-models"
 - extendedWaitUntil:
     visible:
       id: "models-screen"
     timeout: 5000
+- tapOn:
+    id: "models-back"
 
 # 5. Settings tab
 - tapOn:

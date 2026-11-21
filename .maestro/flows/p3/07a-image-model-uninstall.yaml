@@ -58,8 +58,12 @@ tags:
 # Delete image model
 # ==============================
 - evalScript: "${console.log('IMG_UNINSTALL - Go to Models screen')}"
+- scrollUntilVisible:
+    element:
+      id: "home-phone-models"
+    direction: DOWN
 - tapOn:
-    text: "Models"
+    id: "home-phone-models"
 
 - extendedWaitUntil:
     visible:

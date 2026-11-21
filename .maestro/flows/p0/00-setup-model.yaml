@@ -4,7 +4,7 @@
 # Strategy: Simple and deterministic
 # 1. Handle onboarding
 # 2. If new-chat-button visible -> done
-# 3. Otherwise navigate to Models tab directly and download if needed
+# 3. Otherwise open Models from Home's Phone card and download if needed
 # 4. Then select the model from picker
 
 appId: ${APP_ID}
@@ -114,10 +114,14 @@ tags:
             - tapOn:
                 point: "50%,10%"
 
-            # Go to Models tab
-            - evalScript: "${console.log('SETUP - Go to Models tab')}"
+            # Open Models from the Phone card on Home
+            - evalScript: "${console.log('SETUP - Go to Models')}"
+            - scrollUntilVisible:
+                element:
+                  id: "home-phone-models"
+                direction: DOWN
             - tapOn:
-                id: "models-tab"
+                id: "home-phone-models"
 
             - extendedWaitUntil:
                 visible:
@@ -168,10 +172,11 @@ tags:
             - tapOn:
                 text: "OK"
 
-            # Go back to home
+            # Go back to home: close the model's files, then leave Models with its back arrow
             - evalScript: "${console.log('SETUP - Back to home')}"
+            - back
             - tapOn:
-                id: "home-tab"
+                id: "models-back"
             - extendedWaitUntil:
                 visible:
                   id: "home-screen"

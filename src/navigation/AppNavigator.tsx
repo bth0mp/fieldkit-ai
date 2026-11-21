@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createBottomTabNavigator, type BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -53,17 +53,20 @@ import {
   MainTabParamList,
 } from './types';
 import { useRegisteredScreens } from './screenRegistry';
+import { NewChatTabButton } from './NewChatTabButton';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
+
+// The New chat place has no screen of its own; its button opens a chat or goes Home.
+const NoScreen: React.FC = () => null;
+const renderNewChatButton = (props: BottomTabBarButtonProps) => <NewChatTabButton {...props} />;
 
 // Animated tab icon with scale spring on focus
 const TAB_ICON_MAP: Record<string, string> = {
   HomeTab: 'home',
   ChatsTab: 'message-circle',
-  ProjectsTab: 'folder',
   KitTab: 'compass',
-  ModelsTab: 'cpu',
   SettingsTab: 'settings',
 };
 
@@ -145,7 +148,7 @@ const MainTabs: React.FC = () => {
           ),
           tabBarLabelStyle: {
             fontSize: 11,
-            fontWeight: '500' as const,
+            fontWeight: '400' as const,
           },
         })}
       >
@@ -166,25 +169,17 @@ const MainTabs: React.FC = () => {
           })}
         />
         <Tab.Screen
-          name="ProjectsTab"
-          component={ProjectsScreen}
-          options={{ tabBarLabel: 'Projects', tabBarButtonTestID: 'projects-tab' }}
+          name="NewChatTab"
+          component={NoScreen}
+          options={{ tabBarButton: renderNewChatButton }}
           listeners={() => ({
-            tabPress: () => { triggerHaptic('selection'); },
+            tabPress: (e) => { e.preventDefault(); },
           })}
         />
         <Tab.Screen
           name="KitTab"
           component={KitScreen}
           options={{ tabBarLabel: 'Kit', tabBarButtonTestID: 'kit-tab' }}
-          listeners={() => ({
-            tabPress: () => { triggerHaptic('selection'); },
-          })}
-        />
-        <Tab.Screen
-          name="ModelsTab"
-          component={ModelsScreen}
-          options={{ tabBarLabel: 'Models', tabBarButtonTestID: 'models-tab' }}
           listeners={() => ({
             tabPress: () => { triggerHaptic('selection'); },
           })}
@@ -240,6 +235,8 @@ export const AppNavigator: React.FC = () => {
         <RootStack.Screen name="ModelDownload" component={ModelDownloadScreen} />
         <RootStack.Screen name="Main" component={MainTabs} />
         <RootStack.Screen name="Chat" component={ChatScreen} />
+        <RootStack.Screen name="Models" component={ModelsScreen} />
+        <RootStack.Screen name="Projects" component={ProjectsScreen} />
         <RootStack.Screen name="ProjectDetail" component={ProjectDetailScreen} />
         <RootStack.Screen name="ProjectChats" component={ProjectChatsScreen} />
         <RootStack.Screen

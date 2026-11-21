@@ -79,7 +79,7 @@ function simulateHandleStepPress(
       setTimeout(() => goTo(IMAGE_LOAD_STEP_INDEX), 600);
     } else {
       setPendingSpotlight(IMAGE_DOWNLOAD_STEP_INDEX);
-      navigate('ModelsTab');
+      navigate('Models');
       const idx = STEP_INDEX_MAP[stepId];
       if (idx !== undefined) setTimeout(() => goTo(idx), 800);
     }
@@ -138,7 +138,7 @@ describe('handleStepPress', () => {
 
     it('navigates for non-HomeTab flows', () => {
       simulateHandleStepPress('downloadedModel', callbacks());
-      expect(navigate).toHaveBeenCalledWith('ModelsTab');
+      expect(navigate).toHaveBeenCalledWith('Models');
     });
 
     it('uses 800ms delay for cross-tab navigations', () => {
@@ -173,9 +173,9 @@ describe('handleStepPress', () => {
       expect(peekPendingSpotlight()).toBe(9);
     });
 
-    it('navigates to ModelsTab', () => {
+    it('navigates to Models', () => {
       simulateHandleStepPress('downloadedModel', callbacks());
-      expect(navigate).toHaveBeenCalledWith('ModelsTab');
+      expect(navigate).toHaveBeenCalledWith('Models');
     });
 
     it('fires goTo(0) after delay', () => {
@@ -239,9 +239,9 @@ describe('handleStepPress', () => {
         expect(peekPendingSpotlight()).toBe(17);
       });
 
-      it('navigates to ModelsTab', () => {
+      it('navigates to Models', () => {
         simulateHandleStepPress('triedImageGen', callbacks(), imageState);
-        expect(navigate).toHaveBeenCalledWith('ModelsTab');
+        expect(navigate).toHaveBeenCalledWith('Models');
       });
 
       it('fires goTo(4) after 800ms delay', () => {
@@ -328,9 +328,9 @@ describe('handleStepPress', () => {
       expect(peekPendingSpotlight()).toBe(8);
     });
 
-    it('navigates to ProjectsTab', () => {
+    it('navigates to Projects', () => {
       simulateHandleStepPress('createdProject', callbacks());
-      expect(navigate).toHaveBeenCalledWith('ProjectsTab');
+      expect(navigate).toHaveBeenCalledWith('Projects');
     });
 
     it('fires goTo(7) after delay', () => {

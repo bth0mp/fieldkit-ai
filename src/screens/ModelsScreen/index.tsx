@@ -2,7 +2,7 @@ import React, { useCallback, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
-import { MainTabParamList } from '../../navigation/types';
+import { RootStackParamList } from '../../navigation/types';
 import Icon from 'react-native-vector-icons/Feather';
 import { AttachStep } from 'react-native-spotlight-tour';
 import { CustomAlert, hideAlert } from '../../components/CustomAlert';
@@ -24,9 +24,9 @@ export const ModelsScreen: React.FC = () => {
   // The Voice tab always renders; when the slot is empty (free / non-pro) we
   // show an upsell so users can see what Pro adds.
   const VoiceModelsPanel = useSlot(SLOTS.modelsScreenVoiceTab);
-  const route = useRoute<RouteProp<MainTabParamList, 'ModelsTab'>>();
+  const route = useRoute<RouteProp<RootStackParamList, 'Models'>>();
 
-  // Reset to model list view when tab loses focus (e.g. user switches away)
+  // Reset to model list view when the screen loses focus (e.g. user opens another screen)
   // vm.setSelectedModel / vm.setModelFiles are useState setters — stable across renders.
   // Do NOT use [vm] as dependency — vm is a new object every render, which would
   // cause the cleanup to fire on every re-render and immediately undo model selection.
@@ -66,6 +66,10 @@ export const ModelsScreen: React.FC = () => {
       <View style={isShowingDetail ? collapsedStyle.hidden : undefined}>
         {/* Header */}
         <View style={styles.header}>
+          <TouchableOpacity testID="models-back" onPress={() => vm.navigation.goBack()} style={styles.backButton}
+            accessibilityRole="button" accessibilityLabel="Back">
+            <Icon name="arrow-left" size={20} color={colors.text} />
+          </TouchableOpacity>
           <Text style={styles.title}>Models</Text>
           <AttachStep index={10}>
             <TouchableOpacity
