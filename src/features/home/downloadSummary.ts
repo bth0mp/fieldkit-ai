@@ -14,7 +14,8 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 /**
  * What Home's Downloads card says about the downloads running: model downloads and guides. During "Download all"
- * every guide in the batch counts, those done as full and those still waiting as empty. Null when nothing downloads and no batch is running.
+ * every guide in the batch counts, those done as full and those still waiting as empty.
+ * Null when there is nothing to name: no model, and no guide running or waiting in a batch.
  */
 export function downloadSummary(
   models: DownloadEntry[],
@@ -34,7 +35,7 @@ export function downloadSummary(
   return {
     title: `Downloading ${parts.join(' and ')}`,
     count: batch ? `${batch.done} of ${batch.total}` : null,
-    fraction: items > 0 ? sum / items : 0,
+    fraction: items > 0 ? Math.min(1, sum / items) : 0,
     opens: models.length > 0 ? 'DownloadManager' : 'GuideLibrary',
   };
 }

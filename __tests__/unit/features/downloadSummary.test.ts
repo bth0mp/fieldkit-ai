@@ -40,6 +40,10 @@ describe('downloadSummary', () => {
     expect(downloadSummary([], { guides: {}, batch: { total: 0, done: 0 } })).toBeNull();
   });
 
+  it('never reports more than all of it, even with guides running outside the batch', () => {
+    expect(downloadSummary([], { guides: { a: dl(0.9), b: dl(0.9), c: dl(0.9) }, batch: { total: 2, done: 0 } })?.fraction).toBe(1);
+  });
+
   it('pluralises models and a single guide', () => {
     expect(downloadSummary([model(0), model(0)], { guides: { a: dl(0) }, batch: null })?.title)
       .toBe('Downloading 2 models and 1 guide');
