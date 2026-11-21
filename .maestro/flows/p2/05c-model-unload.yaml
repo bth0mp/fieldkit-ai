@@ -83,7 +83,9 @@ tags:
 # ==============================
 - evalScript: "${console.log('UNLOAD - Open picker')}"
 - tapOn:
-    text: "Text"
+    id: "models-summary"
+- tapOn:
+    id: "models-row-text"
 
 - extendedWaitUntil:
     visible:

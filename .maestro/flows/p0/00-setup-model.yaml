@@ -3,7 +3,7 @@
 #
 # Strategy: Simple and deterministic
 # 1. Handle onboarding
-# 2. If new-chat-button visible -> done
+# 2. If the Assistant card's model chip does not say "No model" -> done
 # 3. Otherwise open Models from Home's Phone card and download if needed
 # 4. Then select the model from picker
 
@@ -72,8 +72,8 @@ tags:
 # ==============================
 - runFlow:
     when:
-      visible:
-        id: "new-chat-button"
+      notVisible:
+        text: "No model"
     commands:
       - evalScript: "${console.log('SETUP - Model already loaded!')}"
       - takeScreenshot: 03-done-early
@@ -93,7 +93,9 @@ tags:
       # Open Text picker to see if models exist
       - evalScript: "${console.log('SETUP - Check for existing models')}"
       - tapOn:
-          text: "Text"
+          id: "models-summary"
+      - tapOn:
+          id: "models-row-text"
       - extendedWaitUntil:
           visible:
             text: "Text Models"
@@ -186,7 +188,9 @@ tags:
             # Open Text picker again
             - evalScript: "${console.log('SETUP - Open picker again')}"
             - tapOn:
-                text: "Text"
+                id: "models-summary"
+            - tapOn:
+                id: "models-row-text"
             - extendedWaitUntil:
                 visible:
                   text: "Text Models"
@@ -215,8 +219,8 @@ tags:
       # Wait for model to load
       - evalScript: "${console.log('SETUP - Waiting for load')}"
       - extendedWaitUntil:
-          visible:
-            id: "new-chat-button"
+          notVisible:
+            text: "No model"
           timeout: 120000
       - evalScript: "${console.log('SETUP - Model loaded!')}"
       - takeScreenshot: 15-loaded
@@ -224,7 +228,7 @@ tags:
 # ==============================
 # Final verification
 # ==============================
-- assertVisible:
-    id: "new-chat-button"
+- assertNotVisible:
+    text: "No model"
 - evalScript: "${console.log('SETUP - PASSED')}"
 - takeScreenshot: 99-complete

@@ -76,7 +76,9 @@ tags:
       # No models loaded, check if any downloaded
       - evalScript: "${console.log('SELECTION - Check models')}"
       - tapOn:
-          text: "Text"
+          id: "models-summary"
+      - tapOn:
+          id: "models-row-text"
       - extendedWaitUntil:
           visible:
             text: "Text Models"
@@ -118,7 +120,9 @@ tags:
       # Model is loaded, unload it
       - evalScript: "${console.log('SELECTION - Unload current model')}"
       - tapOn:
-          text: "Text"
+          id: "models-summary"
+      - tapOn:
+          id: "models-row-text"
       - extendedWaitUntil:
           visible:
             text: "Text Models"
@@ -137,7 +141,9 @@ tags:
 # ==============================
 - evalScript: "${console.log('SELECTION - Open picker')}"
 - tapOn:
-    text: "Text"
+    id: "models-summary"
+- tapOn:
+    id: "models-row-text"
 
 - extendedWaitUntil:
     visible:
