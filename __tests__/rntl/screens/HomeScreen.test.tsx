@@ -116,6 +116,7 @@ jest.mock('../../../src/services/hardware', () => ({
     getTotalMemoryGB: jest.fn(() => 8),
     formatBytes: jest.fn((bytes: number) => `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`),
     formatModelSize: jest.fn(() => '4.0 GB'),
+    getStorage: jest.fn(() => Promise.resolve({ freeBytes: 0, totalBytes: 0 })),
   },
 }));
 
@@ -708,14 +709,17 @@ describe('HomeScreen', () => {
   // Gallery Card
   // ============================================================================
   describe('gallery card', () => {
-    it('shows Image Gallery card', () => {
-      const { getByText } = renderHomeScreen();
-      expect(getByText('Image Gallery')).toBeTruthy();
+    const IMAGE = { id: '1', prompt: 'test', imagePath: '/path', width: 512, height: 512, steps: 20, seed: 1, modelId: 'm', createdAt: '' };
+
+    it('shows the Gallery row on the Phone card once there are images', () => {
+      useAppStore.setState({ generatedImages: [IMAGE] });
+      const { getByTestId } = renderHomeScreen();
+      expect(getByTestId('home-phone-gallery')).toBeTruthy();
     });
 
-    it('shows "0 images" when no images', () => {
-      const { getByText } = renderHomeScreen();
-      expect(getByText('0 images')).toBeTruthy();
+    it('leaves the Gallery row out when there are no images and no image models', () => {
+      const { queryByTestId } = renderHomeScreen();
+      expect(queryByTestId('home-phone-gallery')).toBeNull();
     });
 
     it('shows count with "images" (plural) for multiple images', () => {
@@ -726,8 +730,8 @@ describe('HomeScreen', () => {
         ],
       });
 
-      const { getByText } = renderHomeScreen();
-      expect(getByText('2 images')).toBeTruthy();
+      const { getByTestId } = renderHomeScreen();
+      expect(getByTestId('home-phone-gallery')).toHaveTextContent('2 images', { exact: false });
     });
 
     it('shows "1 image" (singular) for single image', () => {
@@ -737,8 +741,8 @@ describe('HomeScreen', () => {
         ],
       });
 
-      const { getByText } = renderHomeScreen();
-      expect(getByText('1 image')).toBeTruthy();
+      const { getByTestId } = renderHomeScreen();
+      expect(getByTestId('home-phone-gallery')).toHaveTextContent('1 image', { exact: false });
     });
   });
 
@@ -1341,9 +1345,14 @@ describe('HomeScreen', () => {
   // Gallery Navigation
   // ============================================================================
   describe('gallery navigation', () => {
-    it('navigates to Gallery when gallery card is pressed', () => {
-      const { getByText } = renderHomeScreen();
-      fireEvent.press(getByText('Image Gallery'));
+    it('navigates to Gallery when the Gallery row is pressed', () => {
+      useAppStore.setState({
+        generatedImages: [
+          { id: '1', prompt: 'test', imagePath: '/path', width: 512, height: 512, steps: 20, seed: 1, modelId: 'm', createdAt: '' },
+        ],
+      });
+      const { getByTestId } = renderHomeScreen();
+      fireEvent.press(getByTestId('home-phone-gallery'));
 
       expect(mockNavigate).toHaveBeenCalledWith('Gallery');
     });

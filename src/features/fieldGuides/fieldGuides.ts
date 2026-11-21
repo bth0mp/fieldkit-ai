@@ -12,7 +12,7 @@ export const FIELD_GUIDES_PROJECT_ID = 'field-guides';
  * Public-domain US government guides shipped in android/app/src/main/assets/guides. Sources and licences are
  * credited in scripts/gen-notices.js (Open-source licenses screen). `name` is what the user and the model see.
  */
-const FIELD_GUIDES = [
+const FIELD_GUIDES: ReadonlyArray<{ asset: string; name: string; category: string }> = [
   { asset: 'atp-3-50-21-survival.pdf', name: 'Survival (US Army ATP 3-50.21).pdf', category: 'fieldcraft' },
   { asset: 'ships-medicine-chest.pdf', name: "Ship's Medicine Chest and Medical Aid at Sea (US Public Health Service).pdf", category: 'medical' },
   { asset: 'atp-4-02-11-first-aid.pdf', name: 'Casualty Response and First Aid (US Army ATP 4-02.11).pdf', category: 'medical' },
@@ -20,6 +20,9 @@ const FIELD_GUIDES = [
   { asset: 'nrcs-tn28-solar-pumps.pdf', name: 'Solar-Powered Water Pump Systems (USDA NRCS Technical Note 28).pdf', category: 'power' },
   { asset: 'neets-1-direct-current.pdf', name: 'Matter, Energy and Direct Current (US Navy NEETS Module 1).pdf', category: 'power' },
 ];
+
+/** The guides that ship with the app. */
+export const BUNDLED_GUIDES = FIELD_GUIDES;
 
 /** Each bundled guide's library category, by the name the user and the model see. */
 export const BUNDLED_GUIDE_CATEGORY_BY_NAME: Record<string, string> = Object.fromEntries(FIELD_GUIDES.map(g => [g.name, g.category]));

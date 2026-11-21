@@ -17,11 +17,12 @@ type NavigationProp = CompositeNavigationProp<
   NativeStackNavigationProp<RootStackParamList>
 >;
 
-const KIT_ITEMS = [
-  { icon: 'book-open', title: 'Guide library', desc: 'Free guides to download and use offline', screen: 'GuideLibrary' as const, testID: 'kit-guide-library' },
-  { icon: 'zap', title: 'Quick reference', desc: 'Signals, codes and scales at a glance', screen: 'QuickReference' as const, testID: 'kit-quick-reference' },
-  { icon: 'hash', title: 'Calculators', desc: 'Units, grid references, sun and moon, distance, dates', screen: 'Calculators' as const, testID: 'kit-calculators' },
-  { icon: 'check-square', title: 'Checklists', desc: 'Your own packing and check lists', screen: 'Checklists' as const, testID: 'kit-checklists' },
+/** The four tools, in the order Field kit and Home's Field kit card show them. `short` is the label on Home. */
+export const KIT_ITEMS = [
+  { icon: 'book-open', title: 'Guide library', desc: 'Free guides to download and use offline', screen: 'GuideLibrary' as const, testID: 'kit-guide-library', short: 'Guides' },
+  { icon: 'zap', title: 'Quick reference', desc: 'Signals, codes and scales at a glance', screen: 'QuickReference' as const, testID: 'kit-quick-reference', short: 'Signals' },
+  { icon: 'hash', title: 'Calculators', desc: 'Units, grid references, sun and moon, distance, dates', screen: 'Calculators' as const, testID: 'kit-calculators', short: 'Calc' },
+  { icon: 'check-square', title: 'Checklists', desc: 'Your own packing and check lists', screen: 'Checklists' as const, testID: 'kit-checklists', short: 'Lists' },
 ];
 
 export const KitScreen: React.FC = () => {

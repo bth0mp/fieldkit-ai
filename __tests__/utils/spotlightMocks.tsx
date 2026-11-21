@@ -106,6 +106,7 @@ export function createHardwareServiceMock() {
       getAccelerationCapability: jest.fn(() => Promise.resolve({ hasNpu: false, hasGpu: false })),
       formatBytes: jest.fn((bytes: number) => `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`),
       formatModelSize: jest.fn(() => '4.0 GB'),
+      getStorage: jest.fn(() => Promise.resolve({ freeBytes: 0, totalBytes: 0 })),
     },
   };
 }

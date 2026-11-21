@@ -102,29 +102,6 @@ const createModelCardStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
   },
 });
 const createSectionStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
-  galleryCard: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    gap: 16,
-    ...shadows.small,
-  },
-  galleryCardInfo: {
-    flex: 1,
-  },
-  galleryCardTitle: {
-    ...TYPOGRAPHY.body,
-    fontWeight: '600' as const,
-    color: colors.text,
-  },
-  galleryCardMeta: {
-    ...TYPOGRAPHY.bodySmall,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
   desktopCard: {
     backgroundColor: colors.surface,
     borderRadius: 12,

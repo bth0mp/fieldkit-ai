@@ -872,6 +872,9 @@ interface DownloadOptions {
   begin?: (r: DownloadBegin) => void; progress?: (r: DownloadProgress) => void;
 }
 
+/** What getFSInfo reports: free and total bytes, or 'fail' to reject like a phone that cannot say. */
+export type FsInfoOption = { freeSpace: number; totalSpace: number } | 'fail';
+
 export interface FsFake {
   module: Record<string, unknown>;
   /** Seed a file on the virtual disk with an exact byte size (for truncated/partial-file cases). */
@@ -888,7 +891,7 @@ export interface FsFake {
   DocumentDirectoryPath: string;
 }
 
-function makeFsFake(): FsFake {
+function makeFsFake(fsInfo?: FsInfoOption): FsFake {
   const DocumentDirectoryPath = '/docs';
   // Backed by memfs — a REAL in-memory filesystem engine does the storage/tree work; this only maps the
   // react-native-fs API onto it. (Off-the-shelf fake engine, per the plan, not a hand-rolled tree.)
@@ -923,7 +926,8 @@ function makeFsFake(): FsFake {
   // Like react-native-fs: downloadFile returns { jobId, promise } at once and the native side calls begin and
   // progress later; stopDownload(jobId) rejects that job's promise and stops any further writes.
   let lastJobId = 0;
-  let freeSpace = 64 * GB;
+  let freeSpace = fsInfo && fsInfo !== 'fail' ? fsInfo.freeSpace : 64 * GB;
+  const totalSpace = fsInfo && fsInfo !== 'fail' ? fsInfo.totalSpace : 256 * GB;
   const stopped = new Set<number>();
   const later = () => new Promise<void>(resolve => setImmediate(resolve));
   const abortIfStopped = (jobId: number) => { if (stopped.has(jobId)) throw new Error('Download has been aborted'); };
@@ -984,7 +988,10 @@ function makeFsFake(): FsFake {
       return { jobId: lastJobId, promise: runDownload(lastJobId, opts) };
     }),
     stopDownload: jest.fn((jobId: number) => { stopped.add(jobId); }),
-    getFSInfo: jest.fn(async () => ({ freeSpace, totalSpace: 256 * GB })),
+    getFSInfo: jest.fn(async () => {
+      if (fsInfo === 'fail') throw new Error('Storage info is not available');
+      return { freeSpace, totalSpace };
+    }),
   };
   return { module, seedFile, seedDir, seedAsset, seedDownload, setFreeSpace: (bytes: number) => { freeSpace = bytes; }, DocumentDirectoryPath };
 }
@@ -1031,6 +1038,8 @@ export interface InstallOpts {
   ram?: RamProfile;
   /** Replace the dumb global react-native-fs stub with a stateful in-memory filesystem. */
   fs?: boolean;
+  /** What getFSInfo reports (free and total bytes), or 'fail' to reject. Needs { fs: true }. */
+  fsInfo?: FsInfoOption;
   /** Install the native PDF text extractor (PDFExtractorModule); a seeded file's contents are its text layer.
    *  Needs { fs: true }. Omit it to model a device without the module. */
   pdf?: boolean;
@@ -1116,7 +1125,7 @@ export function installNativeBoundary(opts: InstallOpts = {}): NativeBoundary {
   const downloadFake = opts.download ? makeDownloadFake(handle) : undefined;
 
   // Stateful FS: override the dumb global react-native-fs stub BEFORE any service requires it.
-  const fsFake = opts.fs ? makeFsFake() : undefined;
+  const fsFake = opts.fs ? makeFsFake(opts.fsInfo) : undefined;
   if (fsFake) jest.doMock('react-native-fs', () => fsFake.module);
   const documentsFake = opts.documents && fsFake ? makeDocumentsFake() : undefined;
   if (documentsFake && fsFake) {

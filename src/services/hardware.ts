@@ -256,6 +256,11 @@ class HardwareService {
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
     return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${units[i]}`;
   }
+  /** Free and total space on the phone's storage. Rejects when the system cannot say. */
+  async getStorage(): Promise<{ freeBytes: number; totalBytes: number }> {
+    const info = await RNFS.getFSInfo();
+    return { freeBytes: info.freeSpace, totalBytes: info.totalSpace };
+  }
   getModelTotalSize(model: { fileSize?: number; size?: number; mmProjFileSize?: number }): number {
     return (model.fileSize || model.size || 0) + (model.mmProjFileSize || 0);
   }

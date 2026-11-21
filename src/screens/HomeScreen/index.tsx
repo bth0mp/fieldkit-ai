@@ -3,18 +3,19 @@ import { View, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, CustomAlert, hideAlert } from '../../components';
 import { AnimatedEntry } from '../../components/AnimatedEntry';
-import { AnimatedPressable } from '../../components/AnimatedPressable';
 import { OnboardingSheet } from '../../components/onboarding/OnboardingSheet';
 import { PulsatingIcon } from '../../components/onboarding/PulsatingIcon';
 import { useOnboardingSheet } from '../../components/onboarding/useOnboardingSheet';
 import { useFocusTrigger } from '../../hooks/useFocusTrigger';
-import Icon from 'react-native-vector-icons/Feather';
-import { useThemedStyles, useTheme } from '../../theme';
+import { useThemedStyles } from '../../theme';
 import { createStyles } from './styles';
 import { useHomeScreen, HomeScreenNavigationProp } from './hooks/useHomeScreen';
 import { useHomeScreenSpotlight } from './hooks/useHomeScreenSpotlight';
 import { RecentConversations } from './components/RecentConversations';
 import { AssistantCard } from './cards/AssistantCard';
+import { FieldKitCard } from './cards/FieldKitCard';
+import { LibraryCard } from './cards/LibraryCard';
+import { PhoneCard } from './cards/PhoneCard';
 import { ModelPickerSheet } from './components/ModelPickerSheet';
 import { LoadingOverlay } from './components/LoadingOverlay';
 import { ModelsManagerSheet, ModelRowType } from '../../components/models/ModelsManagerSheet';
@@ -31,7 +32,6 @@ type HomeScreenProps = {
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const focusTrigger = useFocusTrigger();
-  const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { sheetVisible, openSheet, closeSheet, showIcon } = useOnboardingSheet();
 
@@ -162,6 +162,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           </View>
 
           <AnimatedEntry index={0} staggerMs={50} trigger={focusTrigger}>
+            <View testID="home-card-assistant">
             <AssistantCard
               chip={{ label: chipLabel, remote: !!(activeTextModel && activeRemoteTextModelId), loading: loadingState.isLoading }}
               onOpenModels={() => setModelsManagerOpen(true)}
@@ -179,23 +180,37 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 />
               )}
             />
+            </View>
           </AnimatedEntry>
 
-          {/* Image Gallery */}
-          <AnimatedPressable
-            style={styles.galleryCard}
-            onPress={() => navigation.navigate('Gallery')}
-            hapticType="selection"
-          >
-            <Icon name="grid" size={18} color={colors.primary} />
-            <View style={styles.galleryCardInfo}>
-              <Text style={styles.galleryCardTitle}>Image Gallery</Text>
-              <Text style={styles.galleryCardMeta}>
-                {generatedImages.length} {generatedImages.length === 1 ? 'image' : 'images'}
-              </Text>
+          <AnimatedEntry index={1} staggerMs={50} trigger={focusTrigger}>
+            <View testID="home-card-fieldKit">
+              <FieldKitCard onOpen={(screen) => navigation.navigate(screen)} />
             </View>
-            <Icon name="chevron-right" size={16} color={colors.textMuted} />
-          </AnimatedPressable>
+          </AnimatedEntry>
+
+          <AnimatedEntry index={2} staggerMs={50} trigger={focusTrigger}>
+            <View testID="home-card-library">
+              <LibraryCard
+                onOpenGuides={() => navigation.navigate('GuideLibrary')}
+                onOpenKiwix={() => navigation.navigate('KiwixFiles')}
+                onOpenProjects={() => navigation.navigate('ProjectsTab')}
+              />
+            </View>
+          </AnimatedEntry>
+
+          <AnimatedEntry index={3} staggerMs={50} trigger={focusTrigger}>
+            <View testID="home-card-phone">
+              <PhoneCard
+                focusTrigger={focusTrigger}
+                downloadedModelCount={downloadedModels.length}
+                imageModelCount={downloadedImageModels.length}
+                imageCount={generatedImages.length}
+                onOpenModels={() => navigation.navigate('ModelsTab')}
+                onOpenGallery={() => navigation.navigate('Gallery')}
+              />
+            </View>
+          </AnimatedEntry>
         </ScrollView >
       </View >
 

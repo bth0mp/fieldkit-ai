@@ -20,7 +20,7 @@
  *   await h.send('what is the capital of France', { text: 'Paris.' });  // types, presses send, awaits reply
  *   expect(h.view.queryByText(/Paris\./)).not.toBeNull();
  */
-import { installNativeBoundary, requireRTL, GB, type RamProfile, type CompletionMeta, type SpeechFakeOptions, type CalendarFakeOptions } from './nativeBoundary';
+import { installNativeBoundary, requireRTL, GB, type FsInfoOption, type RamProfile, type CompletionMeta, type SpeechFakeOptions, type CalendarFakeOptions } from './nativeBoundary';
 import { createDownloadedModel } from '../utils/factories';
 
 /** Shared route params the test's navigation mock reads (set by setupChatScreen). */
@@ -31,6 +31,8 @@ export interface ChatHarnessOptions {
   /** 'ios' surfaces the Metal accelerator path for llama; default 'android'. */
   platform?: 'ios' | 'android';
   ram?: RamProfile;
+  /** What the phone's storage reports (free and total bytes), or 'fail' when it cannot say. */
+  fsInfo?: FsInfoOption;
   /** Make the (LiteRT) model vision-capable so the attach-photo gesture is allowed. */
   vision?: boolean;
   /** Make the (LiteRT) model audio-capable (liteRTAudio) — so supportsDirectAudio() is true and chat-mode
@@ -74,7 +76,7 @@ export interface ChatHarnessOptions {
 export async function setupChatScreen(opts: ChatHarnessOptions) {
   const platform = opts.platform ?? 'android';
   const ram = opts.ram ?? { platform, totalBytes: 12 * GB, availBytes: 8 * GB };
-  const boundary = installNativeBoundary({ llama: opts.engine === 'llama', llamaChatTemplate: opts.chatTemplate, fs: true, pdf: opts.pdf, ram, whisper: opts.whisper, download: opts.download, speech: opts.speech, calendar: opts.calendar, documents: opts.documents });
+  const boundary = installNativeBoundary({ llama: opts.engine === 'llama', llamaChatTemplate: opts.chatTemplate, fs: true, fsInfo: opts.fsInfo, pdf: opts.pdf, ram, whisper: opts.whisper, download: opts.download, speech: opts.speech, calendar: opts.calendar, documents: opts.documents });
   if (opts.sqlite) require('./sqliteFake').doMockRealSqlite();
 
   // Global boundary polyfill: React 19's error reporter calls window.dispatchEvent; in the node test
