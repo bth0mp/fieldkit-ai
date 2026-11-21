@@ -9,8 +9,8 @@ import { CardBar } from './CardBar';
 import { CardRow } from './CardRow';
 
 type Props = {
-  /** Bumps each time Home comes into focus; the storage is read again then. */
-  focusTrigger: number;
+  /** Changes when Home regains focus, the app resumes or the day turns; the storage is read again then. */
+  refreshKey: number;
   /** Text models downloaded to the phone. */
   downloadedModelCount: number;
   /** Image models downloaded to the phone. */
@@ -24,7 +24,7 @@ type Storage = { freeBytes: number; totalBytes: number };
 
 /** Home's Phone card: free storage with a bar, downloaded models and the image gallery. */
 export const PhoneCard: React.FC<Props> = ({
-  focusTrigger, downloadedModelCount, imageModelCount, imageCount, onOpenModels, onOpenGallery,
+  refreshKey, downloadedModelCount, imageModelCount, imageCount, onOpenModels, onOpenGallery,
 }) => {
   const styles = useThemedStyles(createStyles);
   const [storage, setStorage] = useState<Storage | null>(null);
@@ -38,7 +38,7 @@ export const PhoneCard: React.FC<Props> = ({
         .catch(() => { if (current) setStorage(null); });
     });
     return () => { current = false; task.cancel(); };
-  }, [focusTrigger]);
+  }, [refreshKey]);
 
   const used = storage && storage.totalBytes > 0
     ? Math.min(1, Math.max(0, (storage.totalBytes - storage.freeBytes) / storage.totalBytes))

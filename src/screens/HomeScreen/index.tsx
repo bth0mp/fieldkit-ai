@@ -40,7 +40,7 @@ type HomeScreenProps = {
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const focusTrigger = useFocusTrigger();
   const styles = useThemedStyles(createStyles);
-  const { now, sky } = useTodaySky(focusTrigger);
+  const { now, sky, tick } = useTodaySky();
   const [slim, setSlim] = React.useState(false);
   const { sheetVisible, openSheet, closeSheet, showIcon } = useOnboardingSheet();
 
@@ -199,7 +199,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     today: <TodayCard sky={sky} />,
     phone: (
       <PhoneCard
-        focusTrigger={focusTrigger}
+        refreshKey={tick}
         downloadedModelCount={downloadedModels.length}
         imageModelCount={downloadedImageModels.length}
         imageCount={generatedImages.length}
