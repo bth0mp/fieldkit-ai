@@ -13,10 +13,11 @@ export type RootStackParamList = {
   KnowledgeBase: { projectId: string };
   GuideLibrary: undefined;
   KiwixFiles: undefined;
-  QuickReference: undefined;
+  QuickReference: { cardId?: string } | undefined;
   Checklists: { listId?: string } | undefined;
   Calculators: undefined;
   EditHome: undefined;
+  HomeSearch: undefined;
   DocumentPreview: { filePath: string; fileName: string; fileSize: number };
   // Former SettingsStack
   ModelSettings: undefined;

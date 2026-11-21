@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
 import { useTheme, useThemedStyles } from '../theme';
 import { QUICK_REFERENCE_CARDS, ReferenceCard, spellTyped } from '../features/quickReference/cards';
 import { searchCards } from '../features/quickReference/search';
 import { createStyles } from './QuickReferenceScreen.styles';
+import type { RootStackParamList } from '../navigation/types';
 
 /**
  * Signal and code cards to read at a glance: no model, no download, no network. Cards start closed; opening one
@@ -16,9 +17,10 @@ import { createStyles } from './QuickReferenceScreen.styles';
  */
 export const QuickReferenceScreen: React.FC = () => {
   const navigation = useNavigation();
+  const route = useRoute<RouteProp<RootStackParamList, 'QuickReference'>>();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const [open, setOpen] = useState<Set<string>>(new Set());
+  const [open, setOpen] = useState<Set<string>>(new Set(route.params?.cardId ? [route.params.cardId] : []));
   const [query, setQuery] = useState('');
   const searching = query.trim() !== '';
   const found = searchCards(query);

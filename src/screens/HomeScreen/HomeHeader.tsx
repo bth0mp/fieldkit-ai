@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import { PulsatingIcon } from '../../components/onboarding/PulsatingIcon';
 import { useTheme, useThemedStyles } from '../../theme';
@@ -20,6 +20,13 @@ const createStyles = (colors: ThemeColors) => ({
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     gap: SPACING.sm,
+  },
+  searchButton: {
+    marginLeft: 'auto' as const,
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
   title: {
     ...TYPOGRAPHY.h2,
@@ -53,10 +60,11 @@ type Props = {
   slim: boolean;
   showIcon: boolean;
   onOpenOnboarding: () => void;
+  onOpenSearch: () => void;
 };
 
 /** Home's top bar: the app name, then the date and an Offline label while the phone has no connection. */
-export const HomeHeader: React.FC<Props> = ({ now, sunset, slim, showIcon, onOpenOnboarding }) => {
+export const HomeHeader: React.FC<Props> = ({ now, sunset, slim, showIcon, onOpenOnboarding, onOpenSearch }) => {
   const styles = useThemedStyles(createStyles);
   const { colors } = useTheme();
   const offline = useOffline();
@@ -65,6 +73,10 @@ export const HomeHeader: React.FC<Props> = ({ now, sunset, slim, showIcon, onOpe
       <View style={styles.nameRow}>
         <Text style={styles.title}>{BRAND.name}</Text>
         {showIcon && <PulsatingIcon onPress={onOpenOnboarding} />}
+        <TouchableOpacity testID="home-search-button" style={styles.searchButton} onPress={onOpenSearch}
+          accessibilityRole="button" accessibilityLabel="Search">
+          <Icon name="search" size={20} color={colors.text} />
+        </TouchableOpacity>
       </View>
       {!slim && (
         <View style={styles.detailRow}>

@@ -212,7 +212,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View testID="home-screen" style={styles.scrollView}>
-        <HomeHeader now={now} sunset={sky?.sunset ?? null} slim={slim} showIcon={showIcon} onOpenOnboarding={openSheet} />
+        <HomeHeader now={now} sunset={sky?.sunset ?? null} slim={slim} showIcon={showIcon} onOpenOnboarding={openSheet} onOpenSearch={() => navigation.navigate('HomeSearch')} />
         <ScrollView
           testID="home-scroll"
           style={styles.scrollView}

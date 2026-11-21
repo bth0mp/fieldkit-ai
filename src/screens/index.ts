@@ -13,6 +13,7 @@ export { KnowledgeBaseScreen } from './KnowledgeBaseScreen';
 export { GuideLibraryScreen } from './GuideLibraryScreen';
 export { KiwixFilesScreen } from './KiwixFilesScreen';
 export { QuickReferenceScreen } from './QuickReferenceScreen';
+export { HomeSearchScreen } from './HomeSearchScreen';
 export { ChecklistsScreen } from './ChecklistsScreen';
 export { CalculatorsScreen } from './CalculatorsScreen';
 export { EditHomeScreen } from './EditHomeScreen';

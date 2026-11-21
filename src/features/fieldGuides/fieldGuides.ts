@@ -24,6 +24,14 @@ const FIELD_GUIDES: ReadonlyArray<{ asset: string; name: string; category: strin
 /** The guides that ship with the app. */
 export const BUNDLED_GUIDES = FIELD_GUIDES;
 
+/** What the in-app PDF preview needs to open a bundled guide's copy on the phone. */
+export async function bundledGuidePreview(asset: string): Promise<{ filePath: string; fileName: string; fileSize: number }> {
+  const filePath = `${RNFS.DocumentDirectoryPath}/field-guides/${asset}`;
+  const fileName = FIELD_GUIDES.find(g => g.asset === asset)?.name ?? asset;
+  const { size } = await RNFS.stat(filePath);
+  return { filePath, fileName, fileSize: Number(size) };
+}
+
 /** Each bundled guide's library category, by the name the user and the model see. */
 export const BUNDLED_GUIDE_CATEGORY_BY_NAME: Record<string, string> = Object.fromEntries(FIELD_GUIDES.map(g => [g.name, g.category]));
 
