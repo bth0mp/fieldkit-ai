@@ -16,7 +16,10 @@ import { AssistantCard } from './cards/AssistantCard';
 import { FieldKitCard } from './cards/FieldKitCard';
 import { LibraryCard } from './cards/LibraryCard';
 import { ChecklistsCard } from './cards/ChecklistsCard';
+import { TodayCard } from './cards/TodayCard';
 import { PhoneCard } from './cards/PhoneCard';
+import { useTodaySky } from './hooks/useTodaySky';
+import { formatDay } from '../../features/home/todaySky';
 import { ModelPickerSheet } from './components/ModelPickerSheet';
 import { LoadingOverlay } from './components/LoadingOverlay';
 import { ModelsManagerSheet, ModelRowType } from '../../components/models/ModelsManagerSheet';
@@ -34,6 +37,7 @@ type HomeScreenProps = {
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const focusTrigger = useFocusTrigger();
   const styles = useThemedStyles(createStyles);
+  const sky = useTodaySky(focusTrigger);
   const { sheetVisible, openSheet, closeSheet, showIcon } = useOnboardingSheet();
 
   const {
@@ -156,9 +160,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       <View testID="home-screen" style={styles.scrollView}>
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
           <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <Text style={styles.title}>{BRAND.name}</Text>
-              {showIcon && <PulsatingIcon onPress={openSheet} />}
+            <View>
+              <View style={styles.headerLeft}>
+                <Text style={styles.title}>{BRAND.name}</Text>
+                {showIcon && <PulsatingIcon onPress={openSheet} />}
+              </View>
+              <Text testID="home-date" style={styles.date}>
+                {sky?.sunset ? `${formatDay(new Date())} · sunset ${sky.sunset}` : formatDay(new Date())}
+              </Text>
             </View>
           </View>
 
@@ -207,6 +216,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           </AnimatedEntry>
 
           <AnimatedEntry index={4} staggerMs={50} trigger={focusTrigger}>
+            <View testID="home-card-today">
+              <TodayCard sky={sky} />
+            </View>
+          </AnimatedEntry>
+
+          <AnimatedEntry index={5} staggerMs={50} trigger={focusTrigger}>
             <View testID="home-card-phone">
               <PhoneCard
                 focusTrigger={focusTrigger}

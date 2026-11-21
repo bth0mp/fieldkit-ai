@@ -27,6 +27,10 @@ const createLayoutStyles = (colors: ThemeColors) => ({
     ...TYPOGRAPHY.h2,
     color: colors.text,
   },
+  date: {
+    ...TYPOGRAPHY.bodySmall,
+    color: colors.textMuted,
+  },
 });
 const createModelCardStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
   modelsRow: {

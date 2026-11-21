@@ -172,6 +172,41 @@ function moonEvents(place: Place, start: number, clock: Clock): string {
   return ` ${sentence[0].toUpperCase()}${sentence.slice(1)}.`;
 }
 
+/**
+ * The solar day asked for is the one whose noon falls nearest midday on that date in the zone shown (`midnight`
+ * is that date's UTC midnight). Also where the moon's window for that date starts.
+ * The moon's events are those whose time, to the minute, is inside the calendar day asked about on the clock
+ * shown. The day is counted from half a minute before its midnight, so a rising at 23:59:50 is 00:00 of the
+ * next day, where the Naval Observatory lists it too, and not "00:00 (+1 day)" here and missing there.
+ * ponytail: with utc_offset left out, the day is 24 hours on the phone's offset at noon. On the two days a year
+ * the clocks change, a moon event in the hour gained or lost lands in neither day or in both (about one day
+ * in eight years at a place). Use the real local day and per-event offsets if that ever matters.
+ */
+function solarDay(place: Place, midnight: number, offsetMs: number): { dayStart: number; moonStart: number } {
+  const middayThere = midnight + DAY_MS / 2 - offsetMs;
+  const dayStart = [-1, 0, 1]
+    .map(shift => midnight + shift * DAY_MS)
+    .reduce((best, start) => (Math.abs(solarNoon(place, start) - middayThere) < Math.abs(solarNoon(place, best) - middayThere) ? start : best));
+  return { dayStart, moonStart: midnight - offsetMs - MINUTE_MS / 2 };
+}
+
+/**
+ * Today's sunrise and sunset instants at a place on the phone's clock (or which side of the horizon the sun
+ * stays on), and where the moon's window for that day starts: the numbers sun_times prints.
+ */
+export function sunCrossings(
+  place: Place,
+  now: Date,
+): { rise: Crossing; set: Crossing; moonStart: number } {
+  const { day, offsetMs } = readWhen({}, now);
+  const { dayStart, moonStart } = solarDay(place, Date.UTC(day.year, day.month - 1, day.day), offsetMs);
+  return {
+    rise: crossing(place, dayStart, { side: -1, zenith: SUNRISE_ZENITH }),
+    set: crossing(place, dayStart, { side: 1, zenith: SUNRISE_ZENITH }),
+    moonStart,
+  };
+}
+
 export function sunTimes(call: ToolCall, now: Date = new Date()): string {
   const { position: rawPosition } = call.arguments;
   if (typeof rawPosition !== 'string' || !rawPosition.trim()) throw new Error('Missing required parameter: position');
@@ -179,11 +214,7 @@ export function sunTimes(call: ToolCall, now: Date = new Date()): string {
   const { day, offsetMs } = readWhen(call.arguments, now);
   const midnight = Date.UTC(day.year, day.month - 1, day.day);
 
-  // The solar day asked for is the one whose noon falls nearest midday on that date in the zone shown.
-  const middayThere = midnight + DAY_MS / 2 - offsetMs;
-  const dayStart = [-1, 0, 1]
-    .map(shift => midnight + shift * DAY_MS)
-    .reduce((best, start) => (Math.abs(solarNoon(place, start) - middayThere) < Math.abs(solarNoon(place, best) - middayThere) ? start : best));
+  const { dayStart, moonStart } = solarDay(place, midnight, offsetMs);
 
   const minute = (instant: number) => Math.round((instant + offsetMs) / MINUTE_MS);
   /** "07:23", with "(+1 day)" when the event falls on another date in the zone shown. */
@@ -204,12 +235,5 @@ export function sunTimes(call: ToolCall, now: Date = new Date()): string {
     ? ` These are ${zone} clock times, not this place's own local time, and its date there may differ. Give utc_offset for the place to get its local times.`
     : '';
   const head = `Sun at ${place.lat.toFixed(5)}, ${place.lon.toFixed(5)} on ${day.year}-${pad(day.month)}-${pad(day.day)} (${zone}): `;
-  // The moon's events are those whose time, to the minute, is inside the calendar day asked about on the clock
-  // shown. The day is counted from half a minute before its midnight, so a rising at 23:59:50 is 00:00 of the
-  // next day, where the Naval Observatory lists it too, and not "00:00 (+1 day)" here and missing there.
-  // ponytail: with utc_offset left out, the day is 24 hours on the phone's offset at noon. On the two days a year
-  // the clocks change, a moon event in the hour gained or lost lands in neither day or in both (about one day
-  // in eight years at a place). Use the real local day and per-event offsets if that ever matters.
-  const moonDayStart = midnight - offsetMs - MINUTE_MS / 2;
-  return `${head}${describe(events, clock)}${moonPhrase(noon)}${moonEvents(place, moonDayStart, clock)}${elsewhere}`;
+  return `${head}${describe(events, clock)}${moonPhrase(noon)}${moonEvents(place, moonStart, clock)}${elsewhere}`;
 }
