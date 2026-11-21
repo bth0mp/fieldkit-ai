@@ -131,4 +131,26 @@ describe('Home cards (rendered)', () => {
     await h.settle();
     expect(home.queryByTestId('home-phone-storage')).toBeNull();
   }, 30000);
+
+  it('drops the storage line when the phone reports no total space', async () => {
+    const h = await setupChatScreen({ engine: 'llama', sqlite: true, fsInfo: { freeSpace: 0, totalSpace: 0 } });
+    const { HomeScreen } = require('../../../src/screens/HomeScreen');
+    const home = h.rtl.render(h.React.createElement(HomeScreen, { navigation: makeNav() }));
+
+    await h.rtl.waitFor(() => expect(home.getByTestId('home-phone-models')).toHaveTextContent('1 downloaded', PARTIAL), TIMEOUT);
+    await h.rtl.waitFor(() => expect(require('react-native-fs').getFSInfo).toHaveBeenCalled(), TIMEOUT);
+    await h.settle();
+    expect(home.queryByTestId('home-phone-storage')).toBeNull();
+  }, 30000);
+
+  it('shows no guide counts until the saved guide records have been read', async () => {
+    const h = await setupChatScreen({ engine: 'llama', sqlite: true });
+    const { HomeScreen } = require('../../../src/screens/HomeScreen');
+    const home = h.rtl.render(h.React.createElement(HomeScreen, { navigation: makeNav() }));
+
+    // Before the read the row says nothing about counts rather than a false "0 on phone, 0 taught".
+    expect(home.getByTestId('home-library-guides')).toHaveTextContent('Guides', PARTIAL);
+    expect(home.getByTestId('home-library-guides')).not.toHaveTextContent('on phone', PARTIAL);
+    await h.rtl.waitFor(() => expect(home.getByTestId('home-library-guides')).toHaveTextContent('0 on phone, 0 taught', PARTIAL), TIMEOUT);
+  }, 30000);
 });

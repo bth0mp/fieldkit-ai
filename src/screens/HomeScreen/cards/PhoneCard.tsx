@@ -34,13 +34,13 @@ export const PhoneCard: React.FC<Props> = ({
     let current = true;
     const task = InteractionManager.runAfterInteractions(() => {
       hardwareService.getStorage()
-        .then((s) => { if (current) setStorage(s); })
+        .then((s) => { if (current) setStorage(s.totalBytes > 0 ? s : null); })
         .catch(() => { if (current) setStorage(null); });
     });
     return () => { current = false; task.cancel(); };
   }, [refreshKey]);
 
-  const used = storage && storage.totalBytes > 0
+  const used = storage
     ? Math.min(1, Math.max(0, (storage.totalBytes - storage.freeBytes) / storage.totalBytes))
     : 0;
 

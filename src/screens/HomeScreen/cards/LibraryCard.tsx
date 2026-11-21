@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Text, InteractionManager } from 'react-native';
 import { Card } from '../../../components/Card';
 import { useThemedStyles } from '../../../theme';
@@ -27,10 +27,15 @@ export const LibraryCard: React.FC<Props> = ({ onOpenGuides, onOpenKiwix, onOpen
   const projectCount = useProjectStore((s) => s.projects.length);
   const { onPhone, taught } = libraryCounts({ catalogue, guides, delisted });
 
-  // Reads the saved guide records from disk (no network), once Home has finished opening.
+  // Reads the saved guide records from disk (no network), once Home has finished opening. Until that read has
+  // finished the counts would be zeros that are not true, so the row shows none.
+  const [loaded, setLoaded] = useState(false);
   useEffect(() => {
-    const task = InteractionManager.runAfterInteractions(() => { guideLibraryService.init(); });
-    return () => task.cancel();
+    let current = true;
+    const task = InteractionManager.runAfterInteractions(() => {
+      guideLibraryService.init().then((ok) => { if (current) setLoaded(ok); });
+    });
+    return () => { current = false; task.cancel(); };
   }, []);
 
   return (
@@ -39,7 +44,7 @@ export const LibraryCard: React.FC<Props> = ({ onOpenGuides, onOpenKiwix, onOpen
       <CardRow
         testID="home-library-guides"
         label="Guides"
-        value={`${onPhone} on phone, ${taught} taught`}
+        value={loaded ? `${onPhone} on phone, ${taught} taught` : ''}
         note={`Plus ${BUNDLED_GUIDES.length} that come with the app`}
         onPress={onOpenGuides}
       />
