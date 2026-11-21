@@ -5,6 +5,7 @@ import { useThemedStyles } from '../../../theme';
 import type { ThemeColors } from '../../../theme';
 import { TYPOGRAPHY, SPACING } from '../../../constants';
 import { hardwareService } from '../../../services/hardware';
+import { CardBar } from './CardBar';
 import { CardRow } from './CardRow';
 
 type Props = {
@@ -51,9 +52,7 @@ export const PhoneCard: React.FC<Props> = ({
           <Text testID="home-phone-storage" style={styles.storageText} numberOfLines={1}>
             {`${hardwareService.formatBytes(storage.freeBytes)} free of ${hardwareService.formatBytes(storage.totalBytes)}`}
           </Text>
-          <View style={styles.track}>
-            <View style={[styles.fill, { width: `${Math.round(used * 100)}%` }]} />
-          </View>
+          <CardBar fraction={used} />
         </View>
       )}
       <CardRow testID="home-phone-models" label="Models" value={`${downloadedModelCount + imageModelCount} downloaded`} onPress={onOpenModels} />
@@ -74,6 +73,4 @@ const createStyles = (colors: ThemeColors) => ({
   title: { ...TYPOGRAPHY.h3, color: colors.text },
   storage: { gap: SPACING.xs },
   storageText: { ...TYPOGRAPHY.bodySmall, color: colors.textMuted },
-  track: { height: 6, borderRadius: 3, backgroundColor: colors.border, overflow: 'hidden' as const },
-  fill: { height: 6, borderRadius: 3, backgroundColor: colors.primary },
 });

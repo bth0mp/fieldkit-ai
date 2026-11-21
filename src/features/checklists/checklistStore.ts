@@ -6,7 +6,8 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface ChecklistItem { id: string; text: string; done: boolean }
-export interface Checklist { id: string; name: string; items: ChecklistItem[] }
+/** `changedAt` is when the list was last made or changed, in ms; 0 for a list saved before it was kept. */
+export interface Checklist { id: string; name: string; items: ChecklistItem[]; changedAt: number }
 
 interface ChecklistState {
   /** Newest first. */
@@ -28,9 +29,19 @@ function readLists(saved: unknown): Checklist[] {
         items.push({ id: item.id, text: item.text, done: item.done === true });
       }
     }
-    read.push({ id: list.id, name: list.name, items });
+    const changedAt = typeof list.changedAt === 'number' && Number.isFinite(list.changedAt) ? list.changedAt : 0;
+    read.push({ id: list.id, name: list.name, items, changedAt });
   }
   return read;
+}
+
+/** The `count` lists changed most recently, latest first. Lists changed at the same time keep their stored order. */
+export function recentlyChanged(lists: Checklist[], count: number): Checklist[] {
+  return lists
+    .map((list, index) => ({ list, index }))
+    .sort((a, b) => b.list.changedAt - a.list.changedAt || a.index - b.index)
+    .slice(0, count)
+    .map(entry => entry.list);
 }
 
 let unreadable = false;

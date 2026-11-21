@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 // The app is edge to edge, so the window does not shrink for the keyboard: this scroll view keeps the field
 // being typed in above it.
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
@@ -13,6 +13,7 @@ import { CustomAlert, showAlert, hideAlert, initialAlertState, type AlertState }
 import { checklistService, CHECKLIST_LIMITS } from '../features/checklists/checklistService';
 import { useChecklistStore, type Checklist } from '../features/checklists/checklistStore';
 import { STARTER_LISTS } from '../features/checklists/starterLists';
+import type { RootStackParamList } from '../navigation/types';
 import { createStyles } from './ChecklistsScreen.styles';
 
 /** Which field a refused change belongs under, and what the service said. */
@@ -33,10 +34,11 @@ function deleteMessage(list: Checklist): string {
  */
 export const ChecklistsScreen: React.FC = () => {
   const navigation = useNavigation();
+  const route = useRoute<RouteProp<RootStackParamList, 'Checklists'>>();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const lists = useChecklistStore(s => s.lists);
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(route.params?.listId ?? null);
   const [newName, setNewName] = useState('');
   const [newItem, setNewItem] = useState('');
   /** The open list's new name while it is being renamed; null when it is not. */

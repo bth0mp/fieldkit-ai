@@ -15,6 +15,7 @@ import { RecentConversations } from './components/RecentConversations';
 import { AssistantCard } from './cards/AssistantCard';
 import { FieldKitCard } from './cards/FieldKitCard';
 import { LibraryCard } from './cards/LibraryCard';
+import { ChecklistsCard } from './cards/ChecklistsCard';
 import { PhoneCard } from './cards/PhoneCard';
 import { ModelPickerSheet } from './components/ModelPickerSheet';
 import { LoadingOverlay } from './components/LoadingOverlay';
@@ -200,6 +201,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           </AnimatedEntry>
 
           <AnimatedEntry index={3} staggerMs={50} trigger={focusTrigger}>
+            <View testID="home-card-checklists">
+              <ChecklistsCard onOpen={(listId) => (listId ? navigation.navigate('Checklists', { listId }) : navigation.navigate('Checklists'))} />
+            </View>
+          </AnimatedEntry>
+
+          <AnimatedEntry index={4} staggerMs={50} trigger={focusTrigger}>
             <View testID="home-card-phone">
               <PhoneCard
                 focusTrigger={focusTrigger}

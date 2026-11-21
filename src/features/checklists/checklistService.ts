@@ -35,7 +35,7 @@ function write(update: (lists: Checklist[]) => Checklist[]): void {
 }
 
 function change(listId: string, edit: (list: Checklist) => Checklist): void {
-  write(lists => lists.map(list => (list.id === listId ? edit(list) : list)));
+  write(lists => lists.map(list => (list.id === listId ? { ...edit(list), changedAt: Date.now() } : list)));
 }
 
 export const checklistService = {
@@ -47,7 +47,7 @@ export const checklistService = {
       throw new Error(`You have ${MAX_LISTS} lists, the most this screen keeps. Delete one first.`);
     }
     const texts = items.map(text => oneLine(text, CHECKLIST_LIMITS.item)).filter(Boolean).slice(0, MAX_ITEMS);
-    const list: Checklist = { id: newId(), name: clean, items: texts.map(newItem) };
+    const list: Checklist = { id: newId(), name: clean, items: texts.map(newItem), changedAt: Date.now() };
     write(lists => [list, ...lists]);
     return list.id;
   },
