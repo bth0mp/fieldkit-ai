@@ -58,17 +58,26 @@ const downloadsOf = (fs: Fs, url: string) =>
   (fs.module.downloadFile as jest.Mock).mock.calls.filter(([opts]) => opts.fromUrl === url).length;
 const exists = (fs: Fs, path: string) => (fs.module.exists as (p: string) => Promise<boolean>)(path);
 
-/** Boot the app with the embedding model shipped, let `seed` set up the device, then open the Guide library. */
+/**
+ * Boot the app with the embedding model shipped, let `seed` set up the device, then open the Guide library.
+ * The seed lands before Home first mounts: Home's Your library card starts the guide library at launch, and
+ * that reads the saved records once, as the app does after a restart.
+ */
 async function openLibrary(guides: unknown[], seed: (fs: Fs, dir: string) => void | Promise<void> = () => {}) {
-  const h = await setupChatScreen({ engine: 'llama', pdf: true, sqlite: true });
-  const fs = h.boundary.fs!;
-  fs.seedAsset('models/all-MiniLM-L6-v2-Q8_0.gguf', 'GGUF');
-  h.boundary.llama!.scriptEmbedding(keywordVector);
+  const h = await setupChatScreen({
+    engine: 'llama', pdf: true, sqlite: true,
+    beforeHome: async (boundary) => {
+      const fs = boundary.fs!;
+      fs.seedAsset('models/all-MiniLM-L6-v2-Q8_0.gguf', 'GGUF');
+      boundary.llama!.scriptEmbedding(keywordVector);
+      const { GUIDE_LIBRARY_DIR } = require('../../../src/features/guideLibrary/guideLibraryService');
+      fs.seedDownload(CATALOGUE_URL, catalogueOf(guides));
+      await seed(fs, GUIDE_LIBRARY_DIR);
+    },
+  });
   const { GUIDE_LIBRARY_DIR } = require('../../../src/features/guideLibrary/guideLibraryService');
-  fs.seedDownload(CATALOGUE_URL, catalogueOf(guides));
-  await seed(fs, GUIDE_LIBRARY_DIR);
   const view = await mountLibrary(h);
-  return { ...h, fs, view, dir: GUIDE_LIBRARY_DIR as string };
+  return { ...h, fs: h.boundary.fs!, view, dir: GUIDE_LIBRARY_DIR as string };
 }
 
 async function mountLibrary(h: Opened): Promise<View> {

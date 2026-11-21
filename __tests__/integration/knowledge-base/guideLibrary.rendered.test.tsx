@@ -67,14 +67,22 @@ async function removeGuide(h: Opened, view: View, id: string, answer: 'Remove' |
   return message;
 }
 
-/** Boot the app, let `seed` set up the device, then open the Guide library and wait for its refresh to end. */
+/**
+ * Boot the app, let `seed` set up the device, then open the Guide library and wait for its refresh to end.
+ * The seed lands before Home first mounts: Home's Your library card starts the guide library at launch, and
+ * that reads the saved records once, as the app does after a restart.
+ */
 async function openLibrary(seed: (fs: Fs) => void | Promise<void> = () => {}) {
-  const h = await setupChatScreen({ engine: 'llama', pdf: true, sqlite: true });
+  const h = await setupChatScreen({
+    engine: 'llama', pdf: true, sqlite: true,
+    beforeHome: async (boundary) => {
+      const { GUIDE_LIBRARY_DIR } = require('../../../src/features/guideLibrary/guideLibraryService');
+      DIR = GUIDE_LIBRARY_DIR;
+      await seed(boundary.fs!);
+    },
+  });
   const { React, rtl, boundary } = h;
   const fs = boundary.fs!;
-  const { GUIDE_LIBRARY_DIR } = require('../../../src/features/guideLibrary/guideLibraryService');
-  DIR = GUIDE_LIBRARY_DIR;
-  await seed(fs);
   const fetchedBeforeOpen = downloadsOf(fs, CATALOGUE_URL);
   const { GuideLibraryScreen } = require('../../../src/screens/GuideLibraryScreen');
   const view = rtl.render(React.createElement(GuideLibraryScreen, {}));
@@ -332,24 +340,35 @@ describe('Guide library (rendered)', () => {
   }, 30000);
 
   it('when the saved state cannot be read, nothing is deleted, and the next open finds the guides', async () => {
-    const h = await setupChatScreen({ engine: 'llama', pdf: true, sqlite: true });
-    const fs = h.boundary.fs!;
-    DIR = require('../../../src/features/guideLibrary/guideLibraryService').GUIDE_LIBRARY_DIR;
-    // Offline, so test-knots and test-water are guides the shipped catalogue does not list: their files are the
-    // only copies the user can get.
-    fs.seedFile(`${DIR}/test-knots.pdf`, KNOTS.bytes);
-    fs.seedFile(`${DIR}/test-water.pdf`, WATER.bytes);
-    const storage = AsyncStorageOf();
-    await storage.setItem('@fieldkit/guide_library', JSON.stringify({ downloaded: { 'test-knots': KNOTS, 'test-water': WATER } }));
-    const before = await storage.getItem('@fieldkit/guide_library');
     let failing = true;
-    // AsyncStorage's jest mock is the device's storage; keep its own implementation and fail this key on top of it.
-    const getItem = storage.getItem as jest.Mock;
-    const realGetItem = getItem.getMockImplementation()!;
-    getItem.mockImplementation(async (key: string, ...rest: unknown[]) => {
-      if (failing && key === '@fieldkit/guide_library') throw new Error('storage read failed');
-      return realGetItem(key, ...rest);
+    let before: string | null = null;
+    // AsyncStorage is required after the device is installed (the install resets modules).
+    let storage = AsyncStorageOf();
+    let getItem = storage.getItem as jest.Mock;
+    let realGetItem!: (key: string, ...rest: unknown[]) => Promise<string | null>;
+    // The saved state is unreadable from launch on: Home's Your library card starts the library at launch, and
+    // that must fail too, deleting nothing.
+    const h = await setupChatScreen({
+      engine: 'llama', pdf: true, sqlite: true,
+      beforeHome: async (boundary) => {
+        const fs = boundary.fs!;
+        DIR = require('../../../src/features/guideLibrary/guideLibraryService').GUIDE_LIBRARY_DIR;
+        // Offline, so test-knots and test-water are guides the shipped catalogue does not list: their files are the
+        // only copies the user can get.
+        fs.seedFile(`${DIR}/test-knots.pdf`, KNOTS.bytes);
+        fs.seedFile(`${DIR}/test-water.pdf`, WATER.bytes);
+        storage = AsyncStorageOf();
+        getItem = storage.getItem as jest.Mock;
+        realGetItem = getItem.getMockImplementation()!;
+        await storage.setItem('@fieldkit/guide_library', JSON.stringify({ downloaded: { 'test-knots': KNOTS, 'test-water': WATER } }));
+        before = await storage.getItem('@fieldkit/guide_library');
+        getItem.mockImplementation(async (key: string, ...rest: unknown[]) => {
+          if (failing && key === '@fieldkit/guide_library') throw new Error('storage read failed');
+          return realGetItem(key, ...rest);
+        });
+      },
     });
+    const fs = h.boundary.fs!;
     const failedReads = () => getItem.mock.calls.filter(([key]) => key === '@fieldkit/guide_library').length;
 
     const { GuideLibraryScreen } = require('../../../src/screens/GuideLibraryScreen');
@@ -458,17 +477,24 @@ describe('Guide library (rendered)', () => {
 
     /** Open the library with mkdir of the library folder failing until `allow()` is called. */
     async function openBroken(seed: (fs: Fs) => void | Promise<void> = () => {}) {
-      const h = await setupChatScreen({ engine: 'llama', pdf: true, sqlite: true });
-      const fs = h.boundary.fs!;
-      DIR = require('../../../src/features/guideLibrary/guideLibraryService').GUIDE_LIBRARY_DIR;
       let failing = true;
-      const mkdir = fs.module.mkdir as jest.Mock;
-      const real = mkdir.getMockImplementation()!;
-      mkdir.mockImplementation(async (p: string) => {
-        if (failing && p === DIR) throw new Error('EACCES: permission denied');
-        return real(p);
+      // The folder cannot be made from launch on, so Home's Your library card fails to start the library too.
+      const h = await setupChatScreen({
+        engine: 'llama', pdf: true, sqlite: true,
+        beforeHome: async (boundary) => {
+          const fsb = boundary.fs!;
+          DIR = require('../../../src/features/guideLibrary/guideLibraryService').GUIDE_LIBRARY_DIR;
+          const mkdirFn = fsb.module.mkdir as jest.Mock;
+          const realMkdir = mkdirFn.getMockImplementation()!;
+          mkdirFn.mockImplementation(async (p: string) => {
+            if (failing && p === DIR) throw new Error('EACCES: permission denied');
+            return realMkdir(p);
+          });
+          await seed(fsb);
+        },
       });
-      await seed(fs);
+      const fs = h.boundary.fs!;
+      const mkdir = fs.module.mkdir as jest.Mock;
       const { GuideLibraryScreen } = require('../../../src/screens/GuideLibraryScreen');
       const view = h.rtl.render(h.React.createElement(GuideLibraryScreen, {}));
       // The screen's start and its refresh each tried, and failed, to start the library.

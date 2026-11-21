@@ -20,7 +20,7 @@
  *   await h.send('what is the capital of France', { text: 'Paris.' });  // types, presses send, awaits reply
  *   expect(h.view.queryByText(/Paris\./)).not.toBeNull();
  */
-import { installNativeBoundary, requireRTL, GB, type FsInfoOption, type RamProfile, type CompletionMeta, type SpeechFakeOptions, type CalendarFakeOptions } from './nativeBoundary';
+import { installNativeBoundary, requireRTL, GB, type NativeBoundary, type FsInfoOption, type RamProfile, type CompletionMeta, type SpeechFakeOptions, type CalendarFakeOptions } from './nativeBoundary';
 import { createDownloadedModel } from '../utils/factories';
 
 /** Shared route params the test's navigation mock reads (set by setupChatScreen). */
@@ -71,6 +71,9 @@ export interface ChatHarnessOptions {
   pdf?: boolean;
   /** Back op-sqlite with a real node:sqlite engine, so the knowledge base stores and retrieves for real. */
   sqlite?: boolean;
+  /** Runs on the installed device before Home first mounts. Home's cards read saved state once at launch (the guide
+   *  library's records, say), so device state a test wants read at launch is seeded here, not after setup. */
+  beforeHome?: (boundary: NativeBoundary) => void | Promise<void>;
 }
 
 export async function setupChatScreen(opts: ChatHarnessOptions) {
@@ -127,6 +130,7 @@ export async function setupChatScreen(opts: ChatHarnessOptions) {
 
   // GESTURE: mount the real Home screen — its REAL hydration loads the record — then open the picker and TAP
   // the model row. The real handleSelectTextModel sets it active (no setState activeModelId shortcut).
+  await opts.beforeHome?.(boundary);
   const home = rtl.render(React.createElement(HomeScreen, { navigation: { navigate: () => {}, goBack: () => {}, setOptions: () => {}, addListener: () => () => {} } }));
   await rtl.waitFor(() => { expect(useAppStore.getState().downloadedModels.length).toBeGreaterThan(0); }, { timeout: 4000 });
   rtl.fireEvent.press(await rtl.waitFor(() => home.getByTestId('browse-models-button')));
