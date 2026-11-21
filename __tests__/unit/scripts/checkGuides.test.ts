@@ -195,6 +195,11 @@ describe('licence claim guard', () => {
     expect(releaseStatementProblem({ licenceNote: CLAIM, statementSeen: false }, '', false)).toBe('scanned, statement must be confirmed by eye');
     expect(releaseStatementProblem({ licenceNote: CLAIM, statementSeen: true }, '', false)).toBeNull();
   });
+
+  it('accepts a statement seen by eye when the text layer garbles it', () => {
+    expect(releaseStatementProblem({ licenceNote: CLAIM }, 'Approved for public rel1ease', true)).toBe('release statement not found in the document');
+    expect(releaseStatementProblem({ licenceNote: CLAIM, statementSeen: true }, 'Approved for public rel1ease', true)).toBeNull();
+  });
 });
 
 describe('redirect hops', () => {

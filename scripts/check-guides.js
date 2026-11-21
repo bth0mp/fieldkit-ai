@@ -150,11 +150,11 @@ function readTextLayer(file) {
   return { pages: parts.length - 1, hasText, head, text: parts.join('\f') };
 }
 
-/** Why a candidate's "approved for public release" claim cannot be accepted, or null if it can (or none is made). */
+/** Why a candidate's "approved for public release" claim fails, or null (also when none is made). statementSeen: true means it was read by eye, on a scan or where the text layer garbles it. */
 function releaseStatementProblem(candidate, headText, hasText) {
   if (!hasReleaseStatement(candidate.licenceNote)) return null;
   if (!hasText) return candidate.statementSeen === true ? null : 'scanned, statement must be confirmed by eye';
-  return hasReleaseStatement(headText) ? null : 'release statement not found in the document';
+  return hasReleaseStatement(headText) || candidate.statementSeen === true ? null : 'release statement not found in the document';
 }
 
 // A tripwire for review by eye: wide on purpose, since a miss is worse than a false alarm. Whole words only;
