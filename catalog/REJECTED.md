@@ -655,3 +655,1040 @@ on running a radio were looked at. Neither was listed.
   TC 21-3 of September 2025, prints the same chart as its Figure C-1 (PDF page 121, looked at). The two codes differ
   on X, which the app's Quick reference card now says. Page 83 also
   tells the reader to put strobe lights 'in holes so they can only be viewed from above', which is concealment.
+
+## Thirteenth batch, 20 November 2026: civilian agencies, Army and Defense Health Agency sheets, Navy manuals
+
+Three searches ran side by side: civilian agencies on their own sites and on govinfo (the Food Safety and Inspection
+Service, OSHA, FEMA, the Geological Survey, CDC, NIOSH and others), Army Public Health Center and Defense Health
+Agency fact sheets with the Armed Forces Pest Management Board, and the Navy's old training manuals from Wayback
+Machine captures of the Navy's own addresses. A second reviewer then downloaded every guide the searches passed,
+matched its hash, read the text for credits and looked at every picture page again. 43 were listed: 22 civilian, 19
+Army and Defense Health Agency, and two Navy (Tools and Their Uses, NAVEDTRA 14256, and Mathematics, Basic, NAVEDTRA
+14139, which is read only: most pages have no text layer).
+
+### Out on the second review
+
+- Prevention, Treatment, and Management of Cold Weather Injuries (US Army,
+  https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN45918-TB_MED_508-000-WEB-1.pdf): Fig 5-3 (PDF p58) reproduces
+  without credit the Falklands cold-injury photos that Borden Institute 'Medical Aspects of Harsh Environments' Vol 1
+  Ch 15 prints as Figs 15-2/15-3 under '(c) British Crown Copyright/MOD, reproduced with the permission of HMSO'; Fig
+  4-3 A-D (p42) are W. J. Mills Jr's Pictorial Atlas photos of his civilian Alaska patients. Crown Copyright is not US
+  public domain and the DSA cannot release it.
+- Cold Weather Injuries (US Army, https://ph.health.mil/resources/disease_epi-cold-weather-Injuries-factsheet.pdf): p2
+  photo captioned 'Photo from TB MED 508, 2005' is the same Crown Copyright/MOD Falklands image (Borden Fig 15-3,
+  mirrored); the frostbite photo matches Mills' Pictorial Atlas Fig 6a. Both are outside owners' pictures carried
+  over.
+- Deployment Health Quick-Guide: Wildfire Response (Defense Health Agency,
+  https://ph.health.mil/resources/em-wildfires-deployment-health-guide.pdf): p1 heat table prints Category 4 'Very
+  Heavy Work' as '20 min / 1/4 qt/hr'; the cited TB MED 507 Table 3-3 gives 1 1/4 qt/hr - a misprint that under-states
+  fluid fivefold (unsafe). Also the flame header image is an uncredited Photoshop CS 2004 TIFF with no creator,
+  stock-like.
+- Tick-Borne Relapsing Fever (Defense Health Agency,
+  https://ph.health.mil/resources/ento-tick-borne-relapsing-fever.pdf): p1 says the tick 'must be attached for 24-48
+  hours to transmit' the disease. That is hard-tick (Lyme) guidance; TBRF is spread by soft Ornithodoros ticks that
+  feed for under 30 minutes, often at night, so the advice is wrong and gives false reassurance. Pictures and release
+  are fine; the owner may overrule on another reading of the sentence.
+
+### Held for the owner: one question each, in `catalog/pending/owner-questions-2026-11-20.json`
+
+The lead-based paint sheet (DHA FS 058-1225, its page 1 photo), the human remains sheet (DHA FS 052-0125, "reviewed
+and incorporated"), the Pest Management Board's delousing guide (TG 6, scope) and Aerographer's Mate Module 5, Basic
+Meteorology (NAVEDTRA 14312, a climate map "after Köppen").
+
+### Out at the search: civilian agencies
+
+- How to Make 0.1% Chlorine Solution to Disinfect Surfaces: Non-healthcare Settings (CDC, CS-317768-A)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HE20_7000-PURL-gpo151330/pdf/GOVPUB-HE20_7000-PURL-gpo151330.pdf): The
+  drawn tub for '70% HTH' carries a red 'hth' mark in a blue ring on an orange band, copying the HTH brand's
+  packaging; with The Big Thaw's Dole logo also out, this is another organisation's logo. The page also names no
+  agency (only the CS number). Doses are correct. Owner could rule otherwise.
+- Stray Dogs in Hurricane Disaster Areas (CDC, govinfo 2012)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HE20_7000-PURL-gpo30995/pdf/GOVPUB-HE20_7000-PURL-gpo30995.pdf): The
+  page names no agency, so authorship rests only on the govinfo record; the dog silhouette and paw prints look like
+  generic clip art of unknown origin; points readers to petfinder.com.
+- Backyard Flock (CDC)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HE20_7000-PURL-gpo251375/pdf/GOVPUB-HE20_7000-PURL-gpo251375.pdf): Image
+  metadata dc:rights 'Chuck Schmidt'.
+- Preventing Heat-Related Illness or Death of Outdoor Workers (NIOSH)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HE20_7000-PURL-gpo41704/pdf/GOVPUB-HE20_7000-PURL-gpo41704.pdf): Image
+  metadata credits Thinkstock / Ron Chapple stock.
+- NIOSH Criteria for a Recommended Standard: Occupational Exposure to Heat and Hot Environments
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HE20_7100-PURL-gpo67041/pdf/GOVPUB-HE20_7100-PURL-gpo67041.pdf): 'Cover
+  photo by Thinkstock(c)'; outside reviewers thanked.
+- Protecting Yourself from Ticks and Mosquitoes (NIOSH)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HE20_7100-PURL-gpo74109/pdf/GOVPUB-HE20_7100-PURL-gpo74109.pdf): 'Image
+  courtesy of U.S. Department of Agriculture' and stock-style art; courtesy wording.
+- Protecting Yourself from Heat Stress (NIOSH Fast Facts)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HE20_7000-PURL-gpo41220/pdf/GOVPUB-HE20_7000-PURL-gpo41220.pdf):
+  Uncredited header photo art in a template whose sibling sheet carries Thinkstock metadata; doubt.
+- Protecting Yourself from Cold Stress (NIOSH Fast Facts)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HE20_7100-PURL-gpo74111/pdf/GOVPUB-HE20_7100-PURL-gpo74111.pdf): Same
+  NIOSH Fast Facts header art as the heat sheet; doubt.
+- Mosquito Bite Prevention (CDC)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HE20_7000-PURL-gpo65136/pdf/GOVPUB-HE20_7000-PURL-gpo65136.pdf): Lacks
+  the current warning against oil of lemon eucalyptus for children under 3; table of brand-name repellents.
+- Flooding and Mold (CDC colouring book)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HE20_7000-PURL-gpo88079/pdf/GOVPUB-HE20_7000-PURL-gpo88079.pdf):
+  Children's colouring book by a named artist whose federal status is unknown; low value.
+- Hurricane Recovery (CDC, 2003)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HE20_7000-PURL-LPS74943/pdf/GOVPUB-HE20_7000-PURL-LPS74943.pdf):
+  Outdated: '6 drops' of bleach per gallon with no bleach strength given.
+- Safety in a Power Outage (CDC, 2004)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HE20_7000-PURL-LPS61843/pdf/GOVPUB-HE20_7000-PURL-LPS61843.pdf): Web
+  printout; its 2-hour refrigerator rule differs from FSIS's current 4 hours; the listed FSIS emergency sheet covers
+  it.
+- Preparedness Messaging (CDC)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HE20_7000-PURL-gpo108772/pdf/GOVPUB-HE20_7000-PURL-gpo108772.pdf): Image
+  metadata credits stock photographers 'Juhku' and 'BenDC'.
+- Stinging Insects (NIOSH)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HE20_7100-PURL-gpo73870/pdf/GOVPUB-HE20_7100-PURL-gpo73870.pdf):
+  Stock-like header bee photo; 'Image courtesy of USDA'; outdated 'never squeeze the stinger or use tweezers' advice.
+- Extension Cords (NIOSH)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HE20_7100-PURL-gpo212498/pdf/GOVPUB-HE20_7100-PURL-gpo212498.pdf):
+  Co-branded with CPWR, a private research centre.
+- An Ax to Grind: A Practical Ax Manual (USFS MTDC)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A13-PURL-LPS100730/pdf/GOVPUB-A13-PURL-LPS100730.pdf): Illustrations
+  used by permission (Kock), Gransfors Bruks courtesy credits, material reprinted by permission.
+- Low-Impact Food Hoists (USFS)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A13-PURL-gpo250779/pdf/GOVPUB-A13-PURL-gpo250779.pdf): Technical
+  reviewer from Wilderness Outfitters, a private company; knot figure and bear cartoons of uncertain origin.
+- Africanized Honey Bees (USFS)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A13-PURL-gpo246590/pdf/GOVPUB-A13-PURL-gpo246590.pdf): Photos credited
+  to Dr. Gerald M. Loper, 'associated with' an ARS lab; federal employment not stated.
+- Keeping Warm on Fires (USFS)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A13-PURL-gpo246927/pdf/GOVPUB-A13-PURL-gpo246927.pdf):
+  Firefighter-specific; repeats the outdated 'most heat is lost from your head' claim.
+- Inspecting Buildings after Natural Disasters (USFS)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A13-PURL-gpo244477/pdf/GOVPUB-A13-PURL-gpo244477.pdf): Points to
+  NCSEA/ATC manuals and reproduces the SEERPlan cover, an outside work.
+- Emergency Communications (USFS, 2007)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A13-PURL-gpo238113/pdf/GOVPUB-A13-PURL-gpo238113.pdf): 2007
+  satellite-tracker evaluation; obsolete.
+- Wetland Trail Design and Construction (USFS)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A13-PURL-gpo121877/pdf/GOVPUB-A13-PURL-gpo121877.pdf): FHWA cooperation
+  boilerplate and a named illustrator of unknown status.
+- Floating Trail Bridges and Docks (USFS)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A13-PURL-gpo246131/pdf/GOVPUB-A13-PURL-gpo246131.pdf): FHWA 'views of
+  the contractor' boilerplate (outside authorship).
+- Rigging for Trail Work (USFS, 2024)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A13-PURL-gpo235248/pdf/GOVPUB-A13-PURL-gpo235248.pdf): Thanks outside
+  contributors (a retired California State Parks worker and others).
+- Fitness and Work Capacity (USFS)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A13-PURL-gpo237349/pdf/GOVPUB-A13-PURL-gpo237349.pdf): University of
+  Montana co-author; material reprinted by permission.
+- Air Drying of Lumber (Forest Products Laboratory)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A13-PURL-gpo27447/pdf/GOVPUB-A13-PURL-gpo27447.pdf): Carries the
+  University of Wisconsin line that is a pending owner question; not proposed.
+- Nutritive Value of Foods, Home and Garden Bulletin 72, 2002 (USDA ARS)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A-PURL-LPS56953/pdf/GOVPUB-A-PURL-LPS56953.pdf): Page 5 thanks
+  University of Maryland extension staff who 'reviewed the manuscript and provided helpful comments'; Table 2 is
+  sourced to Oregon State University Extension and the American Institute for Cancer Research.
+- Home Canning of Fruits and Vegetables, 1983 (USDA)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A-PURL-gpo23098/pdf/GOVPUB-A-PURL-gpo23098.pdf): Outdated canning
+  advice; not downloaded.
+- The Big Thaw - Safe Defrosting Methods for Consumers (USDA FSIS, 2010)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo127393/pdf/GOVPUB-A110-PURL-gpo127393.pdf): The 'USDA
+  Photo' header shows Dole Fruit 'N Juice boxes with the Dole logo legible twice, plus other branded food boxes:
+  another organisation's logo. Passed in the first session, dropped on a zoomed recheck.
+- Cooking Safely in the Microwave Oven (USDA FSIS, 2011)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo127402/pdf/GOVPUB-A110-PURL-gpo127402.pdf): Maker's
+  wordmark visible on the microwave in the 'USDA Photo' header; low value off grid.
+- Handling Food Safely on the Road (USDA FSIS, 2010)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo36942/pdf/GOVPUB-A110-PURL-gpo36942.pdf): Clean (cooler
+  photo credited USDA Photo), but it largely repeats the listed Food Safety While Hiking, Camping & Boating sheet.
+- "Danger Zone" (40 F - 140 F) (USDA FSIS, 2011)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo11877/pdf/GOVPUB-A110-PURL-gpo11877.pdf): Image metadata:
+  'Copyright 2005 Michael Pohuski. All Rights Reserved'.
+- Removing Odors from Refrigerators and Freezers (USDA FSIS, 2011)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo80762/pdf/GOVPUB-A110-PURL-gpo80762.pdf): Image metadata:
+  'Copyright 2005 Michael Pohuski. All Rights Reserved'.
+- Slow Cookers and Food Safety (USDA FSIS, 2012)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo30229/pdf/GOVPUB-A110-PURL-gpo30229.pdf): Image metadata:
+  'Copyright 2005 Michael Pohuski. All Rights Reserved'.
+- Food Product Dating (USDA FSIS, 2011)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo15519/pdf/GOVPUB-A110-PURL-gpo15519.pdf): Uncredited, posed
+  photograph of a shopper and butcher at a meat counter, with no USDA Photo line; doubt.
+- Bacon and Food Safety (USDA FSIS, 2011)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo127380/pdf/GOVPUB-A110-PURL-gpo127380.pdf): Uncredited
+  food-styling header photograph; sends home curing to a university extension page; low value.
+- Bison from Farm to Table (USDA FSIS, 2011)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo46864/pdf/GOVPUB-A110-PURL-gpo46864.pdf): Uncredited header
+  photograph of a bison herd; figures sourced to the National Bison Association; low value.
+- Shell Eggs from Farm to Table (USDA FSIS, 2011)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo19093/pdf/GOVPUB-A110-PURL-gpo19093.pdf): Quotes the book
+  'On Food and Cooking', an outside copyrighted work.
+- Cleanliness Helps Prevent Foodborne Illness (USDA FSIS, 2011)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo46859/pdf/GOVPUB-A110-PURL-gpo46859.pdf): 'in cooperation
+  with the Partnership for Food Safety Education' (Be Food Safe campaign).
+- Beef from Farm to Table (USDA FSIS, 2011)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo127379/pdf/GOVPUB-A110-PURL-gpo127379.pdf): PhotoDisc
+  licence line.
+- Lamb from Farm to Table (USDA FSIS, 2011)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo19083/pdf/GOVPUB-A110-PURL-gpo19083.pdf): PhotoDisc licence
+  line.
+- Duck and Goose from Farm to Table (USDA FSIS, 2011)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo19088/pdf/GOVPUB-A110-PURL-gpo19088.pdf): PhotoDisc licence
+  line.
+- Veal from Farm to Table (USDA FSIS, 2011)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo19096/pdf/GOVPUB-A110-PURL-gpo19096.pdf): PhotoDisc licence
+  line.
+- Water in Meat and Poultry (USDA FSIS, 2011)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo22025/pdf/GOVPUB-A110-PURL-gpo22025.pdf): PhotoDisc licence
+  line.
+- Sausages and Food Safety (USDA FSIS, 2011)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo62711/pdf/GOVPUB-A110-PURL-gpo62711.pdf): PhotoDisc licence
+  line.
+- Shelf-Stable Food Safety (USDA FSIS)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo38739/pdf/GOVPUB-A110-PURL-gpo38739.pdf): PhotoDisc licence
+  line (already in REJECTED.md).
+- Smoking Meat and Poultry (USDA FSIS)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo6366/pdf/GOVPUB-A110-PURL-gpo6366.pdf): PhotoDisc licence
+  line (already in REJECTED.md).
+- Smoking Meat and Poultry, other edition (USDA FSIS)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo26768/pdf/GOVPUB-A110-PURL-gpo26768.pdf): PhotoDisc licence
+  line.
+- Game from Farm to Table (USDA FSIS)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo112380/pdf/GOVPUB-A110-PURL-gpo112380.pdf): PhotoDisc
+  licence line (already in REJECTED.md).
+- Barbecue and Food Safety (USDA FSIS)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo26742/pdf/GOVPUB-A110-PURL-gpo26742.pdf): PhotoDisc licence
+  line (already in REJECTED.md).
+- Fires and Food Safety (USDA FSIS)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo85591/pdf/GOVPUB-A110-PURL-gpo85591.pdf): 'Test detectors
+  twice a year' (now monthly); lists Red Cross recommendations (already in REJECTED.md).
+- Cooking for Groups: A Volunteer's Guide to Food Safety (USDA FSIS)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo18780/pdf/GOVPUB-A110-PURL-gpo18780.pdf): Fight
+  BAC!/Partnership naming, a pending owner question; already in REJECTED.md.
+- High Altitude Cooking and Food Safety (USDA FSIS)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo62705/pdf/GOVPUB-A110-PURL-gpo62705.pdf): 'Colorado State
+  University Cooperative Extension contributed' (already in REJECTED.md).
+- Kitchen Thermometers (USDA FSIS)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo22020/pdf/GOVPUB-A110-PURL-gpo22020.pdf): Commercial
+  thermometer product cut-outs (held for the owner in REJECTED.md).
+- Kitchen Companion: Your Safe Food Handbook (USDA FSIS)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-A110-PURL-gpo234150/pdf/GOVPUB-A110-PURL-gpo234150.pdf): Image metadata
+  names stock agency 'Jose Luis Pelaez Inc' (already in REJECTED.md).
+- Working Safely Near Overhead Power Lines (OSHA alert, 2019)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-L35-PURL-gpo145211/pdf/GOVPUB-L35-PURL-gpo145211.pdf): Stock-style
+  uncredited silhouette photo of a lineman at sunset; six thin bullets.
+- Protecting Workers from Heat Stress (OSHA QuickCard 3154, 2017)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-L35-PURL-gpo92199/pdf/GOVPUB-L35-PURL-gpo92199.pdf): Uncredited grey
+  drawings of unknown origin (drinker, umbrella, no-coffee sign, T-shirt); FS-3743 covers the same ground in text
+  only.
+- Using Portable Generators Safely (OSHA fact sheet, 9/2005)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-L35-PURL-gpo9620/pdf/GOVPUB-L35-PURL-gpo9620.pdf): Gives '3 to 4 feet of
+  clear space' as the ventilation rule and no distance from the house; current federal advice is at least 20 feet
+  away.
+- Hand Hygiene in Hurricane-Affected Areas (OSHA QuickCard, 2005)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-L35-PURL-gpo21393/pdf/GOVPUB-L35-PURL-gpo21393.pdf): Advises washing
+  wounds with hand sanitizer; bleach doses given without bleach strength; doubt.
+- Fungi Hazards and Flood Cleanup (OSHA, 2005)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-L35-PURL-gpo116335/pdf/GOVPUB-L35-PURL-gpo116335.pdf): Superseded by the
+  listed FS-3713 mold sheet (2013).
+- Flood Cleanup (OSHA, 2005)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-L35-PURL-gpo31569/pdf/GOVPUB-L35-PURL-gpo31569.pdf): Superseded by the
+  listed FS-3276 Cleanup Hazards (2024).
+- The Cold Stress Equation (OSHA 3156, 1998)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-L35-PURL-LPS73931/pdf/GOVPUB-L35-PURL-LPS73931.pdf): Wind-chill table
+  'Adapted from: ACGIH Threshold Limit Values', an outside owner.
+- Fire Safety (OSHA FS-3527, 2020)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-L35-PURL-gpo213521/pdf/GOVPUB-L35-PURL-gpo213521.pdf): Clean, but only
+  employer compliance (exit routes, plans, standards); teaches no fire skills; low value.
+- Stopping for Water Keeps You Going (OSHA poster)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-L35-PURL-gpo142138/pdf/GOVPUB-L35-PURL-gpo142138.pdf): 'Developed by
+  Cal/OSHA', a state agency.
+- Keeping Workers Safe During Flood Cleanup (OSHA alert)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-L35-PURL-gpo144767/pdf/GOVPUB-L35-PURL-gpo144767.pdf): Stock-style
+  header photographs.
+- Preventing Carbon Monoxide Poisoning While Working with Portable Generators (OSHA alert)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-L35-PURL-gpo152061/pdf/GOVPUB-L35-PURL-gpo152061.pdf): Stock-style
+  header photographs.
+- Protect Rescue Workers and Emergency Responders After an Earthquake (OSHA alert)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-L35-PURL-gpo144779/pdf/GOVPUB-L35-PURL-gpo144779.pdf): Thin five-bullet
+  alert; low value.
+- Working Safely in Cold Weather (OSHA alert)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-L35-PURL-gpo145269/pdf/GOVPUB-L35-PURL-gpo145269.pdf): Thin six-bullet
+  alert; low value.
+- Prevent Heat Illness at Work (OSHA, 2021)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-L35-PURL-gpo157242/pdf/GOVPUB-L35-PURL-gpo157242.pdf): Stock-style flat
+  vector illustrations.
+- Ticks (OSHA) (https://www.govinfo.gov/content/pkg/GOVPUB-L35-PURL-gpo190326/pdf/GOVPUB-L35-PURL-gpo190326.pdf):
+  'Know your ticks' panel with cut-out photos of unknown origin.
+- Working Safely with Chain Saws (OSHA, 2005)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-L35-PURL-gpo17128/pdf/GOVPUB-L35-PURL-gpo17128.pdf): Superseded by the
+  listed 2018 FS-3920.
+- Rodents, Snakes and Insects (OSHA)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-L35-PURL-gpo9989/pdf/GOVPUB-L35-PURL-gpo9989.pdf): Outdated snakebite
+  first aid (keep the bite below heart level).
+- Falls and Other Hazards to Workers Removing Snow from Rooftops (OSHA hazard alert)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-L35-PURL-gpo154452/pdf/GOVPUB-L35-PURL-gpo154452.pdf): Stock-style roof
+  and snow-rake photographs.
+- NPS Preservation Briefs 01, 04, 05, 09, 10, 15, 19, 21, 22, 24, 26, 28, 29, 30, 31, 45 and 50
+  (https://www.nps.gov/orgs/1739/upload/preservation-brief-<n>.pdf): Outside photo credits, courtesy lines, outside
+  authors, a Wiley permission line, Shutterstock and CC BY-SA images across the set.
+- Weather Spotter's Field Guide, 2011 (NWS)
+  (https://web.archive.org/web/20250320000223id_/https://www.weather.gov/media/owlie/SGJune6-11.pdf): Photographer
+  copyrights in image metadata and on the cover.
+- Basic Spotters' Field Guide (NWS)
+  (https://web.archive.org/web/20260510203331id_/https://www.weather.gov/media/grr/brochures/nwsbasicspottersfieldguide.pdf):
+  '(c) Alan Moller' and 'Courtesy Roger Edwards'.
+- Advanced Spotters' Field Guide, NOAA PA 92055 (NWS)
+  (https://web.archive.org/web/20250206194256id_/https://www.weather.gov/media/grr/brochures/advspg.pdf):
+  Acknowledgements and outside photo credits (Tim Marshall, Alan Moller).
+- BLM Fencing and Water Developments handbooks ((no allowed host found)): No publisher host or allowed institutional
+  copy could be reached.
+- USDA Farmers' Bulletins at UNT Digital Library (https://digital.library.unt.edu/): UNT holds page images only, no
+  PDF the app can fetch.
+- How to Prepare for an Earthquake (FEMA)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo87895/pdf/GOVPUB-HS5_100-PURL-gpo87895.pdf): Image
+  metadata names stock sources (Blend Images, a.a.n.g.).
+- Drop, Cover, and Hold On poster, FEMA 529 (2014)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo123356/pdf/GOVPUB-HS5_100-PURL-gpo123356.pdf): One page
+  of about 30 words; cartoon with no creator.
+- FEMA P-1078 earthquake publication
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo138627/pdf/GOVPUB-HS5_100-PURL-gpo138627.pdf): Cal OES,
+  Earthquake Country Alliance and ShakeOut logos; 'developed in partnership with' Cal OES.
+- Earthquake Safety Checklist, FEMA B-526 (2023)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo252214/pdf/GOVPUB-HS5_100-PURL-gpo252214.pdf):
+  Stock-style flat illustrations (one shows a Fiat 500); a note sourced to the Humane Society.
+- Earthquake Safety Checklist, FEMA B-526 (December 2014)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo62042/pdf/GOVPUB-HS5_100-PURL-gpo62042.pdf): Glossy
+  clip-art icons; first aid advice gives mouth-to-mouth only (outdated).
+- Earthquake Safety Checklist, FEMA 526 (August 2005)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-FDLP665/pdf/GOVPUB-HS5_100-PURL-FDLP665.pdf): Outdated
+  advice: 'supported archways' as a safe spot, mouth-to-mouth only, Halazone tablets.
+- Earthquake Safety Guide for Homeowners, FEMA 530 (2005)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-LPS115413/pdf/GOVPUB-HS5_100-PURL-LPS115413.pdf): Same
+  Applied Technology Council lineage as FEMA P-530 in REJECTED.md; not downloaded.
+- FEMA 240 (2006)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-LPS121261/pdf/GOVPUB-HS5_100-PURL-LPS121261.pdf): Cover
+  photo by Lloyd Wolf 'for the U.S. Census Bureau'; quotes NASP; 'tips from the National Institute of Mental Health
+  and other organizations'.
+- How to Prepare for a Flood (FEMA)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo86333/pdf/GOVPUB-HS5_100-PURL-gpo86333.pdf): Uncredited,
+  stock-like cover photo.
+- Flood Preparation and Safety (FEMA)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo9393/pdf/GOVPUB-HS5_100-PURL-gpo9393.pdf): Image marked
+  © Corbis.
+- Coping with a Flood (FEMA)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-FEM1-PURL-LPS19310/pdf/GOVPUB-FEM1-PURL-LPS19310.pdf): A printout of a
+  web page, not a publication.
+- After a Flood: The First Steps (FEMA L-198 / ARC 4476)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-LPS58396/pdf/GOVPUB-HS5_100-PURL-LPS58396.pdf): Joint
+  American Red Cross product, co-branded.
+- Protecting Your Home and Property from Flood Damage, FEMA P-805 (2010)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo59965/pdf/GOVPUB-HS5_100-PURL-gpo59965.pdf): Landslide
+  chapter reproduces an uncredited outside homeowners' landslide guide; landslide photo has an empty rights field.
+- FEMA P-805 predecessor (1997/2003 edition)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-LPS73856/pdf/GOVPUB-HS5_100-PURL-LPS73856.pdf): Same
+  landslide pages as P-805, and superseded.
+- Flood After Fire (FEMA, 2012)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo87389/pdf/GOVPUB-HS5_100-PURL-gpo87389.pdf): NFIP
+  insurance marketing; stock-like header photo.
+- How to Speak Flood, FEMA P-1033 (2016)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo74201/pdf/GOVPUB-HS5_100-PURL-gpo74201.pdf): Glossary
+  for insurance agents, not a how-to.
+- How to Prepare for a Wildfire (FEMA)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo87861/pdf/GOVPUB-HS5_100-PURL-gpo87861.pdf): Uncredited,
+  stock-like cover photo.
+- Home Builder's Guide to Construction in Wildfire Zones, FEMA P-737
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo60104/pdf/GOVPUB-HS5_100-PURL-gpo60104.pdf): Prepared by
+  URS (contractor); Anchor Point Group photo; courtesy MonierLifetile.
+- Avoiding Wildfire Damage: A Checklist for Homeowners (FEMA, 2002)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-FEM1-PURL-LPS18949/pdf/GOVPUB-FEM1-PURL-LPS18949.pdf): Outdated:
+  1/4-inch vent mesh and 1/2-inch mesh under decks (current advice is 1/8 inch).
+- Wildfire... Are You Prepared? (FEMA)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-FEM1-PURL-LPS18950/pdf/GOVPUB-FEM1-PURL-LPS18950.pdf): Red Cross logo;
+  joint product.
+- Rebuilding After a Wildfire (FEMA)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo194519/pdf/GOVPUB-HS5_100-PURL-gpo194519.pdf): Says it
+  was produced with the Federal Alliance for Safe Homes and the Institute for Business and Home Safety.
+- Wildfires (FEMA)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo87898/pdf/GOVPUB-HS5_100-PURL-gpo87898.pdf): Metadata
+  creator 'FEMA/CarrotNewYork', a design agency.
+- Taking Shelter from the Storm, FEMA P-320, 4th edition
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo63161/pdf/GOVPUB-HS5_100-PURL-gpo63161.pdf): Appendix A
+  acknowledges URS, Texas Tech University and others; images with outside creators.
+- How to Prepare for a Tornado (FEMA)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo87893/pdf/GOVPUB-HS5_100-PURL-gpo87893.pdf): Uncredited,
+  stock-like cover photo.
+- How to Prepare for a Hurricane (FEMA)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo87878/pdf/GOVPUB-HS5_100-PURL-gpo87878.pdf): Uncredited
+  flat illustrations of unknown origin.
+- Be Prepared for a Tornado (FEMA)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo173190/pdf/GOVPUB-HS5_100-PURL-gpo173190.pdf): Ready.gov
+  hazard-sheet class already rejected in REJECTED.md (P-2143, which cites P-2064).
+- Snow Load Safety Guide, FEMA P-957
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo59955/pdf/GOVPUB-HS5_100-PURL-gpo59955.pdf): Stock
+  photographer Alexey Smolyanyy; Cornell references.
+- Are You Ready?, FEMA P-2064 (2020)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo159555/pdf/GOVPUB-HS5_100-PURL-gpo159555.pdf): Already
+  in REJECTED.md.
+- CERT Basic Training Participant Manual (2019)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo185734/pdf/GOVPUB-HS5_100-PURL-gpo185734.pdf): Already
+  in REJECTED.md.
+- Prepare for Emergencies Now (FEMA Ready)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo63993/pdf/GOVPUB-HS5_100-PURL-gpo63993.pdf): Digital
+  Vision and Stockbyte stock images; consulted with AARP, the American Red Cross and the National Organization on
+  Disability.
+- Prepare for Emergencies Now (FEMA Ready, second printing)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo72805/pdf/GOVPUB-HS5_100-PURL-gpo72805.pdf): Same as
+  gpo63993: stock images and outside consultees.
+- Food and Water in an Emergency (FEMA, August 2004)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo71537/pdf/GOVPUB-HS5_100-PURL-gpo71537.pdf): Joint FEMA
+  and American Red Cross booklet: page 16 presents it with Red Cross Community Disaster Education, Red Cross 'A'
+  numbers and redcross.org; metadata author is a named person.
+- Prepare Your Pets for Disasters (FEMA Ready, 2021)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo159547/pdf/GOVPUB-HS5_100-PURL-gpo159547.pdf): Stock
+  photo: image metadata 'Eric Isselée', '© lifeonwhite.com'.
+- How to Prepare for a Winter Storm (FEMA, dated January 2011)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo85639/pdf/GOVPUB-HS5_100-PURL-gpo85639.pdf): Stock
+  photos: metadata names Blend Images - REB Images, Richard Newstead, peeter viisimaa, '(c) Andrew Bret Wallis', '(c)
+  Philip and Karen Smith'.
+- Prepare for Emergencies Now: Information for Pet Owners (FEMA Ready)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo86024/pdf/GOVPUB-HS5_100-PURL-gpo86024.pdf): Stockdisc
+  images; consulted with the ASPCA, the American Veterinary Medical Association and the Humane Society of the U.S.
+- Private Water Crossings, FEMA P-778 (June 2009)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo54905/pdf/GOVPUB-HS5_100-PURL-gpo54905.pdf): Page 4
+  (printed 2) reproduces a page of a state Department of Natural Resources permit packet ('Clear Span Bridge General
+  Permit Packet', 01/23/2008, NR 320 Adm. Code); also a sandbag cut-out photo and sketches of unknown origin.
+- Protecting Your Family From Fire, USFA FA-130 (March 2008)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo6447/pdf/GOVPUB-HS5_100-PURL-gpo6447.pdf): Pictures and
+  rights pass (bespoke uncredited illustrations), but the smoke-alarm advice is outdated: page 7 says a bedroom needs
+  its own alarm only if you sleep with the door closed (current USFA advice: an alarm in every bedroom), and page 8
+  sets alarms 'no closer than 3 feet from the door to a kitchen' (current advice: at least 10 feet from a cooking
+  appliance).
+- Fire Safety for Older Adults, USFA FA-221 (October 2018)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_200-PURL-gpo119393/pdf/GOVPUB-HS5_200-PURL-gpo119393.pdf): Page 16
+  photo metadata: 'Photographer: Mauro Scarone', 'Copyright:Mauro Scarone'.
+- Fire Safety Checklist for Older Adults, USFA FA-221 (May 2010)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_200-PURL-gpo16825/pdf/GOVPUB-HS5_200-PURL-gpo16825.pdf): Uncredited,
+  stock-like cover photo of an older couple on a bench; superseded by the 2018 edition.
+- After the Fire, USFA FA-46 (January 2019)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_200-PURL-gpo160017/pdf/GOVPUB-HS5_200-PURL-gpo160017.pdf):
+  Uncredited, stock-like photos: cover (burned house) and page 4 (passport and Social Security card cut-out).
+- Campus Fire Safety, USFA FA-334 (October 2012)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_200-PURL-gpo187887/pdf/GOVPUB-HS5_200-PURL-gpo187887.pdf):
+  Uncredited, stock-like cover photo of students; campus-specific.
+- Electrical Fire Safety, USFA (May 2015)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_200-PURL-gpo188257/pdf/GOVPUB-HS5_200-PURL-gpo188257.pdf): Stock
+  photos: metadata 'Iriana Shiyan' / 'artazum, LLC', '© 2013 Michael Krinke Photography. ALL RIGHTS RESERVED',
+  '365mm'.
+- Summertime Burn Safety, USFA (2019)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_200-PURL-gpo138918/pdf/GOVPUB-HS5_200-PURL-gpo138918.pdf): One-page
+  flyer, about 930 characters of text (below the 2,000 threshold); uncredited photo.
+- Grilling Fire Safety, USFA (2019)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_200-PURL-gpo138929/pdf/GOVPUB-HS5_200-PURL-gpo138929.pdf): One-page
+  flyer, about 690 characters of text; uncredited illustration.
+- Protect Your Home and Community From Wildfire, USFA (2020)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_200-PURL-gpo138994/pdf/GOVPUB-HS5_200-PURL-gpo138994.pdf): One-page
+  flyer, about 710 characters of text; uncredited photo.
+- Wildfire Evacuation, USFA (2020)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_200-PURL-gpo142565/pdf/GOVPUB-HS5_200-PURL-gpo142565.pdf): One-page
+  flyer, about 1,200 characters of text; uncredited photos.
+- Fire Safety for People With Disabilities, USFA (2020)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_200-PURL-gpo153049/pdf/GOVPUB-HS5_200-PURL-gpo153049.pdf): One-page
+  flyer, about 970 characters of text; uncredited photo.
+- Sesame Street Fire Safety Program titles, USFA (2015)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HS5_200-PURL-gpo124152/pdf/GOVPUB-HS5_200-PURL-gpo124152.pdf): Sesame
+  Workshop characters (outside owner); also gpo62843, gpo62407, gpo62409, gpo124147, gpo124148. Not downloaded.
+- Sinkholes, USGS Fact Sheet 2007-3060 (https://pubs.usgs.gov/fs/2007/3060/pdf/FS2007-3060.pdf): Map data credited to
+  the Missouri Department of Natural Resources; Missouri-specific.
+- Living with Volcano Hazards, USGS Fact Sheet 2018-3075 (https://pubs.usgs.gov/fs/2018/3075/fs2018-3075.pdf):
+  'Copyrighted photograph by Mark Stensaas, used with permission'; a photo courtesy of Robert Smith, University of
+  Utah.
+- Protecting Your Family From Earthquakes: The Seven Steps to Earthquake Safety, USGS GIP 42
+  (https://pubs.usgs.gov/gip/2007/42/): Co-authored with the American Red Cross, the California Earthquake Authority
+  and others.
+- 100-Year Flood: It's All About Chance, USGS GIP 106
+  (https://pubs.usgs.gov/gip/106/pdf/100-year-flood_041210web.pdf): Image marked ©Srenco93.
+- Geologic Hazards at Volcanoes, USGS GIP 64 (https://pubs.usgs.gov/gip/64/gip64.pdf): One-page poster, image only, no
+  text layer.
+- Hazards: A National Threat fact sheets, USGS (2005-2006) (https://pubs.usgs.gov/fs/2006/3016/2006-3016.pdf):
+  Programme overviews, the same class as Landslide Hazards FS 2005-3156 in REJECTED.md (also FS 2006-3014, 2006-3015,
+  2005-3121). Not downloaded.
+- Scaffold Use in the Construction Industry, OSHA 3150
+  (https://www.govinfo.gov/content/pkg/GOVPUB-L35-PURL-gpo14193/pdf/GOVPUB-L35-PURL-gpo14193.pdf): Uncredited cover
+  photo; regulatory compliance content.
+- Fall Protection in Construction, OSHA 3146 (2015)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-L35-PURL-gpo171942/pdf/GOVPUB-L35-PURL-gpo171942.pdf): 'Cover photo:
+  Dona File' and 'Photo: Skip Pennington' (rights 2011).
+- Personal Protective Equipment, OSHA 3151 (2004)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-L35-PURL-gpo142826/pdf/GOVPUB-L35-PURL-gpo142826.pdf): Uncredited cover
+  photo.
+- Seven Steps to Correctly Wear a Respirator at Work (OSHA, 2020)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-L35-PURL-gpo141699/pdf/GOVPUB-L35-PURL-gpo141699.pdf): One page with
+  uncredited posed photos.
+- Tractor Hazards, OSHA FS-3835 (2015)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-L35-PURL-gpo142478/pdf/GOVPUB-L35-PURL-gpo142478.pdf): Stock-style barn
+  header photo.
+- Preventing Injuries When Working With Skid-Steer Loaders (NIOSH, 2010)
+  (https://www.govinfo.gov/content/pkg/GOVPUB-HE20-PURL-gpo174234/pdf/GOVPUB-HE20-PURL-gpo174234.pdf): Acknowledgments
+  name University of Iowa contributors and the Association of Equipment Manufacturers.
+- Trenching and Excavation Safety, OSHA 2226-10R (2015)
+  (https://web.archive.org/web/20210301230346id_/https://www.osha.gov/sites/default/files/publications/osha2226.pdf):
+  Page 2: 'Cover photo courtesy of Speed Shore Corp.'
+- Excavations, OSHA 2226 (2000, reprinted)
+  (https://web.archive.org/web/20020919173122id_/http://www.osha.gov:80/Publications/Osha2226.pdf): Nearly passed:
+  public-domain statement on page 2, pictures are two line drawings (Figure 1 Type C soil slope, Figure 2 trench
+  shields). Left out on doubt: pages 5-6 say the protective-system rule does not apply to house foundation/basement
+  excavations under 7.5 feet (or benched) when listed conditions hold. That rests on a 1995 OSHA suspension memo whose
+  current status I could not confirm (osha.gov refuses automated requests; the 2015 edition drops the passage).
+- Concepts and Techniques of Machine Safeguarding, OSHA 3067
+  (https://web.archive.org/web/20041014075016id_/http://www.osha.gov/Publications/osha3067.pdf): Only capture is an
+  image-only scan (88 pages, 6,929,621 bytes, no text layer); later osha.gov addresses redirect to a 404.
+- NIOSH Alert 96-118 summary (Wayback capture)
+  (https://web.archive.org/web/20120605111329id_/http://www.cdc.gov/niosh/docs/96-118/pdfs/96-118asum.pdf): Joint with
+  the Colorado Department of Public Health and Environment; image-only scan.
+- NIOSH Alert 90-103 summary (Wayback capture)
+  (https://web.archive.org/web/20150910033103id_/http://www.cdc.gov/niosh/docs/90-103/pdfs/90-103sum.pdf): One-page
+  image-only scan.
+- NIOSH Alerts 88-102 and 94-105 (Wayback) (http://www.cdc.gov/niosh/docs/94-105/): No PDF capture; the archive holds
+  only the HTML pages.
+- CERT Basic Training Participant Manual, January 2011 (citizencorps.gov)
+  (https://web.archive.org/web/20110517063408id_/http://www.citizencorps.gov:80/cert/downloads/training/participantmanual/PM-Combined.pdf):
+  'Developed By: PerformTech Inc.' (contractor); page 3 thanks focus-group members from state and local agencies.
+
+### Out at the search: Army, Defense Health Agency and Pest Management Board
+
+- Arctic and Cold Weather Maintenance Operations, TM 4-33.31, December 2025 (US Army)
+  (https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN45406-TM_4-33.31-000-WEB-1.pdf): Figure 3-3 (page 49) is two studio
+  cut-out photos of commercial battery load testers, each with a maker's wordmark (too small to read): evidently
+  manufacturer product photos. Also weapons chapters 6-7 and missile handling (about 15%). Statement A on page 1; the
+  other pictures are clean (Figure 1-1 is derived from the Army Topographic Engineering Center).
+- Mountain Leader's Guide to Winter Operations, MCRP 12-10A.2 (formerly MCRP 3-35.1B), 2013, Change 1 2018 (US Marine
+  Corps)
+  (https://web.archive.org/web/20220122075631id_/https://www.marines.mil/portals/1/Publications/MCRP%2012-10A.2.pdf):
+  Figure 9-2 (page 67) is a 3D-rendered cut-out of a BvS10 Viking with a UK registration plate, evidently not the
+  Marine Corps' own (a maker-style render). The avalanche transceiver guidance is dated (analog beacon, 2.275 kHz
+  units). About a quarter is tactics: combat tracking and antitracking, countermobility, over-snow vehicles, skiborne
+  firing positions. Distribution A on the cover. The 2016 capture
+  (https://web.archive.org/web/20240620070013id_/https://www.marines.mil/Portals/1/Publications/MCRP%2012-10A.2%20(Formerly%20MCRP%203-35.1B).pdf)
+  is the same text before Change 1.
+- Mountain Leader's Guide to Mountain Warfare Operations, MCRP 12-10A.3 (formerly MCRP 3-35.1C), Change 1 2018 (US
+  Marine Corps)
+  (https://web.archive.org/web/20251030232829id_/https://www.marines.mil/Portals/1/Publications/MCRP%2012-10A.3%20GN.pdf):
+  Manufacturers' catalogue product photos: Black Diamond logo on hexes (page 166, Figure 6-25), a Petzl Grigri with
+  PETZL embossed (page 187, Figure 6-41), and cut-out shots of nuts, cams, pitons, a snow stake, a 'Coyote', ice
+  screws and a harness (pages 164, 168, 170, 237, 306). Also about 30% doctrine (intelligence, C2, maneuver, security,
+  fires, force protection). Distribution A; 420 pages, 50.9 MB; every picture page was looked at.
+- Marine Corps Water Survival, MCRP 8-10B.6, 2016 (US Marine Corps)
+  (https://web.archive.org/web/20201202023059id_/https://www.marines.mil/portals/1/Publications/MCRP%208-10B.6.pdf):
+  Outdated safety advice: the resuscitation steps tell lay rescuers to give two breaths, then check for a pulse before
+  starting CPR, and refer to MCRP 3-40A.9 (already out for pre-2005 CPR); the same ground as the rejected TC 21-21.
+  Distribution A, no text credits; the picture pages were not audited. The 2022 capture (?ver=2017-09-22) is truncated
+  at 1 MB.
+- Afoot in the Desert, FMFRP 0-53, 1990 reprint of the 1956 Air University text (US Marine Corps)
+  (https://web.archive.org/web/20231120150513id_/https://www.marines.mil/Portals/1/Publications/FMFRP%200-53%20Afoot%20in%20the%20Desert.pdf):
+  Photos credited 'Photo by Carleton S. Coon' (pages 18 and 49), an outside photographer; 1956 survival advice; a scan
+  with an OCR text layer.
+- Construction Estimating, MCRP 3-40D.12 / NTRP 4-04.2.3 / TM 3-34.41 / AFPAM 32-1000, December 2010
+  (https://web.archive.org/web/20221222013457id_/https://www.marines.mil/Portals/1/Publications/MCRP%203-40D.12.pdf):
+  Scope: military construction project estimating (estimate levels, procurement, labour and equipment production
+  planning). Planning and administration under ruling 5. Distribution A.
+- Base Camps, ATP 3-37.10 / MCRP 3-40D.13, January 2017
+  (https://web.archive.org/web/20251127123444id_/https://www.marines.mil/portals/1/Publications/MCRP%203-40d.13.pdf):
+  Already rejected as ATP 3-37.10 (planning). Note: armypubs now also serves a PDF of the newer ATP 3-37.10 at
+  https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/ATP 3-37x10 FINAL WEB.pdf (it was earlier rejected as EPUB
+  only); not re-proposed.
+- Radio Operator's Handbook, MCRP 8-10B.10, Change 1 2018 (US Marine Corps)
+  (https://web.archive.org/web/20190726025020id_/https://www.marines.mil/Portals/1/Publications/MCRP%208-10B.10.pdf?ver=2019-07-11-074614-383):
+  Scope: military radio procedures and equipment, as with the rejected ATP 6-02.53. The distribution statement letter
+  does not come through in the text layer.
+- Antenna Handbook, MCRP 8-10B.11 (formerly MCRP 3-40.3C)
+  (https://web.archive.org/web/20200112012230id_/https://www.marines.mil/Portals/1/Publications/MCRP%208-10B.11.pdf?ver=2017-03-15-092827-423):
+  Same publication as the already-rejected MCRP 3-40.3C.
+- Boat Crew Handbook - Seamanship Fundamentals, BCH 16114.4, December 2017 (US Coast Guard)
+  (https://www.uscga-district-7.org/pdf/operations/seamanship_fundamentals_dec_2017.pdf): No public-release statement:
+  the handbook's distribution paragraph says only that an electronic copy is on the internal CG-731 portal. No
+  official public host found (the Wayback CDX of dcms.uscg.mil and dco.uscg.mil has no BCH files); only Coast Guard
+  Auxiliary hosts. The other volumes (BCH 16114.1 Boat Operations, .2 Rescue and Survival, .3 Navigation, .5 First
+  Aid) share the format and were not fetched.
+- Rescue and Survival Systems Manual, COMDTINST M10470.10H, October 2020 (US Coast Guard)
+  (https://web.archive.org/web/20210501083841id_/https://media.defense.gov/2020/Nov/03/2002528748/-1/-1/0/CIM_10470_10H.PDF):
+  No public-release statement: it prints 'DISTRIBUTION - SDL No. 170' and 'Internet release is authorized', which is
+  not the required statement. It is also equipment policy, procurement and maintenance (administration), naming
+  commercial PFD models. The official host returns 403 to the app's User-Agent.
+- Tri-Service Food Code, TB MED 530, 2019 (US Army, Navy, Air Force)
+  (https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/ARN15052_TB_MED_530_FINAL.pdf): Scope: a regulatory food code
+  for military food establishments (rule 5, as with EM 385-1-1); not read further for credits.
+- Veterinary Care and Management of the Military Working Dog, TB MED 298, May 2019 (US Army)
+  (https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/ARN17825_TBMED298_FINAL.pdf): Scope: a veterinarian-level
+  clinical manual (radiography, CT and MRI, laparotomy and gastrectomy) and MWD programme administration; not a
+  civilian how-to. Distribution A.
+- Maritime Standards and Safety, TM 4-15.21, 2023 (US Army)
+  (https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN37975-TM_4-15.21-000-WEB-1.pdf): Scope: Army watercraft standards
+  and safety administration; not read further.
+- SERE Operations, AFH 10-644, 2017 (US Air Force)
+  (https://web.archive.org/web/20230728232124id_/https://static.e-publishing.af.mil/production/1/af_a3/publication/afh10-644/afh10-644.pdf):
+  No public-release statement: page 2 says only 'There are no releasability restrictions on this publication.'
+  e-publishing.af.mil returns 403 to the app's User-Agent.
+- Small Unit Leader's Guide to Mountain Warfare Operations, MCRP 12-10A.1, 2013, Change 1 2018 (US Marine Corps)
+  (https://web.archive.org/web/20230204012449id_/https://www.marines.mil/portals/1/Publications/MCRP%2012-10A.1%20gn.pdf):
+  Tactics: command and control, mountain patrolling, fires, defensive positions, camouflage, patrol and warning
+  orders. Distribution A.
+- Cold Region Operations, ATTP 3-97.11 / MCRP 3-35.1D, January 2011
+  (https://web.archive.org/web/20240320143204id_/https://www.marines.mil/portals/1/Publications/MCRP%203-35.1D%20Cold%20Region%20Operations.pdf?ver=2017-08-16-115016-790):
+  Doctrine (full spectrum operations, combat power).
+- MCRP 3-40A.1 and MCRP 3-40A.3 (MTTP for treatment of chemical and biological warfare casualties)
+  (https://web.archive.org/web/20240320143005id_/https://www.marines.mil/Portals/1/Publications/MCRP%203-40A.1.pdf?ver=2019-03-12-101225-567):
+  Same publications as the rejected ATP 4-02.85 and ATP 4-02.84 (doctrine). MCRP 3-40A.3:
+  https://web.archive.org/web/20201122085153id_/https://www.marines.mil/Portals/1/Publications/MCRP%203-40A.3.pdf
+- MCRP 4-11.1C (2013 edition of ATP 4-02.84)
+  (https://web.archive.org/web/20240320142907id_/https://www.marines.mil/portals/1/Publications/MCRP%204-11.1c.pdf?ver=2016-12-05-140400-790):
+  Doctrine; an earlier edition of a rejected publication.
+- Health Service Support Field Reference Guide, MCRP 3-40A.5
+  (https://web.archive.org/web/20230619212922id_/https://www.marines.mil/Portals/1/Publications/MCRP%203-40A.5.pdf):
+  Doctrine and administration.
+- Contingency Contracting, MCRP 3-40B.3
+  (https://web.archive.org/web/20220123022943id_/https://www.marines.mil/Portals/1/Publications/MCRP%203-40B.3.pdf):
+  Administration.
+- Petroleum Operations, MCRP 3-40B.5
+  (https://web.archive.org/web/20240330131553id_/https://www.marines.mil/Portals/1/Publications/MCRP%203-40B.5.pdf):
+  Doctrine and administration.
+- Water Support Operations, MCRP 3-40D.14
+  (https://web.archive.org/web/20230630080118id_/https://www.marines.mil/Portals/1/Publications/MCRP%203-40D.14.pdf):
+  Same publication as the rejected ATP 4-44.
+- First Aid, MCRP 3-40A.9 (formerly MCRP 3-02G)
+  (https://web.archive.org/web/20210810014544id_/https://www.marines.mil/Portals/1/Publications/MCRP%203-40A.9.pdf):
+  The rejected MCRP 3-02G content (pre-2005 CPR).
+- MCRP 3-40D.6
+  (https://web.archive.org/web/20250914082326id_/https://www.marines.mil/portals/1/Publications/MCRP%203-40D.6.pdf):
+  The only capture is truncated at 5 MB, so it cannot be checked or fetched whole.
+- MEDIC: Medical Education and Demonstration of Individual Competence, TC 8-800, 2021 (US Army)
+  (https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN33634-TC_8-800-000-WEB-1.pdf): Medic-level procedures (scope); not
+  downloaded.
+- Principles of Automotive Vehicles, TM 9-8000
+  (https://armypubs.army.mil/ProductMaps/PubForm/Details.aspx?PUB_ID=10403): No PDF on armypubs (EM media only).
+- Use and Care of Hand Tools and Measuring Tools, TM 9-243
+  (https://armypubs.army.mil/ProductMaps/PubForm/Details.aspx?PUB_ID=26331): No PDF on armypubs (EM media only).
+- Maintenance in the Desert, TB 43-0239 (https://armypubs.army.mil/ProductMaps/PubForm/Details.aspx?PUB_ID=48290): No
+  PDF on armypubs (EM 0178 only).
+- Solder and Soldering, TB SIG 222 (https://armypubs.army.mil/ProductMaps/PubForm/Details.aspx?PUB_ID=12954): No PDF
+  on armypubs (EM media only).
+- Armed Forces Recipe Service, TM 10-412 (https://armypubs.army.mil/ProductMaps/PubForm/Details.aspx?PUB_ID=27625): No
+  PDF on armypubs (EM media only).
+- Operator's Manual for Extended Cold Weather Clothing System Gen III, TM 10-8415-236-10
+  (https://armypubs.army.mil/ProductMaps/PubForm/Details.aspx?PUB_ID=84917): No PDF on armypubs (EM media only).
+- TM 10-6140-200-14 (industrial motive-power batteries)
+  (https://armypubs.army.mil/ProductMaps/PubForm/Details.aspx?PUB_ID=33420): No PDF on armypubs (EM media only).
+- Soldier's Manual and Trainer's Guide, MOS 91B Wheeled Vehicle Mechanic, STP 9-91B13-SM-TG, 2024
+  (https://armypubs.army.mil/epubs/DR_pubs/DR_c/ARN40600-STP_9-91B13-SM-TG-000-WEB-1.pdf): DR_c folder: the link
+  redirects to an Army sign-in.
+- Soldier's Manual and Trainer's Guide, MOS 91E Allied Trades Specialist, STP 9-91E13-SMTG, 2026
+  (https://armypubs.army.mil/epubs/DR_pubs/DR_c/ARN46831-STP_9-91E13-SMTG-000-WEB-1.pdf): DR_c folder: the link
+  redirects to an Army sign-in.
+- Special Forces Tracking and Countertracking, TC 18-35, 2023
+  (https://armypubs.army.mil/epubs/DR_pubs/DR_c/ARN38230-TC_18-35-000-WEB-1.pdf): DR_c folder (sign-in); also tactics.
+- Sapper Leader Course Handbook, TC 3-34.85, 2023
+  (https://armypubs.army.mil/epubs/DR_pubs/DR_b/ARN37235-TC_3-34.85-000-WEB-1.pdf): DR_b folder (sign-in); also
+  tactics.
+- Facility Sanitation Controls and Inspections, TB MED 531, 2019
+  (https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN43612-TB_MED_531-001-WEB-2.pdf): Administration (inspection
+  programme).
+- Dining Facility Operations, TM 4-41.11 (https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tm4_41x11.pdf):
+  Administration (dining facility management).
+- Occupational and Environmental Health Pest Surveillance, TB MED 561, 1992
+  (https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/tbmed561.pdf): Outdated (1992 pesticide and surveillance
+  guidance) and administration.
+- Army graphic training aids: Cold Weather Smart Card GTA 20-01-001, Poisonous Snake Bite Treatment GTA 08-05-047,
+  Injurious Plants GTA 08-05-055, Field Feeding Quick Reference GTA 10-01-008, Petroleum and Water Quick Reference GTA
+  10-09-001 (https://armypubs.army.mil/ProductMaps/PubForm/Details.aspx?PUB_ID=1032238): armypubs lists no PDF for
+  these GTA items (as with the GTAs already rejected).
+- ATP 7-22.02 Holistic Health and Fitness Drills and Exercises
+  (https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN45013-ATP_7-22.02-001-WEB-4.pdf): Acknowledgements page (page 21)
+  says copyright owners have granted permission to reproduce material. FM 7-22 is already in REJECTED.md.
+- Lyme Disease, FS 18-011-0618 (https://ph.health.mil/resources/Lyme_Disease_FS_18-011-0618.pdf): Photo of branded
+  commercial repellent products (Cutter and others), 'Courtesy Graham Snodgrass'.
+- Tick Control Around the Home, FS 18-001-0818
+  (https://ph.health.mil/resources/TickControlAroundtheHome_FS_18-001-0818.pdf): Same branded repellent product photo.
+- Deer Hunter Fact Sheet, FS 18-079-0919 (https://ph.health.mil/resources/DeerHunter_FS_18-079-0919.pdf): Same branded
+  repellent product photo.
+- DoD Insect Repellent System, FS 18-009-1218
+  (https://ph.health.mil/resources/DoD_Insect_Repellent_System_FS_18-009-1218.pdf): Branded product photo; military
+  uniform system.
+- Brown Recluse Spiders, FS 18-027-0317 (https://ph.health.mil/resources/BrownRecluseSpiders_FS_18-027-0317.pdf):
+  Drawings and photos 'courtesy of' University of Kentucky, University of Nebraska and University of California
+  Riverside.
+- Widow Spiders, FS 18-030-0818 (https://ph.health.mil/resources/WidowSpiders_FS_18-030-0818.pdf): Photos credited to
+  bugwood.org and James Carrel, University of Missouri.
+- Bed Bugs fact sheet, FS 18-074-0821 (https://ph.health.mil/resources/ento-bedbugs-factsheet.pdf): Photos credited to
+  Dr. H. J. Harlan with no agency stated (in doubt).
+- Filtration in the Use of Individual Water Purification Devices, TIP 31-004-0211
+  (https://ph.health.mil/resources/Filtration%20in%20the%20Use%20of%20Individual%20Water%20Purification%20Devices.pdf):
+  Figure 'Source: Reference 3' (Crittenden, Water Treatment, Wiley).
+- Electrochemically Generated Oxidant Disinfection in the Use of IWPDs, TIP 31-003-0211
+  (https://ph.health.mil/resources/Electrochemically%20Generated%20Oxidant%20Disinfection%20in%20the%20Use%20of%20Individual%20Water%20Purification%20Devices.pdf):
+  Figure 'Source: Reference 4' (Morita et al., journal article).
+- Iodine Disinfection in the Use of IWPDs, TIP 31-005-0211
+  (https://ph.health.mil/resources/Iodine%20Disinfection%20in%20the%20Use%20of%20Individual%20Water%20Purification%20Devices.pdf):
+  Figure 'adapted from references 9 and 11' (NAS; Chang in JAWWA).
+- Ultraviolet Light Disinfection in the Use of IWPDs, TIP 31-006-0211
+  (https://ph.health.mil/resources/Ultraviolet%20Light%20Disinfection%20in%20the%20Use%20of%20Individual%20Water%20Purification%20Devices.pdf):
+  Figure 'Source:' a commercial website (sentinelarchiving.com).
+- TG 277 Army Mold Remediation Guidance (2019) (https://ph.health.mil/resources/TG277FINAL28Feb2019.pdf): 'Adapted
+  from NYCDOH Guidelines' (municipal, an outside owner).
+- TG 336 Malaria Field Guide (2016) (https://ph.health.mil/resources/ento-malaria-field-guide-tg336.pdf): Table
+  'Adapted from Management of Severe Malaria, WHO'.
+- Exertional Heat Illness Prevention guide (https://ph.health.mil/resources/cphe-heat-ehip-guide.pdf): Image XMP
+  credit 'Gunter Albers - stock.adobe.com' (stock image).
+- Hurricane Deployment Response Guide (https://ph.health.mil/resources/phpr-hurricane-guide.pdf): Image XMP
+  iStockphoto/Getty (stock image).
+- Protecting Yourself From Ticks tri-fold flyer
+  (https://ph.health.mil/resources/ento-ticks-protect-yourself-flyer.pdf): Image XMP 'Getty Images/iStockphoto' (stock
+  image).
+- Protecting Yourself from Ticks (https://ph.health.mil/resources/ehse-ento-protecting-yourself-from-ticks.pdf): No
+  release statement.
+- Self-care: Cuts, Punctures, Bites (https://ph.health.mil/resources/Cuts%20Punctures%20Bites.pdf): No release
+  statement.
+- High Caliber Nutrition in the Field (PM_MOD6) (https://ph.health.mil/resources/PM_MOD6.April.2011.pdf): No release
+  statement.
+- Field Oral Hygiene (2010) (https://ph.health.mil/resources/Field%20oral%20hygiene%20Jan%202010.pdf): No release
+  statement.
+- Making Safer Local Food Choices During Deployment
+  (https://ph.health.mil/resources/Deployment_Food_Risk_Briefing.pdf): No release statement.
+- Preventing Mold in the Home (https://ph.health.mil/resources/Mold_Prevention_Home.pdf): No release statement.
+- Safe Drinking Water for Unregulated Systems (2010)
+  (https://ph.health.mil/resources/SafeDrinkingWaterUnregSysMar10.pdf): No release statement.
+- Protect Your Pets from Common Household Dangers (2010)
+  (https://ph.health.mil/resources/Protect%20your%20Pets%20at%20Home%20Jan%202010.pdf): No release statement.
+- Barracks Hygiene (2010) (https://ph.health.mil/resources/Barracks%20Hygiene%20Jan%202010.pdf): No release statement.
+- Healthy Hydration (2010) (https://ph.health.mil/resources/HealthyHydrationMar10.pdf): No release statement.
+- We've Got Your Back repellent flyer (https://ph.health.mil/resources/ento-repellents-flyer.pdf): No release
+  statement; image only, no text layer.
+- UV Disinfection in Drinking Water Treatment (2010) (https://ph.health.mil/resources/UVDisinfectionWaterApr10.pdf):
+  No release statement; figure with an outside 'Source:' credit.
+- Heat Work/Rest and Fluid Replacement poster
+  (https://ph.health.mil/resources/cphe-heat-fluid-replacement-poster.pdf): Tables extracted from TB MED 507, which is
+  already in the catalog.
+- Guidance on the Use of Heaters Inside Tents, FS 55-007-0114
+  (https://ph.health.mil/resources/Guidance_on_the_Use_of_Heaters_Inside_Tents_FS-55-007-0114.pdf): Command policy on
+  approved military heaters and licensing (administration, military plant).
+- Potable Water Production during Humanitarian Assistance/Disaster Relief, TIP 21-090-0520
+  (https://ph.health.mil/resources/potable_water_production_during_humanitarian_relief.pdf): National Guard and USAID
+  request procedures (administration).
+- Sanitation Guidelines for Shower and Laundry Operations, TIP 31-036-0215
+  (https://ph.health.mil/resources/TIP_No_31-036-0215_ShowerandLaundryOperations.pdf): Specific to Operation United
+  Assistance (Ebola deployment).
+- Water Supply Systems - Water Storage, TIP 31-112-0722
+  (https://ph.health.mil/resources/ehse-water-supply-systems-water-storage.pdf): Installation water-utility tank
+  management (specialist plant).
+- Non-Potable Water Substitution and Reuse in the Field, TIP 32-002-0111
+  (https://ph.health.mil/resources/Non-Potable%20Water%20Reuse%202011.pdf): Army deployment water-reuse planning
+  (ROWPU, Force Provider).
+- Post-Mold Remediation Household Goods Evaluation and Cleaning, FS 55-026-1020
+  (https://ph.health.mil/resources/Post-MoldRemHHGoodsEvalandCleaning_FS_55-026-1020.pdf): Core content attributed to
+  IICRC S520, possibly in its wording (in doubt).
+- Pesticides and Child Safety, FS 18-034-0216
+  (https://ph.health.mil/resources/PesticidesandChildSafety_FS_18-034-0216.pdf): AAPCC 'Poison Help' logo, 'Image:
+  AAPCC' (outside organisation's logo).
+- Southern Tick-Associated Rash Illness (STARI), FS 18-010-0317
+  (https://ph.health.mil/resources/STARI_FS_18-010-0317.pdf): 'Photograph used with permission from the Journal of
+  Infectious Diseases'.
+- Tick-Borne Encephalitis, FS 18-018-0718 (https://ph.health.mil/resources/Tick-BorneEncephalitis_FS_18-018-0718.pdf):
+  Map 'Adapted from Lindquist and Vapalahti' (journal article).
+- Colorado Tick Fever, FS 18-058-0317 (https://ph.health.mil/resources/ColoradoTickFever_FS_18-058-0317.pdf): 'Photo:
+  Oregon State University'; scrambled text layer.
+- Ionizing Radiation, FS 26-010-1116 (https://ph.health.mil/resources/IonizingRadiation_FS_26-010-1116.pdf): Figure
+  'Source: NCRP Report No. 160' (outside owner).
+- Venomous Reptiles of the U.S. and Canada poster
+  (https://ph.health.mil/resources/ento-venom-reptile-uscanada-poster.pdf): Individual photographer credits (Bill Love
+  and others) and stock image metadata.
+- Volcanic Activity in Hawaii, PHIP 43-01-0618
+  (https://ph.health.mil/resources/PHIP-43-01-0618-VolcanicActivityinHawaii.pdf): Figures from the Hawaii State
+  Department of Health (non-federal); event-specific.
+- Occupational Ototoxins, FS 51-002-0713 (https://ph.health.mil/resources/Ototoxin_FS_51-002-0713.pdf): Aimed at
+  hearing-program staff; Army worksite content.
+- Asbestos Occupational Health Overview, FS 65-007-0813
+  (https://ph.health.mil/resources/Asbestos_FS_65-007-0813_FINAL.pdf): Occupational medical-surveillance requirements
+  (administration).
+- Recommendations on PPE for Radiological Incidents, FS 26-014-1116
+  (https://ph.health.mil/resources/PPEforRadiologicalIncidents_FS_26-014-1116.pdf): For military treatment facility
+  casualty handling (specialist).
+- Novel Respiratory Viruses, FS 040-0524 (https://ph.health.mil/resources/cphe-oem-nrv-factsheet.pdf): Half the sheet
+  is DoD laboratory surveillance and commanders' duties.
+- Fall-Related Injuries, FS 12-007-0522 (https://ph.health.mil/resources/cphe-ip-fall-related-injuries-factsheet.pdf):
+  Army workplace, vehicle and parachuting focus; outside the requested topics.
+- Trauma Scene Cleanup, TIP 37-011-0122 (https://ph.health.mil/resources/ehse-wm-trauma-scene-cleanup.pdf):
+  Installation and contract responsibilities (administration).
+- Selecting the Appropriate Eye and Face Protection, FS 63-012-0916
+  (https://ph.health.mil/resources/PPE_Selection_TSVCRP_FS_63-012-0916.pdf): Regulatory history of ANSI Z87.1 that
+  points to an outside ISEA guide.
+- Bat-Proofing Your Home poster (https://ph.health.mil/resources/vet-batproof-home.pdf): One-page clip-art poster of
+  unclear origin with little text (in doubt).
+- Never Handle a Bat poster (https://ph.health.mil/resources/vet-never-handle-bat.pdf): One-page clip-art poster of
+  unclear origin with little text (in doubt).
+- Household Sharps Disposal flyer (https://ph.health.mil/resources/ehse-medwaste-household-sharps-disposal-flyer.pdf):
+  Photo-real bottle render of unclear origin (in doubt).
+- Cleaning, Sanitizing, and Disinfecting Chart (2022)
+  (https://ph.health.mil/resources/aphn-cys-sanitizing-and-disinfection-chart.pdf): Image XMP 'GettyImages-1256805814'
+  (stock image).
+- USARIEM Heat Acclimatization Guide (2003)
+  (https://usariem.health.mil/assets/docs/partnering/HeatAcclimatizationGuide.pdf): No release statement.
+- Heat Injury Prevention (2007 OTSG memo)
+  (https://usariem.health.mil/assets/docs/partnering/HeatInjuryPrevention2007.pdf): No release statement;
+  administration.
+- Borden monograph: Water Requirements and Soldier Hydration (2010)
+  (https://usariem.health.mil/assets/docs/publications/articles/2010/HydrationPDF.pdf): No release statement.
+- Borden monograph: Load Carriage in Military Operations (2010)
+  (https://usariem.health.mil/assets/docs/publications/articles/2010/LoadCarriagePDF.pdf): No release statement.
+- TB MED 592 Prevention and Control of Musculoskeletal Injuries (2011)
+  (https://usariem.health.mil/assets/docs/publications/guidance/tbmed592_musculoskeletal_injuries.pdf): Copyrighted
+  figures and tables (Wolters Kluwer, JAMA/AMA, MJA 'reproduced with permission').
+- USARIEM Altitude Acclimatization Guide, TN04-05 (2004)
+  (https://usariem.health.mil/assets/docs/partnering/altitudeacclimatizationguide.pdf): Scan with no text layer; TB
+  MED 505 is already in the catalog.
+- USARIEM TN 02-2 Sustaining Health and Performance in Cold Weather Operations (2001)
+  (https://web.archive.org/web/20260422125057id_/https://apps.dtic.mil/sti/pdfs/ADA395745.pdf): OCR scan, superseded
+  by TB MED 508 (2026); weapons and CBRN equipment sections.
+- USARIEM technical notes 91-1, 91-3, 92-2, 93-8 (1990-1993) (https://apps.dtic.mil/): Outdated (superseded by current
+  TB MEDs); not fetched.
+- Warfighter's Ration Guide, 2nd ed. (2025) (https://quartermaster.army.mil/): Host fails TLS and no archive capture
+  exists; not checked.
+- AFPMB TG 36 Personal Protective Measures against Insects and Other Arthropods of Military Significance (2015)
+  (https://www.acq.osd.mil/eie/afpmb/docs/techguides/tg36.pdf): No 'approved for public release' statement anywhere in
+  the text layer.
+- AFPMB TG 42 Self-Help Integrated Pest Management (2016)
+  (https://www.acq.osd.mil/eie/afpmb/docs/techguides/tg42.pdf): No 'approved for public release' statement anywhere in
+  the text layer.
+- AFPMB TG 26 Tick-Borne Diseases: Vector Surveillance and Control
+  (https://www.acq.osd.mil/eie/afpmb/docs/techguides/tg26.pdf): No 'approved for public release' statement anywhere in
+  the text layer.
+- AFPMB TG 38 Protecting MREs and Other Subsistence during Storage
+  (https://www.acq.osd.mil/eie/afpmb/docs/techguides/tg38.pdf): No 'approved for public release' statement anywhere in
+  the text layer.
+- AFPMB TG 27 Stored-Product Pest Monitoring Methods (https://www.acq.osd.mil/eie/afpmb/docs/techguides/tg27.pdf): No
+  'approved for public release' statement anywhere in the text layer.
+- AFPMB TG 29 Integrated Pest Management In and Around Buildings
+  (https://www.acq.osd.mil/eie/afpmb/docs/techguides/tg29.pdf): No 'approved for public release' statement anywhere in
+  the text layer.
+- AFPMB TG 5 Integrated Pest Management for Food Service Managers
+  (https://www.acq.osd.mil/eie/afpmb/docs/techguides/tg5.pdf): No 'approved for public release' statement anywhere in
+  the text layer.
+- AFPMB TG 2 Integrated Pest Management for Child Development Centers and Schools
+  (https://www.acq.osd.mil/eie/afpmb/docs/techguides/tg2.pdf): No 'approved for public release' statement anywhere in
+  the text layer.
+- AFPMB TG 15 Pesticide Spill Prevention and Management (https://www.acq.osd.mil/eie/afpmb/docs/techguides/tg15.pdf):
+  No 'approved for public release' statement anywhere in the text layer.
+- AFPMB TG 16 Pesticide Fires - Prevention, Management, and Cleanup
+  (https://www.acq.osd.mil/eie/afpmb/docs/techguides/tg16.pdf): No 'approved for public release' statement anywhere in
+  the text layer. Also pest-control-shop specific.
+- AFPMB TG 21 Pesticide Disposal Guide for Pest Control Shops
+  (https://www.acq.osd.mil/eie/afpmb/docs/techguides/tg21.pdf): No 'approved for public release' statement anywhere in
+  the text layer. Also pest-control-shop specific.
+- AFPMB TG 48 Pest and Vector Surveillance (https://www.acq.osd.mil/eie/afpmb/docs/techguides/tg48.pdf): No 'approved
+  for public release' statement anywhere in the text layer. Also specialist surveillance.
+- AFPMB TG 49 Sand Flies: Significance, Surveillance, and Control in Contingency Operations
+  (https://www.acq.osd.mil/eie/afpmb/docs/techguides/tg49.pdf): No 'approved for public release' statement anywhere in
+  the text layer.
+- AFPMB TG 14 Personal Protective Gear and Equipment for Pest Management Personnel
+  (https://www.acq.osd.mil/eie/afpmb/docs/techguides/tg14.pdf): Only a DoD Office of Prepublication and Security
+  Review stamp 'CLEARED For Open Publication' (Aug 21, 2020); no printed distribution statement, which the rule
+  requires.
+- AFPMB TG 30 Filth Flies: Significance, Surveillance and Control in Contingency Operations
+  (https://www.acq.osd.mil/eie/afpmb/docs/techguides/tg30.pdf): Only a DoD Office of Prepublication and Security
+  Review stamp 'CLEARED For Open Publication' (Feb 20, 2025); no printed distribution statement, which the rule
+  requires.
+- AFPMB TG 41 Rodent-Borne Diseases, with Special Emphasis on Protection from Hantavirus
+  (https://www.acq.osd.mil/eie/afpmb/docs/techguides/tg41.pdf): Only a DoD Office of Prepublication and Security
+  Review stamp 'CLEARED For Open Publication' (Jan 29, 2021); no printed distribution statement, which the rule
+  requires. Also a figure 'Reprinted with permission of the authors: C. Schmaljohn and B. Hjelle'.
+- AFPMB TG 44 Bed Bugs - Importance, Biology, and Control Strategies
+  (https://www.acq.osd.mil/eie/afpmb/docs/techguides/tg44.pdf): Only a DoD Office of Prepublication and Security
+  Review stamp 'CLEARED For Open Publication' (Apr 16, 2019); no printed distribution statement, which the rule
+  requires. Also photos 'by G. D. Alpert' and 'by H. J. Harlan' with no agency stated.
+- AFPMB TG 47 Aedes Mosquito Vector Control (https://www.acq.osd.mil/eie/afpmb/docs/techguides/tg47.pdf): Only a DoD
+  Office of Prepublication and Security Review stamp 'CLEARED For Open Publication' (Jun 16, 2026); no printed
+  distribution statement, which the rule requires.
+- AFPMB TG 8 Surveillance Guide and Response Plan for the Asian Longhorned Tick (2020)
+  (https://www.acq.osd.mil/eie/afpmb/docs/techguides/tg8.pdf): Has the release statement, but figures are credited
+  'Source: Keirans & Litwak 1989' (journal) and 'Source: National Tick Collection' (Georgia Southern University);
+  specialist surveillance.
+- AFPMB Information Bulletin: Fight the Bite - Personal Protection
+  (https://www.acq.osd.mil/eie/afpmb/docs/bulletins/AFPMB_Fight_the_Bite_Bulletin.pdf): No 'approved for public
+  release' statement anywhere in the text layer.
+- AFPMB Information Bulletin for Post-Hurricane Disease Vector and Pest Awareness
+  (https://www.acq.osd.mil/eie/afpmb/docs/bulletins/AFPMB_Post_Hurricane_Disease_Vector_Bulletin.pdf): No 'approved
+  for public release' statement anywhere in the text layer.
+- AFPMB New World Screwworm Surveillance and Pest Management bulletin
+  (https://www.acq.osd.mil/eie/afpmb/docs/bulletins/NWS_Bulletin.pdf): No 'approved for public release' statement
+  anywhere in the text layer.
+- AFPMB Asian Longhorned Tick and Spotted Lanternfly Guide
+  (https://www.acq.osd.mil/eie/afpmb/docs/bulletins/AFPMB_Asian_Longhorned_Tick_and_Spotted_Lanternfly_Guide.pdf): No
+  'approved for public release' statement anywhere in the text layer.
+- AFPMB TGs on military plant, administration or installation programmes: TG 4, 9, 11, 13, 17, 18, 20, 22, 31 and
+  supplements, 39, 45, 46 (https://www.acq.osd.mil/eie/afpmb/technicalguides.html): Out of scope (aircraft
+  disinsection, fumigation, ULV equipment, facility design, installation programmes, contracts, retail display,
+  vehicle washdown, risk assessments); not fetched.
+- AFPMB items on dod365.sharepoint-mil.us (Contingency Pesticide Usage Guide, Stray Animals, Feral Animal Risk
+  Mitigation and others) (https://www.acq.osd.mil/eie/afpmb/technicalguides.html): CAC login required; not fetchable
+  by the app.
+- AFPMB Disease Vector Ecology Profiles (DVEPs, 18 regional profiles) (https://www.acq.osd.mil/eie/afpmb/dveps.html):
+  Region-specific deployment planning profiles; not fetched.
+- AFPMB 2011 editions of technical guides on afpmb.org (Wayback captures)
+  (https://web.archive.org/web/2011/http://www.afpmb.org/sites/default/files/pubs/techguides/): Superseded by the
+  current editions, which themselves lack the statement; not fetched.
+
+### Out at the search: Navy training manuals
+
+- Basic Machines, NAVEDTRA 14037 (February 1994)
+  (https://web.archive.org/web/20030414114232id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14037.pdf):
+  Maker's branding inside a picture: Figure 9-5 'The Schrader gauge' (PDF page 59) is a product picture whose
+  nameplate reads 'Schrader', a patent line and 'MADE IN U.S.A.' (looked at, zoomed). Otherwise clean: Distribution
+  Statement A on PDF pages 1-2, text search found only citations, no safety advice. Chapters 12-13 also carry many
+  uncredited catalogue-style photos of commercial engine and truck parts (PDF pages 98-129). All 129 picture pages
+  were looked at by two readers. 178 pages, 8,552,129 bytes, sha256
+  1904edc955ce37e49b5dc5f6b172abb6e2bf9f43b67b759b3d9dda5f259af40e.
+- Illustrator Draftsman 3 and 2, Volume 2: Standard Drafting Practices and Theory, NAVEDTRA 14276 (August 1999)
+  (https://web.archive.org/web/20030413091151id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14276.pdf):
+  Outside artists and firms credited inside pictures: PDF page 23, Figure 1-11 is N.C. Wyeth's war-bonds poster,
+  captioned in the picture '1942 N.C.WYETH WW II POSTER FOR U.S. GOVERNMENT PRINTING OFFICE' (looked at); the page 22
+  poster carries an artist's signature; page 59 is a sample title block of 'NEWPORT NEWS SHIPBUILDING & DRY DOCK CO.';
+  pages 60 and 62 show a named architect's registration seal; page 273 is a Japanese woodblock-style print with a seal
+  and signature column; Appendices II-III (pages 412-418) are symbol charts of unstated source. Text search clean
+  (citations only), 0.04% scrambled lines. All 294 picture pages were looked at by four readers.
+- Electronics Technician Volume 7: Antennas and Wave Propagation, NAVEDTRA 14092 (October 1995)
+  (https://web.archive.org/web/20030416214815id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14092.pdf):
+  Not a new guide: its theory repeats the listed NEETS Module 10 and TC 9-64, and the rest is shipboard antenna
+  equipment (AN/URA-38 couplers, AN/WSC-3) and working aloft near ship stacks. Text clean (no credits). Pictures not
+  looked at.
+- Engineering Aid 3, NAVEDTRA 14069 (April 1995)
+  (https://web.archive.org/web/20011108084143id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14069.pdf):
+  Credits an outside owner: PDF page 14, 'Permission to use this illustration is gratefully acknowledged. SOURCE
+  FIGURE ELE International, Inc. 15-28'; page 534 shows 'FIGURE REMOVED Copyright permission not granted for
+  electronic media.' The later edition 14069A on courses.netc.navy.mil is 90 MB, over the cap.
+- Utilitiesman Basic, Volume 2, NAVEDTRA 14279 (September 1999)
+  (https://web.archive.org/web/20030413180547id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14279.pdf):
+  Outdated safety advice: PDF page 208, refrigerant in the eyes, 'Drop sterile mineral oil into the eyes and irrigate
+  them'; asbestos board and asbestos rope for furnaces (page 133); arsenic compounds as boiler inhibitors (page 51);
+  R-12 flushing practice.
+- Utilitiesman Basic, Volume 1, NAVEDTRA 14265 (June 1998)
+  (https://web.archive.org/web/20030411100820id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14265.pdf):
+  Outdated safety advice: PDF page 296, chlorine first aid, 'If conscious, give the patient one-half teaspoonful of
+  essence of peppermint or a moderate stimulant.'
+- Utilitiesman Advanced, NAVEDTRA 14259 (April 1995)
+  (https://web.archive.org/web/20011113153349id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14259.pdf):
+  Supervisor and design level (planning, estimating, plant design) with 1995 halon and CFC handling; scope and dated
+  hazardous-material practice. Not read further.
+- Construction Electrician Intermediate, NAVEDTRA 14027 (October 1998)
+  (https://web.archive.org/web/20030414022522id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14027.pdf):
+  Reproduces an outside owner's text: PDF page 210 quotes the National Electrical Code ('The NEC (section 725-1)
+  states: ...'), an NFPA publication, and many passages closely paraphrase the NEC.
+- Fireman, NAVEDTRA 14104 (February 1992)
+  (https://web.archive.org/web/20030411160719id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14104.pdf):
+  Outdated safety advice (R-12 practice, asbestos gaskets presented as current, 1992 heat-casualty first aid), and
+  mostly shipboard steam plant.
+- NEETS Module 01: Introduction to Matter, Energy, and Direct Current, NAVEDTRA 14173 (September 1998)
+  (https://legacy.maritime.org/doc/neets/mod01.pdf): Outdated safety advice: PDF pages 217-218 give electric-shock
+  first aid that puts artificial ventilation first and mentions CPR only as something to learn (no chest compressions,
+  no AED), as in the rejected NEETS 19. Also about 10.9% of text lines scrambled (pdftotext). The lifeboat.com copy
+  (https://lifeboat.com/InfoPreserver/images/4/41/NEETS-v01-Intro.pdf) is byte-identical, sha256
+  b85e85456bafb1b55a2283f1819b25bc28f556b92502882aa578f2f92e123481.
+- Electronics Technician Volume 1: Safety, NAVEDTRA 14086 (July 1997)
+  (https://web.archive.org/web/20030415153744id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14086.pdf):
+  Outdated safety advice: PDF page 26, 'Do Not use carbon tetrachloride ... Use trichloroethane instead' (an
+  ozone-depleting solvent since phased out); the rest is Navy safety-programme administration.
+- Hospital Corpsman, NAVEDTRA 14295 (August 2000)
+  (https://web.archive.org/web/20011103191621id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14295.pdf):
+  Outdated safety advice: 2000 CPR and first aid (before the 2005 changes), syrup of ipecac in the emergency bag (PDF
+  page 117), tourniquet guidance; trademark marks (Ace, Kling) in the text.
+- Operations Specialist, Volume 1, NAVEDTRA 14308 (2000)
+  (https://web.archive.org/web/20011210052659id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14308.pdf):
+  Scope: military operations (combat information centre, tactical plotting).
+- Aerographer's Mate 1 and C, NAVEDTRA 14010 (September 1995)
+  (https://web.archive.org/web/20011103042641id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14010.pdf):
+  Scope: forecasting with tactical decision aids, operational oceanography and administration.
+- Aerographer's Mate Module 2: Miscellaneous Observations and Codes, NAVEDTRA 14270 (April 1999)
+  (https://web.archive.org/web/20011118193017id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14270.pdf):
+  Scope: rawinsonde and pilot-balloon upper-air soundings and coded message formats; needs equipment a civilian does
+  not have.
+- Aerographer's Mate Module 3: Environmental Satellites and Weather Radar, NAVEDTRA 14271 (April 1999)
+  (https://web.archive.org/web/20011114013100id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14271.pdf):
+  Scope: interpreting satellite imagery and weather radar, of no use without those feeds.
+- Mathematics, Trigonometry, NAVEDTRA 14140 (February 1989)
+  (https://web.archive.org/web/20030413220502id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14140.pdf):
+  Not checked: 264 of its 272 pages have no text layer. The first-round reason ("unverifiable, as with TM 5-650")
+  predates the owner's ruling 4 and is withdrawn: like 14139 it could be listed read only once every page has been
+  read by eye for credits. That page-by-page check was not done.
+- Time Conversion, NAVEDTRA 14252 (October 1992)
+  (https://web.archive.org/web/20030414181349id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14252.pdf):
+  An outside product reproduced: PDF page 22, Figure 2-1 'Typical commercial time-conversion aid' (looked at). Written
+  for cryptologic technicians ('the local time of the target'); its useful part repeats the listed map guides.
+- Electronics Technician Volume 8: Support Systems (September 1996), NAVEDTRA 14093
+  (https://web.archive.org/web/20030417042314id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14093.pdf):
+  Scope, not downloaded: shipboard cooling water, dry air and power support systems.
+- Electronics Technician Volume 3: Communications Systems (July 1997), NAVEDTRA 14088
+  (https://web.archive.org/web/20030415234916id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14088.pdf):
+  Scope, not downloaded: shipboard military communications systems.
+- Aircrew Survival Equipmentman 1 and C (December 1985), NAVEDTRA 14217
+  (https://web.archive.org/web/20011115105947id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14217.pdf):
+  Scope, not downloaded: aviation survival and parachute equipment, plus administration.
+- Aircrew Survival Equipmentman 2 (March 1990), NAVEDTRA 14218
+  (https://web.archive.org/web/20011115085952id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14218.pdf):
+  Scope, not downloaded: aviation survival, parachute and oxygen equipment.
+- Dental Technician, Volume 1 (October 1999), NAVEDTRA 14274
+  (https://web.archive.org/web/20030325173613id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14274.pdf):
+  Scope, not downloaded: specialist dental-clinic training with 1999 drug and infection-control guidance.
+- Mathematics, Pre-Calculus and Introduction to Probability (December 1988), NAVEDTRA 14141
+  (https://web.archive.org/web/20030414063954id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14141.pdf):
+  Scope, not downloaded: low practical value.
+- Mathematics, Introduction to Statistics, Number Systems and Boolean Algebra (August 1986), NAVEDTRA 14142
+  (https://web.archive.org/web/20030414145202id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14142.pdf):
+  Scope, not downloaded: low practical value.
+- Other titles in the archived NETPDTC full-book set (music 10243, 10244, 12012; military requirements 12018, 12024,
+  14144, 14145, 14146; ratings administration and military plant 14014, 14016, 14017, 14019, 14020, 14022, 14030,
+  14063, 14082, 14083a, 14084, 14085, 14087, 14090, 14091, 14097, 14098, 14101, 14102, 14111, 14135, 14153, 14154,
+  14156, 14158, 14160, 14163, 14171a, 14172, 14198, 14208, 14209, 14210, 14214, 14223, 14225, 14226, 14227, 14230,
+  14232, 14233, 14235, 14237, 14239, 14242, 14243, 14244, 14260, 14261a, 14262, 14263, 14272, 14310, 14316, 14319,
+  14320)
+  (https://web.archive.org/cdx/search/cdx?url=advancement.cnet.navy.mil/products/web-pdf/tramans/fullbook/&matchType=prefix):
+  Scope, identified from front matter or the NETPDTC catalogue page and not downloaded: music, administration,
+  aviation, weapons, mine warfare, signals, photography, captivity and other military subjects.
+- NEETS A editions and Basic Military Requirements on www.courses.netc.navy.mil (14173A to 14196A, 14325)
+  (https://web.archive.org/cdx/search/cdx?url=courses.netc.navy.mil/courses/&matchType=prefix): Not proposed: every
+  NEETS module not already listed is rejected in REJECTED.md, and 14325 is military requirements. Official Wayback
+  copies exist for the listed NEETS 04, 05 and 07 to 12 (14176A, 14177A, 14179A to 14184A), but they are different
+  files (later editions), not mirrors.
+- Aerographer's Mate Module 5: Basic Meteorology, NAVEDTRA 14312 (June 2001)
+  (https://web.archive.org/web/20011215155414id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14312.pdf):
+  Held for the owner, otherwise clean (full candidate record in held.json). Figure 6-2 (PDF page 168) is titled
+  "CLIMATIC TYPES OF THE EARTH (after Köppen)": a map credited as adapted from a named outside author. Köppen died in
+  1940 and his maps appeared between 1900 and 1936, so whether this is a source long out of copyright (ruling 2, the
+  Beaufort case) depends on which map was followed. When in doubt, leave it out.
+- Steelworker, Volume 1, NAVEDTRA 14250 (1996)
+  (https://web.archive.org/web/20030414084739id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14250.pdf):
+  Outside material in pictures (looked at, zoomed). PDF pages 60-61, Figure 3-37: a scanned ASME form, "QW-482
+  SUGGESTED FORMAT FOR WELDING PROCEDURE SPECIFICATIONS (WPS)", with the footer "This form (E00006) may be obtained
+  from the Order Dept., ASME". PDF page 92, Figures 4-25 and 4-26: photographs of a branded cutting carriage reading
+  "NCG CUT-O-MATIC" and "NATIONAL CYLINDER GAS COMPANY". PDF page 106, Figures 5-6 and 5-7: "WYPO" on the tip-cleaner
+  case. PDF page 84, Figure 4-13: a catalogue-style tip chart with maker part numbers. Further cut-out product
+  photographs on pages 81, 182 and 192 (a maker's label on the wire spool). All 154 picture pages were looked at by
+  two readers. 246 pages, 10,392,419 bytes, sha256 c7fa57e3173cc67515b2494df529184edb7e1ebac223acf4668de2f728ff8258.
+- Construction Mechanic Basic, Volume 1, NAVEDTRA 14264 (1998)
+  (https://web.archive.org/web/20030411074346id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14264.pdf):
+  Uncredited catalogue-style cut-out photographs of commercial shop equipment (looked at, zoomed): PDF page 107,
+  Figure 3-78 cylinder leakage tester, which the text calls one of "The commercial testers"; page 95, Figures 3-56
+  valve-refacing machine and 3-57 stone dresser; page 105, Figure 3-76 compression tester. Also maker-style airbrushed
+  cutaways of the Roosa Master DB2 pump (pages 178-181) and a maker-style timing-gauge photograph (page 187). The same
+  reading rejected TM 5-685 and the Fire-Weather Observers' Handbook. Asbestos gaskets are described with no handling
+  advice. All 194 picture pages were looked at by three readers. 312 pages, 6,542,265 bytes, sha256
+  70dc2a7c7a7bb2e537ad7ea2100b6a0fe88abf8e0c505cdf66909bd2463a6be7.
+- Tools and Their Uses, NAVEDTRA 14256A (2015)
+  (https://web.archive.org/web/20190526192047id_/https://www.courses.netc.navy.mil/courses/14256A/14256A.pdf):
+  Catalogue-style studio product photographs of commercial tools throughout, for example Figure 5-66, a ratchet
+  screwdriver (PDF page 100, looked at, zoomed); "Phillips" carries a registered-trademark sign in the text. 497
+  pages, 51,833,556 bytes. The 1992 edition, NAVEDTRA 14256, is listed instead.
+- Equipment Operator, Basic, NAVEDTRA 14081 (1994)
+  (https://web.archive.org/web/20011103200301id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14081.pdf):
+  Scope: heavy construction plant (trucks, tractor-trailers, forklifts, loaders, graders, scrapers, dozers, rollers,
+  cranes, earthwork and paving) and Navy equipment administration, the ground on which the Earthmoving and Paving
+  manuals (TM 3-34.62, TM 3-34.63) were rejected. It also draws on maker manuals (Case 1085B and 480E operator's
+  manuals, Deere Fundamentals of Service) and names a Caterpillar trademark (glossary, PDF page 506). Pictures not
+  reviewed. 650 pages, 24,172,327 bytes, the same size as the held militarynewbie.com copy (hash not compared), sha256
+  5a380b808d99ab9788deeb1bc17c76348939c6e545d17a786d5d11a3434d3463.
+- Aerographer's Mate Module 1: Surface Weather Observations, NAVEDTRA 14269
+  (https://web.archive.org/web/20011103045001id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14269.pdf):
+  Scope and outdated safety advice. About 88 of its 298 pages are observation codes, WMO code tables and plotting
+  standards (chapters 3 and 4, Appendix IV). Its wind chill chart (Figure 1-39, PDF page 70) is the index the US
+  National Weather Service replaced in November 2001 (it gives -10 F for 20 F at 29 knots). Chapter 2 relies on a
+  maker's equipment information (AAI Corporation). 7,781,999 bytes.

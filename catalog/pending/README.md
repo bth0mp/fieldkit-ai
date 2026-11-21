@@ -16,5 +16,9 @@ shape `scripts/check-guides.js` reads from `catalog/candidates.json`.
   `question` field, add a `creditsNote` saying every picture page was looked at and what was found, set
   `creditsReviewed` to true, and move the record into `catalog/candidates.json`.
 
+- `owner-questions-2026-11-20.json`: three Defense Health Agency and Armed Forces Pest Management Board sheets and
+  the Navy's Aerographer's Mate Module 5, held after a second review, each on the one question in its `question`
+  field. The same steps as above apply on a yes.
+
 To add one, copy it into `catalog/candidates.json` and run the checker, then read every third-party hit by eye as
 `catalog/REJECTED.md` and the design doc describe.

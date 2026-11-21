@@ -1,0 +1,54 @@
+[
+  {
+    "id": "dha-fs-058-1225-lead-based-paint",
+    "title": "Lead-based Paint in Military Housing",
+    "category": "building",
+    "publisher": "Defense Health Agency",
+    "year": 2025,
+    "licence": "Public domain",
+    "licenceNote": "US government work (17 U.S.C. 105). Fact Sheet 058-1225, page 1: distribution statement printed in the document: approved for public release; distribution is unlimited.",
+    "url": "https://ph.health.mil/resources/phcom-hrc-lead-based-paint-in-military-housing-factsheet.pdf",
+    "evidence": "Approved for public release; distribution is unlimited. (page 1)",
+    "creditsNote": "Checked 20 November 2026 (file 342,815 bytes, sha256 f7991479237b7bd02c4b9ac060f44587a14337a3cfc6d2bfb6e9191fb2f257c2, 2 pages; fetched from ph.health.mil with the Dalvik User-Agent; not encrypted; clean text layer). Text hits: No outside credits. CDC blood lead reference value 3.5 ug/dL (current). Picture audit: every picture page looked at by eye: One uncredited faded photo of a soldier with family by a house (flag for the owner: no credit or image metadata, taken as the publisher's own).",
+    "question": "Is the page 1 photo the agency's own? A second reviewer found: p1 photo (soldier in OCP holding two children's hands by a house porch, sketch-filtered) is uncredited and posed; it was also uncredited in the 2018 predecessor and no DVIDS/agency source was found. Ruling 1 would take it as the agency's own unless evidently from elsewhere; it looks commissioned/stock-like, same doubt as the OSHA 3080 precedent. Text and release fine. Yes lists it under ruling 1; no keeps it out."
+  },
+  {
+    "id": "dha-fs-052-0125-human-remains-disasters",
+    "title": "Handling of Human Remains from Natural Disasters",
+    "category": "disasters",
+    "publisher": "Defense Health Agency",
+    "year": 2025,
+    "licence": "Public domain",
+    "licenceNote": "US government work (17 U.S.C. 105). Fact Sheet 052-0125, page 1: distribution statement printed in the document: approved for public release; distribution is unlimited.",
+    "url": "https://ph.health.mil/resources/ehse-wm-handling-human-remains-natural-disasters.pdf",
+    "evidence": "Approved for public release; distribution is unlimited. (page 1)",
+    "creditsNote": "Checked 20 November 2026 (file 207,780 bytes, sha256 a250e345ba00d930550db8d3e8713aff05f77927f9ac6af940b33e57a03edb41, 2 pages; fetched from ph.health.mil with the Dalvik User-Agent; not encrypted; clean text layer). Text hits: No outside credits. Picture audit: every picture page looked at by eye: Header only.",
+    "question": "Does \"reviewed and incorporated\" count as a credit to an outside work? A second reviewer found: p2: 'The following references were reviewed and incorporated into this fact sheet' - ISID 2022, Morgan 2004, PAHO 2004, PAHO/ICRC 2016. Under ruling 2 'incorporates a named outside work' counts as a credit on what it covers; the text reads as DHA's own summary and no wording looks lifted, but 'incorporated' is the trigger word. No pictures of concern."
+  },
+  {
+    "id": "afpmb-tg-6-delousing-procedures",
+    "title": "Delousing Procedures for Contingency Operations (Technical Guide No. 6)",
+    "category": "medical",
+    "publisher": "Armed Forces Pest Management Board (US DoD)",
+    "year": 2024,
+    "licence": "Public domain",
+    "licenceNote": "US government work (17 U.S.C. 105). AFPMB Technical Guide No. 6, page 2: distribution statement printed in the document: approved for public release; distribution unlimited.",
+    "url": "https://www.acq.osd.mil/eie/afpmb/docs/techguides/tg6.pdf",
+    "evidence": "Approved for Public Release; Distribution Unlimited May 2024 (page 2; the cover also carries the DoD Office of Prepublication and Security Review stamp 'CLEARED For Open Publication May 07, 2024')",
+    "creditsNote": "Checked 20 November 2026 (file 372,952 bytes, sha256 d6d9e7feb4c8cff674b9ca4367af6999a49e1ad1c8c1bd4860fa020332c9b730, 22 pages; fetched from www.acq.osd.mil with the Dalvik User-Agent; not encrypted; clean text layer on every page). Text hits: page 2 boilerplate 'Any copyrighted material included in this TG is identified at its point of use' - no material in the guide is so identified; 'Acknowledgements' (page 4) names the author (COL Stephen B. Berte, USA, retired, formerly of the AFPMB), the 2024 reviser (Joshua Bast, DCPH-A) and reviewers from USDA and the Army, all federal; Appendix C (pages 18-20) summarises louse-control recommendations of WHO, PAHO and APHA with citations and quotes one sentence from a 1997 WHO fact sheet in quotation marks: citations under ruling 2, nothing credited as adapted or reprinted; 'NATO' and 'University' appear only in a personal-communication note and the reference list. Picture audit: the only picture page is the cover (page 1), looked at by eye: the DoD seal and the DOPSR clearance stamp; no other images or drawings. Note: page 2 repeats the title of another guide ('Guidelines for Testing Experimental Pesticides on DoD Property'), a typing slip. Scope flag for the owner: the method (wash clothing at 54 C/130 F for 15 minutes or hotter, tumble-dry at 60 C/140 F, field hot-water baths, bathing; body lice live in clothing) is general-use disaster and camp sanitation and matches current CDC advice, but the guide is framed for detainee and displaced-civilian camps under DoD control: pages 5-8 and Appendix B are DoD doctrine and responsibilities, and Appendix D lists DoD-supply permethrin uniform kits.",
+    "question": "Is it in scope? A second reviewer found: Scope: written for detainee/dislocated-civilian camp operations under DoD control - Appendix B is JP 3-07/JP 4-02/DoDI 2310.08 doctrine, the method centres on the LADS laundry system, Appendix D lists DoD-supply NSNs; Appendix C summarises WHO/PAHO/APHA and quotes one WHO sentence. Only about one page (54 C wash, 60 C dry, bag clothing) is general-use. Release and pictures fine."
+  },
+  {
+    "id": "navy-navedtra-14312",
+    "title": "Aerographer's Mate Module 5: Basic Meteorology",
+    "category": "navigation",
+    "publisher": "US Navy",
+    "year": 2001,
+    "licence": "Public domain",
+    "licenceNote": "US government work (17 U.S.C. 105). NAVEDTRA 14312, June 2001, cover and title page: Distribution Statement A, approved for public release; distribution is unlimited. Preface: \"2001 Edition Prepared by AGC(AW/SW) RICK KROLAK\", a Navy chief, \"Published by Naval Education and Training Professional Development and Technology Center\". The file is a Wayback Machine raw capture (15 December 2001) of the Navy's official NETPDTC address advancement.cnet.navy.mil/products/web-pdf/tramans/fullbook/14312.pdf. This answers the earlier rejection in REJECTED.md, which rested only on the militarynewbie.com copy having no second copy. SHA-256 4db1051d3b274b80decf85ec12c9415e0683b5888a996dce98078e4b5f6e0954.",
+    "url": "https://web.archive.org/web/20011215155414id_/http://www.advancement.cnet.navy.mil:80/products/web-pdf/tramans/fullbook/14312.pdf",
+    "evidence": "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited. (cover, PDF page 1; repeated on PDF page 2)",
+    "creditsNote": "Whole text searched and every hit read in context. Hits: the course answer-sheet boilerplate, \"taken from\" in physics text, two Air Weather Service (US Air Force) publications, AWS/TR-79/006 and AWS/TI-84/001, and \"your local power company\" in a question. Picture audit, 20 November 2026: every page with a picture (90 of 252 pages) was looked at by eye, with zooms on anything small. No picture carries a credit line, copyright notice, signature, watermark, logo or brand. Open point for the owner: Figure 6-2 (PDF page 168), a Navy redraw with figure id AG5f 0602, is titled \"CLIMATIC TYPES OF THE EARTH (after Köppen)\". \"After\" says the map is adapted from Wladimir Köppen (died 1940). His classification and maps appeared between 1900 and 1936, so whether the source is long out of copyright (the Beaufort case in ruling 2) depends on which map was followed. No other source is printed on the map (zoomed). Table 6-2, \"Trewartha's Climatic Groups and their Poleward Boundaries\", states a named classification's boundaries in the Navy's own typeset table with no credit line, so it is taken as a summary (a citation). Uncredited photographs: solar-disk photographs (Figure 1-2, page 14), a four-frame tornado sequence (Figure 5-6, page 147) and scanned world pressure maps (Figures 3-3A/B, page 60). Each carries a Navy figure id and no marks when zoomed, and none is stock imagery or a product photograph, so they are taken as the Navy's own. Figure 1-10 (page 29) has a small engraving-style wind-head drawing with no signature (zoomed to 500 dpi). Page 97 carries the standard US government note that international boundaries are not necessarily authoritative. Text: the 7 pages without a text layer are all blank; scrambled lines 0.02 percent (PyMuPDF) and 0.1 percent (pdftotext). No safety advice beyond mentions; page 5-11 repeats the dated idea that pressure drop makes buildings explode in a tornado, without advice.",
+    "question": "Is Figure 6-2 (PDF page 168), a Navy redraw titled \"CLIMATIC TYPES OF THE EARTH (after Köppen)\", the Navy's own? \"After\" says it is adapted from Wladimir Köppen's classification (he died in 1940); no credit line or other owner is shown. Everything else is clean (see creditsNote). Yes lists it; no keeps it out."
+  }
+]
