@@ -12,6 +12,16 @@ const createLayoutStyles = (colors: ThemeColors) => ({
     padding: 20,
     paddingBottom: 32,
   },
+  editLink: {
+    alignSelf: 'center' as const,
+    minHeight: 44,
+    justifyContent: 'center' as const,
+    paddingHorizontal: SPACING.lg,
+  },
+  editLinkText: {
+    ...TYPOGRAPHY.bodySmall,
+    color: colors.textSecondary,
+  },
 });
 const createModelCardStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
   modelsRow: {

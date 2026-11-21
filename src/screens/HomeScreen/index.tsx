@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, CustomAlert, hideAlert } from '../../components';
 import { AnimatedEntry } from '../../components/AnimatedEntry';
@@ -28,6 +28,7 @@ import { VoiceModelsSheet } from '../../components/models/VoiceModelsSheet';
 import { useWhisperStore } from '../../stores/whisperStore';
 import { WHISPER_MODELS } from '../../services';
 import { useUiModeStore } from '../../stores/uiModeStore';
+import { shownCards, useHomeLayoutStore, type HomeCardId } from '../../features/home/homeLayout';
 
 /** Scrolled further than this (px), the header drops its date line and Offline label. */
 const SLIM_AFTER = 40;
@@ -158,6 +159,56 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     </View>
   );
 
+  // The cards the owner chose to show, in the order chosen. The Downloads card is not one of them: it follows
+  // the Assistant card wherever that sits, and shows only while something is downloading.
+  const layout = useHomeLayoutStore();
+  const shown = shownCards(layout);
+  const cards: Record<HomeCardId, React.ReactNode> = {
+    assistant: (
+      <AssistantCard
+        chip={{ label: chipLabel, remote: !!(activeTextModel && activeRemoteTextModelId), loading: loadingState.isLoading }}
+        onOpenModels={() => setModelsManagerOpen(true)}
+        canChat={!!(activeTextModel || activeImageModelId)}
+        setup={setupCard}
+        onAsk={(firstMessage) => navigation.navigate('Chat', { firstMessage })}
+        recent={recentConversations.length > 0 && (
+          <RecentConversations
+            conversations={recentConversations}
+            totalCount={conversations.length}
+            focusTrigger={focusTrigger}
+            onContinueChat={continueChat}
+            onDeleteConversation={handleDeleteConversation}
+            onSeeAll={() => navigation.navigate('ChatsTab')}
+          />
+        )}
+      />
+    ),
+    fieldKit: <FieldKitCard onOpen={(screen) => navigation.navigate(screen)} />,
+    library: (
+      <LibraryCard
+        onOpenGuides={() => navigation.navigate('GuideLibrary')}
+        onOpenKiwix={() => navigation.navigate('KiwixFiles')}
+        onOpenProjects={() => navigation.navigate('ProjectsTab')}
+      />
+    ),
+    checklists: (
+      <ChecklistsCard
+        onOpen={(listId) => (listId ? navigation.navigate('Checklists', { listId }) : navigation.navigate('Checklists'))}
+      />
+    ),
+    today: <TodayCard sky={sky} />,
+    phone: (
+      <PhoneCard
+        focusTrigger={focusTrigger}
+        downloadedModelCount={downloadedModels.length}
+        imageModelCount={downloadedImageModels.length}
+        imageCount={generatedImages.length}
+        onOpenModels={() => navigation.navigate('ModelsTab')}
+        onOpenGallery={() => navigation.navigate('Gallery')}
+      />
+    ),
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View testID="home-screen" style={styles.scrollView}>
@@ -170,71 +221,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           scrollEventThrottle={16}
         >
 
-          <AnimatedEntry index={0} staggerMs={50} trigger={focusTrigger}>
-            <View testID="home-card-assistant">
-            <AssistantCard
-              chip={{ label: chipLabel, remote: !!(activeTextModel && activeRemoteTextModelId), loading: loadingState.isLoading }}
-              onOpenModels={() => setModelsManagerOpen(true)}
-              canChat={!!(activeTextModel || activeImageModelId)}
-              setup={setupCard}
-              onAsk={(firstMessage) => navigation.navigate('Chat', { firstMessage })}
-              recent={recentConversations.length > 0 && (
-                <RecentConversations
-                  conversations={recentConversations}
-                  totalCount={conversations.length}
-                  focusTrigger={focusTrigger}
-                  onContinueChat={continueChat}
-                  onDeleteConversation={handleDeleteConversation}
-                  onSeeAll={() => navigation.navigate('ChatsTab')}
-                />
-              )}
-            />
-            </View>
-          </AnimatedEntry>
+          {shown.map((id, index) => (
+            <React.Fragment key={id}>
+              <AnimatedEntry index={index} staggerMs={50} trigger={focusTrigger}>
+                <View testID={`home-card-${id}`}>{cards[id]}</View>
+              </AnimatedEntry>
+              {id === 'assistant' && <DownloadsCard onOpen={(screen) => navigation.navigate(screen)} />}
+            </React.Fragment>
+          ))}
 
-          <DownloadsCard onOpen={(screen) => navigation.navigate(screen)} />
-
-          <AnimatedEntry index={1} staggerMs={50} trigger={focusTrigger}>
-            <View testID="home-card-fieldKit">
-              <FieldKitCard onOpen={(screen) => navigation.navigate(screen)} />
-            </View>
-          </AnimatedEntry>
-
-          <AnimatedEntry index={2} staggerMs={50} trigger={focusTrigger}>
-            <View testID="home-card-library">
-              <LibraryCard
-                onOpenGuides={() => navigation.navigate('GuideLibrary')}
-                onOpenKiwix={() => navigation.navigate('KiwixFiles')}
-                onOpenProjects={() => navigation.navigate('ProjectsTab')}
-              />
-            </View>
-          </AnimatedEntry>
-
-          <AnimatedEntry index={3} staggerMs={50} trigger={focusTrigger}>
-            <View testID="home-card-checklists">
-              <ChecklistsCard onOpen={(listId) => (listId ? navigation.navigate('Checklists', { listId }) : navigation.navigate('Checklists'))} />
-            </View>
-          </AnimatedEntry>
-
-          <AnimatedEntry index={4} staggerMs={50} trigger={focusTrigger}>
-            <View testID="home-card-today">
-              <TodayCard sky={sky} />
-            </View>
-          </AnimatedEntry>
-
-          <AnimatedEntry index={5} staggerMs={50} trigger={focusTrigger}>
-            <View testID="home-card-phone">
-              <PhoneCard
-                focusTrigger={focusTrigger}
-                downloadedModelCount={downloadedModels.length}
-                imageModelCount={downloadedImageModels.length}
-                imageCount={generatedImages.length}
-                onOpenModels={() => navigation.navigate('ModelsTab')}
-                onOpenGallery={() => navigation.navigate('Gallery')}
-              />
-            </View>
-          </AnimatedEntry>
-        </ScrollView >
+          <TouchableOpacity
+            testID="home-edit"
+            style={styles.editLink}
+            onPress={() => navigation.navigate('EditHome')}
+            accessibilityRole="button"
+            accessibilityLabel="Edit home"
+          >
+            <Text style={styles.editLinkText}>Edit home</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </View >
 
       {/* Model Picker Sheet */}

@@ -16,6 +16,7 @@ export type RootStackParamList = {
   QuickReference: undefined;
   Checklists: { listId?: string } | undefined;
   Calculators: undefined;
+  EditHome: undefined;
   DocumentPreview: { filePath: string; fileName: string; fileSize: number };
   // Former SettingsStack
   ModelSettings: undefined;
