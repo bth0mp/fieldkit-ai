@@ -59,7 +59,7 @@ export const ModelsScreen: React.FC = () => {
   const isShowingDetail = vm.activeTab === 'text' && vm.selectedModel !== null;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']} testID="models-screen">
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']} testID="models-screen">
       {/* Collapse header/import/tabs when showing model detail — detail has its own header.
            Use height:0 + overflow:hidden instead of unmounting so AttachStep components
            stay registered with the SpotlightTourProvider (prevents broken spotlight overlays). */}

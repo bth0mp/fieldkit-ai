@@ -116,7 +116,7 @@ export const ProjectsScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']} testID="projects-screen">
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']} testID="projects-screen">
       <View style={styles.header}>
         <TouchableOpacity testID="projects-back" onPress={() => navigation.goBack()} style={styles.backButton}
           accessibilityRole="button" accessibilityLabel="Back">
