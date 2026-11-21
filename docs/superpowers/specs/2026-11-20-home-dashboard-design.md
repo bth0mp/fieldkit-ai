@@ -124,7 +124,8 @@ When the page scrolls, the header shrinks to one line ("Fieldkit" and the search
   `ModelPickerSheet`, `RecentConversations`) and extend with a prop rather than copying.
 - One rendered integration test per change: mount the real screen, reach the state with real gestures, assert what
   the user sees; fake only at the device boundary (`__tests__/harness/`).
-- Saved-data keys keep the `@offgrid/` prefix.
+- Saved-data keys that exist stay as they are. New ones use the `@fieldkit/<snake_case>` prefix of the other Fieldkit
+  features (`@fieldkit/checklists`, `@fieldkit/kiwix_files`).
 - The onboarding spotlight tour and `spotlightConfig.tsx` point at `ModelsTab`, `ProjectsTab` and Home elements;
   they must be moved to the new places, and the tour must still run end to end.
 - Code that navigates to `ModelsTab` or `ProjectsTab` (Home, Chats list, the spotlight hook) must go to the new
@@ -151,7 +152,7 @@ When the page scrolls, the header shrinks to one line ("Fieldkit" and the search
    manually dont have it use location permissions"). Settings gets a "Home place" row where the owner types a
    latitude and longitude, a UTM or an MGRS grid reference, read by the parser the calculators already use
    (`positionOf` in `src/services/tools/coordinateTools.ts`), with the same error message for a position it cannot
-   read. A service owns it and saves it under an `@offgrid/` key; clearing the row clears the Today card. The app
+   read. A service owns it and saves it under `@fieldkit/home_place`; clearing the row clears the Today card. The app
    adds no location permission or location library, so what the calculators and the `sun_times` tool tell the user
    about not using their location stays true. The sunrise calculator does not fill in or change the home place.
 
