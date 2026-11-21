@@ -219,6 +219,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           contentContainerStyle={styles.content}
           onScroll={(e) => setSlim(e.nativeEvent.contentOffset.y > SLIM_AFTER)}
           scrollEventThrottle={16}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         >
 
           {shown.map((id, index) => (

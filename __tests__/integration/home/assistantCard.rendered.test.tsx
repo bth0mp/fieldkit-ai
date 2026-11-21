@@ -98,6 +98,29 @@ describe('Assistant card (rendered)', () => {
     chat.unmount();
   }, 30000);
 
+  it('keeps the keyboard from eating the first tap on Send, and the keyboard send key asks the question', async () => {
+    const h = await setupChatScreen({ engine: 'llama', sqlite: true });
+    const { React, rtl } = h;
+    const { HomeScreen } = require('../../../src/screens/HomeScreen');
+    const nav = makeNav();
+    const home = rtl.render(React.createElement(HomeScreen, { navigation: nav }));
+    const input = await rtl.waitFor(() => home.getByTestId('home-ask-input'), TIMEOUT);
+
+    // fireEvent skips the responder system, so pin the props that make a real first tap reach Send.
+    expect(home.getByTestId('home-scroll').props.keyboardShouldPersistTaps).toBe('handled');
+    expect(home.getByTestId('home-scroll').props.keyboardDismissMode).toBe('on-drag');
+    expect(input.props.returnKeyType).toBe('send');
+
+    rtl.fireEvent(input, 'submitEditing');
+    expect(nav.navigate).not.toHaveBeenCalled();
+    rtl.fireEvent.changeText(input, QUESTION);
+    rtl.fireEvent(input, 'submitEditing');
+    expect(nav.navigate).toHaveBeenCalledTimes(1);
+    expect(nav.navigate).toHaveBeenCalledWith('Chat', { firstMessage: QUESTION });
+    expect(home.getByTestId('home-ask-input').props.value).toBe('');
+    home.unmount();
+  }, 30000);
+
   it('shows "No model" and the setup card when nothing is loaded', async () => {
     installNativeBoundary();
     const React = require('react');

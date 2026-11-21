@@ -51,6 +51,9 @@ const AskBox: React.FC<{ onAsk: (text: string) => void }> = ({ onAsk }) => {
         style={styles.askInput}
         value={text}
         onChangeText={setText}
+        returnKeyType="send"
+        onSubmitEditing={send}
+        blurOnSubmit
         placeholder="Ask anything"
         placeholderTextColor={colors.textMuted}
       />
