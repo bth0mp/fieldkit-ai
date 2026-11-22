@@ -10,12 +10,21 @@ import { useAppStore, useRemoteServerStore } from '../stores';
 const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
 const writing = () => generationService.getState().isGenerating || imageGenerationService.getState().isGenerating;
 
-let tail: Promise<unknown> = Promise.resolve();
+let tail: Promise<void> = Promise.resolve();
 
-/** Choices run one at a time. Each counts as a running turn, so nothing queued is sent until it ends. */
+/**
+ * Choices run one at a time. Each counts as a running turn, so nothing queued is sent until it ends. The next
+ * choice starts when the work is done, while this one's claim is still held, so its end drains nothing.
+ */
 function exclusively(work: () => Promise<void>): Promise<void> {
-  const finish = async () => { await work(); await sleep(0); }; // the chat's queue processor reads its last render
-  const run = tail.then(() => generationService.runTurn(async () => {
+  const before = tail;
+  let workDone!: () => void;
+  tail = new Promise<void>(resolve => { workDone = resolve; });
+  const finish = async () => {
+    try { await work(); } finally { workDone(); }
+    await sleep(0); // the chat's queue processor reads its last render
+  };
+  const run = before.then(() => generationService.runTurn(async () => {
     // A turn still being prepared cannot be stopped, and would load its own model when it got there. Polled
     // because turns are not observable; gives up after 15 s so a hung one cannot block choosing for good.
     const until = Date.now() + 15_000;
@@ -28,7 +37,7 @@ function exclusively(work: () => Promise<void>): Promise<void> {
       await finish();
     });
   }));
-  tail = run.catch(() => { });
+  run.then(workDone, workDone); // a throw before the work (stopping the engines) must not block later choices
   return run;
 }
 

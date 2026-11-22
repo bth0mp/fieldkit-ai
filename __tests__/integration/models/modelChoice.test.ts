@@ -120,9 +120,10 @@ describe('modelChoice', () => {
     await bootDefault();
     const seen: Array<string | null> = [];
     rtl.renderHook(() => { seen.push(useActiveTextModel().modelId); }); // what the chat sees, render by render
-    await rtl.act(async () => {
-      await chooseTextModel('b'); await chooseRemoteTextModel('s1', 'x'); await chooseRemoteTextModel('s2', 'y'); await chooseTextModel('a');
-    });
+    await rtl.act(async () => { await chooseTextModel('b'); });
+    await rtl.act(async () => { await chooseRemoteTextModel('s1', 'x'); });
+    await rtl.act(async () => { await chooseRemoteTextModel('s2', 'y'); });
+    await rtl.act(async () => { await chooseTextModel('a'); });
     expect(seen).not.toContain(null); expect(seen.at(-1)).toBe('a');
   });
 
@@ -190,6 +191,18 @@ describe('modelChoice', () => {
     await settle(300); expect(sentTo).toEqual(['b']);
   });
 
+  it('a message waiting while two choices follow each other goes out once, after the last', async () => {
+    await boot([make('llama', 'a'), make('llama', 'b'), make('llama', 'c')]);
+    await activeModelService.loadTextModel('a');
+    const sentTo: Array<string | null> = [];
+    generationService.setQueueProcessor(async () => { sentTo.push(state().activeModelId); });
+    await replying();
+    generationService.enqueueMessage({ id: 'q', conversationId, text: 'next', messageText: 'next' });
+    await Promise.all([chooseTextModel('b'), chooseTextModel('c')]);
+    await rtl.waitFor(() => expect(sentTo).toEqual(['c']));
+    await settle(300); expect(sentTo).toEqual(['c']);
+  });
+
   it('a message still being prepared: the switch waits for its reply to start, stops it, and the choice stands', async () => {
     await bootDefault();
     const turn = generationService.runTurn(async () => {
@@ -215,7 +228,15 @@ describe('modelChoice', () => {
 
   it('two choices at once: they run in turn and the last one is in use', async () => {
     await bootDefault();
-    await Promise.all([chooseRemoteTextModel('s1', 'x'), chooseTextModel('b')]);
-    expect([remote().activeRemoteTextModelId, state().activeModelId]).toEqual([null, 'b']);
+    const trace: string[] = [];
+    const note = () => {
+      const entry = `${remote().activeServerId}|${state().activeModelId}`;
+      if (trace.at(-1) !== entry) trace.push(entry);
+    };
+    useRemoteServerStore.subscribe(note); useAppStore.subscribe(note);
+    await Promise.all([chooseTextModel('b'), chooseRemoteTextModel('s1', 'x'), chooseTextModel('a')]);
+    expect([remote().activeServerId, state().activeModelId]).toEqual([null, 'a']);
+    // each choice completes before the next starts: b, then the remote model (which drops b), then a
+    expect(trace).toEqual(['null|a', 'null|b', 's1|b', 's1|null', 's1|a', 'null|a']);
   });
 });
