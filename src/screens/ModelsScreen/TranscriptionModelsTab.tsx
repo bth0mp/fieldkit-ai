@@ -24,6 +24,7 @@ import { useSttDownloadState } from '../../hooks/useSttDownloadState';
 import { WHISPER_MODELS } from '../../services';
 import { createStyles as createModelsScreenStyles } from './styles';
 import logger from '../../utils/logger';
+import { WHISPER_NOTES } from '../../features/modelGuide/notes';
 
 const ENGLISH_MODELS = WHISPER_MODELS.filter(m => m.lang === 'en');
 const MULTI_MODELS = WHISPER_MODELS.filter(m => m.lang === 'multi');
@@ -64,6 +65,7 @@ const WhisperCard: React.FC<WhisperCardProps> = ({
       isQueued={queued}
       downloadProgress={downloadProgress}
       downloadBytes={downloadBytes}
+      goodFor={WHISPER_NOTES[model.id]?.goodFor}
       testID={`transcription-model-card-${index}`}
       // Present but not active → tap to use; not present → tap to download.
       onPress={downloading ? undefined : (present ? (active ? undefined : () => onSelect(model.id)) : () => onDownload(model.id))}

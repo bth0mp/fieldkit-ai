@@ -253,6 +253,8 @@ export const ModelCard: React.FC<ModelCardProps> = ({
               isActive={isActive}
               recommended={recommended}
               supportsAcceleration={supportsAcceleration}
+              goodFor={goodFor}
+              testID={testID}
             />
           )}
 

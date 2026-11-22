@@ -25,6 +25,7 @@ import { FilterState, SortOption } from './types';
 import { SORT_OPTIONS } from './constants';
 import { formatNumber, getTextModelCompatibility } from './utils';
 import { curatedLiteRTDownloadWarning, LITERT_PARENT_ID } from '../../services/curatedLiteRTRegistry';
+import { LITERT_NOTES } from '../../features/modelGuide/notes';
 import { LITERT_FILE_META, LITERT_RECOMMENDED_MODEL, LITERT_PARENT_RECOMMENDED } from './litertRecommended';
 import { modelManager } from '../../services';
 import { useOffline } from '../../services/networkStatus';
@@ -197,6 +198,7 @@ const ModelDetailView: React.FC<DetailProps> = ({
         onRepairVision={s.needsVisionRepair && !s.progress && !s.repairingVision ? () => handleRepairMmProj(selectedModel, item) : undefined}
         onCancel={s.canCancel ? () => handleCancelDownload(s.downloadKey) : undefined}
         recommended={recommended}
+        goodFor={LITERT_NOTES[item.name]?.goodFor}
         supportsAcceleration={isAccelerableQuant(item.quantization) || !!liteRTMeta}
         failedState={failedState}
       />

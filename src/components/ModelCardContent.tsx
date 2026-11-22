@@ -238,6 +238,9 @@ interface StandardModelCardContentProps {
   recommended?: RecommendedConfig;
   /** Model can run on the GPU/NPU (LiteRT or Q4_0/Q8_0 GGUF) → show the badge. */
   supportsAcceleration?: boolean;
+  /** One "Good for" phrase; the line shows only when it is passed. */
+  goodFor?: string;
+  testID?: string;
 }
 
 export const StandardModelCardContent: React.FC<StandardModelCardContentProps> = ({
@@ -247,6 +250,8 @@ export const StandardModelCardContent: React.FC<StandardModelCardContentProps> =
   isActive,
   recommended,
   supportsAcceleration,
+  goodFor,
+  testID,
 }) => {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -300,6 +305,7 @@ export const StandardModelCardContent: React.FC<StandardModelCardContentProps> =
           {description}
         </Text>
       )}
+      {!!goodFor && <Text style={styles.statsLine} testID={`${testID}-good-for`}>{`Good for: ${goodFor}`}</Text>}
     </>
   );
 };

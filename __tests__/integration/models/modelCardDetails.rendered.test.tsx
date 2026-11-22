@@ -8,7 +8,7 @@
  */
 import { openModelsFromHome } from '../../harness/modelsApp';
 import { resetDeviceMemory } from '../../harness/deviceMemory';
-import { TEXT_NOTES, NO_NOTE } from '../../../src/features/modelGuide/notes';
+import { TEXT_NOTES, WHISPER_NOTES, NO_NOTE } from '../../../src/features/modelGuide/notes';
 
 jest.mock('@react-navigation/native', () => jest.requireActual('@react-navigation/native'));
 jest.mock('../../../src/hooks/useFocusTrigger', () => ({ useFocusTrigger: () => 0 }));
@@ -59,5 +59,12 @@ describe('Model cards (rendered)', () => {
     const texts = coder.UNSAFE_getAllByType(require('react-native').Text)
       .flatMap((n: any) => [n.props.children].flat().filter((c: unknown) => typeof c === 'string')) as string[];
     expect(texts.join('\n')).not.toMatch(/undefined|NaN|downloads this month|likes/);
+  });
+
+  it('shows a Good for line on a Transcription card', async () => {
+    const { rtl, ui } = await openModelsFromHome({ totalGB: 10.82, platform: 'ios' });
+    rtl.fireEvent.press(ui.getByTestId('transcription-models-tab'));
+    const tiny = await rtl.waitFor(() => rtl.within(ui.getByTestId('transcription-model-card-0')), TIMEOUT);
+    expect(tiny.getByText(`Good for: ${WHISPER_NOTES['tiny.en'].goodFor}`)).toBeTruthy();
   });
 });
