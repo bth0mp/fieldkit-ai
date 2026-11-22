@@ -84,6 +84,12 @@ async function handleWebSearch(query: string): Promise<string> {
         'Accept': 'text/html',
       },
     });
+    // A refused or rate-limited search page has no results to parse. Say the search failed,
+    // instead of telling the model that the web has nothing on this query. Checked by status,
+    // not `ok`, so fakes without an `ok` field still read as successful pages.
+    if (response.status >= 400) {
+      throw new Error(`Web search is unavailable right now (HTTP ${response.status}).`);
+    }
     const html = await response.text();
     const results = parseBraveResults(html);
 
@@ -158,19 +164,17 @@ function parseBraveResults(html: string): SearchResult[] {
   return results;
 }
 
+const NAMED_HTML_ENTITIES: Readonly<Record<string, string>> = {
+  amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ',
+};
+
+/** One pass, so `&amp;lt;` becomes the text `&lt;` and is not decoded a second time. */
 function decodeHTMLEntities(text: string): string {
-  return text
-    .replaceAll('&amp;', '&')
-    .replaceAll('&lt;', '<')
-    .replaceAll('&gt;', '>')
-    .replaceAll('&quot;', '"')
-    .replaceAll('&#39;', "'")
-    .replaceAll('&#x27;', "'")
-    .replaceAll('&#x2F;', '/')
-    .replaceAll('&nbsp;', ' ')
-    .replaceAll('&apos;', "'")
-    .replaceAll(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
-    .replaceAll(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCodePoint(Number.parseInt(hex, 16)));
+  return text.replaceAll(/&(#x[0-9a-fA-F]+|#\d+|[a-zA-Z]+);/g, (entity, body: string) => {
+    if (body.startsWith('#x')) return String.fromCodePoint(Number.parseInt(body.slice(2), 16));
+    if (body.startsWith('#')) return String.fromCodePoint(Number(body.slice(1)));
+    return NAMED_HTML_ENTITIES[body] ?? entity;
+  });
 }
 
 function handleGetDatetime(timezone?: string): string {
