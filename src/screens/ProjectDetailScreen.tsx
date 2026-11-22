@@ -49,7 +49,10 @@ export const ProjectDetailScreen: React.FC = () => {
 
   const handleNewChat = () => {
     if (!hasModels) {
-      setAlertState(showAlert('No Model', 'Please download a model first from the Models tab.'));
+      setAlertState(showAlert('No Model', 'Please download a model first from the Models screen.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Open Models', onPress: () => navigation.navigate('Models', { initialTab: 'text' }) },
+      ]));
       return;
     }
     const modelId = activeModelId || downloadedModels[0]?.id;
@@ -165,7 +168,7 @@ export const ProjectDetailScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top']} testID="project-detail-screen">
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -216,8 +219,7 @@ export const ProjectDetailScreen: React.FC = () => {
                 variant="primary"
                 size="small"
                 onPress={handleNewChat}
-                disabled={!hasModels}
-                icon={<Icon name="plus" size={16} color={hasModels ? colors.primary : colors.textDisabled} />}
+                icon={<Icon name="plus" size={16} color={colors.primary} />}
               />
               <Icon
                 name="chevron-right"

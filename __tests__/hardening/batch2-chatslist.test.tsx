@@ -83,22 +83,6 @@ jest.mock('../../src/components/CustomAlert', () => ({
 
 jest.mock('../../src/services', () => ({
   onnxImageGeneratorService: { deleteGeneratedImage: jest.fn(() => Promise.resolve()) },
-  activeModelService: {
-    loadTextModel: jest.fn(() => Promise.resolve()),
-    loadImageModel: jest.fn(() => Promise.resolve()),
-    unloadTextModel: jest.fn(() => Promise.resolve()),
-    unloadImageModel: jest.fn(() => Promise.resolve()),
-  },
-  llmService: { getLoadedModelPath: jest.fn(() => null), isModelLoaded: jest.fn(() => false) },
-  remoteServerManager: { clearActiveRemoteModel: jest.fn() },
-}));
-
-jest.mock('../../src/components', () => ({
-  ModelSelectorModal: ({ visible }: any) => {
-    if (!visible) return null;
-    const { View, Text } = require('react-native');
-    return (<View testID="model-selector-modal"><Text>Select Model</Text></View>);
-  },
 }));
 
 // Render Swipeable's right actions so the delete button is reachable.

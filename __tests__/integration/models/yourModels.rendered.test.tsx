@@ -277,6 +277,19 @@ describe('Your models on the Text tab (rendered)', () => {
     expect(t.ui.getByTestId('models-screen')).toBeTruthy();
   });
 
+  it('while a switch waits, the spinner is on the row just tapped, not on the one still in use', async () => {
+    await boot();
+    await openModels();
+    const { generationService } = require('../../../src/services/generationService');
+    const row = (name: string) => section().getAllByTestId('model-item').find(el => nameOf(el) === name);
+    const spins = (name: string) => t.rtl.within(row(name)!).queryByTestId('model-row-loading') !== null;
+    generationService.runTurn(() => settle(400));
+    press(t.ui.getByLabelText('Use New'));
+    await t.rtl.waitFor(() => expect(spins('New')).toBe(true), TIMEOUT);
+    expect(spins('Used')).toBe(false);
+    await t.rtl.waitFor(() => expect(state().activeModelId).toBe('new'), TIMEOUT);
+  });
+
   // The next two push a second Models screen on top and act on that one.
   it('two quick taps on Use go back once', async () => {
     await boot();

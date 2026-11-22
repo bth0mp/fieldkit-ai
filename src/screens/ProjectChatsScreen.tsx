@@ -184,7 +184,10 @@ export const ProjectChatsScreen: React.FC = () => {
 
   const handleNewChat = () => {
     if (!hasModels) {
-      setAlertState(showAlert('No Model', 'Please download a model first from the Models tab.'));
+      setAlertState(showAlert('No Model', 'Please download a model first from the Models screen.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Open Models', onPress: () => navigation.navigate('Models', { initialTab: 'text' }) },
+      ]));
       return;
     }
     const modelId = activeModelId || downloadedModels[0]?.id;
@@ -254,7 +257,7 @@ export const ProjectChatsScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top']} testID="project-chats-screen">
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Icon name="arrow-left" size={20} color={colors.text} />
@@ -264,8 +267,8 @@ export const ProjectChatsScreen: React.FC = () => {
             {project?.name || 'Chats'}
           </Text>
         </View>
-        <TouchableOpacity onPress={handleNewChat} style={styles.addButton} disabled={!hasModels}>
-          <Icon name="plus" size={20} color={hasModels ? colors.primary : colors.textMuted} />
+        <TouchableOpacity onPress={handleNewChat} style={styles.addButton} testID="project-chats-new" accessibilityRole="button" accessibilityLabel="New chat">
+          <Icon name="plus" size={20} color={colors.primary} />
         </TouchableOpacity>
       </View>
 

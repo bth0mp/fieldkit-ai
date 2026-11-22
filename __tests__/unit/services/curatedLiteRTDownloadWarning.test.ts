@@ -1,6 +1,6 @@
 /**
  * curatedLiteRTDownloadWarning — the SINGLE device-aware decision for "should downloading
- * this curated LiteRT model warn on THIS device?" Both the Models tab and the onboarding
+ * this curated LiteRT model warn on THIS device?" Both the Models screen and the onboarding
  * screen call it, so it must never be a device-blind static flag (the bug: the warning fired
  * on a 12GB device that easily fits the ~3.4GB Gemma 4 E4B model).
  *

@@ -4,13 +4,14 @@
  * The SAME loaded text model must report the SAME RAM footprint everywhere it is shown. The residency
  * chip on the Models manager sheet (`models-row-text-ram`) reads the resident's registered `sizeMB`,
  * which activeModelService computes with the backend-aware `textOverheadMultiplier(inferenceBackend)`
- * (2.2× on a GPU/NPU backend). The Select-Model picker's "Currently Loaded" RAM label
- * (`currently-loaded-model-ram`) computed the figure with a FIXED 1.5× (hardwareService.formatModelRam
- * default), so on a non-CPU backend the two surfaces disagree for the identical model (device 2026-07-14).
+ * (2.2× on a GPU/NPU backend). The model picker's RAM label (once the old selector's "Currently Loaded" label,
+ * now the RAM hint on the model's row in "Your models") computed the figure with a FIXED 1.5×
+ * (hardwareService.formatModelRam default), so on a non-CPU backend the two surfaces disagreed for the identical
+ * model (device 2026-07-14).
  *
- * SPEC (user's view): loaded a 2GB model on the GPU backend → the picker RAM label and the sheet RAM chip
- * show the SAME number of GB. On HEAD the picker shows ~3.0 GB (1.5×) while the sheet chip shows 4.4 GB
- * (2.2×) → RED. The fix routes the picker label through the SAME backend-aware multiplier owner.
+ * SPEC (user's view): loaded a 2GB model on the GPU backend → the row's RAM hint and the sheet RAM chip
+ * show the SAME number of GB (a fixed 1.5× gives ~3.0 GB against the chip's 4.4 GB). The row routes through
+ * the SAME backend-aware multiplier owner.
  *
  * Real Models-screen list and In memory sheet + real gestures + real activeModelService/modelResidencyManager; fakes only
  * at the native llama/fs/RAM boundary. Backend is switched to GPU via the REAL BackendSelector control
@@ -63,8 +64,8 @@ function ramGb(node: { props?: { children?: unknown } }): string {
   return bare[1];
 }
 
-describe('RAM display agreement — picker label matches the residency chip for the same model', () => {
-  it('shows the SAME GB figure on the manager-sheet chip and the picker "Currently Loaded" label (GPU backend)', async () => {
+describe('RAM display agreement — the model row hint matches the residency chip for the same model', () => {
+  it('shows the SAME GB figure on the In memory sheet chip and the model row RAM hint (GPU backend)', async () => {
     const boundary = installNativeBoundary({ llama: true, fs: true, ram: { platform: 'android', totalBytes: 12 * GB, availBytes: 8 * GB } });
     const g = globalThis as unknown as { window?: Record<string, unknown> };
     if (!g.window) g.window = { dispatchEvent: () => true, addEventListener: () => {}, removeEventListener: () => {} };
@@ -79,8 +80,6 @@ describe('RAM display agreement — picker label matches the residency chip for 
     const { InMemory } = require('../../../src/screens/ModelsScreen/InMemory');
     const { ResidentsProbe } = require('../../harness/ResidentsProbe');
     const { BackendSelector } = require('../../../src/components/settings/textGenAdvancedSections');
-    const { ModelSelectorModal } = require('../../../src/components/ModelSelectorModal');
-    const { llmService } = require('../../../src/services/llm');
 
     // BOUNDARY: a downloaded 2GB model = the persisted record + the file on disk. 2GB makes the two
     // multipliers visibly disagree (1.5× → 3.0 GB, 2.2× → 4.4 GB) yet fit the 8GB-avail budget.
@@ -125,15 +124,12 @@ describe('RAM display agreement — picker label matches the residency chip for 
     await rtl.waitFor(() => { expect(view.queryByTestId('models-row-text') !== null).toBe(true); }, { timeout: 10000 });
     const chipGb = ramGb(await rtl.waitFor(() => view.getByTestId('models-row-text-ram'), { timeout: 10000 }));
 
-    // The Select-Model picker "Currently Loaded" RAM label — mounted with the real loaded path.
-    const picker = rtl.render(React.createElement(ModelSelectorModal, {
-      visible: true, onClose: () => {}, onSelectModel: () => {}, onUnloadModel: () => {}, isLoading: false,
-      currentModelPath: llmService.getLoadedModelPath(),
-    }));
-    const pickerGb = ramGb(await rtl.waitFor(() => picker.getByTestId('currently-loaded-model-ram'), { timeout: 10000 }));
+    // The RAM hint on the loaded model's row in "Your models".
+    const hint = await rtl.waitFor(() => rtl.within(view.getAllByTestId('model-item')[0]).getByText(/GB RAM/), { timeout: 10000 });
+    const pickerGb = ramGb(hint);
 
     // Same model, same backend → the two surfaces must show the SAME RAM figure.
-    // RED on HEAD: picker=3.0 (fixed 1.5×) vs chip=4.4 (backend-aware 2.2×).
+    // A fixed 1.5× would show 3.0 against the chip's 4.4 (backend-aware 2.2×).
     expect(pickerGb).toBe(chipGb);
   }, 60000);
 });

@@ -24,7 +24,7 @@ const DISCOVERY_FETCH_TIMEOUT_MS = 5000;
 /**
  * The Off Grid AI Desktop gateway tags every /v1/models entry with a modality
  * `kind` (chat | vision | image | speech | transcription). Only chat/vision are
- * text models that belong in the chat model picker — image, speech (TTS) and
+ * text models that belong in the text model lists — image, speech (TTS) and
  * transcription (STT) models must not be listed as text. Servers that don't send
  * `kind` (Ollama, LM Studio) fall back to the name-based generative filter.
  */

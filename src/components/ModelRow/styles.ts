@@ -3,10 +3,7 @@ import { TYPOGRAPHY, SPACING } from '../../constants';
 import type { ThemeColors } from '../../theme';
 
 /**
- * Canonical local-model row — one design shared by every model picker (chat + home) so
- * the sheets can't drift into differential looks. Lifted verbatim from the chat
- * selector's card (the design agreed as canonical); the home sheet adopts it via the
- * shared ModelRow component. Any restyle happens here once.
+ * Canonical model row for "Your models" on the Models screen. Any restyle happens here once.
  */
 export const createModelRowStyles = (colors: ThemeColors) => StyleSheet.create({
   row: {
@@ -49,15 +46,6 @@ export const createModelRowStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   visionBadgeText: { ...TYPOGRAPHY.label, color: colors.info },
   ramHint: { ...TYPOGRAPHY.bodySmall, color: colors.textMuted, marginTop: 4 },
-  checkmark: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-  },
-  checkmarkText: { backgroundColor: colors.primary },
-  checkmarkImage: { backgroundColor: colors.info },
   status: { ...TYPOGRAPHY.label, color: colors.textMuted, marginLeft: SPACING.sm },
   action: {
     minHeight: 32,

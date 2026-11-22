@@ -18,8 +18,6 @@ export interface ModelRowProps {
   ramHint?: string;
   /** Highlight as the active/selected model. */
   isActive?: boolean;
-  /** Show the trailing checkmark (currently loaded). */
-  isLoaded?: boolean;
   /** This model is being loaded right now — show a trailing spinner on the row itself. */
   loading?: boolean;
   /** Accent: text models use the primary (emerald) accent, image models the info accent. */
@@ -36,12 +34,11 @@ export interface ModelRowProps {
 }
 
 /**
- * The one local-model row used by every model picker (chat + home). Purely
- * presentational — callers map their model shape to these props — so the two sheets
- * render an identical card and can't drift into differential designs.
+ * The one model row used by "Your models" on the Models screen. Purely presentational:
+ * callers map their model shape to these props.
  */
 export const ModelRow: React.FC<ModelRowProps> = ({
-  name, size, quant, isVision, ramHint, isActive, isLoaded, loading, variant = 'text', remote, status, action, disabled, onPress, testID,
+  name, size, quant, isVision, ramHint, isActive, loading, variant = 'text', remote, status, action, disabled, onPress, testID,
 }) => {
   const styles = useThemedStyles(createModelRowStyles);
   const { colors } = useTheme();
@@ -91,13 +88,9 @@ export const ModelRow: React.FC<ModelRowProps> = ({
         {!!ramHint && <Text style={styles.ramHint}>{ramHint}</Text>}
       </View>
       {!!status && <Text style={styles.status}>{status}</Text>}
-      {loading ? (
+      {loading && (
         <ActivityIndicator testID="model-row-loading" size="small" color={isImage ? colors.info : colors.primary} />
-      ) : isLoaded ? (
-        <View style={[styles.checkmark, isImage ? styles.checkmarkImage : styles.checkmarkText]}>
-          <Icon name="check" size={16} color={colors.background} />
-        </View>
-      ) : null}
+      )}
       {action && (
         <TouchableOpacity
           style={styles.action}

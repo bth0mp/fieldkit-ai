@@ -7,7 +7,7 @@
  * DEVICE GROUND TRUTH (2026-07-15, 12GB Android, Aggressive): loading a large text model ("qwythos")
  * refused with "Failed to load model: … it needs ~6738MB but only 5030MB is available" — an OK-only
  * alert, NO Load Anyway. Root cause: the pre-load context gate (llmSafetyChecks.resolveSafeContext)
- * threw a plain Error; loadModelWithOverride only offers "Load Anyway" for an OverridableMemoryError,
+ * threw a plain Error; the chat's load (initiateModelLoad) only offers "Load Anyway" for an OverridableMemoryError,
  * so a plain Error fell to the dead-end "Failed to load model" alert.
  *
  * The intersection reproduced (numbers pinned from the live [MEM-SM] trace, not guessed): Aggressive

@@ -179,11 +179,14 @@ describe('ProjectChatsScreen', () => {
       expect(mockNavigate).toHaveBeenCalledWith('Chat', { conversationId: 'new-conv-id', projectId: 'proj1' });
     });
 
-    it('does not create conversation when no models (plus button disabled)', () => {
+    it('with no models, the plus button creates no chat and offers Open Models, which opens the Text tab', () => {
       mockDownloadedModels = [];
-      render(<ProjectChatsScreen />);
-      // When no models, plus button is disabled and createConversation is not called
+      const { getByTestId } = render(<ProjectChatsScreen />);
+      fireEvent.press(getByTestId('project-chats-new'));
       expect(mockCreateConversation).not.toHaveBeenCalled();
+      expect(getByTestId('alert-message').props.children).toBe('Please download a model first from the Models screen.');
+      fireEvent.press(getByTestId('alert-button-Open Models'));
+      expect(mockNavigate).toHaveBeenCalledWith('Models', { initialTab: 'text' });
     });
 
     it('uses first downloaded model when no activeModelId', async () => {

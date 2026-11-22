@@ -33,6 +33,7 @@ interface GenerationSettingsModalProps {
   onClose: () => void;
   onOpenProject?: () => void;
   onOpenGallery?: () => void;
+  onOpenImageModels?: () => void;
   onShareConversation?: () => void;
   onDeleteConversation?: () => void;
   onOpenTTSSettings?: () => void;
@@ -46,6 +47,7 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
   onClose,
   onOpenProject,
   onOpenGallery,
+  onOpenImageModels,
   onShareConversation,
   onDeleteConversation,
   onOpenTTSSettings,
@@ -132,7 +134,7 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
             color={colors.textMuted}
           />
         </TouchableOpacity>
-        {imageSettingsOpen && <ImageGenerationSection />}
+        {imageSettingsOpen && <ImageGenerationSection onClose={onClose} onOpenImageModels={onOpenImageModels} />}
 
         {/* TEXT GENERATION SETTINGS */}
         <TouchableOpacity

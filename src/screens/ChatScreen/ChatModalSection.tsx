@@ -30,6 +30,7 @@ type ChatModalSectionProps = {
   imageCount: number;
   activeConversationId: string | null | undefined;
   navigation: any;
+  openModels: (tab: 'text' | 'image') => void;
   viewerImageUri: string | null;
   setViewerImageUri: (v: string | null) => void;
   handleSaveImage: () => void;
@@ -43,7 +44,7 @@ export const ChatModalSection: React.FC<ChatModalSectionProps> = ({
   showSettingsPanel, setShowSettingsPanel,
   debugInfo, activeProject, activeConversation, settings, projects,
   handleSelectProject, handleDeleteConversation,
-  imageCount, activeConversationId, navigation,
+  imageCount, activeConversationId, navigation, openModels,
   viewerImageUri, setViewerImageUri, handleSaveImage,
   isRemote,
 }) => (
@@ -68,6 +69,7 @@ export const ChatModalSection: React.FC<ChatModalSectionProps> = ({
       onClose={() => setShowSettingsPanel(false)}
       onOpenProject={() => setShowProjectSelector(true)}
       onOpenGallery={imageCount > 0 ? () => navigation.navigate('Gallery', { conversationId: activeConversationId }) : undefined}
+      onOpenImageModels={() => openModels('image')}
       onShareConversation={canShareConversation(activeConversation) ? () => { shareConversation(activeConversation); } : undefined}
       onDeleteConversation={activeConversation ? handleDeleteConversation : undefined}
       conversationImageCount={imageCount}

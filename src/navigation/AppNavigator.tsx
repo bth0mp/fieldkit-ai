@@ -59,7 +59,7 @@ import { NewChatTabButton } from './NewChatTabButton';
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-// The New chat place has no screen of its own; its button opens a chat or goes Home.
+// The New chat place has no screen of its own; its button opens a chat, or the Models screen when no model is in use.
 const NoScreen: React.FC = () => null;
 const renderNewChatButton = (props: BottomTabBarButtonProps) => <NewChatTabButton {...props} />;
 

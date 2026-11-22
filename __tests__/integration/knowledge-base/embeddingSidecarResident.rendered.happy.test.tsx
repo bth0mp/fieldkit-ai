@@ -1,14 +1,14 @@
 /**
  * T118 (GREEN guard, UI) — the embedding model lazy-loads on the first real embed() and co-resides as a
- * reclaimable SIDECAR: after a document is indexed into a project's knowledge base, the model selector's
- * "In Memory" section lists `resident-item-embedding`.
+ * reclaimable SIDECAR: after a document is indexed into a project's knowledge base, the In memory sheet
+ * lists `resident-item-embedding`.
  *
  * Real stack, real gestures, boundary fakes only: mount the REAL KnowledgeBaseScreen, tap the real "Add
  * Document" button → real ragService.indexDocument → real documentService (memfs) → chunk → real
  * embeddingService.load() (registers `type:'embedding'` residency) → real embed() → real ragDatabase writes
  * to a REAL in-memory sqlite engine. The only fakes are device leaves: the picker, memfs, the embedding
  * model's native context (llama fake's `embedding()` → device-shaped 384-dim vector), and op-sqlite backed by
- * node:sqlite. Residency is validated through the SAME model-selector In Memory UI as T111–T117 —
+ * node:sqlite. Residency is validated through the SAME In memory sheet as T111–T117 —
  * not getResidents().
  *
  * Precondition: before indexing, In Memory does NOT list the embedding model — so its appearance after the

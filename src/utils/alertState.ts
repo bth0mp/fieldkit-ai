@@ -1,7 +1,7 @@
 /**
  * Alert STATE — a pure, React-free descriptor of an alert + the factories that build it. Lives in
- * the pure layer (not in the CustomAlert component) so non-UI code (e.g. services/loadModelWithOverride,
- * which owns the Load-Anyway flow) can construct an alert state to hand back to a screen WITHOUT a
+ * the pure layer (not in the CustomAlert component) so non-UI code (e.g. a service that owns a
+ * Load-Anyway flow) can construct an alert state to hand back to a screen WITHOUT a
  * service → component dependency (no-backward-layering-core). The CustomAlert component imports and
  * RE-EXPORTS these, so existing `from '../components/CustomAlert'` importers keep working.
  */

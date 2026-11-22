@@ -1,7 +1,7 @@
 /**
- * TDD (feature not built yet) — per-model eject in the model selector.
+ * TDD (feature not built yet) — per-model eject in the In memory sheet.
  *
- * The model selector should list EVERY model currently in memory (text, image, and sidecars like whisper),
+ * The In memory sheet should list EVERY model currently in memory (text, image, and sidecars like whisper),
  * each with its RAM, and let the user eject each one INDIVIDUALLY — freeing only that model (calling its real
  * unload), leaving the others resident. This is the "In Memory" section. It also lets a user free the whisper
  * sidecar that ejectAll leaks (T023b).
@@ -20,7 +20,7 @@ jest.mock('@react-navigation/native', () => ({
   useFocusEffect: () => {}, useIsFocused: () => true,
 }));
 
-describe('per-model eject (TDD) — model selector In Memory section', () => {
+describe('per-model eject (TDD) — In memory sheet', () => {
   it('lists every resident with RAM and ejects one individually, leaving the others', async () => {
     // Heavy (4GB) text model so the image load EVICTS it (one heavy at a time) → residents = image +
     // whisper. The harness default is a lighter 2GB model (fits chat-flow budgets) which would co-reside.

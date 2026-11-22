@@ -75,6 +75,9 @@ describe('In memory on the Models screen (rendered)', () => {
     expect(ROWS.every(row => shown(`models-row-${row}`))).toBe(true);
     // Only the text model is loaded.
     expect(gb(t.ui.getByTestId('in-memory-label'))).toBe(gb(t.ui.getByTestId('models-row-text-ram')));
+    // The row names the loaded model, and its figure is a real number of GB (memory is not a black box).
+    expect(t.rtl.within(t.ui.getByTestId('models-row-text')).getByText('Test Model')).toBeTruthy();
+    expect(Number(gb(t.ui.getByTestId('models-row-text-ram')))).toBeGreaterThan(0);
   });
 
   it('ejecting a row frees memory and keeps the choice', async () => {

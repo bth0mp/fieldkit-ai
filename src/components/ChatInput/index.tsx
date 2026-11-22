@@ -32,6 +32,8 @@ interface ChatInputProps {
   imageModelLoaded?: boolean;
   onImageModeChange?: (mode: ImageModeState) => void;
   onOpenSettings?: () => void;
+  /** Opens the Models screen on a tab; the "No Image Model" alert offers it. */
+  onOpenModels?: (tab: 'text' | 'image') => void;
   queueCount?: number;
   queuedTexts?: string[];
   onClearQueue?: () => void;
@@ -121,6 +123,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   imageModelLoaded = false,
   onImageModeChange,
   onOpenSettings: _onOpenSettings,
+  onOpenModels,
   queueCount = 0,
   queuedTexts = [],
   onClearQueue,
@@ -219,7 +222,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     if (!imageModelLoaded) {
       const { downloadedImageModels, setActiveImageModelId } = useAppStore.getState();
       if (downloadedImageModels.length === 0) {
-        setAlertState(showAlert('No Image Model', 'Download an image generation model from the Models screen to enable this feature.', [{ text: 'OK' }]));
+        setAlertState(showAlert('No Image Model', 'Download an image generation model from the Models screen to enable this feature.', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Open Models', onPress: () => onOpenModels?.('image') },
+        ]));
         quickSettings.hide();
         return;
       }

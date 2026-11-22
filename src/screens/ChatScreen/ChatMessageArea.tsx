@@ -300,6 +300,7 @@ export const ChatMessageArea: React.FC<ChatMessageAreaProps> = ({
             conversationId={chat.activeConversationId}
             imageModelLoaded={chat.imageModelLoaded}
             onOpenSettings={() => chat.setShowSettingsPanel(true)}
+            onOpenModels={chat.openModels}
             queueCount={chat.queueCount}
             queuedTexts={chat.queuedTexts}
             onClearQueue={() => generationService.clearQueue()}

@@ -404,11 +404,14 @@ describe('ProjectDetailScreen', () => {
       expect(mockNavigate).toHaveBeenCalledWith('Chat', { conversationId: 'new-conv-1', projectId: 'proj1' });
     });
 
-    it('disables New button when no models available', () => {
+    it('with no models, New creates no chat and offers Open Models, which opens the Text tab', () => {
       mockDownloadedModels = [];
       const { getByTestId } = render(<ProjectDetailScreen />);
-      const newButton = getByTestId('button-New');
-      expect(newButton.props.accessibilityState?.disabled || newButton.props.disabled).toBeTruthy();
+      fireEvent.press(getByTestId('button-New'));
+      expect(mockCreateConversation).not.toHaveBeenCalled();
+      expect(getByTestId('alert-message').props.children).toBe('Please download a model first from the Models screen.');
+      fireEvent.press(getByTestId('alert-button-Open Models'));
+      expect(mockNavigate).toHaveBeenCalledWith('Models', { initialTab: 'text' });
     });
 
     it('uses active model ID for new conversation', () => {

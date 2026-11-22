@@ -50,7 +50,7 @@ export const DOWNLOAD_FILE_STEP_INDEX = 9;
 // Download Manager icon spotlight (continuation of downloadedModel flow)
 export const DOWNLOAD_MANAGER_STEP_INDEX = 10;
 
-// Model picker first item spotlight (continuation of loadedModel flow)
+// First "Your models" row spotlight (continuation of loadedModel flow)
 export const MODEL_PICKER_STEP_INDEX = 11;
 
 // Voice record button spotlight (continuation of sentMessage flow)

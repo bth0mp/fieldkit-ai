@@ -1,14 +1,14 @@
 /**
  * RED-FLOW (UI integration, HEAVY entry point) — the MODELS manager sheet is the residency surface
  * (agreed design 2026-07-14): each modality row shows a RAM chip when its model is RESIDENT plus a
- * per-row eject control; "Eject All" stays; row tap still goes to that type's tab. And "In Memory"
- * moves OUT of the Select Model picker (the manager sheet replaces it).
+ * per-row eject control; "Eject All" stays; row tap still goes to that type's tab. ("In Memory" left the
+ * Select Model picker for this sheet; the picker is gone, so that half has no test.)
  *
  * Real Models-screen list and In memory sheet + real gestures + real activeModelService/modelResidencyManager; fakes only
  * at the native llama/fs/RAM boundary. The ResidentsProbe (test-only) is the sanctioned observable
  * for the raw resident set; every product assertion rides the real sheet/picker surfaces.
  *
- * RED on HEAD: the sheet has no RAM chip and no per-row eject; the picker still renders In Memory.
+ * RED on HEAD: the sheet has no RAM chip and no per-row eject.
  * Falsifiers: before any load the text row shows NO chip and NO eject (and the other rows never do);
  * after eject the chip is gone while the row still opens the picker.
  */
@@ -75,7 +75,7 @@ async function setupHome() {
   rtl.fireEvent.press(rows[0]);
   await rtl.waitFor(() => { expect(useAppStore.getState().activeModelId).toBe('m'); }, { timeout: 10000 });
 
-  return { boundary, React, rtl, useAppStore, activeModelService, view, onOpenTab };
+  return { boundary, rtl, useAppStore, activeModelService, view, onOpenTab };
 }
 
 describe('manager sheet residency — RAM chip + per-row eject (agreed design 2026-07-14)', () => {
@@ -115,28 +115,5 @@ describe('manager sheet residency — RAM chip + per-row eject (agreed design 20
     // The row itself still goes to the Text tab (eject must not swallow the row tap).
     await rtl.act(async () => { pressByWalkingUp(view.getByTestId('models-row-text')); });
     await rtl.waitFor(() => { expect(onOpenTab.mock.calls.map((c: unknown[]) => c[0])).toEqual(['text']); }, { timeout: 10000 });
-  }, 60000);
-
-  it('the Select Model picker no longer renders the In Memory section (moved to the manager sheet)', async () => {
-    const h = await setupHome();
-    const { rtl, view, React } = h;
-
-    await rtl.act(async () => { await h.activeModelService.loadTextModel('m'); });
-    // Guard against the trivially-green null: a resident REALLY exists (the section would render on HEAD).
-    await rtl.waitFor(() => { expect(view.getByTestId('probe-residents').props.children).toContain('text'); }, { timeout: 10000 });
-
-    // The surface that carried "In Memory": the chat's ModelSelectorModal (mounted the way the
-    // sibling memory suite does — with a resident live, the section rendered here on HEAD).
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { ModelSelectorModal } = require('../../../src/components/ModelSelectorModal');
-    const picker = rtl.render(React.createElement(ModelSelectorModal, {
-      visible: true, onClose: () => {}, onSelectModel: () => {}, onUnloadModel: () => {}, isLoading: false,
-      currentModelPath: null,
-    }));
-    await rtl.waitFor(() => { expect(picker.queryByText('Select Model')).not.toBeNull(); }, { timeout: 10000 });
-    await new Promise((r) => setTimeout(r, 400)); // one poll tick of the section, so absence is real
-
-    // RED on HEAD: the picker still shows "In Memory". The manager sheet is the residency surface now.
-    expect(picker.queryByTestId('in-memory-section')).toBeNull();
   }, 60000);
 });

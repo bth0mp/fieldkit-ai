@@ -57,7 +57,7 @@ const mockStopGeneration = llmService.stopGeneration as jest.Mock;
 const mockIsModelLoaded = llmService.isModelLoaded as jest.Mock;
 
 // Mock CustomAlert helpers — both the barrel (used by useChatModelActions) and the
-// concrete module (used by the shared loadModelWithOverride helper it now delegates to).
+// concrete module.
 const showAlertMock = (title: string, message: string, buttons?: any[]) => ({
   visible: true,
   title,
@@ -193,8 +193,10 @@ describe('initiateModelLoad', () => {
     const deps = makeDeps();
     await initiateModelLoad(deps, false);
     expect(deps.setAlertState).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Error' }),
+      expect.objectContaining({ title: 'Error', message: expect.stringContaining('Load failed') }),
     );
+    // A failure that is not the memory gate offers no Load Anyway.
+    expect(deps.setAlertState).not.toHaveBeenCalledWith(expect.objectContaining({ title: 'Insufficient Memory' }));
   });
 
   it('resumes the pending turn after "Load Anyway" on a measured-loader refusal (F16)', async () => {
@@ -411,5 +413,9 @@ describe('initiateModelLoad — Load Anyway button (measured loader refusal, tur
 
     // State cleaned up (setIsModelLoading(false) called in finally)
     expect(deps.setIsModelLoading).toHaveBeenCalledWith(true); // set by callback
+    expect(deps.setIsModelLoading).toHaveBeenLastCalledWith(false); // the retry's own finally
+    // A failed forced load shows a plain Error: Load Anyway is offered only once.
+    expect(deps.setAlertState).toHaveBeenCalledWith(expect.objectContaining({ title: 'Error' }));
+    expect(deps.setAlertState).not.toHaveBeenCalledWith(expect.objectContaining({ title: 'Insufficient Memory' }));
   });
 });

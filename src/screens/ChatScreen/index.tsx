@@ -232,6 +232,7 @@ export const ChatScreen: React.FC = () => {
           imageCount={imageCount}
           activeConversationId={chat.activeConversationId}
           navigation={chat.navigation}
+          openModels={chat.openModels}
           viewerImageUri={chat.viewerImageUri}
           setViewerImageUri={chat.setViewerImageUri}
           handleSaveImage={chat.handleSaveImage}

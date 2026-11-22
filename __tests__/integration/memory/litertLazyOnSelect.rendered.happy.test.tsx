@@ -9,7 +9,7 @@
  * ('exactly the lazy model loading I wanted')"). This guard protects that decision from regressing back to
  * eager warm (which re-introduces the co-residency race).
  *
- * Residency is validated through the model selector's real "In Memory" section (same as T111–T117), not
+ * Residency is validated through the real In memory sheet (same as T111–T117), not
  * getResidents(). Falsify: if select eager-loaded, models-row-text-ram would be present BEFORE any send.
  */
 import { setupChatScreen } from '../../harness/chatHarness';

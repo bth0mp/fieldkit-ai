@@ -2,7 +2,7 @@
  * Tab bar (rendered): the bottom bar has five places, Home, Chats, a raised round New chat button, Kit and
  * Settings. Projects and Models are no longer tabs; the Your library and Phone cards on Home open them as screens
  * with a back arrow. The New chat button opens a new chat when a text or image model is active, and otherwise
- * goes to Home, where the setup card is.
+ * opens the Models screen, where Use opens the new chat.
  *
  * Real AppNavigator in a real NavigationContainer, with the real navigation library (the global jest.setup stub of
  * useNavigation is lifted here, so every screen navigates for real), and the real Home, Chats, Chat, Projects and
@@ -70,30 +70,30 @@ describe('Tab bar (rendered)', () => {
     expect(ui.queryByTestId('projects-tab')).toBeNull();
     expect(ui.queryByTestId('models-tab')).toBeNull();
 
-    // 2. With no model loaded, New chat from the Chats tab goes Home, where the setup card is, and opens no chat.
+    // 2. With no model in use, New chat from the Chats tab opens Models (no chat yet); Use there opens the new chat
+    // with its input, in the Models screen's place.
     rtl.fireEvent.press(ui.getByTestId('chats-tab'));
     await rtl.waitFor(() => expect(ui.getByTestId('chats-tab')).toBeSelected(), TIMEOUT);
     rtl.fireEvent.press(ui.getByTestId('new-chat-button'));
-    await rtl.waitFor(() => expect(ui.getByTestId('home-tab')).toBeSelected(), TIMEOUT);
-    expect(ui.getByTestId('setup-card')).toBeTruthy();
+    await rtl.waitFor(() => expect(ui.getByTestId('models-screen')).toBeTruthy(), TIMEOUT);
     expect(ui.queryByTestId('chat-input')).toBeNull();
-
-    // 3. Choose the model from the setup card (it opens Models, where Use goes back Home); New chat now opens a chat with its input.
-    rtl.fireEvent.press(ui.getByTestId('browse-models-button'));
-    const rows = await rtl.waitFor(() => {
-      const r = ui.queryAllByTestId('model-item');
-      expect(r.length).toBeGreaterThan(0);
-      return r;
-    }, TIMEOUT);
-    rtl.fireEvent.press(rows[0]);
-    await rtl.waitFor(() => expect(ui.getByTestId('model-chip-label')).toHaveTextContent('Test Model'), TIMEOUT);
-    rtl.fireEvent.press(ui.getByTestId('new-chat-button'));
+    rtl.fireEvent.press(await rtl.waitFor(() => ui.getByLabelText('Use Test Model'), TIMEOUT));
     await rtl.waitFor(() => expect(ui.getByTestId('chat-input')).toBeTruthy(), TIMEOUT);
 
-    // Back to Home with the chat's own back arrow.
+    // 3. Back from that chat with its own back arrow is the Chats tab it came from; with the model now in use,
+    // New chat opens a chat directly.
     rtl.fireEvent.press(rtl.within(ui.getByTestId('chat-screen')).UNSAFE_getAllByProps({ name: 'arrow-left' })[0]);
     await rtl.waitFor(() => expect(ui.queryByTestId('chat-screen')).toBeNull(), TIMEOUT);
-    expect(ui.getByTestId('home-tab')).toBeSelected();
+    expect(ui.getByTestId('chats-tab')).toBeSelected();
+    rtl.fireEvent.press(ui.getByTestId('new-chat-button'));
+    await rtl.waitFor(() => expect(ui.getByTestId('chat-input')).toBeTruthy(), TIMEOUT);
+    expect(ui.queryByTestId('models-screen')).toBeNull();
+
+    // Back to Chats with the chat's own back arrow, then on to Home.
+    rtl.fireEvent.press(rtl.within(ui.getByTestId('chat-screen')).UNSAFE_getAllByProps({ name: 'arrow-left' })[0]);
+    await rtl.waitFor(() => expect(ui.queryByTestId('chat-screen')).toBeNull(), TIMEOUT);
+    rtl.fireEvent.press(ui.getByTestId('home-tab'));
+    await rtl.waitFor(() => expect(ui.getByTestId('home-tab')).toBeSelected(), TIMEOUT);
 
     // 4. The Your library card's Projects row opens Projects, and its back arrow returns Home.
     rtl.fireEvent.press(ui.getByTestId('home-library-projects'));

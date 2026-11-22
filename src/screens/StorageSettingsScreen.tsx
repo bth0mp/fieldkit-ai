@@ -223,7 +223,7 @@ export const StorageSettingsScreen: React.FC = () => {
         <OrphanedFilesSection onStorageChange={loadStorageInfo} />
 
         <Text style={styles.hint}>
-          To free up space, you can delete models from the Models tab.
+          To free up space, you can delete models in the Download Manager.
         </Text>
       </ScrollView>
 
