@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect, RouteProp } from '@react-navigation/native';
 import { AlertState, initialAlertState } from '../../components';
 import { useAppStore, useChatStore, useProjectStore, useRemoteServerStore } from '../../stores';
 import { callHook, HOOKS } from '../../bootstrap/hookRegistry';
@@ -16,16 +16,12 @@ import { toolPermissions } from '../../services/tools/toolPermissions';
 import { useGeneratingConversationId } from '../../hooks/useGenerationSession';
 import { Message, MediaAttachment, Project, DownloadedModel, DebugInfo, RemoteModel } from '../../types';
 import { RootStackParamList } from '../../navigation/types';
-import { ensureModelLoadedFn, ensureTextModelForChatFn, handleModelSelectFn, handleUnloadModelFn, initiateModelLoad, useChatImageModelEffects, useChatModelStateSync } from './useChatModelActions';
+import { ensureModelLoadedFn, ensureTextModelForChatFn, initiateModelLoad, useChatImageModelEffects, useChatModelStateSync } from './useChatModelActions';
 import { startGenerationFn, handleSendFn, handleStopFn, handleSelectProjectFn, dispatchGenerationFn } from './useChatGenerationActions';
 import { handleRetryMessageFn, handleEditMessageFn, handleDeleteConversationFn, handleGenerateImageFromMsgFn } from './useChatMessageHandlers';
 import { getDisplayMessages } from './types';
 import { saveImageToGallery } from './useSaveImage';
 import { needsVisionRepair } from '../../utils/visionRepair';
-import {
-  isSuspiciousRecoveredImageModel,
-  isSuspiciousRecoveredTextModel,
-} from '../../utils/modelSelectorFilters';
 
 export type { AlertState };
 export type { ChatMessageItem } from './types';
@@ -106,10 +102,6 @@ export const useChatScreen = () => {
   const [supportsVision, setSupportsVision] = useState(false);
   const [showProjectSelector, setShowProjectSelector] = useState(false);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
-  const [showModelSelector, setShowModelSelector] = useState(false);
-  // Which tab the model selector opens on (the models manager row the user tapped, or a notice that asks for
-  // the on-device text model).
-  const [modelSelectorTab, setModelSelectorTab] = useState<'text' | 'image'>('text');
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null);
   const [alertState, setAlertState] = useState<AlertState>(initialAlertState);
@@ -127,8 +119,9 @@ export const useChatScreen = () => {
   const lastMessageCountRef = useRef(0);
   // Owned by the generationSession service (single owner); observed reactively here.
   const generatingConversationId = useGeneratingConversationId();
-  // Stashed when the model selector opens with no text model; replayed on pick.
-  const pendingMessageRef = useRef<{ text: string; attachments?: MediaAttachment[] } | null>(null);
+  // Stashed, with the chat it was written in, when a message needs a text model and none was ever chosen; sent
+  // once when the chat is focused again with a model in use.
+  const pendingMessageRef = useRef<{ text: string; attachments?: MediaAttachment[]; conversationId: string } | null>(null);
 
   // The text model is intentionally NOT loaded on chat open. It loads lazily on
   // send, when the generation path recognizes a local text model is needed
@@ -219,19 +212,13 @@ export const useChatScreen = () => {
   const hasTextModel = activeModelInfo.modelId !== null;
   const hasActiveModel = hasTextModel || !!activeImageModelId;
   const activeModelName = activeModelInfo.modelName;
-  const availableDownloadedTextModels = useMemo(
-    () => downloadedModels.filter(model => !isSuspiciousRecoveredTextModel(model)),
-    [downloadedModels],
-  );
-  const availableDownloadedImageModels = useMemo(
-    () => downloadedImageModels.filter(model => !isSuspiciousRecoveredImageModel(model)),
-    [downloadedImageModels],
-  );
   const hasAvailableModels =
-    availableDownloadedTextModels.length > 0 ||
-    availableDownloadedImageModels.length > 0 ||
-    discoveredModels[activeServerId || '']?.length > 0 ||
+    downloadedModels.length > 0 ||
+    downloadedImageModels.length > 0 ||
     Object.values(discoveredModels).some(models => models.length > 0);
+  const openModels = useCallback((tab: 'text' | 'image') => {
+    (navigation as any).navigate('Models', { initialTab: tab });
+  }, [navigation]);
 
   const effectiveProjectId = activeConversation ? activeConversation.projectId : pendingProjectId;
   const activeProject = effectiveProjectId ? getProject(effectiveProjectId) : null;
@@ -247,19 +234,18 @@ export const useChatScreen = () => {
     setAppIsGeneratingImage, addMessage, clearStreamingMessage, deleteConversation,
     setActiveConversation, removeImagesByConversationId, navigation, setShowSettingsPanel,
     ensureModelLoaded: async (onLoadedResume?: () => void) => ensureModelLoadedFn(modelDeps, onLoadedResume),
-    ensureTextModelForChat: () => ensureTextModelForChatFn({ setShowModelSelector, setLoadingModel, setIsModelLoading }),
-    setPendingMessage: (text: string, attachments?: MediaAttachment[]) => { pendingMessageRef.current = { text, attachments }; },
+    ensureTextModelForChat: () => ensureTextModelForChatFn({ openModels, setLoadingModel, setIsModelLoading }),
+    setPendingMessage: (text: string, attachments: MediaAttachment[] | undefined, conversationId: string) => { pendingMessageRef.current = { text, attachments, conversationId }; },
     createConversation,
     pendingProjectId,
-    setShowModelSelector,
-    setModelSelectorTab,
+    openModels,
   };
   genDepsRef.current = genDeps;
 
   const modelDeps = {
     activeModel, activeModelId: activeModelInfo.modelId, activeModelInfo, hasActiveModel, activeConversationId, isStreaming, settings,
     clearStreamingMessage, createConversation, addMessage,
-    setIsModelLoading, setLoadingModel, setSupportsVision, setShowModelSelector,
+    setIsModelLoading, setLoadingModel, setSupportsVision,
     setAlertState, modelLoadStartTimeRef,
   };
 
@@ -356,7 +342,6 @@ export const useChatScreen = () => {
 
   const handleReloadTextModel = useCallback(async () => {
     if (!activeModelInfo.modelId || activeModelInfo.isRemote) return;
-    setShowModelSelector(true);
     // Unload with keepSelection=true so a failed reload never clears activeModelId
     // (the default unload cleared it, so an OOM stranded the chat: stuck banner +
     // wedged send). The unload still nulls loadedTextModelId, so loadTextModel
@@ -374,22 +359,24 @@ export const useChatScreen = () => {
     handleSendFn(genDeps, { text, attachments, imageMode, startGeneration, setDebugInfo });
   useSendFirstMessage(route.params?.firstMessage, activeConversationId, handleSend);
 
-  // After picking a text model, replay the stashed message (no retype needed).
-  const handleModelSelect = async (model: DownloadedModel) => {
-    await handleModelSelectFn(modelDeps, model);
+  // A message that waited for a text model goes out once the chat is in front again with one in use: Use on the Models
+  // screen marks the model while this screen is not focused, and coming back runs this. It is cleared before it is
+  // sent, so it can never go twice, and only goes into the chat it was written in.
+  const handleSendRef = useRef(handleSend);
+  handleSendRef.current = handleSend;
+  useFocusEffect(useCallback(() => {
     const pending = pendingMessageRef.current;
-    if (pending) {
-      pendingMessageRef.current = null;
-      handleSend(pending.text, pending.attachments);
-    }
-  };
-
+    if (!hasTextModel || !pending) return;
+    pendingMessageRef.current = null;
+    if (pending.conversationId !== activeConversationId) return;
+    handleSendRef.current(pending.text, pending.attachments);
+  }, [hasTextModel, activeConversationId]));
 
   return {
     isModelLoading, loadingModel, supportsVision,
     showProjectSelector, setShowProjectSelector,
     showDebugPanel, setShowDebugPanel,
-    showModelSelector, setShowModelSelector, modelSelectorTab, setModelSelectorTab,
+    openModels,
     showSettingsPanel, setShowSettingsPanel,
     supportsToolCalling, supportsThinking,
     debugInfo, alertState, setAlertState,
@@ -409,8 +396,6 @@ export const useChatScreen = () => {
     navigation, hardwareService,
     handleSend,
     handleStop: () => handleStopFn(genDeps),
-    handleModelSelect,
-    handleUnloadModel: () => handleUnloadModelFn(modelDeps),
     handleDeleteConversation: () =>
       handleDeleteConversationFn(genDeps, { activeConversationId, activeConversation, setAlertState }),
     handleCopyMessage: (_content: string) => { },

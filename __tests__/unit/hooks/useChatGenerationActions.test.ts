@@ -689,7 +689,7 @@ describe('handleSendFn', () => {
   it('aborts the send and stashes the message when no text model is chosen', async () => {
     mockClassifyIntent.mockResolvedValueOnce('text');
     const startGeneration = jest.fn(() => Promise.resolve());
-    const ensureTextModelForChat = jest.fn(() => Promise.resolve(false)); // opened selector
+    const ensureTextModelForChat = jest.fn(() => Promise.resolve(false)); // opened the Models screen
     const setPendingMessage = jest.fn();
     const deps = makeGenerationDeps({
       imageModelLoaded: true, hasTextModel: false, activeImageModel: { id: 'img' },
@@ -698,8 +698,8 @@ describe('handleSendFn', () => {
     await handleSendFn(deps, { text: 'tell me a joke', imageMode: 'auto', startGeneration, setDebugInfo: jest.fn() });
     expect(ensureTextModelForChat).toHaveBeenCalled();
     expect(startGeneration).not.toHaveBeenCalled();
-    // The message is remembered so it can be replayed after the user picks a model.
-    expect(setPendingMessage).toHaveBeenCalledWith('tell me a joke', undefined);
+    // The message is remembered, with its chat, so it can be sent there after the user picks a model.
+    expect(setPendingMessage).toHaveBeenCalledWith('tell me a joke', undefined, 'conv-1');
   });
 
   it('shows alert when no activeModel', async () => {
@@ -832,7 +832,7 @@ describe('dispatchGenerationFn (single routing layer)', () => {
     await dispatchGenerationFn(deps, { text: 'Hi', conversationId: 'conv-1' }, startText);
     expect(startText).not.toHaveBeenCalled();
     expect(mockGenerateImage).not.toHaveBeenCalled();
-    expect(setPendingMessage).toHaveBeenCalledWith('Hi', undefined);
+    expect(setPendingMessage).toHaveBeenCalledWith('Hi', undefined, 'conv-1');
   });
 });
 

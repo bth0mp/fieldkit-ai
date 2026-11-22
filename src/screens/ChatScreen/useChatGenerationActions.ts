@@ -70,14 +70,13 @@ export type GenerationDeps = {
   setShowSettingsPanel?: SetState<boolean>;
   ensureModelLoaded: () => Promise<ModelReadyOutcome>;
   /** Loads the last-selected text model for a chat request that has none; opens
-   *  the model selector and returns false when no text model was ever chosen. */
+   *  the Models screen and returns false when no text model was ever chosen. */
   ensureTextModelForChat: () => Promise<boolean>;
-  /** Stash a message to replay after the user picks a text model. */
-  setPendingMessage?: (text: string, attachments?: MediaAttachment[]) => void;
+  /** Stash a message to replay, in its own chat, after the user picks a text model. */
+  setPendingMessage?: (text: string, attachments: MediaAttachment[] | undefined, conversationId: string) => void;
   createConversation: (modelId: string, title?: string, projectId?: string) => string;
   pendingProjectId?: string;
-  setShowModelSelector?: (v: boolean) => void;
-  setModelSelectorTab?: (tab: 'text' | 'image') => void;
+  openModels?: (tab: 'text' | 'image') => void;
 };
 /** A chat with calendar data was about to go to a remote model: say why it stopped, and offer the two ways on.
  *  The alert closes itself after a button's onPress. */
@@ -96,7 +95,7 @@ function showPrivateDataNotice(deps: GenerationDeps, conversation: Conversation 
       },
       {
         text: 'Use the on-device model',
-        onPress: () => { deps.setModelSelectorTab?.('text'); deps.setShowModelSelector?.(true); },
+        onPress: () => deps.openModels?.('text'),
       },
     ],
   ));
@@ -577,7 +576,7 @@ async function dispatchTurn(
   // ONE post-decision dispatch seam, shared with resend (image-model guard + text-provision path).
   const result = await dispatchResolvedTurn(deps, kind, {
     text, attachments, conversationId, imageSkipsUserMessage: false,
-    onTextModelUnavailable: () => { deps.setPendingMessage?.(text, attachments); },
+    onTextModelUnavailable: () => { deps.setPendingMessage?.(text, attachments, conversationId); },
   });
   if (result.handled) return;
   deps.addMessage(conversationId, { role: 'user', content: text, attachments });
@@ -653,7 +652,7 @@ async function regenerateTurn(deps: GenerationDeps, call: RegenerateCall): Promi
   const result = await dispatchResolvedTurn(deps, kind, {
     text: userMessage.content, attachments: userMessage.attachments, conversationId: targetConversationId,
     imageSkipsUserMessage: true,
-    onTextModelUnavailable: () => { deps.setPendingMessage?.(userMessage.content, userMessage.attachments); },
+    onTextModelUnavailable: () => { deps.setPendingMessage?.(userMessage.content, userMessage.attachments, targetConversationId); },
   });
   if (result.handled) return;
   const messageText = result.messageText;

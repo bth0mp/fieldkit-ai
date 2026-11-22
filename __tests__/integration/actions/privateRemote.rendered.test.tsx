@@ -12,8 +12,9 @@
 import { setupChatScreen } from '../../harness/chatHarness';
 import { installRemoteModel, installRemoteStream } from '../../harness/remoteHarness';
 
+const mockNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => ({
-  useNavigation: () => ({ navigate: () => {}, goBack: () => {}, setOptions: () => {}, addListener: () => () => {} }),
+  useNavigation: () => ({ navigate: mockNavigate, goBack: () => {}, setOptions: () => {}, addListener: () => () => {} }),
   useRoute: () => require('../../harness/chatHarness').routeHolder,
   useFocusEffect: () => {},
   useIsFocused: () => true,
@@ -84,10 +85,9 @@ describe('a private chat stays off remote models', () => {
     await h.rtl.waitFor(() => { expect(h.view!.getByText(NOTICE_TITLE)).toBeTruthy(); });
     expect(h.view!.getByText(NOTICE_BODY)).toBeTruthy();
     expect(chatCompletionBodies(sendSpy)).toEqual([]);
-    // "Use the on-device model" opens the model selector on its Text tab.
+    // "Use the on-device model" opens the Models screen on its Text tab.
     h.rtl.fireEvent.press(h.view!.getByText('Use the on-device model'));
-    await h.rtl.waitFor(() => { expect(h.view!.getByText('Select Model')).toBeTruthy(); });
-    expect(h.view!.getByTestId('text-model-row-m')).toBeTruthy();
+    expect(mockNavigate).toHaveBeenCalledWith('Models', { initialTab: 'text' });
     await h.rtl.waitFor(() => { expect(h.view!.queryByText(NOTICE_TITLE)).toBeNull(); });
 
     // Regenerate: the same notice, still nothing sent.

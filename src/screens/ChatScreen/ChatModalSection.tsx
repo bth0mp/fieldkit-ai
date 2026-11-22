@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  ModelSelectorModal, GenerationSettingsModal,
+  GenerationSettingsModal,
   ProjectSelectorSheet, DebugSheet,
 } from '../../components';
 import { createStyles } from './styles';
@@ -18,9 +18,6 @@ type ChatModalSectionProps = {
   setShowProjectSelector: (v: boolean) => void;
   showDebugPanel: boolean;
   setShowDebugPanel: (v: boolean) => void;
-  showModelSelector: boolean;
-  setShowModelSelector: (v: boolean) => void;
-  modelSelectorTab?: 'text' | 'image';
   showSettingsPanel: boolean;
   setShowSettingsPanel: (v: boolean) => void;
   debugInfo: any;
@@ -29,10 +26,7 @@ type ChatModalSectionProps = {
   settings: any;
   projects: any[];
   handleSelectProject: (p: any) => void;
-  handleModelSelect: (m: any) => void;
-  handleUnloadModel: () => void;
   handleDeleteConversation: () => void;
-  isModelLoading: boolean;
   imageCount: number;
   activeConversationId: string | null | undefined;
   navigation: any;
@@ -46,11 +40,10 @@ export const ChatModalSection: React.FC<ChatModalSectionProps> = ({
   styles, colors,
   showProjectSelector, setShowProjectSelector,
   showDebugPanel, setShowDebugPanel,
-  showModelSelector, setShowModelSelector, modelSelectorTab = 'text',
   showSettingsPanel, setShowSettingsPanel,
   debugInfo, activeProject, activeConversation, settings, projects,
-  handleSelectProject, handleModelSelect, handleUnloadModel, handleDeleteConversation,
-  isModelLoading, imageCount, activeConversationId, navigation,
+  handleSelectProject, handleDeleteConversation,
+  imageCount, activeConversationId, navigation,
   viewerImageUri, setViewerImageUri, handleSaveImage,
   isRemote,
 }) => (
@@ -69,15 +62,6 @@ export const ChatModalSection: React.FC<ChatModalSectionProps> = ({
       activeProject={activeProject || null}
       settings={settings}
       activeConversation={activeConversation || null}
-    />
-    <ModelSelectorModal
-      visible={showModelSelector}
-      initialTab={modelSelectorTab}
-      onClose={() => setShowModelSelector(false)}
-      onSelectModel={handleModelSelect}
-      onUnloadModel={handleUnloadModel}
-      isLoading={isModelLoading}
-      onAddServer={() => navigation.navigate('RemoteServers')}
     />
     <GenerationSettingsModal
       visible={showSettingsPanel}

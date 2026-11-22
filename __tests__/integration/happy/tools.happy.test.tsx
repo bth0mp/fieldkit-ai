@@ -81,7 +81,7 @@ describe('happy — a tool runs and its result renders (heavy entry point)', () 
     h.render();
     await h.send('hello', { content: 'Hi there.' });
     await h.rtl.waitFor(() => { expect(h.view!.queryByText(/Hi there\./)).not.toBeNull(); });
-    // With details on, the model name is shown in the per-message details.
-    expect(h.view!.queryByText(/Test Model/)).not.toBeNull();
+    // With details on, the model name is shown in the per-message details, as well as in the chat header.
+    expect(h.view!.queryAllByText(/Test Model/)).toHaveLength(2);
   });
 });
