@@ -1,6 +1,11 @@
 package ai.offgridmobile.download
 
 import android.app.Application
+import android.content.Context
+import android.content.ContextWrapper
+import android.os.Environment
+import androidx.test.core.app.ApplicationProvider
+import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -303,5 +308,18 @@ class DownloadManagerModuleTest {
             as android.app.NotificationManager
         assertNotNull(mgr.getNotificationChannel("model_downloads"))
     }
-}
 
+    @Test
+    fun downloadsDirFallsBackToInternalStorageWhenExternalStorageIsUnavailable() {
+        val app = ApplicationProvider.getApplicationContext<Context>()
+        val noExternal = object : ContextWrapper(app) {
+            override fun getExternalFilesDir(type: String?): File? = null
+        }
+
+        val dir = DownloadManagerModule.downloadsDir(noExternal)
+
+        assertTrue("downloads must stay inside the app sandbox", dir.isAbsolute)
+        assertEquals(File(app.filesDir, Environment.DIRECTORY_DOWNLOADS), dir)
+        assertTrue(dir.isDirectory)
+    }
+}
