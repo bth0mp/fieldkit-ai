@@ -5,12 +5,12 @@ import { useNavigation } from '@react-navigation/native';
  * Returns a number that changes the first time the screen gains focus, and never again.
  * Pass it as `trigger` to AnimatedEntry / AnimatedListItem.
  *
- * It used to change on EVERY focus, so each tab visit replayed the staggered fade of every row:
- * a tab looked half-empty for a second each time you came back (hand check 2026-11-06, Mac: "moving
- * between tabs takes an unreal amount of time"). A list you have already seen is shown at once.
+ * A trigger that changed on every focus would replay the staggered fade of every row on each tab visit, so a
+ * list you have already seen would look half-empty for a moment each time you came back. This one changes once,
+ * and a list you have already seen is shown at once.
  *
- * It listens for the first focus instead of reading useIsFocused, which re-rendered the whole
- * screen on every tab switch, in and out (a 150-250 ms frame on a mid-range Android phone).
+ * It listens for the first focus instead of reading useIsFocused, which re-renders the whole screen on every
+ * tab switch, in and out.
  */
 export function useFocusTrigger(): number {
   const navigation = useNavigation();
