@@ -69,8 +69,27 @@ module.exports = {
     'sonarjs/no-collapsible-if': 'warn',
     'sonarjs/prefer-immediate-return': 'warn',
     'sonarjs/no-duplicated-branches': 'warn',
+
+    // Android Fabric crash guard: FlatList turns removeClippedSubviews ON by default on
+    // Android, which crashes the draw pass (NPE on View.mViewFlags in dispatchDraw). Every
+    // list must spread the one shared default, src/constants/listClipping.ts.
+    'no-restricted-syntax': [
+      'error',
+      {
+        selector:
+          "JSXOpeningElement:matches([name.name=/^(FlatList|SectionList|VirtualizedList)$/], [name.property.name=/^(FlatList|SectionList|VirtualizedList)$/]):not(:has(JSXSpreadAttribute[argument.name='LIST_CLIPPING_PROPS']))",
+        message:
+          'Spread {...LIST_CLIPPING_PROPS} (src/constants/listClipping.ts) on every list: Android clipping crashes Fabric.',
+      },
+    ],
   },
   overrides: [
+    {
+      // TextModelsTab.tsx is also edited on feat/model-marketplace; spreading LIST_CLIPPING_PROPS
+      // there conflicts on merge. Remove this exemption and add the spread after that branch lands.
+      files: ['src/screens/ModelsScreen/TextModelsTab.tsx'],
+      rules: { 'no-restricted-syntax': 'off' },
+    },
     {
       // Relax structural rules in test files — large test suites and helpers are acceptable
       files: ['__tests__/**/*', '*.test.ts', '*.test.tsx', 'jest.setup.ts'],

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Platform } from 'react-native';
+import { LIST_CLIPPING_PROPS } from '../constants/listClipping';
+import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, CompositeNavigationProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -260,12 +261,12 @@ export const ChatsListScreen: React.FC = () => {
         </View>
       ) : (
         <FlatList
+          {...LIST_CLIPPING_PROPS}
           data={sortedConversations}
           renderItem={renderChat}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
-          removeClippedSubviews={Platform.OS !== 'android'}
           testID="conversation-list"
         />
       )}

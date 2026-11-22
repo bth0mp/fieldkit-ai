@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { LIST_CLIPPING_PROPS } from '../../constants/listClipping';
 import {
   View,
   Text,
@@ -123,6 +124,7 @@ export const DebugLogsScreen: React.FC<DebugLogsScreenProps> = ({ visible, onClo
           </View>
         ) : (
           <FlatList
+            {...LIST_CLIPPING_PROPS}
             data={logs}
             keyExtractor={(_, index) => `${index}`}
             contentContainerStyle={styles.listContent}

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { View, FlatList, Text, Keyboard, ActivityIndicator, Platform, StyleSheet } from 'react-native';
+import { LIST_CLIPPING_PROPS } from '../../constants/listClipping';
+import { View, FlatList, Text, Keyboard, ActivityIndicator, StyleSheet } from 'react-native';
 import { useUiModeStore } from '../../stores/uiModeStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useKeyboardVisible } from '../../hooks/useKeyboardVisible';
@@ -187,6 +188,7 @@ export const ChatMessageArea: React.FC<ChatMessageAreaProps> = ({
         })()
       ) : (
         <FlatList
+          {...LIST_CLIPPING_PROPS}
           ref={flatListRef}
           style={isListReady ? undefined : hiddenStyle.hidden}
           data={chat.displayMessages}
@@ -221,7 +223,6 @@ export const ChatMessageArea: React.FC<ChatMessageAreaProps> = ({
           keyboardShouldPersistTaps="handled"
           onTouchStart={() => Keyboard.dismiss()}
           maintainVisibleContentPosition={{ minIndexForVisible: 0, autoscrollToTopThreshold: 100 }}
-          removeClippedSubviews={Platform.OS !== 'android'}
         />
       )}
       {chat.showScrollToBottom && chat.displayMessages.length > 0 && (

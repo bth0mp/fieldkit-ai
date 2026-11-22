@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { LIST_CLIPPING_PROPS } from '../constants/listClipping';
 import {
   View,
   Text,
@@ -300,6 +301,7 @@ export const KnowledgeBaseScreen: React.FC = () => {
         </View>
       ) : (
         <FlatList
+          {...LIST_CLIPPING_PROPS}
           data={kbDocs}
           renderItem={renderDoc}
           keyExtractor={(item) => String(item.id)}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { LIST_CLIPPING_PROPS } from '../constants/listClipping';
 import { View, Text, TouchableOpacity, SectionList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -39,6 +40,7 @@ export const OpenSourceLicensesScreen: React.FC = () => {
         <View style={styles.backButton} />
       </View>
       <SectionList
+        {...LIST_CLIPPING_PROPS}
         testID="open-source-licenses"
         sections={SECTIONS}
         keyExtractor={item => item.title}

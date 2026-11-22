@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { LIST_CLIPPING_PROPS } from '../constants/listClipping';
 import {
   View,
   Text,
@@ -270,6 +271,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
         </View>
 
         <FlatList
+          {...LIST_CLIPPING_PROPS}
           ref={flatListRef}
           data={ONBOARDING_SLIDES}
           renderItem={renderSlide}

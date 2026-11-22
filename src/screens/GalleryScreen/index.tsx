@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, FlatList, Platform } from 'react-native';
+import { LIST_CLIPPING_PROPS } from '../../constants/listClipping';
+import { View, Text, Image, TouchableOpacity, FlatList } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -157,6 +158,7 @@ export const GalleryScreen: React.FC = () => {
         </View>
       ) : (
         <FlatList
+          {...LIST_CLIPPING_PROPS}
           data={displayImages}
           renderItem={renderGridItem}
           keyExtractor={(item) => item.id}
@@ -164,7 +166,6 @@ export const GalleryScreen: React.FC = () => {
           contentContainerStyle={styles.gridContainer}
           columnWrapperStyle={styles.gridRow}
           showsVerticalScrollIndicator={false}
-          removeClippedSubviews={Platform.OS !== 'android'}
         />
       )}
 

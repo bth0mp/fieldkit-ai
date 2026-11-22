@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
+import { LIST_CLIPPING_PROPS } from '../constants/listClipping';
 import {
   View,
   Text,
   FlatList,
   TouchableOpacity,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -291,12 +291,12 @@ export const ProjectChatsScreen: React.FC = () => {
         </View>
       ) : (
         <FlatList
+          {...LIST_CLIPPING_PROPS}
           data={projectChats}
           renderItem={renderChat}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
-          removeClippedSubviews={Platform.OS !== 'android'}
         />
       )}
       <CustomAlert {...alertState} onClose={() => setAlertState(hideAlert())} />
