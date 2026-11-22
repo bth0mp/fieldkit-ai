@@ -14,10 +14,9 @@ import { ModelInfo, ModelFile, DownloadedModel } from '../../types';
 import { FilterDimension, FilterState, ModelTypeFilter, CredibilityFilter, SizeFilter, SortOption } from './types';
 import { initialFilterState, SIZE_OPTIONS, VISION_PIPELINE_TAG, CODE_FALLBACK_QUERY } from './constants';
 import { getModelType } from './utils';
+import { PARAM_COUNT_REGEX } from '../../features/modelGuide/guide';
 import logger from '../../utils/logger';
 import { getUserFacingDownloadMessage } from '../../utils/downloadErrors';
-
-const PARAM_COUNT_REGEX = /\b(\d+[.]\d+|\d+)\s?[Bb]\b/;
 
 function parseParamCount(model: ModelInfo): number | null {
   const match = PARAM_COUNT_REGEX.exec(model.name) ?? PARAM_COUNT_REGEX.exec(model.id);
