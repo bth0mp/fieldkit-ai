@@ -3,6 +3,7 @@ import { createChunkedStorage, type ChunkStore } from '../../../src/utils/chunke
 /** An in-memory AsyncStorage whose single-key read refuses rows over a limit, like Android's cursor window. */
 function memoryStore(readLimit = Infinity, initial: Record<string, string> = {}) {
   const values = new Map(Object.entries(initial));
+  const faults = { setFailures: 0 };
   const read = (key: string): string | null => {
     const value = values.get(key) ?? null;
     if (value !== null && value.length > readLimit) {
@@ -14,13 +15,17 @@ function memoryStore(readLimit = Infinity, initial: Record<string, string> = {})
     getItem: async key => read(key),
     multiGet: async keys => keys.map(key => [key, read(key)] as const),
     multiSet: async pairs => {
+      if (faults.setFailures > 0) {
+        faults.setFailures -= 1;
+        throw new Error('database or disk is full');
+      }
       for (const [key, value] of pairs) values.set(key, value);
     },
     multiRemove: async keys => {
       for (const key of keys) values.delete(key);
     },
   };
-  return { store, values };
+  return { store, values, faults };
 }
 
 const LIMIT = 2 * 1024 * 1024;
@@ -59,8 +64,51 @@ describe('chunked storage', () => {
 
     await storage.setItem('chat', 'short');
 
-    expect([...values.keys()].sort()).toEqual(['chat', 'chat::chunk:0']);
+    // The unused parts are emptied in the same write, so no text of the old value stays behind.
+    expect(values.get('chat::chunk:0')).toBe('short');
+    expect(values.get('chat::chunk:1')).toBe('');
+    expect(values.get('chat::chunk:2')).toBe('');
     expect(await createChunkedStorage(store).getItem('chat')).toBe('short');
+  });
+
+  it('still reads the whole old value after a shrinking save fails', async () => {
+    const { store, faults } = memoryStore();
+    const storage = createChunkedStorage(store);
+    const old = 'x'.repeat(3 * 256 * 1024);
+    await storage.setItem('chat', old);
+
+    faults.setFailures = 1;
+    await expect(storage.setItem('chat', 'short')).rejects.toThrow(/disk is full/);
+
+    expect(await createChunkedStorage(store).getItem('chat')).toBe(old);
+  });
+
+  it('leaves no text of old parts after a later save once a shrinking save failed', async () => {
+    const { store, values, faults } = memoryStore();
+    const storage = createChunkedStorage(store);
+    await storage.setItem('chat', 'x'.repeat(3 * 256 * 1024));
+
+    faults.setFailures = 1;
+    await expect(storage.setItem('chat', 'short')).rejects.toThrow();
+    await storage.setItem('chat', 'shorter');
+
+    for (const [key, value] of values) {
+      if (key.startsWith('chat::chunk:') && key !== 'chat::chunk:0') expect(value).toBe('');
+    }
+    expect(await createChunkedStorage(store).getItem('chat')).toBe('shorter');
+  });
+
+  it('ends with the last value when saves overlap, shrinking then growing and the reverse', async () => {
+    const { store } = memoryStore();
+    const storage = createChunkedStorage(store);
+    const big = 'b'.repeat(3 * 256 * 1024);
+    await storage.setItem('chat', big);
+
+    await Promise.all([storage.setItem('chat', 'small'), storage.setItem('chat', `${big}z`)]);
+    expect(await createChunkedStorage(store).getItem('chat')).toBe(`${big}z`);
+
+    await Promise.all([storage.setItem('chat', big), storage.setItem('chat', 'tiny')]);
+    expect(await createChunkedStorage(store).getItem('chat')).toBe('tiny');
   });
 
   it('recovers an older row that outgrew the read window, then saves it in parts', async () => {

@@ -47,7 +47,7 @@ export function createChunkedStorage(
   base: ChunkStore = AsyncStorage,
   readOversized?: OversizedReader,
 ): StateStorage {
-  // Parts written last per key, so a shorter value removes the ones it no longer uses.
+  // The most part rows that may exist per key, so a shorter value blanks the ones it no longer uses.
   const partCounts = new Map<string, number>();
 
   return {
@@ -75,25 +75,26 @@ export function createChunkedStorage(
       if (parts.some(part => part === null)) {
         throw new Error(`${name}: part of the saved value is missing`);
       }
-      partCounts.set(name, count);
+      partCounts.set(name, Math.max(partCounts.get(name) ?? 0, count));
       return parts.join('');
     },
     setItem: async (name, value) => {
       const parts = split(value);
       const previous = partCounts.get(name) ?? 0;
-      partCounts.set(name, parts.length);
+      // Never lowered by a write: if this one fails, the old rows are all still there and a later
+      // write must still blank the ones it does not use.
+      partCounts.set(name, Math.max(previous, parts.length));
       const stale = Array.from(
         { length: Math.max(0, previous - parts.length) },
-        (_, index) => chunkKey(name, parts.length + index),
+        (_, index): [string, string] => [chunkKey(name, parts.length + index), ''],
       );
-      // Parts and manifest commit together. Both calls are issued before either is awaited, so the
-      // native queue runs them in order ahead of any later write's parts.
-      const written = base.multiSet([
+      // Parts, emptied stale parts and manifest are one multiSet, so one transaction: a failed write
+      // leaves the old manifest with all of its parts, and overlapping writes keep their native order.
+      await base.multiSet([
         ...parts.map((part, index): [string, string] => [chunkKey(name, index), part]),
+        ...stale,
         [name, `${MANIFEST}${parts.length}`],
       ]);
-      const removed = stale.length ? base.multiRemove(stale) : Promise.resolve();
-      await Promise.all([written, removed]);
     },
     removeItem: async name => {
       const count = partCounts.get(name) ?? 0;
