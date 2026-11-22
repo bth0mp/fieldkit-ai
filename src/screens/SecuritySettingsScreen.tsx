@@ -45,8 +45,12 @@ export const SecuritySettingsScreen: React.FC = () => {
             style: 'destructive',
             onPress: () => {
               setAlertState(hideAlert());
-              authService.removePassphrase().then(() => {
-                setAuthEnabled(false);
+              authService.removePassphrase().then((removed) => {
+                if (removed) {
+                  setAuthEnabled(false);
+                } else {
+                  setAlertState(showAlert("Couldn't turn the lock off", 'The passphrase could not be removed. Try again.'));
+                }
               }).catch(() => {});
             },
           },

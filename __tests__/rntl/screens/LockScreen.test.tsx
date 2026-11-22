@@ -360,10 +360,52 @@ describe('LockScreen', () => {
       fireEvent.press(getByText('Unlock'));
     });
 
+    // Not "Incorrect Passphrase": the passphrase was never checked, so nothing is charged and nothing unlocks.
     expect(mockShowAlert).toHaveBeenCalledWith(
-      'Error',
-      'Failed to verify passphrase',
+      "Couldn't check your passphrase",
+      'Try again.',
+      expect.arrayContaining([expect.objectContaining({ text: 'Try again' })]),
     );
+    expect(mockRecordFailedAttempt).not.toHaveBeenCalled();
+    expect(defaultProps.onUnlock).not.toHaveBeenCalled();
+  });
+
+  it('five unreadable-keychain tries charge no attempt and never unlock; Try again checks again', async () => {
+    mockVerifyPassphrase.mockRejectedValue(new Error('Keychain error'));
+    const { getByPlaceholderText, getByText } = render(<LockScreen {...defaultProps} />);
+
+    for (let i = 0; i < 5; i++) {
+      fireEvent.changeText(getByPlaceholderText('Enter passphrase'), 'some-pass');
+      await act(async () => {
+        fireEvent.press(getByText('Unlock'));
+      });
+    }
+
+    expect(mockVerifyPassphrase).toHaveBeenCalledTimes(5);
+    expect(mockRecordFailedAttempt).not.toHaveBeenCalled();
+    expect(defaultProps.onUnlock).not.toHaveBeenCalled();
+
+    // The alert's Try again button runs the check once more with the same passphrase.
+    mockVerifyPassphrase.mockResolvedValue(true);
+    const buttons = mockShowAlert.mock.calls[mockShowAlert.mock.calls.length - 1][2] as any[];
+    await act(async () => {
+      buttons.find(b => b.text === 'Try again').onPress();
+    });
+    expect(defaultProps.onUnlock).toHaveBeenCalledTimes(1);
+  });
+
+  it('a wrong passphrase still counts every time', async () => {
+    mockVerifyPassphrase.mockResolvedValue(false);
+    const { getByPlaceholderText, getByText } = render(<LockScreen {...defaultProps} />);
+
+    for (let i = 0; i < 5; i++) {
+      fireEvent.changeText(getByPlaceholderText('Enter passphrase'), 'wrong-pass');
+      await act(async () => {
+        fireEvent.press(getByText('Unlock'));
+      });
+    }
+
+    expect(mockRecordFailedAttempt).toHaveBeenCalledTimes(5);
     expect(defaultProps.onUnlock).not.toHaveBeenCalled();
   });
 
