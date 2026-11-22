@@ -83,12 +83,14 @@ export async function moveStoredKeysToKeychainImpl(): Promise<void> {
   }
 }
 
+/** Remove a server's key from the Keychain. A Keychain that refuses throws: the key is still there. */
 export async function removeApiKeyImpl(serverId: string): Promise<void> {
   try {
     await Keychain.resetGenericPassword({ service: `${KEYCHAIN_SERVICE}.${serverId}` });
     logger.log('[RemoteServerManager] API key removed for server:', serverId);
   } catch (error) {
     logger.error('[RemoteServerManager] Failed to remove API key:', error);
+    throw error;
   }
 }
 

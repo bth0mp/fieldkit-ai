@@ -15,8 +15,8 @@ jest.mock('@react-native-async-storage/async-storage', () =>
 jest.mock('@op-engineering/op-sqlite', () => require('../../harness/flakyStorage').flakyOpSqliteModule());
 jest.mock('react-native-keychain', () => {
   // On globalThis so a relaunch (fresh modules) sees the same Keychain, as the device's would.
-  const g = globalThis as unknown as { __KEYCHAIN__?: { vault: Map<string, string>; fail: { set: boolean; get: boolean } } };
-  g.__KEYCHAIN__ ??= { vault: new Map<string, string>(), fail: { set: false, get: false } };
+  const g = globalThis as unknown as { __KEYCHAIN__?: { vault: Map<string, string>; fail: { set: boolean; get: boolean; reset: boolean } } };
+  g.__KEYCHAIN__ ??= { vault: new Map<string, string>(), fail: { set: false, get: false, reset: false } };
   const { vault, fail } = g.__KEYCHAIN__;
   return {
     __vault: vault,
@@ -32,7 +32,10 @@ jest.mock('react-native-keychain', () => {
       const password = vault.get(options.service);
       return password === undefined ? false : { username: 'server', password, service: options.service };
     }),
-    resetGenericPassword: jest.fn(async (options: { service: string }) => vault.delete(options.service)),
+    resetGenericPassword: jest.fn(async (options: { service: string }) => {
+      if (fail.reset) throw new Error('Keychain is locked');
+      return vault.delete(options.service);
+    }),
   };
 });
 jest.mock('@react-navigation/native', () => ({
@@ -48,7 +51,7 @@ jest.setTimeout(30000);
 const SERVICE = 'ai.offgridmobile.servers';
 const ENDPOINT = 'http://192.168.1.50:11434';
 const keychain = () => require('react-native-keychain') as {
-  __vault: Map<string, string>; __fail: { set: boolean; get: boolean };
+  __vault: Map<string, string>; __fail: { set: boolean; get: boolean; reset: boolean };
 };
 const vaultKey = (id: string) => keychain().__vault.get(`${SERVICE}.${id}`);
 
@@ -107,6 +110,7 @@ beforeEach(() => {
   keychain().__vault.clear();
   keychain().__fail.set = false;
   keychain().__fail.get = false;
+  keychain().__fail.reset = false;
   (['log', 'warn', 'error'] as const).forEach(level => (console[level] as jest.Mock).mockClear());
   installNetwork();
   useRemoteServerStore.setState({ servers: [], serverHealth: {}, discoveredModels: {} });
@@ -251,5 +255,51 @@ describe('server keys live only in the Keychain', () => {
     await act(async () => { fireEvent.press(ui.getByText('Update Server')); });
 
     await waitFor(() => expect(vaultKey('a')).toBeUndefined());
+  });
+
+  it('says so when the Keychain will not clear a key, and the key stays saved', async () => {
+    keychain().__vault.set(`${SERVICE}.a`, 'sk-old');
+    useRemoteServerStore.setState({ servers: [record('a')] as never });
+    const ui = render(<RemoteServersScreen />);
+
+    fireEvent.press(ui.getByText('Edit'));
+    const key = await waitFor(() => ui.getByDisplayValue('sk-old'));
+    fireEvent.changeText(key, '');
+    fireEvent.changeText(ui.getByDisplayValue('Server a'), 'Renamed');
+    fireEvent.press(ui.getByText('Test Connection'));
+    await waitFor(() => expect(ui.queryByText(/Connected \(/)).not.toBeNull());
+    keychain().__fail.reset = true;
+    await act(async () => { fireEvent.press(ui.getByText('Update Server')); });
+
+    await waitFor(() => expect(ui.queryByText('Keychain is locked')).not.toBeNull());
+    // Nothing was saved as done: the key is still in the Keychain and the server was not renamed.
+    expect(vaultKey('a')).toBe('sk-old');
+    expect(useRemoteServerStore.getState().servers[0].name).toBe('Server a');
+  });
+
+  it('leaves no server behind when its key could not be saved, and a second try saves both', async () => {
+    const ui = render(<RemoteServersScreen />);
+    fireEvent.press(ui.getByText('Add Server'));
+    fireEvent.changeText(await waitFor(() => ui.getByPlaceholderText('e.g., Ollama on my laptop')), 'Desk');
+    fireEvent.changeText(ui.getByPlaceholderText('http://192.168.1.50:7878'), ENDPOINT);
+    fireEvent.changeText(ui.getByPlaceholderText('sk-...'), 'sk-secret-1');
+    fireEvent.press(ui.getByText('Test Connection'));
+    await waitFor(() => expect(ui.queryByText(/Connected \(/)).not.toBeNull());
+    keychain().__fail.set = true;
+    const addButtons = ui.getAllByText('Add Server');
+    await act(async () => { fireEvent.press(addButtons[addButtons.length - 1]); });
+
+    await waitFor(() => expect(ui.queryByText('Keychain is locked')).not.toBeNull());
+    expect(useRemoteServerStore.getState().servers).toEqual([]);
+
+    // The Keychain works again; the same form is tried once more.
+    keychain().__fail.set = false;
+    fireEvent.press(ui.getByText('OK'));
+    await waitFor(() => expect(ui.queryByText('Keychain is locked')).toBeNull());
+    const retry = ui.getAllByText('Add Server');
+    await act(async () => { fireEvent.press(retry[retry.length - 1]); });
+
+    await waitFor(() => expect(useRemoteServerStore.getState().servers).toHaveLength(1));
+    expect(vaultKey(useRemoteServerStore.getState().servers[0].id)).toBe('sk-secret-1');
   });
 });

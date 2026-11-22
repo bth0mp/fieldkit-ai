@@ -51,7 +51,13 @@ class RemoteServerManager {
     const { apiKey, ...publicConfig } = config;
     const id = store.addServer(publicConfig);
     if (apiKey) {
-      await this.storeApiKey(id, apiKey);
+      try {
+        await this.storeApiKey(id, apiKey);
+      } catch (error) {
+        // No server without its key: a retry must not meet the record and be taken for a duplicate.
+        store.removeServer(id);
+        throw error;
+      }
     }
 
     const server = store.getServerById(id);
@@ -103,7 +109,7 @@ class RemoteServerManager {
    */
   async removeServer(id: string): Promise<void> {
     providerRegistry.unregisterProvider(id);
-    await this.removeApiKey(id);
+    await this.removeApiKeyAnyway(id);
     useRemoteServerStore.getState().removeServer(id);
     logger.log('[RemoteServerManager] Removed server:', id);
   }
@@ -225,7 +231,7 @@ class RemoteServerManager {
    */
   async clearAllServers(): Promise<void> {
     for (const server of this.getServers()) {
-      await this.removeApiKey(server.id);
+      await this.removeApiKeyAnyway(server.id);
     }
     providerRegistry.clear();
     useRemoteServerStore.getState().clearAllServers();
@@ -245,6 +251,15 @@ class RemoteServerManager {
 
   private async removeApiKey(serverId: string): Promise<void> {
     return removeApiKeyImpl(serverId);
+  }
+
+  /** Removing a whole server goes ahead when the Keychain refuses; the failure is logged by the Keychain helper. */
+  private async removeApiKeyAnyway(serverId: string): Promise<void> {
+    try {
+      await removeApiKeyImpl(serverId);
+    } catch {
+      // The server goes even though its key could not be cleared.
+    }
   }
 
 }
