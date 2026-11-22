@@ -14,6 +14,7 @@ import { imageBackendLabel } from '../../utils/imageBackend';
 import { createStyles } from './styles';
 import { ModelsScreenViewModel } from './useModelsScreen';
 import { ImageFilterBar } from './ImageFilterBar';
+import { YourModels } from './YourModels';
 import { BackendFilter, ImageFilterDimension } from './types';
 import { formatBytes, getImageModelCompatibility, hfModelToDescriptor } from './utils';
 
@@ -33,7 +34,11 @@ type Props = Pick<ModelsScreenViewModel,
   | 'handleDownloadImageModel' | 'handleCancelImageDownload' | 'loadHFModels'
   | 'clearImageFilters' | 'setUserChangedBackendFilter'
   | 'isRecommendedModel'
->;
+> & {
+  /** Called after "Your models" marks a model in use; the screen decides where to go. */
+  onChosen: () => void;
+  onError: (message: string) => void;
+};
 
 interface ImageModelCardProps {
   model: HFImageModel & { _coreml?: boolean; _coremlFiles?: any[] };
@@ -131,6 +136,8 @@ interface ScrollContentProps {
   handleDownloadImageModel: Props['handleDownloadImageModel'];
   handleCancelImageDownload: Props['handleCancelImageDownload'];
   imageSearchQuery: string;
+  onChosen: () => void;
+  onError: (message: string) => void;
 }
 
 const ImageModelsScrollContent: React.FC<ScrollContentProps> = ({
@@ -143,7 +150,7 @@ const ImageModelsScrollContent: React.FC<ScrollContentProps> = ({
   hfModelsLoading, hfModelsError, loadHFModels,
   filteredHFModels, availableHFModels,
   isRecommendedModel, handleDownloadImageModel, handleCancelImageDownload,
-  imageSearchQuery,
+  imageSearchQuery, onChosen, onError,
 }) => {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -171,6 +178,7 @@ const ImageModelsScrollContent: React.FC<ScrollContentProps> = ({
   return (
     <ScrollView keyboardShouldPersistTaps="handled">
       <View style={styles.imageModelsList}>
+        {!imageSearchQuery.trim() && <YourModels kind="image" onChosen={onChosen} onError={onError} />}
         {showRecHint && showRecommendedOnly && (
           <TouchableOpacity style={styles.recHint} onPress={() => setShowRecHint(false)} activeOpacity={0.7}>
             <Icon name="info" size={11} color={colors.primary} />
@@ -263,7 +271,7 @@ export const ImageModelsTab: React.FC<Props> = ({
   imageRec, ramGB, imageRecommendation,
   handleDownloadImageModel, handleCancelImageDownload, loadHFModels,
   clearImageFilters, setUserChangedBackendFilter,
-  isRecommendedModel,
+  isRecommendedModel, onChosen, onError,
 }) => {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -330,6 +338,8 @@ export const ImageModelsTab: React.FC<Props> = ({
         handleDownloadImageModel={handleDownloadImageModel}
         handleCancelImageDownload={handleCancelImageDownload}
         imageSearchQuery={imageSearchQuery}
+        onChosen={onChosen}
+        onError={onError}
       />
     </View>
   );

@@ -69,6 +69,7 @@ const WhisperCard: React.FC<WhisperCardProps> = ({
       testID={`transcription-model-card-${index}`}
       // Present but not active → tap to use; not present → tap to download.
       onPress={downloading ? undefined : (present ? (active ? undefined : () => onSelect(model.id)) : () => onDownload(model.id))}
+      onSelect={present && !active && !downloading && !queued ? () => onSelect(model.id) : undefined}
       onDownload={!present && !downloading ? () => onDownload(model.id) : undefined}
       onDelete={present ? () => onDelete(model.id) : undefined}
     />

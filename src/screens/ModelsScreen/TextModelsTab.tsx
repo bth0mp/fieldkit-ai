@@ -13,7 +13,7 @@ import { useTheme, useThemedStyles } from '../../theme';
 import { ModelGuideButton } from './ModelGuideButton';
 import { needsVisionRepair as checkNeedsVisionRepair } from '../../utils/visionRepair';
 import { CREDIBILITY_LABELS } from '../../constants';
-import { ModelInfo, ModelFile } from '../../types';
+import { ModelInfo, ModelFile, DownloadedModel } from '../../types';
 import { createStyles } from './styles';
 import { ModelsScreenViewModel } from './useModelsScreen';
 import { useDownloadStore, isActiveStatus, isQueuedStatus } from '../../stores/downloadStore';
@@ -22,6 +22,8 @@ import { modelSupportsNpuGpu, isAccelerableQuant } from '../../utils/acceleratio
 import { aggregateActiveDownloads } from '../../utils/downloadAggregate';
 import { TextFiltersSection } from './TextFiltersSection';
 import { YourModels } from './YourModels';
+import { useActiveTextModel } from '../../hooks/useActiveTextModel';
+import { useModelChoice } from '../../hooks/useModelChoice';
 import { FilterState, SortOption } from './types';
 import { SORT_OPTIONS, SERVER_SORTS } from './constants';
 import { formatNumber, getTextModelCompatibility } from './utils';
@@ -74,7 +76,7 @@ type DetailProps = Pick<Props,
   | 'alertState' | 'setAlertState'
   | 'getDownloadedModel' | 'isModelDownloaded' | 'isRepairingVisionModel'
   | 'handleDownload' | 'handleRepairMmProj' | 'handleCancelDownload' | 'handleDeleteModel'
-> & { selectedModel: ModelInfo; onBack: () => void; };
+> & { selectedModel: ModelInfo; onBack: () => void; onChosen: () => void; onError: (message: string) => void };
 
 // Build the file card's onDownload handler. Whether to show the curated confirm-download
 // warning is the registry's single DEVICE-AWARE decision (curatedLiteRTDownloadWarning),
@@ -102,13 +104,17 @@ function buildFileDownloadHandler({ s, fileName, sizeBytes, ramGB, proceedDownlo
 
 const ModelDetailView: React.FC<DetailProps> = ({
   selectedModel, modelFiles, isLoadingFiles, filterState, ramGB,
-  alertState, setAlertState, onBack,
+  alertState, setAlertState, onBack, onChosen, onError,
   getDownloadedModel, isModelDownloaded, isRepairingVisionModel,
   handleDownload, handleRepairMmProj, handleCancelDownload, handleDeleteModel,
 }) => {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { goTo } = useSpotlightTour();
+  const { busy, choose } = useModelChoice({ onChosen, onError });
+  const active = useActiveTextModel();
+  const isInUse = (record?: DownloadedModel) => !!record && !active.isRemote && active.modelId === record.id;
+  const chooseHandler = (record?: DownloadedModel) => (record && !isInUse(record) ? () => choose({ kind: 'text', id: record.id }) : undefined);
 
   // If user arrived here via onboarding spotlight flow, show file card spotlight
   // Pre-set the next pending (Download Manager icon) so it fires regardless of
@@ -198,6 +204,9 @@ const ModelDetailView: React.FC<DetailProps> = ({
         downloadBytes={s.progress && !s.hasFailed ? { downloaded: s.progress.bytesDownloaded, total: s.progress.totalBytes } : undefined}
         isRepairingVision={s.repairingVision}
         isCompatible={!fileExceedsBudget(item.size, ramGB)} testID={`file-card-${index}`}
+        isActive={isInUse(s.downloadedModel)}
+        onSelect={chooseHandler(s.downloadedModel)}
+        selectDisabled={busy.text}
         onDownload={onDownload}
         onDelete={s.downloaded ? () => handleDeleteModel(`${selectedModel.id}/${item.name}`) : undefined}
         onRepairVision={s.needsVisionRepair && !s.progress && !s.repairingVision ? () => handleRepairMmProj(selectedModel, item) : undefined}
@@ -377,6 +386,8 @@ export const TextModelsTab: React.FC<Props> = (props) => {
         alertState={alertState}
         setAlertState={setAlertState}
         onBack={onBack}
+        onChosen={onChosen}
+        onError={onError}
         getDownloadedModel={getDownloadedModel}
         isModelDownloaded={isModelDownloaded}
         isRepairingVisionModel={isRepairingVisionModel}

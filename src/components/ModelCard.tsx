@@ -55,6 +55,8 @@ interface ModelCardProps {
   onDownload?: () => void;
   onDelete?: () => void;
   onSelect?: () => void;
+  /** Use is shown but cannot be pressed (a model is loading). */
+  selectDisabled?: boolean;
   onRepairVision?: () => void;
   isRepairingVision?: boolean;
   onCancel?: () => void;
@@ -184,6 +186,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({
   onDownload,
   onDelete,
   onSelect,
+  selectDisabled,
   onRepairVision,
   isRepairingVision,
   onCancel,
@@ -305,6 +308,8 @@ export const ModelCard: React.FC<ModelCardProps> = ({
             testID={testID}
             onDownload={onDownload}
             onSelect={onSelect}
+            selectDisabled={selectDisabled}
+            modelName={model.name}
             onDelete={onDelete}
             onRepairVision={onRepairVision}
             isRepairingVision={isRepairingVision}

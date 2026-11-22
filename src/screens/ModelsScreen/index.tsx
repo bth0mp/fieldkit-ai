@@ -263,6 +263,8 @@ export const ModelsScreen: React.FC = () => {
           clearImageFilters={vm.clearImageFilters}
           setUserChangedBackendFilter={vm.setUserChangedBackendFilter}
           isRecommendedModel={vm.isRecommendedModel}
+          onChosen={onChosen}
+          onError={onError}
         />
       )}
 

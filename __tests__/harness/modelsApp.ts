@@ -44,6 +44,9 @@ export async function bootHome(opts: ModelsAppOptions) {
   });
   const imageModels = (opts.imageModels ?? []).map(seed => createONNXImageModel(seed));
   await AsyncStorage.setItem('@local_llm/downloaded_models', JSON.stringify(downloaded));
+  // The Models screen reads image models back from storage, and drops one whose folder is missing.
+  for (const model of imageModels) boundary.fs!.seedFile(model.modelPath, 1);
+  await AsyncStorage.setItem('@local_llm/downloaded_image_models', JSON.stringify(imageModels));
   await hardwareService.refreshMemoryInfo();
   useAppStore.setState({
     hasCompletedOnboarding: true,
