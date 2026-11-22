@@ -85,6 +85,11 @@ export function deriveEngineCapabilities(i: CapabilityInputs): EngineCapabilitie
   };
 }
 
+/** The text engines that have a model loaded right now, whatever the store says is active. */
+export function loadedTextEngines(): typeof TEXT_ENGINES {
+  return TEXT_ENGINES.filter(engine => engine.isModelLoaded());
+}
+
 /**
  * Unload every text engine (an idle engine is a safe no-op). Used on a model switch so a
  * cross-engine swap (LiteRT <-> llama) can't leave the previous model resident, without the

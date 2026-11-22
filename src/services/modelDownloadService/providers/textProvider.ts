@@ -12,6 +12,7 @@
  */
 import { Platform } from 'react-native';
 import { modelManager } from '../../modelManager';
+import { activeModelService } from '../../activeModelService';
 import { backgroundDownloadService } from '../../backgroundDownloadService';
 import { huggingFaceService } from '../../huggingface';
 import { hardwareService } from '../../hardware';
@@ -156,6 +157,11 @@ export const textProvider: DownloadProvider = {
       if (entry.mmProjDownloadId) await modelManager.cancelBackgroundDownload(entry.mmProjDownloadId)
         .catch(err => logger.log(`[DL-SM] ${id} remove: mmproj native cancel failed err=${msg(err)}`));
       useDownloadStore.getState().remove(entry.modelKey);
+    }
+    // A model in use is unloaded first (as imageProvider does), or it would stay in memory with no record.
+    if (key === useAppStore.getState().activeModelId || key === activeModelService.getLoadedModelIds().textModelId) {
+      await activeModelService.unloadTextModel()
+        .catch(err => logger.log(`[DL-SM] ${id} remove: unload failed err=${msg(err)}`));
     }
     await modelManager.deleteModel(key)
       .catch(err => logger.log(`[DL-SM] ${id} remove: delete failed err=${msg(err)}`));

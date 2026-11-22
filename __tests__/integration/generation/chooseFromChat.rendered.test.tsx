@@ -116,6 +116,19 @@ async function messageWaiting(text = 'hello', withServer = false) {
   await t.rtl.waitFor(() => expect(shown('your-models-text')).toBe(true), TIMEOUT);
 }
 
+/** From the Models screen opened at the header: Downloads, delete the model with this file, back to Models. */
+async function deleteInDownloadManager(fileName: string, id: string) {
+  require('../../../src/services/modelDownloadService/registerProviders').registerCoreDownloadProviders(); // App.tsx does this at boot
+  press(t.ui.getByTestId('downloads-icon'));
+  let card = (await t.rtl.waitFor(() => t.ui.getByText(fileName), TIMEOUT)).parent!;
+  while (t.rtl.within(card).queryAllByTestId('delete-model-button').length !== 1) card = card.parent!;
+  press(t.rtl.within(card).getByTestId('delete-model-button'));
+  press(await byText('Delete'));
+  await t.rtl.waitFor(() => expect(state().downloadedModels.some((m: any) => m.id === id)).toBe(false), TIMEOUT);
+  press(t.ui.getByTestId('back-button'));
+  await t.rtl.waitFor(() => expect(shown('models-screen')).toBe(true), TIMEOUT);
+}
+
 afterEach(() => resetDeviceMemory());
 
 describe('Choosing a model from a chat (rendered)', () => {
@@ -369,4 +382,65 @@ describe('Choosing a model from a chat (rendered)', () => {
     expect(await byText('Hi there.')).toBeTruthy();
   });
 
+  it('a model deleted in the Download Manager no longer answers: llama A deleted, Use a remote model, the remote answers', async () => {
+    await boot({ models: [FIRST] }, { text: 'first' });
+    await addServer('Study PC', 'http://localhost:1234', ['x']);
+    t.boundary.llama!.scriptCompletion({ text: 'From First.' });
+    await newChat();
+    send('one');
+    await byText('From First.');
+    press(t.ui.getByTestId('model-selector'));
+    await t.rtl.waitFor(() => expect(shown('models-screen')).toBe(true), TIMEOUT);
+    await deleteInDownloadManager('first.gguf', 'first');
+    press(await byLabel('Use x'));
+    await t.rtl.waitFor(() => expect(header()).toHaveTextContent('x'), TIMEOUT);
+    t.boundary.llama!.scriptCompletion({ text: 'From the deleted model.' });
+    installRemoteStream(reply('From the remote.'));
+    send('two');
+    expect(await byText('From the remote.')).toBeTruthy();
+    expect(t.ui.queryByText('From the deleted model.') === null).toBe(true);
+  });
+
+  it('a model deleted in the Download Manager no longer answers: LiteRT A deleted, Use LiteRT B, B is loaded and answers', async () => {
+    await boot({ models: [LITERT_A, LITERT_B] }, { text: 'a' });
+    const { litert } = t.boundary;
+    litert.scriptTurn({ content: 'From A.' });
+    await newChat();
+    send('one');
+    await byText('From A.');
+    press(t.ui.getByTestId('model-selector'));
+    await t.rtl.waitFor(() => expect(shown('models-screen')).toBe(true), TIMEOUT);
+    await deleteInDownloadManager('a.litertlm', 'a');
+    press(await byLabel('Use Lite B'));
+    await t.rtl.waitFor(() => expect(header()).toHaveTextContent('Lite B'), TIMEOUT);
+    litert.scriptTurn({ content: 'From B.' });
+    send('two');
+    expect(await byText('From B.')).toBeTruthy();
+    expect(litert.module.loadModel.mock.calls.map((c: unknown[]) => c[0])).toEqual([pathOf('a.litertlm'), pathOf('b.litertlm')]);
+  });
+
+  it('a model deleted in the Download Manager is not left in memory: llama A deleted, Use LiteRT B, only B is in memory', async () => {
+    await boot({ models: [FIRST, LITERT_B] }, { text: 'first' });
+    const { llmService } = require('../../../src/services/llm');
+    const residents = () => require('../../../src/services/modelResidency').modelResidencyManager.getResidents();
+    t.boundary.llama!.scriptCompletion({ text: 'From First.' });
+    await newChat();
+    send('one');
+    await byText('From First.');
+    press(t.ui.getByTestId('model-selector'));
+    await t.rtl.waitFor(() => expect(shown('models-screen')).toBe(true), TIMEOUT);
+    await deleteInDownloadManager('first.gguf', 'first');
+    press(await byLabel('Use Lite B'));
+    await t.rtl.waitFor(() => expect(header()).toHaveTextContent('Lite B'), TIMEOUT);
+    expect(llmService.isModelLoaded()).toBe(false);
+    expect(residents()).toHaveLength(0);
+    t.boundary.litert.scriptTurn({ content: 'From B.' });
+    send('two');
+    await byText('From B.');
+    expect(residents()).toHaveLength(1);
+    press(t.ui.getByTestId('model-selector'));
+    press(await t.rtl.waitFor(() => t.ui.getByTestId('in-memory-button'), TIMEOUT));
+    expect(t.rtl.within(await t.rtl.waitFor(() => t.ui.getByTestId('models-row-text'), TIMEOUT)).queryByText('Lite B') !== null).toBe(true);
+    expect(llmService.isModelLoaded()).toBe(false);
+  });
 });

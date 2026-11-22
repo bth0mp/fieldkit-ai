@@ -1,7 +1,7 @@
 // ActiveModelService — THE ONLY PLACE models should be loaded/unloaded from.
 import { llmService } from '../llm';
 import { liteRTService } from '../litert';
-import { getActiveEngineService } from '../engines';
+import { loadedTextEngines } from '../engines';
 import { localDreamGeneratorService as onnxImageGeneratorService } from '../localDreamGenerator';
 import { hardwareService } from '../hardware';
 import { modelResidencyManager } from '../modelResidency';
@@ -226,15 +226,17 @@ class ActiveModelService {
       await this.textLoadPromise;
     }
     const storeActiveModelId = useAppStore.getState().activeModelId;
-    // Unload the ACTIVE engine (was llama-only → a LiteRT eviction never freed native memory).
-    const isNativeLoaded = getActiveEngineService()?.isModelLoaded() ?? false;
+    // Unload EVERY engine with a model loaded, not the active one: a model deleted while loaded has no record,
+    // so no engine is active, and one chosen next on the other engine would leave it resident.
+    const loadedEngines = loadedTextEngines();
+    const isNativeLoaded = loadedEngines.length > 0;
     if (!storeActiveModelId && !this.loadedTextModelId && !isNativeLoaded) {
       return;
     }
     this.loadingState.text = true;
     this.notifyListeners();
     try {
-      if (isNativeLoaded) await getActiveEngineService()?.unloadModel();
+      for (const engine of loadedEngines) await engine.unloadModel();
       this.setLoadedText(null);
       // Eviction (keepSelection) keeps the selection & flags "tap to continue"; user unload clears both.
       if (keepSelection) { if (isNativeLoaded) useAppStore.getState().setTextModelEvicted(true); }
