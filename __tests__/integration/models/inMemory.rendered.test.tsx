@@ -22,6 +22,7 @@ let t: Awaited<ReturnType<typeof bootHome>>;
 const stores = () => require('../../../src/stores');
 const state = () => stores().useAppStore.getState();
 const press = (el: any) => t.rtl.fireEvent.press(el);
+const settle = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
 const find = (text: string) => t.rtl.waitFor(() => t.ui.getByText(text), TIMEOUT);
 const textOf = (el: any): string => el.children.map((c: any) => (typeof c === 'string' ? c : textOf(c))).join('');
 const gb = (el: any) => /([\d.]+) GB/.exec(textOf(el))?.[1];
@@ -94,6 +95,33 @@ describe('In memory on the Models screen (rendered)', () => {
     press(await find('Eject All'));
     await t.rtl.waitFor(() => expect(label()).toBe('In memory: none'), TIMEOUT);
     expect([state().activeModelId, state().activeImageModelId]).toEqual(['m', 'sd']);
+  });
+
+  it('Eject All: Cancel keeps the model loaded; confirming says how many were unloaded', async () => {
+    await boot();
+    await openSheet();
+    press(t.ui.getByText('Eject All Models'));
+    press(await find('Cancel'));
+    await settle(300);
+    expect(residents()).toHaveLength(1);
+    expect(state().activeModelId).toBe('m');
+    await openSheet();
+    press(t.ui.getByText('Eject All Models'));
+    press(await find('Eject All'));
+    await find('Unloaded 1 model');
+    expect(residents()).toHaveLength(0);
+  });
+
+  it('Eject All that fails says so', async () => {
+    await boot();
+    const { activeModelService } = require('../../../src/services/activeModelService');
+    // The engines swallow a context that will not release, so the failure cannot come from the device boundary.
+    jest.spyOn(activeModelService, 'ejectAll').mockRejectedValueOnce(new Error('release failed'));
+    await openSheet();
+    press(t.ui.getByText('Eject All Models'));
+    press(await find('Eject All'));
+    await find('Failed to unload models');
+    expect(residents()).toHaveLength(1);
   });
 
   it.each([['remote', true], ['local', false]])('a %s text model: the sheet cloud mark is %s', async (kind, mark) => {

@@ -95,7 +95,7 @@ export function createSpotlightSteps(): TourStep[] {
       onBackdropPress: 'stop',
       shape: { type: 'rectangle', padding: 8 },
     },
-    // 1: TextModelCard on HomeScreen — loadedModel
+    // 1: model chip on Home — loadedModel
     {
       render: ({ stop }) => (
         <Tooltip
@@ -239,7 +239,7 @@ export function createSpotlightSteps(): TourStep[] {
       onBackdropPress: 'stop',
       shape: { type: 'rectangle', padding: 8 },
     },
-    // 13: ImageModelCard on HomeScreen — triedImageGen (part 2, reactive)
+    // 13: model chip on Home — triedImageGen (part 2, reactive)
     {
       render: ({ stop }) => (
         <Tooltip

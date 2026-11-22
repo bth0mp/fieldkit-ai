@@ -133,8 +133,15 @@ describe('Your models on the Text tab (rendered)', () => {
   it('remote models sit under their server with the cloud mark; Use connects; Disconnect drops', async () => {
     await boot();
     await addServer('Study PC', 'http://localhost:1234', ['llama3']);
+    const caps = { supportsVision: true, supportsToolCalling: true, supportsThinking: true };
+    t.rtl.act(() => {
+      stores().useRemoteServerStore.setState((prev: any) => ({
+        discoveredModels: Object.fromEntries(Object.entries(prev.discoveredModels).map(([id, ms]: any) => [id, ms.map((m: any) => ({ ...m, capabilities: caps }))])),
+      }));
+    });
     await openModels();
     expect(section().getByText('Study PC')).toBeTruthy();
+    expect(section().getByText('Vision · Tools · Thinking')).toBeTruthy();
     expect(section().getByTestId('remote-model-item-remote')).toBeTruthy();
     press(t.ui.getByLabelText('Use llama3'));
     await t.rtl.waitFor(() => expect(remote().activeRemoteTextModelId).toBe('llama3'), TIMEOUT);
@@ -143,6 +150,17 @@ describe('Your models on the Text tab (rendered)', () => {
     press(t.ui.getByLabelText('Disconnect llama3'));
     await t.rtl.waitFor(() => expect(remote().activeServerId === null).toBe(true), TIMEOUT);
     expect(t.ui.getByTestId('models-screen')).toBeTruthy();
+  });
+
+  it('a model that will not unload: Unload says so and the model stays in use', async () => {
+    await boot();
+    await openModels();
+    const { activeModelService } = require('../../../src/services/activeModelService');
+    // The engines swallow a context that will not release, so the failure cannot come from the device boundary.
+    jest.spyOn(activeModelService, 'unloadTextModel').mockRejectedValueOnce(new Error('release failed'));
+    press(t.ui.getByLabelText('Unload Used'));
+    await t.rtl.waitFor(() => expect(t.ui.queryByText('Failed to unload model') !== null).toBe(true), TIMEOUT);
+    expect(state().activeModelId).toBe('used');
   });
 
   it('the same model id on two servers: one row says In use', async () => {
