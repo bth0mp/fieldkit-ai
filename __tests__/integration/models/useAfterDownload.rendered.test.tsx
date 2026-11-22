@@ -69,6 +69,9 @@ const openImageTab = async () => {
   await t.rtl.waitFor(() => expect(t.ui.queryByTestId('your-models-image') !== null).toBe(true), TIMEOUT);
 };
 
+/** A screen reader groups everything under an accessible ancestor into one element and hides the button (the button's own wrappers share its id). */
+const hiddenByGroup = (el: any) => { for (let n = el.parent; n; n = n.parent) if (n.props?.accessible === true && n.props.testID !== el.props.testID) return true; return false; };
+
 afterEach(() => resetDeviceMemory());
 
 describe('Use on file, image and transcription cards (rendered)', () => {
@@ -173,4 +176,15 @@ describe('Use on file, image and transcription cards (rendered)', () => {
     await t.rtl.waitFor(() => expect(whisper().downloadedModelId).toBe('tiny.en'), TIMEOUT);
     expect(t.ui.getByTestId('models-screen')).toBeTruthy();
   });
+
+  it('a screen reader reaches Use on a file card and on a transcription card', async () => {
+    await boot({ models: [FIRST], hf: withRepoFiles });
+    await openFileList();
+    expect(hiddenByGroup(t.ui.getByLabelText('Use Test-Q4_K_M'))).toBe(false);
+    press(t.ui.getByTestId('model-detail-back'));
+    t.boundary.fs!.seedFile(`${t.boundary.fs!.DocumentDirectoryPath}/whisper-models/ggml-tiny.en.bin`, 100 * 1024 * 1024);
+    press(t.ui.getByTestId('transcription-models-tab'));
+    await t.rtl.waitFor(() => expect(t.ui.queryByTestId('transcription-model-card-0-use') !== null).toBe(true), TIMEOUT);
+    expect(hiddenByGroup(t.ui.getByLabelText('Use Tiny'))).toBe(false);
+  }, 30000);
 });

@@ -74,6 +74,9 @@ interface ModelCardProps {
   };
 }
 
+/** With a Use button inside, a grouped card would hide it from a screen reader. */
+const exposeChildren = (onSelect?: () => void) => (onSelect ? { accessible: false } : {});
+
 function resolveQuantInfo(file?: ModelFile, downloadedModel?: DownloadedModel) {
   const quant = file?.quantization ?? downloadedModel?.quantization;
   return quant ? (QUANTIZATION_INFO[quant] ?? null) : null;
@@ -232,6 +235,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({
       onPress={onPress}
       activeOpacity={0.7}
       disabled={!onPress}
+      {...exposeChildren(onSelect)}
       testID={testID}
     >
 <View style={styles.cardRow}>
