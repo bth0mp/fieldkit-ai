@@ -15,6 +15,7 @@ import logger from '../../utils/logger';
 import { useDownloadStore } from '../../stores/downloadStore';
 import { makeModelKey } from '../../utils/modelKey';
 import { extractBaseName } from './scan';
+import { isMMProjFile, pickMmProjForModel } from '../mmproj';
 
 /**
  * The on-disk projector name for a model — QUANT-INDEPENDENT (built from extractBaseName = name+variant,
@@ -35,6 +36,32 @@ export function mmProjLocalName(ggufFileName: string, mmProjSourceName?: string)
   const precision = mmProjSourceName?.match(/[-_.](iq\d[a-z0-9_]*|q\d[a-z0-9_]*|bf16|fp16|f16|f32)\.gguf$/i)?.[1];
   const proj = precision ? `mmproj-${precision}.gguf` : 'mmproj.gguf';
   return `${base}-${proj}`;
+}
+
+/**
+ * A complete projector already in the models folder that belongs to this model under the strict matcher,
+ * whatever name an older version gave it. A file smaller than the repo says is partial and is not reused.
+ * Returns its path, or null.
+ */
+async function findCompleteProjectorOnPhone(opts: {
+  modelsDir: string;
+  modelFileName: string;
+  expectedSize: number | undefined;
+  exceptPath: string;
+}): Promise<string | null> {
+  const { modelsDir, modelFileName, expectedSize, exceptPath } = opts;
+  try {
+    const items = await RNFS.readDir(modelsDir);
+    const names = items.filter(i => i.isFile() && isMMProjFile(i.name) && `${modelsDir}/${i.name}` !== exceptPath).map(i => i.name);
+    const chosen = pickMmProjForModel(modelFileName, names);
+    if (!chosen) return null;
+    const path = `${modelsDir}/${chosen}`;
+    const stat = await RNFS.stat(path);
+    const size = typeof stat.size === 'string' ? Number.parseInt(stat.size, 10) : stat.size;
+    return size > 0 && (!expectedSize || size >= expectedSize) ? path : null;
+  } catch {
+    return null;
+  }
 }
 
 export interface MmProjRepairDownloadOpts {
@@ -62,7 +89,13 @@ export async function performMmProjRepairDownload(opts: MmProjRepairDownloadOpts
   // Same quant-independent name the normal download uses — repair and download must agree on the file.
   const mmProjLocalPath = `${modelsDir}/${mmProjLocalName(file.name, file.mmProjFile?.name)}`;
   const totalBytes = mmProjFile.size;
-  if (await RNFS.exists(mmProjLocalPath)) await RNFS.unlink(mmProjLocalPath).catch(() => {});
+  if (await RNFS.exists(mmProjLocalPath)) {
+    await RNFS.unlink(mmProjLocalPath).catch(() => {});
+  } else {
+    // Already on the phone under an older name: reuse it instead of fetching it again.
+    const onPhone = await findCompleteProjectorOnPhone({ modelsDir, modelFileName: file.name, expectedSize: totalBytes, exceptPath: mmProjLocalPath });
+    if (onPhone) return onPhone;
+  }
 
   const info = await backgroundDownloadService.startDownload({
     url: mmProjFile.downloadUrl,
@@ -149,12 +182,22 @@ export interface PerformBackgroundDownloadOpts {
 export async function performBackgroundDownload(opts: PerformBackgroundDownloadOpts): Promise<BackgroundDownloadInfo> {
   const { modelId, file, modelsDir, backgroundDownloadContext, backgroundDownloadMetadataCallback, onProgress } = opts;
   const localPath = `${modelsDir}/${file.name}`;
-  const mmProjLocalPath = file.mmProjFile
+  let mmProjLocalPath = file.mmProjFile
     ? `${modelsDir}/${mmProjLocalName(file.name, file.mmProjFile?.name)}`
     : null;
 
   const mainExists = await RNFS.exists(localPath);
-  const mmProjExists = await checkMmProjExists(mmProjLocalPath, file.mmProjFile?.size);
+  let mmProjExists = await checkMmProjExists(mmProjLocalPath, file.mmProjFile?.size);
+  if (!mmProjExists && mmProjLocalPath) {
+    // A projector saved under an older name still serves this model: link it, do not fetch it again.
+    const onPhone = await findCompleteProjectorOnPhone({
+      modelsDir, modelFileName: file.name, expectedSize: file.mmProjFile?.size, exceptPath: mmProjLocalPath,
+    });
+    if (onPhone) {
+      mmProjLocalPath = onPhone;
+      mmProjExists = true;
+    }
+  }
 
   if (mainExists && mmProjExists) {
     return handleAlreadyDownloaded({ modelId, file, localPath, mmProjLocalPath, backgroundDownloadContext });

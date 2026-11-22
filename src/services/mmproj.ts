@@ -40,6 +40,8 @@ function modelIdentityStem(fileName: string): string {
     .replace(/[-_.]ud(?=[-_.](?:iq\d|q\d|f\d|fp16|bf16))/gi, '')
     // quant / precision tokens: Q4_K_M, Q8_0, Q5_K_S, Q6_K, IQ4_XS, F16, FP16, F32, BF16, …
     .replace(/[-_.]?(iq\d+[a-z0-9_]*|q\d+[a-z0-9_]*|fp16|f16|f32|bf16)/gi, '')
+    // a projector named `<name>-ud-mmproj` has no quant after the `ud`: drop that trailing marker too
+    .replace(/[-_.]ud$/, '')
     .replace(/[^a-z0-9]+/g, '');
 }
 

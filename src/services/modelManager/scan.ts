@@ -5,6 +5,7 @@ import { buildDownloadedModel, persistDownloadedModel, loadDownloadedModels, sav
 import { copyFileWithProgress } from './copyFile';
 import { resolveCoreMLModelDir } from '../../utils/coreMLModelUtils';
 import { ensureImageExtractionComplete } from '../../utils/imageModelIntegrity';
+import { ImageModelIncompleteError } from '../../utils/modelLoadErrors';
 // Single source of truth for projector detection + model↔projector matching (see src/services/mmproj.ts).
 import { isMMProjFile, pickMmProjForModel } from '../mmproj';
 import { isHelperModelFile } from '../../utils/modelFileKind';
@@ -166,6 +167,8 @@ async function recoverImageModelFromZipRemnant(
   imageModelsDir: string,
 ): Promise<ONNXImageModel | null> {
   const zipFileName = (await RNFS.readFile(`${item.path}/_zip_name`, 'utf8')).trim();
+  // The marker is a file name in the image folder and nothing else; never follow a path out of it.
+  if (!zipFileName || /[/\\]/.test(zipFileName) || zipFileName.includes('..')) return null;
   const zipPath = `${imageModelsDir}/${zipFileName}`;
   if (!(await isValidZip(zipPath))) {
     await RNFS.unlink(item.path).catch(() => {}); // zip gone or corrupt: the partial dir is unrecoverable
@@ -175,7 +178,10 @@ async function recoverImageModelFromZipRemnant(
   const backend = detectBackend(item.name);
   try {
     await ensureImageExtractionComplete({ backend, modelDir: item.path, zipPath, modelId: item.name });
-  } catch {
+  } catch (err) {
+    // Only a tree that is still incomplete after the retry is removed. Any other failure (a passing
+    // unzip or file-system error) leaves the folder and the zip for the next start.
+    if (!(err instanceof ImageModelIncompleteError)) throw err;
     await RNFS.unlink(item.path).catch(() => {});
     await RNFS.unlink(zipPath).catch(() => {});
     return null;

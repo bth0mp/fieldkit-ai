@@ -67,6 +67,7 @@ jest.mock('../../../../src/services/modelManager/storage', () => ({
 jest.mock('../../../../src/utils/coreMLModelUtils', () => ({ resolveCoreMLModelDir: jest.fn(async (d: string) => d) }));
 
 import RNFS from 'react-native-fs';
+import { unzip } from 'react-native-zip-archive';
 import { reconcileFinishedImageDownloads } from '../../../../src/services/modelManager/scan';
 
 const files: Map<string, { isFile: boolean; size: number; content?: string }> = (RNFS as any).__files;
@@ -129,5 +130,40 @@ describe('reconcileFinishedImageDownloads — partial re-unzip completeness gate
     expect(out[0].backend).toBe('mnn');
     expect(files.has(`${DIR}/_ready`)).toBe(true);             // marked ready
     expect(files.has(DIR)).toBe(true);                          // kept
+  });
+
+  it.each(['../x.zip', 'sub/a.zip', String.raw`a\b.zip`, '..', ''])(
+    'trusts no path in the zip marker (%j): nothing is unzipped or removed',
+    async marker => {
+      stageCommon();
+      seed(`${DIR}/_zip_name`, 12, marker);
+      seed(`${DIR}/unet.mnn`, 4096);
+      (unzip as jest.Mock).mockClear();
+      (RNFS.unlink as jest.Mock).mockClear();
+      const o = opts();
+
+      const out = await reconcileFinishedImageDownloads(o);
+
+      expect(out).toEqual([]);
+      expect(unzip).not.toHaveBeenCalled();
+      expect(RNFS.unlink).not.toHaveBeenCalled();
+      expect(files.has(`${DIR}/unet.mnn`)).toBe(true);
+      expect(o.addImageModel).not.toHaveBeenCalled();
+    },
+  );
+
+  it('keeps the folder and the zip when the unzip fails for a passing reason, to try again at the next start', async () => {
+    stageCommon();
+    seed(`${DIR}/unet.mnn`, 4096);
+    (unzip as jest.Mock).mockResolvedValueOnce('').mockRejectedValueOnce(new Error('EIO')); // the second is the retry inside the completeness check
+    const o = opts();
+
+    const out = await reconcileFinishedImageDownloads(o);
+
+    expect(out).toEqual([]);
+    expect(files.has(DIR)).toBe(true);
+    expect(files.has(`${DIR}/unet.mnn`)).toBe(true);
+    expect(files.has(ZIP)).toBe(true);
+    expect(o.addImageModel).not.toHaveBeenCalled();
   });
 });

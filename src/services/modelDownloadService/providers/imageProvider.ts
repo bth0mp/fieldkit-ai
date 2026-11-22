@@ -133,11 +133,12 @@ export const imageProvider: DownloadProvider = {
       .catch(err => logger.log(`[DL-SM] image:${modelId} remove: unload failed err=${msg(err)}`));
     // The files leave first. If the disk refuses, the model stays the person's (still listed, still on
     // disk) and the caller hears it, so the screen can say so and offer a retry.
+    const registered = (await modelManager.getDownloadedImageModels()).some(m => m.id === modelId);
     try {
       await modelManager.deleteImageModel(modelId);
     } catch (err) {
       logger.log(`[DL-SM] image:${modelId} remove: delete failed err=${msg(err)}`);
-      if (await RNFS.exists(`${modelManager.getImageModelsDirectory()}/${modelId}`)) throw err;
+      if (registered && await RNFS.exists(`${modelManager.getImageModelsDirectory()}/${modelId}`)) throw err;
     }
     useAppStore.getState().removeDownloadedImageModel(modelId);
   },
