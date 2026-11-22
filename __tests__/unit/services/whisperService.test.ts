@@ -5,12 +5,14 @@
  * Priority: P1 - Voice input support.
  */
 
+import { waitFor } from '@testing-library/react-native';
 import { initWhisper } from 'whisper.rn';
 import { Platform, PermissionsAndroid } from 'react-native';
 import RNFS from 'react-native-fs';
 import { whisperService, WHISPER_MODELS } from '../../../src/services/whisperService';
 import { backgroundDownloadService } from '../../../src/services/backgroundDownloadService';
 import { audioSessionManager } from '../../../src/services/audioSessionManager';
+import { audioRecorderService } from '../../../src/services/audioRecorderService';
 import { AudioManager } from 'react-native-audio-api';
 
 // The realtime permission path drives audioSessionManager, which calls these.
@@ -719,6 +721,48 @@ describe('WhisperService', () => {
         processTime: 100,
         recordingTime: 200,
       });
+    });
+  });
+
+  describe('a finishing dictation and the next one', () => {
+    it('does not clear the live state of the session that started after it', async () => {
+      let finishFile: (value: { result: string }) => void = () => {};
+      let subscribeFn: any;
+      const mockContext = {
+        id: 'ctx',
+        release: jest.fn(),
+        transcribeRealtime: jest.fn(() => Promise.resolve({
+          stop: jest.fn(),
+          subscribe: (fn: any) => { subscribeFn = fn; },
+        })),
+        transcribe: jest.fn(() => ({
+          stop: jest.fn(),
+          promise: new Promise<{ result: string }>(resolve => { finishFile = resolve; }),
+        })),
+      };
+      mockedInitWhisper.mockResolvedValueOnce(mockContext as any);
+      mockValidModelFile();
+      await whisperService.loadModel('/path/model.bin');
+      Object.defineProperty(Platform, 'OS', { get: () => 'ios' });
+      jest.spyOn(audioRecorderService, 'startRecording').mockResolvedValue();
+      jest.spyOn(audioRecorderService, 'stopRecording').mockResolvedValue({ path: '/recorded.wav', durationSeconds: 1 });
+
+      const firstResult = jest.fn();
+      await whisperService.startRealtimeTranscription(firstResult);
+      // The utterance ends with nothing heard live, so the recorded file is transcribed.
+      subscribeFn({ isCapturing: false, data: { result: '' } });
+      await whisperService.stopTranscription();
+
+      // The person taps the mic again while that file job is still running.
+      await whisperService.startRealtimeTranscription(jest.fn());
+      expect(whisperService.isCurrentlyTranscribing()).toBe(true);
+
+      finishFile({ result: 'what I said' });
+      await waitFor(() => expect(firstResult).toHaveBeenCalledWith(
+        expect.objectContaining({ text: 'what I said', isCapturing: false }),
+      ));
+      // The first session finishing must not clear the live second one.
+      expect(whisperService.isCurrentlyTranscribing()).toBe(true);
     });
   });
 

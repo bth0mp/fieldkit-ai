@@ -9,6 +9,7 @@ import { useDownloadStore } from '../stores/downloadStore';
 import { makeModelKey } from '../utils/modelKey';
 import { WHISPER_MODELS, cleanTranscription } from './whisperModels';
 import * as whisperModelFiles from './whisperModelFiles';
+import { settleDownloadRow } from './whisperDownloadRow';
 
 // Re-export the model catalog + transcription normalizer (moved to whisperModels.ts
 // to keep this file within the max-lines budget). Behavior-neutral: every existing
@@ -28,6 +29,8 @@ class WhisperService {
   private currentModelPath: string | null = null;
   private isTranscribing: boolean = false;
   private stopFn: (() => void) | null = null;
+  /** Counts live sessions, so a finishing session only clears state it still owns. */
+  private realtimeSession = 0;
   private isReleasingContext: boolean = false;
   private contextReleasePromise: Promise<void> = Promise.resolve();
   private transcriptionFullyStopped: Promise<void> = Promise.resolve();
@@ -158,20 +161,11 @@ class WhisperService {
       // download leaves the newer one's row alone.
       if (this.downloadOwners.get(modelId) === owner) {
         this.downloadOwners.delete(modelId);
-        this.settleRow(modelKey, failure);
+        settleDownloadRow(modelKey, failure);
       }
     }
     logger.log(`[Whisper] Downloaded to ${destPath}`);
     return destPath;
-  }
-  private settleRow(modelKey: string, failure: unknown): void {
-    const store = useDownloadStore.getState();
-    const entry = store.downloads?.[modelKey];
-    if (failure === undefined || !entry) {
-      store.remove(modelKey);
-      return;
-    }
-    store.setStatus(entry.downloadId, 'failed', { message: failure instanceof Error ? failure.message : String(failure) });
   }
   /** List every downloaded ggml whisper model on disk (for the Download Manager). */
   async listDownloadedModels(): Promise<Array<{ modelId: string; fileName: string; sizeBytes: number; filePath: string }>> {
@@ -308,6 +302,7 @@ class WhisperService {
     }
 
     this.isTranscribing = true;
+    const session = ++this.realtimeSession;
 
     // Create a promise that resolves when the native side fully finishes
     let resolveTranscriptionStopped: () => void = () => {};
@@ -407,8 +402,11 @@ class WhisperService {
             processTime: processTime || 0,
             recordingTime: recordingTime || 0,
           });
-          this.isTranscribing = false;
-          this.stopFn = null;
+          // A newer session may already be live: its state is not ours to clear.
+          if (session === this.realtimeSession) {
+            this.isTranscribing = false;
+            this.stopFn = null;
+          }
           // Signal that native processing is complete - safe to release context
           resolveTranscriptionStopped();
         });
