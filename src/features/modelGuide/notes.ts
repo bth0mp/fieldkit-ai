@@ -32,110 +32,109 @@ export const NO_NOTE: Record<string, string> = {};
 
 const HF = 'https://huggingface.co/';
 
-const GEMMA_NOT = 'Open-ended or highly complex tasks';
+const GEMMA_NOT = 'Open-ended or very complex tasks';
 
 export const TEXT_NOTES: Record<string, ModelNote> = {
   'unsloth/gemma-4-E2B-it-GGUF': {
-    goodFor: 'Chat, summaries, pictures and audio on a phone',
+    goodFor: 'Chat, summaries, and questions about pictures or speech',
     notFor: GEMMA_NOT,
     source: `${HF}google/gemma-4-E2B-it`,
   },
   'unsloth/gemma-4-E4B-it-GGUF': {
-    goodFor: 'Chat, summaries, pictures and audio; 4.5B effective',
+    goodFor: 'Chat, summaries, pictures and speech; bigger than E2B',
     notFor: GEMMA_NOT,
     source: `${HF}google/gemma-4-E4B-it`,
   },
   'unsloth/Qwen3.5-0.8B-GGUF': {
-    goodFor: 'Prototyping and task fine-tuning; 201 languages',
-    notFor: 'Thinking mode; it can loop and not finish',
+    goodFor: 'Short chats and quick questions on phones with little memory',
+    notFor: 'Leave Thinking off; it can loop and not finish',
     source: `${HF}Qwen/Qwen3.5-0.8B`,
   },
   'unsloth/Qwen3.5-2B-GGUF': {
-    goodFor: 'Prototyping and task fine-tuning; 201 languages',
-    notFor: 'Thinking mode; it can loop and not finish',
+    goodFor: 'Chat and questions in over 200 languages, on small phones',
+    notFor: 'Leave Thinking off; it can loop and not finish',
     source: `${HF}Qwen/Qwen3.5-2B`,
   },
   'unsloth/Qwen3.5-9B-GGUF': {
-    goodFor: 'Tool calling and agent tasks in 201 languages',
+    goodFor: 'Chat and questions in over 200 languages; the biggest Qwen',
     notFor: 'Phones with less than 8 GB of memory',
     source: `${HF}Qwen/Qwen3.5-9B`,
   },
   'ggml-org/SmolLM3-3B-GGUF': {
-    goodFor: 'Chat and tool calling in six languages',
-    notFor: 'Pictures or audio; text only',
+    goodFor: 'Chat and questions in six European languages',
+    notFor: 'Pictures or audio; it only reads and writes text',
     source: `${HF}HuggingFaceTB/SmolLM3-3B`,
   },
   'bartowski/Mistral-7B-Instruct-v0.3-GGUF': {
-    goodFor: 'Chat and function calling',
-    notFor: 'Moderated output; it has no moderation built in',
+    goodFor: 'Everyday chat and quick questions',
+    notFor: 'Blocking unsafe replies; it has no filter built in',
     source: `${HF}mistralai/Mistral-7B-Instruct-v0.3`,
   },
   'ggml-org/SmolVLM2-500M-Video-Instruct-GGUF': {
-    goodFor: 'Questions about images and video; 0.5B parameters',
-    notFor: 'Making images or video; English only',
+    goodFor: 'Answering questions about photos and video; very small',
+    notFor: 'Making pictures or video; English only',
     source: `${HF}HuggingFaceTB/SmolVLM2-500M-Video-Instruct`,
   },
   'QuantFactory/SmolLM2-360M-Instruct-GGUF': {
     goodFor: 'Rewriting and summarizing text on small phones',
-    notFor: 'Function calling; it mostly handles English',
+    notFor: 'Other languages; it mostly handles English',
     source: `${HF}HuggingFaceTB/SmolLM2-360M-Instruct`,
   },
   'ggml-org/SmolVLM-Instruct-GGUF': {
-    goodFor: 'Tasks that mix images and text',
-    notFor: 'Making images; English only',
+    goodFor: 'Answering questions about photos',
+    notFor: 'Making pictures; English only',
     source: `${HF}HuggingFaceTB/SmolVLM-Instruct`,
   },
   'ggml-org/SmolVLM2-2.2B-Instruct-GGUF': {
-    goodFor: 'Captions and questions about images and video',
-    notFor: 'Making images or video; English only',
+    goodFor: 'Describing photos and video, and answering questions',
+    notFor: 'Making pictures or video; English only',
     source: `${HF}HuggingFaceTB/SmolVLM2-2.2B-Instruct`,
   },
 };
 
 /** Every Whisper card lists all the sizes in one table, so the tiny card is the source for the four small sizes. */
 const WHISPER_TABLE = `${HF}openai/whisper-tiny`;
-const WHISPER_HALLUCINATES = 'It can add words that were not spoken';
 const WHISPER_RARE = 'Rarer languages; accuracy is lower there';
-const whisperEn = (params: string): ModelNote => ({
-  goodFor: `Transcribing English speech; ${params} parameters`,
+const whisperEn = (size: string): ModelNote => ({
+  goodFor: `English speech to text; ${size}`,
   notFor: 'Other languages; this one is English only',
   source: WHISPER_TABLE,
 });
-const whisperMulti = (params: string): ModelNote => ({
-  goodFor: `Transcribing and translating speech; ${params} parameters`,
+const whisperMulti = (size: string): ModelNote => ({
+  goodFor: `Speech to text in many languages; ${size}`,
   notFor: WHISPER_RARE,
   source: WHISPER_TABLE,
 });
 
 export const WHISPER_NOTES: Record<string, ModelNote> = {
-  'tiny.en': whisperEn('39M'),
-  'base.en': whisperEn('74M'),
-  'small.en': whisperEn('244M'),
-  'medium.en': whisperEn('769M'),
-  tiny: whisperMulti('39M'),
-  base: whisperMulti('74M'),
-  small: whisperMulti('244M'),
-  medium: whisperMulti('769M'),
+  'tiny.en': whisperEn('the smallest Whisper'),
+  'base.en': whisperEn('bigger than Tiny'),
+  'small.en': whisperEn('bigger than Base'),
+  'medium.en': whisperEn('bigger than Small'),
+  tiny: whisperMulti('the smallest Whisper'),
+  base: whisperMulti('bigger than Tiny'),
+  small: whisperMulti('bigger than Base'),
+  medium: whisperMulti('bigger than Small'),
   'large-v3-turbo': {
-    goodFor: 'Large-v3 with fewer decoding layers; a bit lower quality',
-    notFor: 'Real-time use out of the box',
+    goodFor: 'Speech to text in 99 languages; faster than Large v3',
+    notFor: 'Live transcription as you speak',
     source: `${HF}openai/whisper-large-v3-turbo`,
   },
   'large-v3': {
-    goodFor: 'Transcribing speech in 99 languages; 1550M parameters',
-    notFor: WHISPER_HALLUCINATES,
+    goodFor: 'Speech to text in 99 languages; the biggest Whisper',
+    notFor: 'It can add words that were not spoken',
     source: `${HF}openai/whisper-large-v3`,
   },
 };
 
 export const LITERT_NOTES: Record<string, ModelNote> = {
   'gemma-4-E2B-it.litertlm': {
-    goodFor: 'Private chat on the phone, with GPU support',
-    notFor: 'Chats longer than 32K tokens',
+    goodFor: 'Private chat on the phone, using its graphics chip',
+    notFor: 'Phones short on memory; the file is about 2.6 GB',
     source: `${HF}litert-community/gemma-4-E2B-it-litert-lm`,
   },
   'gemma-4-E4B-it.litertlm': {
-    goodFor: 'Private chat on the phone, with GPU support',
+    goodFor: 'Private chat on the phone; bigger than E2B',
     notFor: 'Phones short on memory; the file is 3.66 GB',
     source: `${HF}litert-community/gemma-4-E4B-it-litert-lm`,
   },
