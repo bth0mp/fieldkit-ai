@@ -382,6 +382,33 @@ describe('Choosing a model from a chat (rendered)', () => {
     expect(await byText('Hi there.')).toBeTruthy();
   });
 
+  it.each(['deleted', 'refused by the phone'])('a message sent when the remembered text model is %s opens Models, and goes out once after Use', async (why) => {
+    await boot({ models: [FIRST, SECOND], imageModels: [SD_ONE] }, { image: 'sd1' });
+    const textTab = async () => { press(t.ui.getByTestId('models-summary')); press(await byText('Text Models')); };
+    await textTab();
+    press(await byLabel('Use First')); // First is now the model to come back to
+    await t.rtl.waitFor(() => expect(shown('models-screen')).toBe(false), TIMEOUT);
+    await textTab();
+    if (why === 'deleted') await deleteInDownloadManager('first.gguf', 'first');
+    else press(await byLabel('Unload First'));
+    await t.rtl.waitFor(() => expect(state().activeModelId).toBeNull(), TIMEOUT);
+    press(t.ui.getByTestId('models-back'));
+    await t.rtl.waitFor(() => expect(shown('models-screen')).toBe(false), TIMEOUT);
+    if (why !== 'deleted') t.boundary.llama!.scriptInitFailure();
+    await newChat();
+    send('hello there');
+    await t.rtl.waitFor(() => expect(shown('your-models-text')).toBe(true), TIMEOUT);
+    expect(userBubbles('hello there')).toBe(0);
+    t.boundary.llama!.scriptInitFailure(false);
+    t.boundary.llama!.scriptCompletion({ text: 'Hi there.' });
+    press(await byLabel('Use Second'));
+    await t.rtl.waitFor(() => expect(userBubbles('hello there')).toBe(1), TIMEOUT);
+    expect(await byText('Hi there.')).toBeTruthy();
+    await settle(300);
+    expect(userBubbles('hello there')).toBe(1);
+    expect(t.boundary.llama!.calls.completion).toHaveLength(1);
+  });
+
   it('a queued message forced to image that waits after Unload everything is not sent as plain text when a text model is chosen', async () => {
     await boot({ models: [FIRST, SECOND], imageModels: [SD_ONE] }, { text: 'first', image: 'sd1' });
     t.boundary.llama!.scriptCompletion({ text: 'one two three', pauseAfter: 'one' });

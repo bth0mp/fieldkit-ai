@@ -202,6 +202,8 @@ export async function ensureTextModelForChatFn(deps: {
     await activeModelService.loadTextModel(lastTextModelId);
     return true;
   } catch {
+    // Gone or too big to load: the message waits, and the Models screen is where to choose another.
+    deps.openModels('text');
     return false;
   } finally {
     deps.setIsModelLoading(false);
