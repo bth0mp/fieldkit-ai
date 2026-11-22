@@ -65,7 +65,10 @@ export const ModelGuideScreen: React.FC = () => {
         <Text testID="guide-your-phone" style={styles.yourPhone}>{`Your phone: ${tier} GB memory`}</Text>
         {tierRows().map(row => <TierView key={row.gb} row={row} yours={row.gb === tier} styles={styles} />)}
         <Text style={styles.note}>Fit comes from each model's size, not a speed test.</Text>
-        <Text style={styles.note}>Tight means the app may ask before loading it, or you may need a smaller file.</Text>
+        <Text style={styles.note}>Tight means the app may stop and offer Load Anyway. A smaller file may help.</Text>
+        <Text style={styles.note}>
+          These labels are for the default CPU setting. The GPU or NPU setting needs about half as much memory again.
+        </Text>
         {PHONE_TIPS.map(tip => <Text key={tip} style={styles.note}>{tip}</Text>)}
         <Section title="Text models" entries={textEntries()} styles={styles} />
         <Section title="Image models" entries={imageEntries()} styles={styles}>

@@ -49,7 +49,8 @@ function expectGuideContent({ rtl, ui }: Awaited<ReturnType<typeof openGuide>>) 
   expect(tier12.getByText('Tight: Gemma 4 E4B, Qwen 3.5 9B')).toBeTruthy();
   expect(note.getByText(`Good for: ${TEXT_NOTES[GEMMA].goodFor}`)).toBeTruthy();
   expect(note.getByText('Fits: 16 GB and up; tight on 8 and 12 GB')).toBeTruthy();
-  expect(ui.getByText('Tight means the app may ask before loading it, or you may need a smaller file.')).toBeTruthy();
+  expect(ui.getByText('Tight means the app may stop and offer Load Anyway. A smaller file may help.')).toBeTruthy();
+  expect(ui.getByText('These labels are for the default CPU setting. The GPU or NPU setting needs about half as much memory again.')).toBeTruthy();
   expect(rtl.within(ui.getByTestId('guide-image-mnn')).getByText('GPU models')).toBeTruthy();
   expect(rtl.within(ui.getByTestId('guide-image-qnn')).getByText('NPU models')).toBeTruthy();
   expect(rtl.within(ui.getByTestId('guide-note-large-v3')).getByText('Large v3 (many languages)')).toBeTruthy();
