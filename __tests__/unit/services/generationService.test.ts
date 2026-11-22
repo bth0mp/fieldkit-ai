@@ -1568,9 +1568,9 @@ describe('generationService', () => {
   });
 
   // ============================================================================
-  // isUsingRemoteProvider — prefers local model when loaded
+  // isUsingRemoteProvider — prefers a loaded local model unless a remote model is chosen and listed
   // ============================================================================
-  describe('isUsingRemoteProvider — local model wins when loaded', () => {
+  describe('isUsingRemoteProvider — local model wins over a server with no listed model chosen', () => {
     const mockRemoteProvider4 = {
       id: 'remote-srv',
       isReady: jest.fn().mockResolvedValue(true),
@@ -1596,7 +1596,7 @@ describe('generationService', () => {
       (mockedProviderRegistry as any).hasProvider = jest.fn(() => false);
     });
 
-    it('uses local LLM when local model is loaded even if remote server is configured', async () => {
+    it('uses local LLM when a local model is loaded and the server does not list the chosen remote model', async () => {
       const convId = setupWithConversation();
       mockedLlmService.generateResponse.mockImplementation(async (_msgs, { onStream: cb }: any = {}) => {
         cb?.({ content: 'hello' });
@@ -1610,6 +1610,15 @@ describe('generationService', () => {
       // Local generateResponse should have been called, not remote provider
       expect(mockedLlmService.generateResponse).toHaveBeenCalled();
       expect(mockRemoteProvider4.generate).not.toHaveBeenCalled();
+    });
+
+    it('goes to the remote provider when the chosen remote model is one the server lists, even with a local model loaded', () => {
+      expect((generationService as any).isUsingRemoteProvider()).toBe(false);
+      useRemoteServerStore.setState({
+        discoveredModels: { 'remote-srv': [{ id: 'gpt-4', name: 'gpt-4', serverId: 'remote-srv', capabilities: {} }] },
+      } as any); // NOSONAR
+      expect((generationService as any).isUsingRemoteProvider()).toBe(true);
+      useRemoteServerStore.setState({ discoveredModels: {} });
     });
   });
 

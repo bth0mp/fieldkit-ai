@@ -1,6 +1,6 @@
 /** GenerationService - Handles LLM generation independently of UI lifecycle */
 import { llmService } from './llm';
-import { getActiveEngineService, stopAllTextEngines } from './engines';
+import { getActiveEngineService, isRemoteTextModelActive, stopAllTextEngines } from './engines';
 import { useAppStore, useChatStore, useRemoteServerStore } from '../stores';
 import { Message, GenerationMeta, MediaAttachment } from '../types';
 import { runToolLoop, type ToolLoopOutcome } from './generationToolLoop';
@@ -84,20 +84,9 @@ class GenerationService {
 
   /** Check if using a remote provider */
   private isUsingRemoteProvider(): boolean {
-    const { activeServerId } = useRemoteServerStore.getState();
-    const hasProvider = activeServerId ? providerRegistry.hasProvider(activeServerId) : false;
-    const localLoaded = llmService.isModelLoaded();
-    logger.log(`[REMOTE-SM] isUsingRemoteProvider? activeServerId=${activeServerId ?? 'none'} hasProvider=${hasProvider} localLoaded=${localLoaded}`);
-    if (!activeServerId) return false;
-    // Provider must be registered (not just persisted from a previous session)
-    if (!hasProvider) return false;
-    // If a local model is loaded, prefer it over the remote server.
-    // Log a warning so this is diagnosable if a user selects remote but gets local responses.
-    if (localLoaded) {
-      logger.warn('[GenerationService] Local model is loaded — preferring local over active remote server:', activeServerId);
-      return false;
-    }
-    return true;
+    const remote = isRemoteTextModelActive();
+    logger.log(`[REMOTE-SM] isUsingRemoteProvider? activeServerId=${useRemoteServerStore.getState().activeServerId ?? 'none'} remote=${remote} localLoaded=${llmService.isModelLoaded()}`);
+    return remote;
   }
 
   private flushTokenBuffer(): void {

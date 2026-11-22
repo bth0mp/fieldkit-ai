@@ -158,4 +158,23 @@ describe('generationToolLoop routes to the engine the engines.ts owner names', (
     expect(engineOwnerNames()).toBe('remote');
     expect(engineTheLoopUsed()).toBe(engineOwnerNames());
   });
+
+  it('a remote model is chosen (the server lists it) while llama is loaded for another job: the loop routes remote', async () => {
+    mockLlm.isModelLoaded.mockReturnValue(true);
+    mockLiteRT.isModelLoaded.mockReturnValue(false);
+    const serverId = 'srv-1';
+    registerRemoteProvider(serverId);
+    useRemoteServerStore.setState({
+      activeServerId: serverId,
+      activeRemoteTextModelId: 'remote-model',
+      discoveredModels: { [serverId]: [{ id: 'remote-model', name: 'remote-model', serverId, capabilities: {} }] },
+    } as never);
+    useAppStore.setState({ downloadedModels: [createDownloadedModel({ id: 'gg', engine: 'llama' })], activeModelId: 'gg' });
+    const conversationId = setupWithConversation({ messages: [] });
+
+    await runToolLoop(makeCtx(conversationId));
+
+    expect(engineOwnerNames()).toBe('remote');
+    expect(engineTheLoopUsed()).toBe('remote');
+  });
 });

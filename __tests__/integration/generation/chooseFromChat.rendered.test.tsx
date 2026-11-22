@@ -382,6 +382,25 @@ describe('Choosing a model from a chat (rendered)', () => {
     expect(await byText('Hi there.')).toBeTruthy();
   });
 
+  it('a chosen remote model answers while a local model is loaded for another job (the image classifier)', async () => {
+    await boot({ models: [FIRST], imageModels: [SD_ONE] }, { image: 'sd1' });
+    t.rtl.act(() => { state().updateSettings({ imageGenerationMode: 'auto', autoDetectMethod: 'llm', classifierModelId: 'first' }); });
+    await addServer('Study PC', 'http://localhost:1234', ['llama3']);
+    press(t.ui.getByTestId('models-summary'));
+    press(await byText('Text Models'));
+    press(await byLabel('Use llama3'));
+    await t.rtl.waitFor(() => expect(shown('models-screen')).toBe(false), TIMEOUT);
+    const { llmService } = require('../../../src/services/llm');
+    await newChat();
+    await t.rtl.waitFor(() => expect(llmService.isModelLoaded()).toBe(true), TIMEOUT); // opening the chat loads the classifier
+    expect(header()).toHaveTextContent('llama3');
+    t.boundary.llama!.scriptCompletion({ text: 'From the classifier.' });
+    installRemoteStream(reply('From the remote.'));
+    send('hello there');
+    expect(await byText('From the remote.')).toBeTruthy();
+    expect(t.ui.queryByText('From the classifier.') === null).toBe(true);
+  });
+
   it('a model deleted in the Download Manager no longer answers: llama A deleted, Use a remote model, the remote answers', async () => {
     await boot({ models: [FIRST] }, { text: 'first' });
     await addServer('Study PC', 'http://localhost:1234', ['x']);
