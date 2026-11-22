@@ -36,6 +36,8 @@ class WhisperService {
   // deleteModel only cancels the download when it is THIS model's — deleting an
   // unrelated (already-downloaded) model must never abort a different in-flight one.
   private activeDownloadModelId: string | null = null;
+  // Owner of each model's download: a stale one (cancelled, then restarted) must not touch the newer's file or state.
+  private downloadOwners = new Map<string, object>();
 
   getModelsDir(): string { return whisperModelFiles.getModelsDir(); }
   async ensureModelsDirExists(): Promise<void> { return whisperModelFiles.ensureModelsDirExists(); }
@@ -76,6 +78,9 @@ class WhisperService {
       progress: 0,
       createdAt: Date.now(),
     });
+    const owner = {};
+    this.downloadOwners.set(modelId, owner);
+    let failure: unknown;
     const { downloadIdPromise, promise } = backgroundDownloadService.downloadFileTo({
       params: {
         url: model.url,
@@ -110,13 +115,16 @@ class WhisperService {
     });
     try {
       try {
-        this.activeDownloadId = await downloadIdPromise;
-        this.activeDownloadModelId = modelId;
+        const nativeId = await downloadIdPromise;
+        if (this.downloadOwners.get(modelId) === owner) {
+          this.activeDownloadId = nativeId;
+          this.activeDownloadModelId = modelId;
+        }
         // A slot opened and the native download started: reconcile the queued
         // placeholder row to the REAL downloadId so progress events (routed by id)
         // land on it. Progress is then driven by the global onAnyProgress listener
         // in useDownloadListeners.
-        useDownloadStore.getState().retryEntry(modelKey, this.activeDownloadId);
+        useDownloadStore.getState().retryEntry(modelKey, nativeId);
         await promise;
       } catch (error) {
         if ((error as { cancelled?: boolean })?.cancelled) {
@@ -126,11 +134,13 @@ class WhisperService {
         }
         // Remove any partial file (a user cancel already deletes it natively; this
         // also covers the error case). Rethrow so the store clears its progress.
-        await RNFS.unlink(destPath).catch(() => {});
+        if (this.downloadOwners.get(modelId) === owner) await RNFS.unlink(destPath).catch(() => {});
         throw error;
       } finally {
-        this.activeDownloadId = null;
-        this.activeDownloadModelId = null;
+        if (this.downloadOwners.get(modelId) === owner) {
+          this.activeDownloadId = null;
+          this.activeDownloadModelId = null;
+        }
       }
       try {
         await this.validateModelFile(destPath);
@@ -138,15 +148,30 @@ class WhisperService {
         await RNFS.unlink(destPath).catch(err => logger.error('[Whisper] Failed to delete invalid model file:', err));
         throw new Error(`Downloaded model file is invalid: ${validationError instanceof Error ? validationError.message : 'unknown error'}`);
       }
+    } catch (error) {
+      if (!(error as { cancelled?: boolean })?.cancelled) failure = error;
+      throw error;
     } finally {
-      // Completed STT models are listed from disk by useVoiceDownloadItems, so
-      // the in-flight store entry must be dropped on success AND failure: leaving
-      // it would show a stale/duplicate active row and block a re-download (add()
-      // refuses when an entry already exists for this modelKey).
-      useDownloadStore.getState().remove(modelKey);
+      // Completed STT models are listed from disk by useVoiceDownloadItems, so a finished or
+      // cancelled download leaves the store. A failed one stays as failed with its reason, so the
+      // Download Manager offers Retry (removing it made a mid-session failure vanish). A stale
+      // download leaves the newer one's row alone.
+      if (this.downloadOwners.get(modelId) === owner) {
+        this.downloadOwners.delete(modelId);
+        this.settleRow(modelKey, failure);
+      }
     }
     logger.log(`[Whisper] Downloaded to ${destPath}`);
     return destPath;
+  }
+  private settleRow(modelKey: string, failure: unknown): void {
+    const store = useDownloadStore.getState();
+    const entry = store.downloads?.[modelKey];
+    if (failure === undefined || !entry) {
+      store.remove(modelKey);
+      return;
+    }
+    store.setStatus(entry.downloadId, 'failed', { message: failure instanceof Error ? failure.message : String(failure) });
   }
   /** List every downloaded ggml whisper model on disk (for the Download Manager). */
   async listDownloadedModels(): Promise<Array<{ modelId: string; fileName: string; sizeBytes: number; filePath: string }>> {
