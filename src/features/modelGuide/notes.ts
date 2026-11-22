@@ -51,7 +51,7 @@ export const TEXT_NOTES: Record<string, ModelNote> = {
     source: `${HF}Qwen/Qwen3.5-0.8B`,
   },
   'unsloth/Qwen3.5-2B-GGUF': {
-    goodFor: 'Chat and questions in over 200 languages, on small phones',
+    goodFor: 'Chat in over 200 languages, on phones with little memory',
     notFor: 'Thinking mode; it can loop and not finish',
     source: `${HF}Qwen/Qwen3.5-2B`,
   },
@@ -72,22 +72,22 @@ export const TEXT_NOTES: Record<string, ModelNote> = {
   },
   'ggml-org/SmolVLM2-500M-Video-Instruct-GGUF': {
     goodFor: 'Answering questions about photos; very small',
-    notFor: 'Making pictures; English only',
+    notFor: 'Making pictures, or languages other than English',
     source: `${HF}HuggingFaceTB/SmolVLM2-500M-Video-Instruct`,
   },
   'QuantFactory/SmolLM2-360M-Instruct-GGUF': {
-    goodFor: 'Rewriting and summarizing text on small phones',
+    goodFor: 'Rewriting and summarizing text on phones with little memory',
     notFor: 'Other languages; it mostly handles English',
     source: `${HF}HuggingFaceTB/SmolLM2-360M-Instruct`,
   },
   'ggml-org/SmolVLM-Instruct-GGUF': {
     goodFor: 'Answering questions about photos',
-    notFor: 'Making pictures; English only',
+    notFor: 'Making pictures, or languages other than English',
     source: `${HF}HuggingFaceTB/SmolVLM-Instruct`,
   },
   'ggml-org/SmolVLM2-2.2B-Instruct-GGUF': {
     goodFor: 'Describing photos and answering questions about them',
-    notFor: 'Making pictures; English only',
+    notFor: 'Making pictures, or languages other than English',
     source: `${HF}HuggingFaceTB/SmolVLM2-2.2B-Instruct`,
   },
 };

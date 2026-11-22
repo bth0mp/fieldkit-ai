@@ -61,6 +61,20 @@ describe('Model cards (rendered)', () => {
     expect(texts.join('\n')).not.toMatch(/undefined|NaN|downloads this month|likes/);
   });
 
+  it('says "1 download this month" and "1 like" for one, on the card and on the detail screen', async () => {
+    const { rtl, ui } = await openModelsFromHome({
+      totalGB: 10.82,
+      platform: 'ios',
+      hf: hf => hf.setList(() => [{ id: 'x/Solo-GGUF', tags: ['gguf'], downloads: 1, likes: 1 }]),
+    });
+    rtl.fireEvent.changeText(ui.getByTestId('search-input'), 'solo');
+    await rtl.waitFor(() => expect(ui.getByText('1 download this month')).toBeTruthy(), { timeout: 6000 });
+    expect(ui.getByText('1 like')).toBeTruthy();
+    rtl.fireEvent.press(ui.getByText('Solo-GGUF'));
+    await rtl.waitFor(() => expect(ui.getAllByText('1 download this month').length).toBeGreaterThan(0), TIMEOUT);
+    expect(ui.queryByText(/downloads this month/)).toBeNull();
+  });
+
   it('shows a Good for line on a Transcription card', async () => {
     const { rtl, ui } = await openModelsFromHome({ totalGB: 10.82, platform: 'ios' });
     rtl.fireEvent.press(ui.getByTestId('transcription-models-tab'));

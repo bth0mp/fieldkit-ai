@@ -232,10 +232,10 @@ const ModelDetailView: React.FC<DetailProps> = ({
         {(selectedModel.downloads > 0 || selectedModel.likes > 0) && (
           <View style={styles.modelStats}>
             {selectedModel.downloads > 0 && (
-              <Text style={styles.statText}>{formatNumber(selectedModel.downloads)} downloads</Text>
+              <Text style={styles.statText}>{formatNumber(selectedModel.downloads)} {selectedModel.downloads === 1 ? 'download' : 'downloads'} this month</Text>
             )}
             {selectedModel.likes > 0 && (
-              <Text style={styles.statText}>{formatNumber(selectedModel.likes)} likes</Text>
+              <Text style={styles.statText}>{formatNumber(selectedModel.likes)} {selectedModel.likes === 1 ? 'like' : 'likes'}</Text>
             )}
           </View>
         )}

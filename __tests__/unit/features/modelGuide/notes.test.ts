@@ -59,6 +59,17 @@ describe('model notes', () => {
     expect(noteFor('no-such-model')).toBeUndefined();
   });
 
+  it('words the picture models, Qwen 3.5 2B and SmolLM2 notes as reviewed, and promises no video', () => {
+    for (const id of ['ggml-org/SmolVLM2-500M-Video-Instruct-GGUF', 'ggml-org/SmolVLM-Instruct-GGUF', 'ggml-org/SmolVLM2-2.2B-Instruct-GGUF']) {
+      expect(TEXT_NOTES[id].notFor).toBe('Making pictures, or languages other than English');
+    }
+    expect(TEXT_NOTES['unsloth/Qwen3.5-2B-GGUF'].goodFor).toBe('Chat in over 200 languages, on phones with little memory');
+    expect(TEXT_NOTES['QuantFactory/SmolLM2-360M-Instruct-GGUF'].goodFor).toBe('Rewriting and summarizing text on phones with little memory');
+    const description = (id: string) => RECOMMENDED_MODELS.find(m => m.id === id)?.description;
+    expect(description('ggml-org/SmolVLM2-500M-Video-Instruct-GGUF')).toBe('Tiny vision model for constrained devices');
+    expect(description('ggml-org/SmolVLM2-2.2B-Instruct-GGUF')).toBe('Vision understanding');
+  });
+
   it('gives image notes a size', () => {
     for (const note of IMAGE_NOTES) expect(note.sizeBytes).toBeGreaterThan(0);
   });

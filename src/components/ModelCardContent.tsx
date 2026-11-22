@@ -77,11 +77,11 @@ function formatNumber(num: number): string {
 function statsLine(m: { downloads?: number; downloadsAllTime?: number }): string | null {
   if (!m.downloads || m.downloads <= 0) return null;
   const allTime = m.downloadsAllTime && m.downloadsAllTime > 0 ? ` · ${formatNumber(m.downloadsAllTime)} all time` : '';
-  return `${formatNumber(m.downloads)} downloads this month${allTime}`;
+  return `${formatNumber(m.downloads)} ${m.downloads === 1 ? 'download' : 'downloads'} this month${allTime}`;
 }
 
 function likesUpdatedLine(m: { likes?: number; lastModified?: string }): string | null {
-  const likes = m.likes && m.likes > 0 ? `${formatNumber(m.likes)} likes` : null;
+  const likes = m.likes && m.likes > 0 ? `${formatNumber(m.likes)} ${m.likes === 1 ? 'like' : 'likes'}` : null;
   const parts = [likes, formatUpdatedAgo(m.lastModified, new Date())].filter((p): p is string => !!p);
   return parts.length ? parts.join(' · ') : null;
 }
