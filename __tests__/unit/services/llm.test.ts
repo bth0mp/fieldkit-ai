@@ -2204,6 +2204,22 @@ describe('LLMService', () => {
       expect(llmService.isModelLoaded()).toBe(false);
     });
 
+    it('clears the released model even when the memory check fails afterwards', async () => {
+      mockedRNFS.exists.mockResolvedValue(true);
+      const { hardwareService } = require('../../../src/services/hardware');
+      const completion = jest.fn().mockResolvedValue({ timings: {} });
+      mockedInitLlama.mockResolvedValue(createMockLlamaContext({ completion }) as any);
+      await llmService.loadModel('/models/test.gguf');
+      jest.spyOn(hardwareService, 'getProcessMemory').mockRejectedValue(new Error('memory read failed'));
+
+      await llmService.unloadModel().catch(() => {});
+
+      expect(llmService.isModelLoaded()).toBe(false);
+      const msgs = [{ id: '1', role: 'user' as const, content: 'hi', timestamp: 0 }];
+      await expect(llmService.generateResponse(msgs)).rejects.toThrow('No model loaded');
+      expect(completion).not.toHaveBeenCalled();
+    });
+
     it('returns accumulated token text', async () => {
       mockedRNFS.exists.mockResolvedValue(true);
       const tokens = ['Hello', ' ', 'world'];

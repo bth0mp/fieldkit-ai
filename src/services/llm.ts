@@ -244,7 +244,8 @@ class LLMService {
       // context.release() returns before the OS frees those pages, so a reload that immediately loaded the
       // new context stacked BOTH models' memory at once → OOM/crash under pressure (device 2026-07-14: a
       // reload with ~2GB free ground to 0 tok/s then died). Wait (bounded) for the process footprint to drop.
-      await awaitMemoryReclaim(() => hardwareService.getProcessMemory());
+      // A failed footprint read must not leave the released context in place: the unload is still done.
+      try { await awaitMemoryReclaim(() => hardwareService.getProcessMemory()); } catch (e) { logger.warn('[LLM] Memory reclaim check failed after unload:', e); }
       useAppStore.getState().setModelMaxContext(null);
       Object.assign(this, { context: null, currentModelPath: null, multimodalSupport: null, multimodalInitialized: false, toolCallingSupported: false, thinkingSupported: false, gpuEnabled: false, gpuReason: '', gpuDevices: [], activeGpuLayers: 0, requestedGpuLayers: 0, gpuAttemptFailed: false });
     } finally {
