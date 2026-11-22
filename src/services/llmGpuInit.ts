@@ -1,4 +1,4 @@
-import { LlamaContext } from 'llama.rn';
+import { initLlama, LlamaContext } from 'llama.rn';
 import { Platform } from 'react-native';
 import logger from '../utils/logger';
 
@@ -50,4 +50,24 @@ export async function tryGpuInit(promise: Promise<LlamaContext>, nGpuLayers: num
   promise.then(ctx => { if (timedOut) safeRelease(ctx); }).catch(() => {});
   try { return await withTimeout(promise, timeoutMs, isHtp ? 'HTP context init' : 'GPU context init'); }
   catch (e) { timedOut = true; throw e; }
+}
+
+/**
+ * After an NPU init failure, the same model on the plain GPU backend: no HTP device and no cache
+ * types, which belong to the NPU. Null when there is no GPU layer count to offer or the init fails,
+ * so the caller moves on to the CPU.
+ */
+export async function tryGpuFallback(params: object, contextLength: number, fallbackGpuLayers: number): Promise<LlamaContext | null> {
+  if (fallbackGpuLayers <= 0) return null;
+  const gpuParams = { ...(params as Record<string, unknown>) };
+  delete gpuParams.devices;
+  delete gpuParams.cache_type_k;
+  delete gpuParams.cache_type_v;
+  try {
+    logger.warn('[LLM] NPU initialization failed; trying the supported GPU backend');
+    return await tryGpuInit(initLlama({ ...gpuParams, n_ctx: contextLength, n_gpu_layers: fallbackGpuLayers } as any), fallbackGpuLayers);
+  } catch (fallbackError) {
+    logger.warn('[LLM] GPU fallback failed:', fallbackError);
+    return null;
+  }
 }

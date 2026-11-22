@@ -2452,6 +2452,40 @@ describe('LLMService', () => {
       );
     });
 
+    it('loads on the GPU, not the CPU, when the NPU init fails and the device supports OpenCL', async () => {
+      jest.spyOn(Platform, 'OS', 'get').mockReturnValue('android');
+      jest.spyOn(hardwareService, 'getSoCInfo').mockResolvedValue({ vendor: 'qualcomm', hasNPU: true, qnnVariant: '8gen3' });
+      jest.spyOn(hardwareService, 'getOpenCLCapability').mockResolvedValue({ supported: true });
+      mockedInitLlama.mockRejectedValueOnce(new Error('HTP init failed'));
+      mockedInitLlama.mockResolvedValueOnce(createMockLlamaContext() as any);
+      useAppStore.setState({
+        settings: { ...useAppStore.getState().settings, inferenceBackend: 'htp' as const, gpuLayers: 99 },
+      });
+
+      await llmService.loadModel('/models/test.gguf');
+
+      expect(mockedInitLlama).toHaveBeenCalledTimes(2);
+      const second = mockedInitLlama.mock.calls[1][0] as Record<string, unknown>;
+      expect(second.devices).toBeUndefined();
+      expect(second.n_gpu_layers).toBeGreaterThan(0);
+    });
+
+    it('goes to the CPU when the NPU init fails and the device has no usable GPU', async () => {
+      jest.spyOn(Platform, 'OS', 'get').mockReturnValue('android');
+      jest.spyOn(hardwareService, 'getSoCInfo').mockResolvedValue({ vendor: 'qualcomm', hasNPU: true, qnnVariant: '8gen3' });
+      jest.spyOn(hardwareService, 'getOpenCLCapability').mockResolvedValue({ supported: false, reason: 'no OpenCL' });
+      mockedInitLlama.mockRejectedValueOnce(new Error('HTP init failed'));
+      mockedInitLlama.mockResolvedValueOnce(createMockLlamaContext() as any);
+      useAppStore.setState({
+        settings: { ...useAppStore.getState().settings, inferenceBackend: 'htp' as const, gpuLayers: 99 },
+      });
+
+      await llmService.loadModel('/models/test.gguf');
+
+      expect(mockedInitLlama).toHaveBeenCalledTimes(2);
+      expect((mockedInitLlama.mock.calls[1][0] as Record<string, unknown>).n_gpu_layers).toBe(0);
+    });
+
     it('does not use HTP when inferenceBackend is cpu on Android', async () => {
       jest.spyOn(Platform, 'OS', 'get').mockReturnValue('android');
 

@@ -9,7 +9,7 @@ import { templateEmitsReasoning } from '../utils/messageContent';
 import { ensureNativeLogCapture, resetNativeLogCapture, recentNativeLog } from './llmNativeLog';
 
 import { HTP_ENABLED } from '../config/featureFlags';
-import { tryGpuInit } from './llmGpuInit';
+import { tryGpuInit, tryGpuFallback } from './llmGpuInit';
 import { CONTEXT_OUTPUT_BUDGET_RATIO } from '../utils/contextBudget';
 
 const RESPONSE_RESERVE = 512;
@@ -116,12 +116,16 @@ export interface ContextInitResult {
   context: LlamaContext;
   gpuAttemptFailed: boolean;
   actualLength: number;
+  /** The GPU layers the context that loaded was offered; 0 when it landed on the CPU. */
+  attemptedGpuLayers: number;
 }
-/** Init llama with GPU/HTP, fall back to CPU, then retry with ctx=2048 on failure. */
+/** Try the selected accelerator, then (after an NPU failure) a supported GPU, then CPU, then CPU at ctx=2048. */
+// eslint-disable-next-line max-params
 export async function initContextWithFallback(
   params: object,
   contextLength: number,
   nGpuLayers: number,
+  fallbackGpuLayers: number = 0,
 ): Promise<ContextInitResult> {
   const modelPath = (params as any).model || 'unknown';
   const isHtp = HTP_ENABLED && Array.isArray((params as any).devices) && (params as any).devices.some((d: string) => d.startsWith('HTP'));
@@ -138,7 +142,7 @@ export async function initContextWithFallback(
     const gpuInitPromise = initLlama({ ...params, n_ctx: contextLength, n_gpu_layers: nGpuLayers } as any);
     const context = await tryGpuInit(gpuInitPromise, nGpuLayers, isHtp);
     logger.log('[LLM] GPU init succeeded');
-    return { context, gpuAttemptFailed, actualLength: contextLength };
+    return { context, gpuAttemptFailed, actualLength: contextLength, attemptedGpuLayers: nGpuLayers };
   } catch (gpuError: any) {
     const gpuMsg = gpuError?.message || String(gpuError);
     if (nGpuLayers > 0) {
@@ -147,6 +151,8 @@ export async function initContextWithFallback(
     } else {
       logger.warn(`[LLM] Attempt 1/3 failed (no GPU requested): ${gpuMsg}`);
     }
+    const gpuFallback = isHtp ? await tryGpuFallback(params, contextLength, fallbackGpuLayers) : null;
+    if (gpuFallback) return { context: gpuFallback, gpuAttemptFailed: false, actualLength: contextLength, attemptedGpuLayers: fallbackGpuLayers };
     try {
       logger.log(`[LLM] Attempt 2/3: CPU init (ctx=${contextLength}, gpu_layers=0)`);
       // Strip devices — HTP requires n_gpu_layers > 0; CPU fallback must not request it
@@ -154,7 +160,7 @@ export async function initContextWithFallback(
       delete cpuParams.devices;
       const context = await initLlama({ ...cpuParams, n_ctx: contextLength, n_gpu_layers: 0 } as any);
       logger.log('[LLM] CPU init succeeded');
-      return { context, gpuAttemptFailed, actualLength: contextLength };
+      return { context, gpuAttemptFailed, actualLength: contextLength, attemptedGpuLayers: 0 };
     } catch (cpuError: any) {
       const cpuMsg = cpuError?.message || String(cpuError);
       logger.warn(`[LLM] Attempt 2/3 failed (CPU, ctx=${contextLength}): ${cpuMsg}`);
@@ -164,7 +170,7 @@ export async function initContextWithFallback(
         delete cpuMinParams.devices;
         const context = await initLlama({ ...cpuMinParams, n_ctx: 2048, n_gpu_layers: 0 } as any);
         logger.log('[LLM] CPU init with ctx=2048 succeeded');
-        return { context, gpuAttemptFailed, actualLength: 2048 };
+        return { context, gpuAttemptFailed, actualLength: 2048, attemptedGpuLayers: 0 };
       } catch (finalError: any) {
         const finalMsg = finalError?.message || String(finalError);
         logger.error(`[LLM] Attempt 3/3 failed (CPU, ctx=2048): ${finalMsg}`);

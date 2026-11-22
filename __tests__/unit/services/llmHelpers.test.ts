@@ -563,6 +563,51 @@ describe('initContextWithFallback — HTP device stripping and timeout', () => {
     expect(minCtxCall.n_ctx).toBe(2048);
   });
 
+  it('tries the GPU before the CPU when the NPU fails, and never reaches the CPU if the GPU loads', async () => {
+    const gpuCtx = { gpu: true, release: jest.fn() };
+    mockedInitLlama.mockRejectedValueOnce(new Error('HTP init failed'));
+    mockedInitLlama.mockResolvedValueOnce(gpuCtx as any);
+
+    const result = await initContextWithFallback({ ...baseParams, cache_type_k: 'q8_0', cache_type_v: 'q8_0' }, 2048, 99, 24);
+
+    expect(result.context).toBe(gpuCtx);
+    expect(result.attemptedGpuLayers).toBe(24);
+    expect(mockedInitLlama).toHaveBeenCalledTimes(2);
+    const gpuCall = mockedInitLlama.mock.calls[1][0] as Record<string, unknown>;
+    expect(gpuCall.devices).toBeUndefined();
+    expect(gpuCall.cache_type_k).toBeUndefined();
+    expect(gpuCall.cache_type_v).toBeUndefined();
+    expect(gpuCall.n_gpu_layers).toBe(24);
+    expect(gpuCall.n_ctx).toBe(2048);
+  });
+
+  it('falls to the CPU when both the NPU and the GPU fail', async () => {
+    const cpuCtx = { gpu: false, release: jest.fn() };
+    mockedInitLlama.mockRejectedValueOnce(new Error('HTP init failed'));
+    mockedInitLlama.mockRejectedValueOnce(new Error('GPU init failed'));
+    mockedInitLlama.mockResolvedValueOnce(cpuCtx as any);
+
+    const result = await initContextWithFallback(baseParams, 2048, 99, 24);
+
+    expect(result.context).toBe(cpuCtx);
+    expect(result.attemptedGpuLayers).toBe(0);
+    expect(mockedInitLlama).toHaveBeenCalledTimes(3);
+    const cpuCall = mockedInitLlama.mock.calls[2][0] as Record<string, unknown>;
+    expect(cpuCall.devices).toBeUndefined();
+    expect(cpuCall.n_gpu_layers).toBe(0);
+  });
+
+  it('goes straight to the CPU when the device has no supported GPU to fall back to', async () => {
+    const cpuCtx = { gpu: false, release: jest.fn() };
+    mockedInitLlama.mockRejectedValueOnce(new Error('HTP init failed'));
+    mockedInitLlama.mockResolvedValueOnce(cpuCtx as any);
+
+    const result = await initContextWithFallback(baseParams, 2048, 99, 0);
+
+    expect(result.context).toBe(cpuCtx);
+    expect(mockedInitLlama).toHaveBeenCalledTimes(2);
+  });
+
   // HTP is currently disabled via HTP_ENABLED feature flag
   it('logs backend=HTP when devices contains HTP0', async () => {
     const mockCtx = { gpu: true, release: jest.fn() };

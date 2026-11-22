@@ -138,11 +138,14 @@ class LLMService {
       availableBytes: deviceInfo.availableMemory,
     });
     if (safeGpuLayers !== params.nGpuLayers) logger.log(`[LLM] GPU layers capped (${(deviceInfo.totalMemory / BYTES_PER_GB).toFixed(1)}GB RAM, ${Platform.OS}): ${params.nGpuLayers} → ${safeGpuLayers}`);
+    // GPU layers to try if the NPU fails to initialise; 0 means go straight to the CPU.
+    let fallbackGpuLayers = 0;
     let resolvedBaseParams: object = params.baseParams;
     if (Platform.OS === 'android') {
       const settings = useAppStore.getState().settings;
       const backend = settings?.inferenceBackend ?? INFERENCE_BACKENDS.CPU;
       if (backend === INFERENCE_BACKENDS.HTP) {
+        fallbackGpuLayers = (await hardwareService.getOpenCLCapability()).supported ? safeGpuLayers : 0;
         // HTP routes to the Hexagon NPU — not subject to Adreno GPU layer caps,
         // but we still respect the RAM-based safeGpuLayers floor (0 on ≤4GB devices).
         safeGpuLayers = safeGpuLayers > 0 ? (settings?.gpuLayers ?? 99) : 0;
@@ -171,7 +174,7 @@ class LLMService {
     const deviceCtxCap = getMaxContextForDevice(deviceInfo.totalMemory);
     const safeCtx = Math.min(params.ctxLen, deviceCtxCap);
     if (safeCtx !== params.ctxLen) logger.log(`[LLM] context capped for ${(deviceInfo.totalMemory / BYTES_PER_GB).toFixed(1)}GB RAM: ${params.ctxLen} → ${safeCtx}`);
-    const initial = { ...await initContextWithFallback(resolvedBaseParams, safeCtx, safeGpuLayers), attemptedGpuLayers: safeGpuLayers };
+    const initial = await initContextWithFallback(resolvedBaseParams, safeCtx, safeGpuLayers, fallbackGpuLayers);
     const modelMax = getModelMaxContext(initial.context);
     const userIsOnDefault = this.currentSettings.contextLength === APP_CONFIG.maxContextLength;
     if (!modelMax || !userIsOnDefault || modelMax <= initial.actualLength) return initial;
@@ -180,7 +183,7 @@ class LLMService {
     if (targetCtx <= initial.actualLength) return initial;
     logger.log(`[LLM] Model supports ${modelMax} ctx, RAM cap ${deviceMaxCtx}, scaling ${initial.actualLength} → ${targetCtx}`);
     try { await initial.context.release(); } catch (e) { logger.warn('[LLM] Error releasing initial context:', e); }
-    return { ...await initContextWithFallback(resolvedBaseParams, targetCtx, safeGpuLayers), attemptedGpuLayers: safeGpuLayers };
+    return initContextWithFallback(resolvedBaseParams, targetCtx, safeGpuLayers, fallbackGpuLayers);
   }
   /** Multimodal init on a NOT-YET-PUBLISHED context (the load pipeline) — no instance-state writes. */
   private async deriveMultimodalFromProjector(context: LlamaContext, modelPath: string, mmProjPath: string): Promise<{ initialized: boolean; support: MultimodalSupport }> {
