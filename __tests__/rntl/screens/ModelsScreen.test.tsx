@@ -652,7 +652,7 @@ describe('ModelsScreen', () => {
         expect(getByText(/Org/)).toBeTruthy();
         expect(getByText(/Type/)).toBeTruthy();
         expect(getByText(/Source/)).toBeTruthy();
-        expect(getByText(/Size/)).toBeTruthy();
+        expect(getByText(/^Size [▴▾]/)).toBeTruthy();
         expect(getByText(/Quant/)).toBeTruthy();
       });
     });
@@ -761,7 +761,7 @@ describe('ModelsScreen', () => {
       });
 
       await act(async () => {
-        fireEvent.press(getByText(/Size/));
+        fireEvent.press(getByText(/^Size [▴▾]/));
       });
 
       await waitFor(() => {
@@ -1469,7 +1469,7 @@ describe('ModelsScreen', () => {
       });
 
       await act(async () => {
-        fireEvent.press(getByText(/Size/));
+        fireEvent.press(getByText(/^Size [▴▾]/));
       });
 
       await waitFor(() => {
@@ -1668,7 +1668,7 @@ describe('ModelsScreen', () => {
         fireEvent.press(getByTestId('text-filter-toggle'));
       });
       await act(async () => {
-        fireEvent.press(getByText(/Size/));
+        fireEvent.press(getByText(/^Size [▴▾]/));
       });
       await waitFor(() => expect(getByText('1-3B')).toBeTruthy());
       await act(async () => {

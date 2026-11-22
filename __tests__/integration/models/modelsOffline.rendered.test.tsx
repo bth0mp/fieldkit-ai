@@ -77,7 +77,6 @@ describe('Models with no connection (rendered)', () => {
     const lists = () => hf.requests().filter(u => u.pathname === '/api/models');
     const before = lists().length;
     rtl.fireEvent.changeText(ui.getByTestId('search-input'), 'qwen');
-    rtl.fireEvent.press(ui.getByTestId('sort-pill'));
     rtl.fireEvent.press(ui.getByTestId('sort-option-trending'));
     await new Promise(r => setTimeout(r, 800));
     expect(lists().length).toBe(before);

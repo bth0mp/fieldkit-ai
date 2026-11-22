@@ -64,12 +64,12 @@ export const BACKEND_OPTIONS: { key: BackendFilter; label: string }[] = [
 
 export const SORT_OPTIONS: { key: SortOption; label: string; icon: string }[] = [
   { key: 'recommended', label: 'Smart', icon: 'zap' },
-  { key: 'bestfit', label: 'For You', icon: 'smartphone' },
-  { key: 'size', label: 'Size', icon: 'database' },
   { key: 'trending', label: 'Trending', icon: 'trending-up' },
   { key: 'downloads', label: 'Most downloaded', icon: 'download' },
   { key: 'likes', label: 'Most liked', icon: 'heart' },
   { key: 'newest', label: 'New releases', icon: 'clock' },
+  { key: 'bestfit', label: 'For You', icon: 'smartphone' },
+  { key: 'size', label: 'Size', icon: 'database' },
 ];
 
 /** Sorts Hugging Face does itself; the others reorder what the phone already has. */

@@ -204,18 +204,16 @@ describe('Your models on the Text tab (rendered)', () => {
     if (what === 'a search') rtl.fireEvent.changeText(ui.getByTestId('search-input'), 'qwen');
     if (what === 'a size filter') {
       rtl.fireEvent.press(ui.getByTestId('text-filter-toggle'));
-      rtl.fireEvent.press(ui.getByText(/^Size/));
+      rtl.fireEvent.press(ui.getByText(/^Size [▴▾]/));
       rtl.fireEvent.press(ui.getByText('1-3B'));
     }
     if (what === 'Trending') {
-      rtl.fireEvent.press(ui.getByTestId('sort-pill'));
       rtl.fireEvent.press(ui.getByTestId('sort-option-trending'));
     }
     await rtl.waitFor(() => expect(ui.queryByTestId('your-models-text') === null).toBe(true), TIMEOUT);
     if (what === 'a search') rtl.fireEvent.changeText(ui.getByTestId('search-input'), '');
     if (what === 'a size filter') rtl.fireEvent.press(ui.getByText('Clear'));
     if (what === 'Trending') {
-      rtl.fireEvent.press(ui.getByTestId('sort-pill'));
       rtl.fireEvent.press(ui.getByTestId('sort-option-recommended'));
     }
     await rtl.waitFor(() => expect(ui.queryByTestId('your-models-text') !== null).toBe(true), TIMEOUT);

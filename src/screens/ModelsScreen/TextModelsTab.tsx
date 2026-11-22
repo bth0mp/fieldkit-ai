@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, FlatList, TextInput, ActivityIndicator, RefreshControl, TouchableOpacity, InteractionManager, Platform } from 'react-native';
+import { View, Text, FlatList, ScrollView, TextInput, ActivityIndicator, RefreshControl, TouchableOpacity, InteractionManager, Platform } from 'react-native';
 import DeviceInfo from 'react-native-device-info';
 import Icon from 'react-native-vector-icons/Feather';
 import { fileExceedsBudget } from '../../services/memoryBudget';
@@ -325,23 +325,21 @@ function applyBackNavigation(setSelectedModel: (m: ModelInfo | null) => void, se
   if (pending !== null) { InteractionManager.runAfterInteractions(() => goTo(pending)); }
 }
 
-interface SortPanelProps {
+interface SortRowProps {
   filterState: FilterState;
   setSortOption: (s: SortOption) => void;
   styles: ReturnType<typeof createStyles>;
   colors: ReturnType<typeof useTheme>['colors'];
 }
-const SortPanel: React.FC<SortPanelProps> = ({ filterState, setSortOption, styles, colors }) => (
-  <View style={styles.filterExpandedContent}>
-    <View style={styles.filterChipWrap}>
-      {SORT_OPTIONS.map(option => (
-        <TouchableOpacity key={option.key} testID={`sort-option-${option.key}`} style={[styles.filterChip, filterState.sort === option.key && styles.filterChipActive]} onPress={() => setSortOption(option.key)} accessibilityRole="button" accessibilityState={{ selected: filterState.sort === option.key }}>
-          <Icon name={option.icon} size={12} color={filterState.sort === option.key ? colors.primary : colors.textSecondary} />
-          <Text style={[styles.filterChipText, filterState.sort === option.key && styles.filterChipTextActive]}>{option.label}</Text>
-        </TouchableOpacity>
-      ))}
-    </View>
-  </View>
+const SortRow: React.FC<SortRowProps> = ({ filterState, setSortOption, styles, colors }) => (
+  <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={styles.sortRow} contentContainerStyle={styles.sortRowContent}>
+    {SORT_OPTIONS.map(option => (
+      <TouchableOpacity key={option.key} testID={`sort-option-${option.key}`} style={[styles.filterChip, styles.sortChip, filterState.sort === option.key && styles.filterChipActive]} onPress={() => setSortOption(option.key)} accessibilityRole="button" accessibilityState={{ selected: filterState.sort === option.key }}>
+        <Icon name={option.icon} size={12} color={filterState.sort === option.key ? colors.primary : colors.textSecondary} />
+        <Text style={[styles.filterChipText, filterState.sort === option.key && styles.filterChipTextActive]}>{option.label}</Text>
+      </TouchableOpacity>
+    ))}
+  </ScrollView>
 );
 
 export const TextModelsTab: React.FC<Props> = (props) => {
@@ -360,8 +358,6 @@ export const TextModelsTab: React.FC<Props> = (props) => {
   } = props;
   const hasNonSortActiveFilters = hasNonSortFilters(filterState);
   const currentSort = SORT_OPTIONS.find(o => o.key === filterState.sort) ?? SORT_OPTIONS[0];
-  const isSortActive = filterState.sort !== 'recommended';
-  const sortToggleActive = isSortActive || filterState.expandedDimension === 'sort';
   const filterToggleActive = textFiltersVisible || hasNonSortActiveFilters;
 
   const { colors } = useTheme();
@@ -414,17 +410,6 @@ export const TextModelsTab: React.FC<Props> = (props) => {
           testID="search-input"
         />
         <TouchableOpacity
-          style={[styles.filterToggle, sortToggleActive && styles.filterToggleActive]}
-          onPress={() => toggleFilterDimension('sort')}
-          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-          testID="sort-pill"
-          accessibilityRole="button"
-          accessibilityLabel={`Sort: ${currentSort.label}`}
-        >
-          <Icon name={currentSort.icon} size={14} color={sortToggleActive ? colors.primary : colors.textMuted} />
-          {isSortActive && <View style={styles.filterDot} />}
-        </TouchableOpacity>
-        <TouchableOpacity
           style={[styles.filterToggle, filterToggleActive && styles.filterToggleActive]}
           onPress={() => setTextFiltersVisible(v => !v)}
           hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
@@ -442,7 +427,7 @@ export const TextModelsTab: React.FC<Props> = (props) => {
         </View>
       )}
 
-      {filterState.expandedDimension === 'sort' && <SortPanel filterState={filterState} setSortOption={setSortOption} styles={styles} colors={colors} />}
+      <SortRow filterState={filterState} setSortOption={setSortOption} styles={styles} colors={colors} />
 
       {textFiltersVisible && (
         <TextFiltersSection
