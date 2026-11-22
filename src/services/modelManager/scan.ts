@@ -7,6 +7,7 @@ import { resolveCoreMLModelDir } from '../../utils/coreMLModelUtils';
 import { ensureImageExtractionComplete } from '../../utils/imageModelIntegrity';
 // Single source of truth for projector detection + model↔projector matching (see src/services/mmproj.ts).
 import { isMMProjFile, pickMmProjForModel } from '../mmproj';
+import { isHelperModelFile } from '../../utils/modelFileKind';
 
 export { isMMProjFile };
 
@@ -329,7 +330,8 @@ async function doScanForUntrackedTextModels(
   for (const item of items) {
     const lowerName = item.name.toLowerCase();
     const isMmProj = isMMProjFile(lowerName);
-    if (!item.isFile() || !item.name.endsWith('.gguf') || registeredPaths.has(item.path) || isMmProj) {
+    // A helper file (MTP head, draft, importance matrix) is never adopted as a model; it stays on disk.
+    if (!item.isFile() || !item.name.endsWith('.gguf') || registeredPaths.has(item.path) || isMmProj || isHelperModelFile(item.name)) {
       continue;
     }
 
@@ -395,6 +397,9 @@ export async function importLocalModel(opts: ImportLocalModelOpts): Promise<Down
   const isLitert = fileName.toLowerCase().endsWith('.litertlm');
   if (!fileName.toLowerCase().endsWith('.gguf') && !isLitert) {
     throw new Error('Only .gguf and .litertlm files can be imported');
+  }
+  if (isHelperModelFile(fileName)) {
+    throw new Error('This file only helps another model run. It cannot be loaded on its own.');
   }
 
   const resolvedSource = resolveUri(sourceUri);

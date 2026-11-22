@@ -464,6 +464,23 @@ describe('HuggingFaceService', () => {
       expect(files[1].size).toBeLessThan(files[2].size);
     });
 
+    it('never offers a helper file (MTP head, draft, importance matrix) as a size, from the tree or the siblings', async () => {
+      const paths = ['model-Q4_K_M.gguf', 'MTP/mtp-model-Q8_0.gguf', 'model-imatrix.gguf', 'model-draft-Q4_0.gguf'];
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(paths.map(path => ({ type: 'file', path, size: 1000 }))),
+      });
+      expect((await huggingFaceService.getModelFiles('org/model')).map(f => f.name)).toEqual(['model-Q4_K_M.gguf']);
+
+      global.fetch = jest.fn()
+        .mockResolvedValueOnce({ ok: false, status: 404 })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ id: 'org/model', siblings: paths.map(rfilename => ({ rfilename, size: 1000 })) }),
+        });
+      expect((await huggingFaceService.getModelFiles('org/model')).map(f => f.name)).toEqual(['model-Q4_K_M.gguf']);
+    });
+
     it('falls back to siblings when tree endpoint fails', async () => {
       global.fetch = jest.fn()
         .mockResolvedValueOnce({ ok: false, status: 404 }) // tree fails

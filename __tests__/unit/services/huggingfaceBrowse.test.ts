@@ -125,6 +125,26 @@ describe('huggingFaceService browse and stats fields', () => {
     expect(hf.requests()[0].searchParams.getAll('expand[]')).toContain('siblings');
   });
 
+  it('browse drops a row whose only files are helper files, and lists only real models on the rest', async () => {
+    const hf = installHfApiFake();
+    const chat = (id: string, siblings: string[]) => ({ id, pipeline_tag: 'text-generation',
+      siblings: siblings.map(rfilename => ({ rfilename })) });
+    hf.setList(() => [
+      chat('a/matrix-only-GGUF', ['model-imatrix.gguf', 'mtp-model-Q8_0.gguf', 'model-draft-Q4_0.gguf']),
+      chat('a/good-GGUF', ['good-imatrix.gguf', 'good-Q4_K_M.gguf']),
+    ]);
+    const out = await huggingFaceService.browseModels('', { sort: 'downloads', maxParamsB: 13 });
+    expect(out.map(m => m.id)).toEqual(['a/good-GGUF']);
+  });
+
+  it('model details list no helper files', async () => {
+    const hf = installHfApiFake();
+    hf.setDetails({ 'a/good-GGUF': { id: 'a/good-GGUF', siblings: [
+      { rfilename: 'good-imatrix.gguf' }, { rfilename: 'mtp-good-Q8_0.gguf' }, { rfilename: 'good-Q4_K_M.gguf' }] } });
+    const m = await huggingFaceService.getModelDetails('a/good-GGUF');
+    expect(m.files.map(f => f.name)).toEqual(['good-Q4_K_M.gguf']);
+  });
+
   it('new releases drops a row with no model file at the top level', async () => {
     const hf = installHfApiFake();
     hf.setList(url => (url.searchParams.get('author') === 'unsloth' ? [
