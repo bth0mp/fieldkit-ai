@@ -1,6 +1,15 @@
 import RNFS from 'react-native-fs';
-import type { Message } from '../types';
+import type { MediaAttachment, Message } from '../types';
 import logger from '../utils/logger';
+
+/**
+ * The image attachments of one message that the model may see, by declaration alone (they name a
+ * file). One rule for what model input may carry: every place that builds it asks here instead of
+ * filtering `type === 'image'` by hand.
+ */
+export function modelImageAttachments(attachments: MediaAttachment[] | undefined): MediaAttachment[] {
+  return (attachments ?? []).filter(a => a.type === 'image' && !!a.uri);
+}
 
 /**
  * Drop image attachments whose files no longer exist before they reach the native layer. A

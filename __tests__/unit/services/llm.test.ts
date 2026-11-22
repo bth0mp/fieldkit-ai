@@ -9,6 +9,7 @@ import { initLlama } from 'llama.rn';
 import { Platform } from 'react-native';
 import RNFS from 'react-native-fs';
 import { llmService } from '../../../src/services/llm';
+import { dropMissingImageAttachments } from '../../../src/services/llmImageInput';
 import { useAppStore } from '../../../src/stores/appStore';
 import { resetStores } from '../../utils/testHelpers';
 import { createMockLlamaContext } from '../../utils/testHelpers';
@@ -1046,15 +1047,15 @@ describe('LLMService', () => {
   // convertToOAIMessages (private, tested via generateResponse with vision)
   // ========================================================================
   describe('convertToOAIMessages', () => {
-    it('converts text-only message to simple format', () => {
+    it('converts text-only message to simple format', async () => {
       const messages = [createUserMessage('Hello')];
-      const oaiMessages = (llmService as any).convertToOAIMessages(messages);
+      const oaiMessages = await (llmService as any).convertToOAIMessages(messages);
 
       expect(oaiMessages[0].role).toBe('user');
       expect(oaiMessages[0].content).toBe('Hello');
     });
 
-    it('converts message with images to multipart format', () => {
+    it('converts message with images to multipart format', async () => {
       const messages = [{
         id: 'msg-1',
         role: 'user' as const,
@@ -1062,7 +1063,7 @@ describe('LLMService', () => {
         timestamp: Date.now(),
         attachments: [{ id: 'att-1', type: 'image' as const, uri: '/path/to/image.jpg' }],
       }];
-      const oaiMessages = (llmService as any).convertToOAIMessages(messages);
+      const oaiMessages = await (llmService as any).convertToOAIMessages(messages);
 
       expect(Array.isArray(oaiMessages[0].content)).toBe(true);
       const parts = oaiMessages[0].content;
@@ -1073,7 +1074,7 @@ describe('LLMService', () => {
       expect(textPart?.text).toBe('What is this?');
     });
 
-    it('adds file:// prefix to local image URIs', () => {
+    it('adds file:// prefix to local image URIs', async () => {
       const messages = [{
         id: 'msg-1',
         role: 'user' as const,
@@ -1081,13 +1082,13 @@ describe('LLMService', () => {
         timestamp: Date.now(),
         attachments: [{ id: 'att-2', type: 'image' as const, uri: '/local/path/image.jpg' }],
       }];
-      const oaiMessages = (llmService as any).convertToOAIMessages(messages);
+      const oaiMessages = await (llmService as any).convertToOAIMessages(messages);
 
       const imagePart = oaiMessages[0].content.find((p: any) => p.type === 'image_url');
       expect(imagePart.image_url.url.startsWith('file://')).toBe(true);
     });
 
-    it('preserves file:// prefix when already present', () => {
+    it('preserves file:// prefix when already present', async () => {
       const messages = [{
         id: 'msg-1',
         role: 'user' as const,
@@ -1095,13 +1096,13 @@ describe('LLMService', () => {
         timestamp: Date.now(),
         attachments: [{ id: 'att-3', type: 'image' as const, uri: 'file:///path/image.jpg' }],
       }];
-      const oaiMessages = (llmService as any).convertToOAIMessages(messages);
+      const oaiMessages = await (llmService as any).convertToOAIMessages(messages);
 
       const imagePart = oaiMessages[0].content.find((p: any) => p.type === 'image_url');
       expect(imagePart.image_url.url).toBe('file:///path/image.jpg');
     });
 
-    it('handles multiple images in one message', () => {
+    it('handles multiple images in one message', async () => {
       const messages = [{
         id: 'msg-1',
         role: 'user' as const,
@@ -1112,13 +1113,13 @@ describe('LLMService', () => {
           { id: 'att-5', type: 'image' as const, uri: 'file:///img2.jpg' },
         ],
       }];
-      const oaiMessages = (llmService as any).convertToOAIMessages(messages);
+      const oaiMessages = await (llmService as any).convertToOAIMessages(messages);
 
       const imageParts = oaiMessages[0].content.filter((p: any) => p.type === 'image_url');
       expect(imageParts).toHaveLength(2);
     });
 
-    it('does not convert assistant messages with images', () => {
+    it('does not convert assistant messages with images', async () => {
       const messages = [{
         id: 'msg-1',
         role: 'assistant' as const,
@@ -1126,7 +1127,7 @@ describe('LLMService', () => {
         timestamp: Date.now(),
         attachments: [{ id: 'att-6', type: 'image' as const, uri: 'file:///img.jpg' }],
       }];
-      const oaiMessages = (llmService as any).convertToOAIMessages(messages);
+      const oaiMessages = await (llmService as any).convertToOAIMessages(messages);
 
       // Assistant messages should remain as simple string content
       expect(typeof oaiMessages[0].content).toBe('string');
@@ -1350,7 +1351,7 @@ describe('LLMService', () => {
   });
 
   describe('convertToOAIMessages empty content branch', () => {
-    it('skips text part when message content is empty', () => {
+    it('skips text part when message content is empty', async () => {
       const messages = [{
         id: 'msg-1',
         role: 'user' as const,
@@ -1358,7 +1359,7 @@ describe('LLMService', () => {
         timestamp: Date.now(),
         attachments: [{ id: 'att-1', type: 'image' as const, uri: '/path/to/image.jpg' }],
       }];
-      const oaiMessages = (llmService as any).convertToOAIMessages(messages);
+      const oaiMessages = await (llmService as any).convertToOAIMessages(messages);
 
       // Should still be an array (multipart) because of image attachments
       expect(Array.isArray(oaiMessages[0].content)).toBe(true);
@@ -2095,6 +2096,56 @@ describe('LLMService', () => {
   });
 
   // ========================================================================
+  // photos whose file is gone
+  // ========================================================================
+  describe('a photo whose file is gone', () => {
+    const history = (uri: string) => [
+      { id: 'p', role: 'user' as const, content: 'Look at this', timestamp: 0, attachments: [{ id: 'a', type: 'image' as const, uri }] },
+      { id: 'q', role: 'assistant' as const, content: 'A cat.', timestamp: 1 },
+      { id: 'r', role: 'user' as const, content: 'Thanks', timestamp: 2 },
+    ];
+    const sentMessages = (ctx: any) => ctx.completion.mock.calls[0][0].messages as Array<{ content: unknown }>;
+    const carriesPhoto = (ctx: any) => JSON.stringify(sentMessages(ctx)).includes('image_url');
+    let ctx: any;
+
+    beforeEach(async () => {
+      mockedRNFS.exists.mockImplementation(async (path: string) => !path.includes('/gone/'));
+      ctx = createMockLlamaContext();
+      mockedInitLlama.mockResolvedValue(ctx as any);
+      await llmService.loadModel('/models/test.gguf');
+    });
+
+    it('is left out of a tool turn, which then runs as text', async () => {
+      await llmService.generateResponseWithTools(history('file:///gone/photo.jpg'), { tools: [] });
+
+      expect(carriesPhoto(ctx)).toBe(false);
+      expect(sentMessages(ctx)[0].content).toBe('Look at this');
+    });
+
+    it('is left out of a capped-token turn', async () => {
+      await llmService.generateWithMaxTokens(history('/gone/photo.jpg'), 16);
+
+      expect(carriesPhoto(ctx)).toBe(false);
+      expect(sentMessages(ctx)[0].content).toBe('Look at this');
+    });
+
+    it('is left out of a plain turn', async () => {
+      await llmService.generateResponse(history('/gone/photo.jpg'));
+
+      expect(carriesPhoto(ctx)).toBe(false);
+    });
+
+    it('does not take a photo that is still there out of a tool or capped-token turn', async () => {
+      await llmService.generateResponseWithTools(history('file:///here/photo.jpg'), { tools: [] });
+      expect(carriesPhoto(ctx)).toBe(true);
+
+      ctx.completion.mockClear();
+      await llmService.generateWithMaxTokens(history('/here/photo.jpg'), 16);
+      expect(carriesPhoto(ctx)).toBe(true);
+    });
+  });
+
+  // ========================================================================
   // generateWithMaxTokens
   // ========================================================================
   describe('generateWithMaxTokens', () => {
@@ -2422,7 +2473,7 @@ describe('LLMService', () => {
 
     it('keeps image attachments whose files exist', async () => {
       mockedRNFS.exists.mockResolvedValue(true);
-      const out = await (llmService as any).dropMissingImageAttachments([withImage('file:///x/a.png')]);
+      const out = await dropMissingImageAttachments([withImage('file:///x/a.png')]);
       expect(out[0].attachments).toHaveLength(1);
       expect(mockedRNFS.exists).toHaveBeenCalledWith('/x/a.png'); // file:// stripped
     });
@@ -2434,13 +2485,13 @@ describe('LLMService', () => {
         { id: 'img', type: 'image', uri: 'file:///x/gone.png' },
         { id: 'aud', type: 'audio', uri: 'file:///x/a.wav' },
       ];
-      const out = await (llmService as any).dropMissingImageAttachments([m]);
+      const out = await dropMissingImageAttachments([m]);
       expect(out[0].attachments).toEqual([{ id: 'aud', type: 'audio', uri: 'file:///x/a.wav' }]);
     });
 
     it('leaves messages without image attachments untouched', async () => {
       const plain = createUserMessage('no attachments');
-      const out = await (llmService as any).dropMissingImageAttachments([plain]);
+      const out = await dropMissingImageAttachments([plain]);
       expect(out[0]).toBe(plain);
     });
   });

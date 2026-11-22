@@ -7,18 +7,18 @@ import { useAppStore } from '../stores/appStore';
 import {
   initContextWithFallback, captureGpuInfo, logContextMetadata, getModelMaxContext,
   initMultimodal, checkContextMultimodal, recordGenerationStats, getStreamingDelta,
-  hashString, ensureSessionCacheDir, getSessionPath, buildModelParams,
+  hashString, ensureSessionCacheDir, getSessionPath,
   buildCompletionParams, buildThinkingCompletionParams, supportsNativeThinking,
   getMaxContextForDevice, getGpuLayersForDevice, BYTES_PER_GB,
-  validateModelFile, checkMemoryForModel, safeCompletion, resolveSafeContext,
+  safeCompletion,
   describeGpuFallback, isTruncatedResult,
 } from './llmHelpers';
-import { awaitMemoryReclaim, effectiveAvailableMB } from './memoryBudget';
-import { modelResidencyManager } from './modelResidency';
+import { awaitMemoryReclaim } from './memoryBudget';
 import { hardwareService } from './hardware';
 import { formatLlamaMessages, buildOAIMessages } from './llmMessages';
 import { generateWithToolsImpl } from './llmToolGeneration';
-import { dropMissingImageAttachments } from './llmImageInput';
+import { dropMissingImageAttachments, modelImageAttachments } from './llmImageInput';
+import { validateAndPrepareModel } from './llmModelPrep';
 import { stopAware } from './llmStopAware';
 import type { ToolCall } from './tools/types';
 import type { MultimodalSupport, LLMPerformanceSettings, LLMPerformanceStats } from './llmTypes';
@@ -73,50 +73,6 @@ class LLMService {
   private hashString(value: string): string { return hashString(value); }
   private ensureSessionCacheDir(): Promise<void> { return ensureSessionCacheDir(this.sessionCacheDir); }
   private getSessionPath(promptHash: string): string { return getSessionPath(this.sessionCacheDir, promptHash); }
-  private async validateAndPrepareModel(modelPath: string, override: boolean = false): Promise<{ fileSize: number; memCheck: Awaited<ReturnType<typeof checkMemoryForModel>>; params: ReturnType<typeof buildModelParams> }> {
-    logger.log(`[LLM] validateAndPrepareModel: ${modelPath}`);
-    if (!await RNFS.exists(modelPath)) throw new Error(`Model file not found at: ${modelPath}`);
-    const validation = await validateModelFile(modelPath);
-    if (!validation.valid) throw new Error(`Cannot load model: ${validation.reason}`);
-    const settings = useAppStore.getState().settings;
-    logger.log(`[LLM] User settings: threads=${settings.nThreads}, batch=${settings.nBatch}, ctx=${settings.contextLength}, gpu=${settings.enableGpu}, flashAttn=${settings.flashAttn}, cache=${settings.cacheType}`);
-    const recommendedThreads = await hardwareService.getRecommendedThreadCount();
-    // nThreads === 0 is the "auto" sentinel — substitute the hardware-recommended count.
-    // Any explicit user choice (1–12) is respected as-is.
-    const effectiveNThreads = settings.nThreads === 0 ? recommendedThreads : settings.nThreads;
-    const params = buildModelParams(modelPath, { ...settings, nThreads: effectiveNThreads });
-    logger.log(`[LLM] Resolved params: threads=${params.nThreads}, batch=${params.nBatch}, ctx=${params.ctxLen}, gpuLayers=${params.nGpuLayers}`);
-    const fileStat = await RNFS.stat(modelPath);
-    const fileSize = typeof fileStat.size === 'string' ? Number.parseInt(fileStat.size, 10) : fileStat.size;
-    // Use the EFFECTIVE cache type, not the raw setting: OpenCL/HTP coerce the KV cache
-    // to f16 (see buildModelParams), so keying off settings.cacheType alone would let the
-    // guard use the cheaper quantized estimate and approve a context that then OOMs.
-    const quantizedCache = !params.usesF16Cache;
-    // Feed the pre-load gate the SAME reclaim-aware available RAM the residency gate uses (the single owner,
-    // effectiveAvailableMB) so the two can never disagree. On Android the raw os_proc snapshot under-counts a
-    // foreground load (the LMK hands background apps' physical pages to us), so a raw gate REFUSED a model
-    // residency ADMITTED — 12GB Android Aggressive, device qwythos. iOS returns raw unchanged (no reclaim —
-    // jetsam kills us), so iOS is untouched. Policy comes from the residency manager (the authoritative owner).
-    const getMem = async (): Promise<{ available: number; total: number; used: number }> => {
-      const raw = await hardwareService.getAppMemoryUsage();
-      const availableMB = effectiveAvailableMB(raw.available / (1024 * 1024), raw.total / (1024 * 1024), {
-        platform: Platform.OS,
-        policy: modelResidencyManager.getLoadPolicy(),
-      });
-      return { ...raw, available: availableMB * 1024 * 1024 };
-    };
-    let memCheck = await checkMemoryForModel({ modelFileSize: fileSize, contextLength: params.ctxLen, getAvailableMemory: getMem, quantizedCache });
-    if (!memCheck.safe) {
-      // Don't just warn and load into a near-certain native allocator crash (the iOS
-      // metal_buffer_type_alloc_buffer / Android litert OOM clusters). Reduce context
-      // to the largest size that fits; only block when the weights alone can't fit.
-      const downgrade = await resolveSafeContext({ fileSize, requestedCtx: params.ctxLen, quantizedCache, override, getAvailableMemory: getMem });
-      params.ctxLen = downgrade.ctxLen;
-      memCheck = downgrade.memCheck;
-    }
-    logger.log(`[LLM] Memory check: estimatedMB=${memCheck.estimatedMB.toFixed(0)}, availableMB=${memCheck.availableMB.toFixed(0)}, safe=${memCheck.safe}, ctx=${params.ctxLen}`);
-    return { fileSize, memCheck, params };
-  }
   private async applyLoadedContext(opts: { context: LlamaContext; actualLength: number; gpuAttemptFailed: boolean; nGpuLayers: number; requestedGpuLayers: number; modelPath: string; mmProjPath?: string }): Promise<void> {
     const { context, actualLength, gpuAttemptFailed, nGpuLayers, requestedGpuLayers, modelPath, mmProjPath } = opts;
     logContextMetadata(context, actualLength);
@@ -153,7 +109,7 @@ class LLMService {
         logger.log('[LLM] Releasing previous context before loading new model');
         await this.doUnloadModel();
       }
-      const { fileSize, memCheck, params } = await this.validateAndPrepareModel(modelPath, opts?.override);
+      const { fileSize, memCheck, params } = await validateAndPrepareModel(modelPath, opts?.override);
       if (mmProjPath && !await RNFS.exists(mmProjPath)) { logger.warn('[LLM] MMProj file not found, disabling vision support'); mmProjPath = undefined; }
       const { baseParams, nThreads, nBatch, ctxLen, nGpuLayers } = params;
       this.currentSettings = { nThreads, nBatch, contextLength: ctxLen };
@@ -308,11 +264,11 @@ class LLMService {
     this.isGenerating = true;
     this.stopRequested = false;
     const completionWork = (async () => {
-      const managed = await this.dropMissingImageAttachments(await this.manageContextWindow(messages));
-      const hasImages = managed.some(m => m.attachments?.some(a => a.type === 'image'));
+      const managed = await this.manageContextWindow(messages);
+      const hasImages = managed.some(m => modelImageAttachments(m.attachments).length > 0);
       if (hasImages && !this.multimodalInitialized) logger.warn('[LLM] Images attached but multimodal not initialized - falling back to text-only');
       logger.log('[LLM] Generation mode:', this.hasVisionInputs(managed) ? 'VISION' : 'TEXT-ONLY');
-      const oaiMessages = this.convertToOAIMessages(managed);
+      const oaiMessages = await this.convertToOAIMessages(managed);
       const { settings } = useAppStore.getState();
       const startTime = Date.now();
       let firstTokenMs = 0, tokenCount = 0, firstReceived = false;
@@ -380,7 +336,6 @@ class LLMService {
   private async manageContextWindow(messages: Message[], _extraReserve = 0): Promise<Message[]> {
     return messages;
   }
-  private dropMissingImageAttachments(messages: Message[]): Promise<Message[]> { return dropMissingImageAttachments(messages); }
   /**
    * Whether this turn should run in VISION mode: at least one message carries an
    * (already-existence-validated by {@link dropMissingImageAttachments}) image
@@ -394,21 +349,24 @@ class LLMService {
    */
   private hasVisionInputs(messages: Message[]): boolean {
     if (!this.multimodalInitialized) return false;
-    return messages.some(m => m.attachments?.some(a => a.type === 'image'));
+    return messages.some(m => modelImageAttachments(m.attachments).length > 0);
   }
   /** Generate a completion with a hard token cap (used for summarization, not user-facing). */
   async generateWithMaxTokens(messages: Message[], maxTokens: number): Promise<string> {
     const ctx = this.stopAware(this.usableContext());
     if (this.isGenerating) throw new Error('Generation already in progress');
     this.isGenerating = true;
-    const oaiMessages = this.convertToOAIMessages(messages);
-    const { settings } = useAppStore.getState();
-    let fullResponse = '';
     this.stopRequested = false;
-    const completionWork = safeCompletion(ctx, () => ctx.completion(
-      { messages: oaiMessages, ...buildCompletionParams(settings, { disableCtxShift: this.shouldDisableCtxShift() }), n_predict: maxTokens },
-      (data) => { if (this.isGenerating && data.token) fullResponse += data.token; },
-    ), 'generateWithMaxTokens');
+    let fullResponse = '';
+    // Registered before the conversion awaits, so a Stop or an unload in that gap waits for this call.
+    const completionWork = (async () => {
+      const oaiMessages = await this.convertToOAIMessages(messages);
+      const { settings } = useAppStore.getState();
+      return safeCompletion(ctx, () => ctx.completion(
+        { messages: oaiMessages, ...buildCompletionParams(settings, { disableCtxShift: this.shouldDisableCtxShift() }), n_predict: maxTokens },
+        (data) => { if (this.isGenerating && data.token) fullResponse += data.token; },
+      ), 'generateWithMaxTokens');
+    })();
     this.activeCompletionPromise = completionWork.then(() => { }, () => { });
     try { await completionWork; return fullResponse.trim(); } finally { this.isGenerating = false; this.activeCompletionPromise = null; }
   }
@@ -457,7 +415,16 @@ class LLMService {
   }
   isCurrentlyGenerating(): boolean { return this.isGenerating; }
   private formatMessages(messages: Message[]): string { return formatLlamaMessages(messages, this.supportsVision(), this.multimodalSupport?.audio ?? false); }
-  private convertToOAIMessages(messages: Message[]): RNLlamaOAICompatibleMessage[] { return buildOAIMessages(messages, this.multimodalSupport?.audio ?? false); }
+  /**
+   * The ONE conversion from our messages to model input, and so the one place that can guarantee every
+   * image handed to the runtime exists. llama.rn refuses the whole turn over one bad media path, and the
+   * model reads images from the entire conversation, so a stale photo from an earlier turn failed even a
+   * plain text message when the tool and capped-token paths converted directly. A guard each caller must
+   * remember is a guard the next caller forgets.
+   */
+  private async convertToOAIMessages(messages: Message[]): Promise<RNLlamaOAICompatibleMessage[]> {
+    return buildOAIMessages(await dropMissingImageAttachments(messages), this.multimodalSupport?.audio ?? false);
+  }
   async getModelInfo() { return this.context ? { contextLength: APP_CONFIG.maxContextLength, vocabSize: 0 } : null; }
   async tokenize(text: string) {
     return (await this.usableContext().tokenize(text)).tokens || [];
