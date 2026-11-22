@@ -36,6 +36,8 @@ class LLMService {
   private context: LlamaContext | null = null;
   private currentModelPath: string | null = null;
   private isGenerating: boolean = false;
+  /** True from the moment the unload starts releasing the context until it is cleared: nothing may start work on it. */
+  private releasingContext: boolean = false;
   private activeCompletionPromise: Promise<void> | null = null;
   /** A Stop asked for during the current turn; see llmStopAware. */
   private stopRequested = false;
@@ -61,6 +63,11 @@ class LLMService {
     const prev = this.contextMutexPromise;
     this.contextMutexPromise = new Promise<void>(resolve => { release = resolve; });
     return { release, ready: prev.catch(() => {}) };
+  }
+  /** The loaded context, or the 'No model loaded' error when there is none or it is being released. */
+  private usableContext(): LlamaContext {
+    if (!this.context || this.releasingContext) throw new Error('No model loaded');
+    return this.context;
   }
   private stopAware(ctx: LlamaContext): LlamaContext { return stopAware(ctx, () => this.stopRequested); }
   private hashString(value: string): string { return hashString(value); }
@@ -233,7 +240,7 @@ class LLMService {
     return { initialized, support };
   }
   async initializeMultimodal(mmProjPath: string): Promise<boolean> {
-    if (!this.context) { logger.warn('[LLM] initializeMultimodal: no context'); return false; }
+    if (!this.context || this.releasingContext) { logger.warn('[LLM] initializeMultimodal: no context'); return false; }
     const { initialized, support } = await this.deriveMultimodalFromProjector(this.context, this.currentModelPath ?? '', mmProjPath);
     this.multimodalInitialized = initialized;
     this.multimodalSupport = support;
@@ -266,20 +273,27 @@ class LLMService {
   }
   /** Internal unload without acquiring the mutex (used by loadModel which already holds it). */
   private async doUnloadModel(): Promise<void> {
-    if (!this.context) return;
-    if (this.isGenerating) {
-      try { await this.context.stopCompletion(); } catch (e) { logger.log('[LLM] Stop during unload:', e); }
-      this.isGenerating = false;
+    const context = this.context;
+    if (!context) return;
+    // Until the context is cleared below, no caller may be handed the one being released.
+    this.releasingContext = true;
+    try {
+      if (this.isGenerating) {
+        try { await context.stopCompletion(); } catch (e) { logger.log('[LLM] Stop during unload:', e); }
+        this.isGenerating = false;
+      }
+      if (this.activeCompletionPromise !== null) { await this.activeCompletionPromise; this.activeCompletionPromise = null; }
+      try { await context.release(); } catch (e) { logger.warn('[LLM] Error releasing context (bridge may be torn down):', e); }
+      // The unload is not DONE until the native memory (weights + GPU/HTP buffers) is actually reclaimed.
+      // context.release() returns before the OS frees those pages, so a reload that immediately loaded the
+      // new context stacked BOTH models' memory at once → OOM/crash under pressure (device 2026-07-14: a
+      // reload with ~2GB free ground to 0 tok/s then died). Wait (bounded) for the process footprint to drop.
+      await awaitMemoryReclaim(() => hardwareService.getProcessMemory());
+      useAppStore.getState().setModelMaxContext(null);
+      Object.assign(this, { context: null, currentModelPath: null, multimodalSupport: null, multimodalInitialized: false, toolCallingSupported: false, thinkingSupported: false, gpuEnabled: false, gpuReason: '', gpuDevices: [], activeGpuLayers: 0, requestedGpuLayers: 0, gpuAttemptFailed: false });
+    } finally {
+      this.releasingContext = false;
     }
-    if (this.activeCompletionPromise !== null) { await this.activeCompletionPromise; this.activeCompletionPromise = null; }
-    try { await this.context.release(); } catch (e) { logger.warn('[LLM] Error releasing context (bridge may be torn down):', e); }
-    // The unload is not DONE until the native memory (weights + GPU/HTP buffers) is actually reclaimed.
-    // context.release() returns before the OS frees those pages, so a reload that immediately loaded the
-    // new context stacked BOTH models' memory at once → OOM/crash under pressure (device 2026-07-14: a
-    // reload with ~2GB free ground to 0 tok/s then died). Wait (bounded) for the process footprint to drop.
-    await awaitMemoryReclaim(() => hardwareService.getProcessMemory());
-    useAppStore.getState().setModelMaxContext(null);
-    Object.assign(this, { context: null, currentModelPath: null, multimodalSupport: null, multimodalInitialized: false, toolCallingSupported: false, thinkingSupported: false, gpuEnabled: false, gpuReason: '', gpuDevices: [], activeGpuLayers: 0, requestedGpuLayers: 0, gpuAttemptFailed: false });
   }
   async unloadModel(): Promise<void> {
     const mutex = this.acquireContextMutex();
@@ -289,10 +303,9 @@ class LLMService {
   getLoadedModelPath(): string | null { return this.currentModelPath; }
   async generateResponse(messages: Message[], options?: { onStream?: StreamCallback; onComplete?: CompleteCallback; disableThinking?: boolean }): Promise<string> {
     const { onStream, onComplete, ...opts } = options ?? {};
-    if (!this.context) throw new Error('No model loaded');
+    const ctx = this.stopAware(this.usableContext());
     if (this.isGenerating) throw new Error('Generation already in progress');
     this.isGenerating = true;
-    const ctx = this.stopAware(this.context);
     this.stopRequested = false;
     const completionWork = (async () => {
       const managed = await this.dropMissingImageAttachments(await this.manageContextWindow(messages));
@@ -343,9 +356,10 @@ class LLMService {
     try { return await completionWork; } finally { this.isGenerating = false; this.activeCompletionPromise = null; }
   }
   async generateResponseWithTools(messages: Message[], options: { tools: any[]; onStream?: StreamCallback; onComplete?: CompleteCallback }): Promise<{ fullResponse: string; toolCalls: ToolCall[]; interrupted?: boolean }> {
+    const ctx = this.stopAware(this.usableContext());
     if (!this.isGenerating) this.stopRequested = false;
     const work = generateWithToolsImpl({
-      context: this.context ? this.stopAware(this.context) : null, isGenerating: this.isGenerating,
+      context: ctx, isGenerating: this.isGenerating,
       isThinkingEnabled: this.isThinkingEnabled(),
       isGemma4Model: this.isGemma4Model(),
       disableCtxShift: this.shouldDisableCtxShift(),
@@ -384,13 +398,12 @@ class LLMService {
   }
   /** Generate a completion with a hard token cap (used for summarization, not user-facing). */
   async generateWithMaxTokens(messages: Message[], maxTokens: number): Promise<string> {
-    if (!this.context) throw new Error('No model loaded');
+    const ctx = this.stopAware(this.usableContext());
     if (this.isGenerating) throw new Error('Generation already in progress');
     this.isGenerating = true;
     const oaiMessages = this.convertToOAIMessages(messages);
     const { settings } = useAppStore.getState();
     let fullResponse = '';
-    const ctx = this.stopAware(this.context);
     this.stopRequested = false;
     const completionWork = safeCompletion(ctx, () => ctx.completion(
       { messages: oaiMessages, ...buildCompletionParams(settings, { disableCtxShift: this.shouldDisableCtxShift() }), n_predict: maxTokens },
@@ -426,7 +439,7 @@ class LLMService {
     return !this.isGenerating;
   }
   async clearKVCache(clearData: boolean = false): Promise<void> {
-    if (!this.context || this.isGenerating) return;
+    if (!this.context || this.releasingContext || this.isGenerating) return;
     try { await (this.context as any).clearCache(clearData); } catch (e) { logger.log('[LLM] Clear cache error:', e); }
   }
   getEstimatedMemoryUsage() {
@@ -447,12 +460,10 @@ class LLMService {
   private convertToOAIMessages(messages: Message[]): RNLlamaOAICompatibleMessage[] { return buildOAIMessages(messages, this.multimodalSupport?.audio ?? false); }
   async getModelInfo() { return this.context ? { contextLength: APP_CONFIG.maxContextLength, vocabSize: 0 } : null; }
   async tokenize(text: string) {
-    if (!this.context) throw new Error('No model loaded');
-    return (await this.context.tokenize(text)).tokens || [];
+    return (await this.usableContext().tokenize(text)).tokens || [];
   }
   async getTokenCount(text: string) {
-    if (!this.context) throw new Error('No model loaded');
-    return (await this.context.tokenize(text)).tokens?.length || 0;
+    return (await this.usableContext().tokenize(text)).tokens?.length || 0;
   }
   async estimateContextUsage(messages: Message[]) {
     const tokenCount = await this.getTokenCount(this.formatMessages(messages));
@@ -464,7 +475,7 @@ class LLMService {
     const managed = await this.manageContextWindow(messages);
     const fmt = this.formatMessages(managed);
     let tokens = 0;
-    try { if (this.context) tokens = (await this.context.tokenize(fmt)).tokens?.length || 0; }
+    try { if (this.context && !this.releasingContext) tokens = (await this.context.tokenize(fmt)).tokens?.length || 0; }
     catch { tokens = Math.ceil(fmt.length / 4); }
     const sys = (m: Message[]) => m.filter(x => x.role === 'system').length;
     const ctx = this.currentSettings.contextLength || APP_CONFIG.maxContextLength;

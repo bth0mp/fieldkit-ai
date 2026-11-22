@@ -2117,6 +2117,42 @@ describe('LLMService', () => {
       (llmService as any).isGenerating = false;
     });
 
+    it('refuses a completion while released memory is still being reclaimed', async () => {
+      mockedRNFS.exists.mockResolvedValue(true);
+      const { hardwareService } = require('../../../src/services/hardware');
+      let released = false;
+      const completion = jest.fn().mockImplementation((_params, cb) => {
+        cb({ token: released ? 'ran on a freed context' : 'ok' });
+        return Promise.resolve({ timings: {} });
+      });
+      const ctx = createMockLlamaContext({
+        completion,
+        release: jest.fn().mockImplementation(async () => { released = true; }),
+      });
+      mockedInitLlama.mockResolvedValue(ctx as any);
+      await llmService.loadModel('/models/test.gguf');
+
+      // The reclaim wait reads process memory; hold that read open so the unload sits in the wait.
+      let finishReclaim: (value: null) => void = () => {};
+      const memoryRead = jest.spyOn(hardwareService, 'getProcessMemory').mockReturnValue(
+        new Promise(resolve => { finishReclaim = resolve; }),
+      );
+      const unloaded = llmService.unloadModel();
+      while (!released || memoryRead.mock.calls.length === 0) await new Promise<void>(r => setImmediate(r));
+
+      const mid = [{ id: '1', role: 'user' as const, content: 'mid-unload', timestamp: 0 }];
+      await expect(llmService.generateWithMaxTokens(mid, 16)).rejects.toThrow('No model loaded');
+      await expect(llmService.generateResponse(mid)).rejects.toThrow('No model loaded');
+      await expect(llmService.generateResponseWithTools(mid, { tools: [] })).rejects.toThrow('No model loaded');
+      await expect(llmService.tokenize('mid-unload')).rejects.toThrow('No model loaded');
+      expect(completion).not.toHaveBeenCalled();
+      expect(ctx.tokenize).not.toHaveBeenCalled();
+
+      finishReclaim(null);
+      await unloaded;
+      expect(llmService.isModelLoaded()).toBe(false);
+    });
+
     it('returns accumulated token text', async () => {
       mockedRNFS.exists.mockResolvedValue(true);
       const tokens = ['Hello', ' ', 'world'];
