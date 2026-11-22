@@ -26,6 +26,7 @@ import { formatNumber, getTextModelCompatibility } from './utils';
 import { curatedLiteRTDownloadWarning, LITERT_PARENT_ID } from '../../services/curatedLiteRTRegistry';
 import { LITERT_FILE_META, LITERT_RECOMMENDED_MODEL, LITERT_PARENT_RECOMMENDED } from './litertRecommended';
 import { modelManager } from '../../services';
+import { useOffline } from '../../services/networkStatus';
 import { modelDownloadService } from '../../services/modelDownloadService';
 import { uniformDownloadId } from '../../services/modelDownloadService/uniformId';
 
@@ -348,6 +349,7 @@ export const TextModelsTab: React.FC<Props> = (props) => {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { goTo } = useSpotlightTour();
+  const offline = useOffline();
 
   const renderModelItem = ({ item, index }: { item: ModelInfo; index: number }) => (
     <ModelListItem item={item} index={index} focusTrigger={focusTrigger} isDownloaded={downloadedModels.some(m => m.id.startsWith(item.id))} isTrending={trendingAsModelInfo.some(t => t.id === item.id)} onPress={() => handleSelectModel(item)} />
@@ -409,6 +411,13 @@ export const TextModelsTab: React.FC<Props> = (props) => {
           {hasNonSortActiveFilters && <View style={styles.filterDot} />}
         </TouchableOpacity>
       </View>
+
+      {offline && (
+        <View style={styles.offlineNotice}>
+          <Icon name="wifi-off" size={14} color={colors.textMuted} />
+          <Text testID="models-offline-notice" style={styles.offlineNoticeText}>Needs a connection to search, sort or show download numbers.</Text>
+        </View>
+      )}
 
       {filterState.expandedDimension === 'sort' && <SortPanel filterState={filterState} setSortOption={setSortOption} styles={styles} colors={colors} />}
 

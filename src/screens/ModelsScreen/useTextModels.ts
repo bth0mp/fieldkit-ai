@@ -17,6 +17,7 @@ import { getModelType } from './utils';
 import { PARAM_COUNT_REGEX, autoLabels, memoryTierGB, maxParamsForTier } from '../../features/modelGuide/guide';
 import { noteFor } from '../../features/modelGuide/notes';
 import logger from '../../utils/logger';
+import { useOffline } from '../../services/networkStatus';
 import type { BrowseSort } from '../../services/huggingface';
 import { getUserFacingDownloadMessage } from '../../utils/downloadErrors';
 
@@ -145,9 +146,17 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
   // Each search takes a number; an answer whose number is no longer the latest is dropped.
   const requestCounter = useRef(0);
   const ramGB = hardwareService.getTotalMemoryGB();
+  // A ref, so a failure that lands late sees the connection as it is now, not as it was when the search began.
+  const offline = useOffline();
+  const offlineRef = useRef(offline);
+  offlineRef.current = offline;
 
   const runSearch = async () => {
     const requestId = ++requestCounter.current;
+    if (offlineRef.current) {
+      // Nothing can be asked: leave the picks showing and drop any answer still on its way.
+      setHasSearched(false); setSearchResults([]); setIsLoading(false); return;
+    }
     const isServerSort = SERVER_SORTS.includes(filterState.sort);
     const hasQuery = searchQuery.trim().length > 0;
     const hasTypeFilter = filterState.type !== 'all';
@@ -174,6 +183,7 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
       setSearchResults(results);
     } catch {
       if (requestId !== requestCounter.current) return;
+      if (offlineRef.current) { setHasSearched(false); setSearchResults([]); return; } // the notice says why
       setAlertState(showAlert('Search Error', 'Failed to search models. Please try again.'));
     } finally {
       if (requestId === requestCounter.current) setIsLoading(false);
@@ -222,6 +232,18 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
     runSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterState.sort]);
+
+  // When the connection returns, ask for whatever the user had set up while it was gone.
+  const wasOffline = useRef(offline);
+  useEffect(() => {
+    const returned = wasOffline.current && !offline;
+    wasOffline.current = offline;
+    if (!returned) return;
+    const hasSomething = searchQuery.trim().length > 0 || SERVER_SORTS.includes(filterState.sort) ||
+      filterState.type !== 'all' || filterState.size !== 'all' || filterState.orgs.length > 0;
+    if (hasSomething) runSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offline]);
 
   const handleSelectModel = async (model: ModelInfo) => {
     setSelectedModel(model); setIsLoadingFiles(true);

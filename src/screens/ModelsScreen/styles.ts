@@ -60,6 +60,14 @@ const createBaseStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
     paddingBottom: 16,
     gap: 8,
   },
+  offlineNotice: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    paddingHorizontal: 16,
+    paddingBottom: SPACING.md,
+    gap: SPACING.xs,
+  },
+  offlineNoticeText: { ...TYPOGRAPHY.bodySmall, color: colors.textMuted, flex: 1 },
   searchInput: {
     ...TYPOGRAPHY.body,
     flex: 1,
