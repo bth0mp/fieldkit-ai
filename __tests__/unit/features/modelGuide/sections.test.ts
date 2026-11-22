@@ -86,7 +86,7 @@ describe('modelGuide sections', () => {
 
   it('sizes LiteRT files by what the app charges to load them', () => {
     const fits = Object.fromEntries(liteRtEntries().map(e => [e.name, e.fits]));
-    expect(fits['Gemma 4 E2B']).toBe('8 GB and up');
+    expect(fits['Gemma 4 E2B']).toBe('12 GB and up');
     expect(fits['Gemma 4 E4B']).toBe('12 GB and up');
   });
 });

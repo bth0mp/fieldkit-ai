@@ -54,6 +54,7 @@ function expectGuideContent({ rtl, ui }: Awaited<ReturnType<typeof openGuide>>) 
   expect(rtl.within(ui.getByTestId('guide-image-qnn')).getByText('NPU models')).toBeTruthy();
   expect(rtl.within(ui.getByTestId('guide-note-large-v3')).getByText('Large v3 (many languages)')).toBeTruthy();
   expect(rtl.within(ui.getByTestId('guide-note-large-v3')).getByText('Fits: 6 GB and up')).toBeTruthy();
+  expect(rtl.within(ui.getByTestId('guide-note-gemma-4-E2B-it.litertlm')).getByText('Fits: 12 GB and up')).toBeTruthy();
   expect(rtl.within(ui.getByTestId('guide-note-gemma-4-E4B-it.litertlm')).getByText('Fits: 12 GB and up')).toBeTruthy();
 }
 
