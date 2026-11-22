@@ -67,4 +67,27 @@ class DownloadReasonTest {
         // A first request has nothing to throw away.
         assertFalse(WorkerDownload.restartsFromZero(code = 200, requestStartBytes = 0L))
     }
+
+    @Test
+    fun `a 206 is only appended when the local file is exactly where the request asked to resume`() {
+        assertTrue(WorkerDownload.partialFileMatchesRequest(code = 206, requestStartBytes = 4096L, localLength = 4096L, contentRange = null))
+        // The file was deleted (a cancel) or cut back: its bytes no longer line up with the offset.
+        assertFalse(WorkerDownload.partialFileMatchesRequest(code = 206, requestStartBytes = 4096L, localLength = 0L, contentRange = null))
+        assertFalse(WorkerDownload.partialFileMatchesRequest(code = 206, requestStartBytes = 4096L, localLength = 1000L, contentRange = null))
+        // The file grew or was replaced by a longer one.
+        assertFalse(WorkerDownload.partialFileMatchesRequest(code = 206, requestStartBytes = 4096L, localLength = 8192L, contentRange = null))
+        // Only a 206 is an append.
+        assertTrue(WorkerDownload.partialFileMatchesRequest(code = 200, requestStartBytes = 4096L, localLength = 0L, contentRange = null))
+    }
+
+    @Test
+    fun `a 206 whose Content-Range starts anywhere else than the requested offset is not appended`() {
+        fun ok(range: String?) = WorkerDownload.partialFileMatchesRequest(206, 4096L, 4096L, range)
+        assertTrue(ok("bytes 4096-9999/10000"))
+        assertFalse(ok("bytes 0-9999/10000"))
+        assertFalse(ok("bytes 4097-9999/10000"))
+        assertFalse(ok("bytes */10000"))
+        assertFalse(ok("garbage"))
+        assertTrue(ok(null))
+    }
 }

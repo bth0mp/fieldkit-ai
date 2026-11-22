@@ -225,10 +225,10 @@ class LiteRTModule(private val reactContext: ReactApplicationContext) :
         val chain = buildBackendChain(requested)
         return firstWorkingBackend(chain) { backend ->
             val name = backendName(backend)
-            Log.i(TAG, "initializeWithFallback — trying $name vision=$visionEnabled audio=$audioEnabled")
+            Log.i(TAG, "initializeWithFallback â€” trying $name vision=$visionEnabled audio=$audioEnabled")
             val ok = tryInitBackend(modelPath, backend, name, visionEnabled, audioEnabled)
             if (!ok && backend != chain.last()) {
-                Log.i(TAG, "initializeWithFallback — $name failed, falling back to next tier")
+                Log.i(TAG, "initializeWithFallback â€” $name failed, falling back to next tier")
             }
             ok
         } ?: throw IllegalStateException("All backends failed")

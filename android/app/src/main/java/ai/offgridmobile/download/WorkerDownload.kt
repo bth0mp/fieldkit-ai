@@ -84,20 +84,41 @@ class WorkerDownload(
                     handleResponse(response, requestStartBytes, download, downloadId, targetFile, progressInterval)
                 }
             } catch (e: Exception) {
-                if (isStopped) return handleStoppedState(downloadId, download, download.downloadedBytes)
-                val reason = DownloadReason.fromThrowable(e)
                 val bytesNow = if (targetFile.exists()) targetFile.length() else 0L
-                if (!DownloadReason.resumesInPlace(reason, bytesNow > requestStartBytes, resumes)) {
-                    return handleDownloadException(downloadId, download, e)
-                }
-                Log.w(TAG, "Transfer cut id=$downloadId at $bytesNow bytes reason=$reason (${e.javaClass.simpleName}); resuming")
+                finishOrNull(e, download, bytesNow, requestStartBytes, resumes)?.let { return it }
                 requestStartBytes = bytesNow
                 resumes++
             } finally {
                 cancelHandle?.dispose()
             }
             delay(RESUME_DELAY_MS)
+            // A Cancel that landed while waiting must not send another request.
+            stoppedOrCancelled(downloadId, download)?.let { return it }
         }
+    }
+
+    /** The result that ends the worker after a failed request, or null when it should resume in place. */
+    private suspend fun finishOrNull(
+        e: Exception,
+        download: DownloadEntity,
+        bytesNow: Long,
+        requestStartBytes: Long,
+        resumes: Int,
+    ): Result? {
+        // Cancel marks the row before it stops the work, so a cut in that window must not resume or retry.
+        stoppedOrCancelled(download.id, download)?.let { return it }
+        val reason = DownloadReason.fromThrowable(e)
+        if (!DownloadReason.resumesInPlace(reason, bytesNow > requestStartBytes, resumes)) {
+            return handleDownloadException(download.id, download, e)
+        }
+        Log.w(TAG, "Transfer cut id=${download.id} at $bytesNow bytes reason=$reason (${e.javaClass.simpleName}); resuming")
+        return null
+    }
+
+    /** Non-null when the work was stopped or the user cancelled: the partial file is dealt with there. */
+    private suspend fun stoppedOrCancelled(downloadId: String, download: DownloadEntity): Result? {
+        val cancelled = downloadDao.getDownload(downloadId)?.status == DownloadStatus.CANCELLED
+        return if (isStopped || cancelled) handleStoppedState(downloadId, download, download.downloadedBytes) else null
     }
 
     /** Required by expedited work as the pre-Android-12 foreground fallback. */
@@ -168,6 +189,13 @@ class WorkerDownload(
         if (earlyResult != null) return earlyResult
 
         val body = response.body ?: return failDownload(downloadId, download, DownloadReason.EMPTY_RESPONSE)
+
+        // The partial file can change between building the Range request and this response (a cancel
+        // deletes it). Bytes that belong at offset N must never be written anywhere else.
+        val localLength = if (targetFile.exists()) targetFile.length() else 0L
+        if (!partialFileMatchesRequest(code, existingBytes, localLength, response.header("Content-Range"))) {
+            throw java.io.IOException("Resume mismatch: asked for offset $existingBytes, file has $localLength bytes")
+        }
 
         val currentFileBytes = if (targetFile.exists() && code == 206) targetFile.length() else 0L
         val contentLength = body.contentLength()
@@ -343,6 +371,19 @@ class WorkerDownload(
          */
         internal fun restartsFromZero(code: Int, requestStartBytes: Long): Boolean =
             requestStartBytes > 0L && code == 200
+
+        /**
+         * A 206 may only be appended when the partial file is exactly as long as the offset the request
+         * asked for, and the server's Content-Range (when present) starts at that same offset.
+         * Anything else would put bytes at the wrong place in the file.
+         */
+        internal fun partialFileMatchesRequest(code: Int, requestStartBytes: Long, localLength: Long, contentRange: String?): Boolean {
+            if (code != 206) return true
+            if (localLength != requestStartBytes) return false
+            if (contentRange == null) return true
+            val start = Regex("""^bytes (\d+)-""").find(contentRange)?.groupValues?.get(1)?.toLongOrNull()
+            return start == requestStartBytes
+        }
 
         /**
          * The authoritative total size for the download. A successful response's
