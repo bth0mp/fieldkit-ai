@@ -47,12 +47,12 @@ export const TEXT_NOTES: Record<string, ModelNote> = {
   },
   'unsloth/Qwen3.5-0.8B-GGUF': {
     goodFor: 'Short chats on phones with little memory',
-    notFor: 'Leave Thinking off; it can loop and not finish',
+    notFor: 'Thinking mode; it can loop and not finish',
     source: `${HF}Qwen/Qwen3.5-0.8B`,
   },
   'unsloth/Qwen3.5-2B-GGUF': {
     goodFor: 'Chat and questions in over 200 languages, on small phones',
-    notFor: 'Leave Thinking off; it can loop and not finish',
+    notFor: 'Thinking mode; it can loop and not finish',
     source: `${HF}Qwen/Qwen3.5-2B`,
   },
   'unsloth/Qwen3.5-9B-GGUF': {
@@ -67,12 +67,12 @@ export const TEXT_NOTES: Record<string, ModelNote> = {
   },
   'bartowski/Mistral-7B-Instruct-v0.3-GGUF': {
     goodFor: 'Everyday chat and quick questions',
-    notFor: 'No built-in safety filter',
+    notFor: 'Filtering unsafe replies; it has no filter',
     source: `${HF}mistralai/Mistral-7B-Instruct-v0.3`,
   },
   'ggml-org/SmolVLM2-500M-Video-Instruct-GGUF': {
-    goodFor: 'Answering questions about photos and video; very small',
-    notFor: 'Making pictures or video; English only',
+    goodFor: 'Answering questions about photos; very small',
+    notFor: 'Making pictures; English only',
     source: `${HF}HuggingFaceTB/SmolVLM2-500M-Video-Instruct`,
   },
   'QuantFactory/SmolLM2-360M-Instruct-GGUF': {
@@ -86,8 +86,8 @@ export const TEXT_NOTES: Record<string, ModelNote> = {
     source: `${HF}HuggingFaceTB/SmolVLM-Instruct`,
   },
   'ggml-org/SmolVLM2-2.2B-Instruct-GGUF': {
-    goodFor: 'Describing photos and video, and answering questions',
-    notFor: 'Making pictures or video; English only',
+    goodFor: 'Describing photos and answering questions about them',
+    notFor: 'Making pictures; English only',
     source: `${HF}HuggingFaceTB/SmolVLM2-2.2B-Instruct`,
   },
 };
@@ -117,12 +117,12 @@ export const WHISPER_NOTES: Record<string, ModelNote> = {
   medium: whisperMulti('bigger than Small'),
   'large-v3-turbo': {
     goodFor: 'Speech to text in 99 languages; smaller than Large v3',
-    notFor: 'Languages it is less accurate in',
+    notFor: 'Less common languages; accuracy drops',
     source: `${HF}openai/whisper-large-v3-turbo`,
   },
   'large-v3': {
     goodFor: 'Speech to text in 99 languages; the biggest Whisper',
-    notFor: 'Languages it is less accurate in',
+    notFor: 'Less common languages; it can add words that were not spoken',
     source: `${HF}openai/whisper-large-v3`,
   },
 };

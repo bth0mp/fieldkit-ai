@@ -25,6 +25,7 @@ afterEach(() => {
 async function openGuide(offline: boolean) {
   const opened = await openModelsFromHome({
     totalGB: 10.82,
+    platform: 'android',
     hf: () => {
       if (!offline) return;
       ({ netInfoFake } = require('../../harness/netInfoFake'));
@@ -43,9 +44,17 @@ function expectGuideContent({ rtl, ui }: Awaited<ReturnType<typeof openGuide>>) 
   expect(ui.getByText('Your phone: 12 GB memory')).toBeTruthy();
   expect(ui.getByTestId('guide-tier-12').props.accessibilityState).toEqual({ selected: true });
   expect(ui.getByTestId('guide-tier-8').props.accessibilityState?.selected).not.toBe(true);
-  expect(ui.getByTestId('guide-tier-12')).toHaveTextContent(/Gemma 4 E4B/);
+  const tier12 = rtl.within(ui.getByTestId('guide-tier-12'));
+  expect(tier12.getByText('Runs well: Gemma 4 E2B, Qwen 3.5 2B, Qwen 3.5 0.8B, SmolLM3 3B, SmolVLM2 2.2B, SmolVLM 2B, Mistral 7B')).toBeTruthy();
+  expect(tier12.getByText('Tight: Gemma 4 E4B, Qwen 3.5 9B')).toBeTruthy();
   expect(note.getByText(`Good for: ${TEXT_NOTES[GEMMA].goodFor}`)).toBeTruthy();
-  expect(note.getByText('Fits: 6 GB and up')).toBeTruthy();
+  expect(note.getByText('Fits: 16 GB and up; tight on 8 and 12 GB')).toBeTruthy();
+  expect(ui.getByText('Tight means the app may ask before loading it, or you may need a smaller file.')).toBeTruthy();
+  expect(rtl.within(ui.getByTestId('guide-image-mnn')).getByText('GPU models')).toBeTruthy();
+  expect(rtl.within(ui.getByTestId('guide-image-qnn')).getByText('NPU models')).toBeTruthy();
+  expect(rtl.within(ui.getByTestId('guide-note-large-v3')).getByText('Large v3 (many languages)')).toBeTruthy();
+  expect(rtl.within(ui.getByTestId('guide-note-large-v3')).getByText('Fits: 6 GB and up')).toBeTruthy();
+  expect(rtl.within(ui.getByTestId('guide-note-gemma-4-E4B-it.litertlm')).getByText('Fits: 12 GB and up')).toBeTruthy();
 }
 
 describe('Which model? guide (rendered)', () => {

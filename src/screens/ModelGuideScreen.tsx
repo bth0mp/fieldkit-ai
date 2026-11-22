@@ -30,7 +30,7 @@ const EntryView: React.FC<{ entry: GuideEntry; styles: Styles }> = ({ entry, sty
     <Text style={styles.entryName}>{entry.name}</Text>
     {entry.goodFor !== undefined && <Text style={styles.detail}>{`Good for: ${entry.goodFor}`}</Text>}
     {entry.notFor !== undefined && <Text style={styles.detail}>{`Not for: ${entry.notFor}`}</Text>}
-    <Text style={styles.detail}>{`Fits: ${entry.fits}`}</Text>
+    <Text style={styles.detail}>{`${entry.fitsLabel}: ${entry.fits}`}</Text>
   </View>
 );
 
@@ -65,11 +65,18 @@ export const ModelGuideScreen: React.FC = () => {
         <Text testID="guide-your-phone" style={styles.yourPhone}>{`Your phone: ${tier} GB memory`}</Text>
         {tierRows().map(row => <TierView key={row.gb} row={row} yours={row.gb === tier} styles={styles} />)}
         <Text style={styles.note}>Fit comes from each model's size, not a speed test.</Text>
+        <Text style={styles.note}>Tight means the app may ask before loading it, or you may need a smaller file.</Text>
         {PHONE_TIPS.map(tip => <Text key={tip} style={styles.note}>{tip}</Text>)}
         <Section title="Text models" entries={textEntries()} styles={styles} />
         <Section title="Image models" entries={imageEntries()} styles={styles}>
-          <Text style={styles.detail}>{IMAGE_BACKEND_NOTES.mnn}</Text>
-          <Text style={styles.detail}>{IMAGE_BACKEND_NOTES.qnn}</Text>
+          <View testID="guide-image-mnn" accessible style={styles.entry}>
+            <Text style={styles.entryName}>GPU models</Text>
+            <Text style={styles.detail}>{IMAGE_BACKEND_NOTES.mnn}</Text>
+          </View>
+          <View testID="guide-image-qnn" accessible style={styles.entry}>
+            <Text style={styles.entryName}>NPU models</Text>
+            <Text style={styles.detail}>{IMAGE_BACKEND_NOTES.qnn}</Text>
+          </View>
         </Section>
         <Section title="Transcription" entries={whisperEntries()} styles={styles} />
         {Platform.OS === 'android' && <Section title="LiteRT" entries={liteRtEntries()} styles={styles} />}
