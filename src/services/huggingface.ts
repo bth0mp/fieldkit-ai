@@ -13,6 +13,7 @@ export const NEW_RELEASE_PUBLISHERS = ['unsloth', 'bartowski', 'ggml-org', 'lmst
 // cardData only goes with the detail request: on a list it made one answer 114 KB against 19 KB.
 const LIST_EXPAND = ['author', 'downloads', 'downloadsAllTime', 'likes', 'lastModified', 'createdAt', 'tags', 'pipeline_tag'];
 const DETAIL_EXPAND = [...LIST_EXPAND, 'cardData', 'siblings'];
+const BROWSE_EXPAND = [...LIST_EXPAND, 'siblings'];
 
 const BROWSE_SORT: Record<BrowseSort, string> = { trending: 'trendingScore', downloads: 'downloads', likes: 'likes', newest: 'createdAt' };
 const BROWSE_PIPELINES = new Set(['text-generation', 'image-text-to-text']);
@@ -28,6 +29,11 @@ function isChatRow(m: ModelInfo): boolean {
 function fitsParams(m: ModelInfo, maxParamsB: number): boolean {
   const match = PARAM_COUNT_REGEX.exec(m.name);
   return !match || Number.parseFloat(match[1]) <= maxParamsB;
+}
+
+// The detail screen lists only top-level model files, so a row with none leads nowhere. No siblings: keep it.
+function hasTopLevelModelFile(r: HFModelSearchResult): boolean {
+  return !r.siblings || r.siblings.some(s => s.rfilename.endsWith('.gguf') && !s.rfilename.includes('/') && !isMMProjFile(s.rfilename));
 }
 
 const expandParams = (fields: string[]) => fields.map(f => `expand[]=${f}`).join('&');
@@ -53,9 +59,18 @@ class HuggingFaceService {
     return this.fetchList(params);
   }
 
+  private fetchRows(params: URLSearchParams, expand: string[]): Promise<HFModelSearchResult[]> {
+    return this.fetchJson<HFModelSearchResult[]>(`${this.apiUrl}/models?${params.toString()}&${expandParams(expand)}`);
+  }
+
   private async fetchList(params: URLSearchParams): Promise<ModelInfo[]> {
-    const results = await this.fetchJson<HFModelSearchResult[]>(`${this.apiUrl}/models?${params.toString()}&${expandParams(LIST_EXPAND)}`);
-    return results.map(this.transformModelResult);
+    return (await this.fetchRows(params, LIST_EXPAND)).map(this.transformModelResult);
+  }
+
+  // Browse rows come back without their file names, so the card shows no files, as before.
+  private async fetchBrowseList(params: URLSearchParams): Promise<ModelInfo[]> {
+    const rows = await this.fetchRows(params, BROWSE_EXPAND);
+    return rows.filter(hasTopLevelModelFile).map(({ siblings: _siblings, ...row }) => this.transformModelResult(row));
   }
 
   /** Server-side sorted browse, limited to models small enough for the phone. */
@@ -77,13 +92,13 @@ class HuggingFaceService {
     };
     let models: ModelInfo[];
     if (sort === 'newest') {
-      const settled = await Promise.allSettled(NEW_RELEASE_PUBLISHERS.map(a => this.fetchList(make(a))));
+      const settled = await Promise.allSettled(NEW_RELEASE_PUBLISHERS.map(a => this.fetchBrowseList(make(a))));
       const failed = settled.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
       if (failed.length === settled.length) throw failed[0].reason;
       models = settled.flatMap(r => (r.status === 'fulfilled' ? r.value : []));
       models.sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
     } else {
-      models = await this.fetchList(make());
+      models = await this.fetchBrowseList(make());
     }
     return models
       .filter(m => isChatRow(m) && fitsParams(m, maxParamsB))

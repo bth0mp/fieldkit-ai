@@ -37,6 +37,20 @@ describe('Server sorts (rendered)', () => {
     expect(ui.queryByText(PICKS)).toBeNull();
   });
 
+  it('a sorted list leaves out a model whose files are all in subfolders', async () => {
+    const { rtl, ui } = await openModelsFromHome({
+      totalGB: 10.82,
+      hf: h => h.setList(url => (url.searchParams.get('sort') === 'downloads' ? [
+        row('a/Nested-Only-GGUF', { siblings: [{ rfilename: 'sub/Nested-Only-Q4_K_M.gguf' }, { rfilename: 'README.md' }] }),
+        row('a/Plain-GGUF', { siblings: [{ rfilename: 'README.md' }, { rfilename: 'Plain-Q4_K_M.gguf' }] }),
+      ] : [])),
+    });
+    rtl.fireEvent.press(ui.getByTestId('sort-pill'));
+    rtl.fireEvent.press(ui.getByTestId('sort-option-downloads'));
+    await rtl.waitFor(() => expect(ui.getByText('Plain-GGUF')).toBeTruthy(), TIMEOUT);
+    expect(ui.queryByText(/Nested-Only/)).toBeNull();
+  });
+
   it('New releases asks five publishers and keeps going when one fails', async () => {
     const { rtl, ui, hf } = await openModelsFromHome({
       totalGB: 10.82,

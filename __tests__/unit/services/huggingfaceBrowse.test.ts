@@ -11,6 +11,7 @@ describe('huggingFaceService browse and stats fields', () => {
     expect(url.searchParams.getAll('expand[]')).toEqual(expect.arrayContaining(
       ['author', 'downloads', 'downloadsAllTime', 'likes', 'lastModified', 'createdAt', 'tags', 'pipeline_tag']));
     expect(url.searchParams.getAll('expand[]')).not.toContain('gguf');
+    expect(url.searchParams.getAll('expand[]')).not.toContain('siblings');
     expect(m).toMatchObject({ downloads: 547232, downloadsAllTime: 2572970, likes: 180,
       lastModified: '2026-03-02T14:07:35.000Z', createdAt: '2026-02-28T10:00:00.000Z', pipelineTag: 'image-text-to-text' });
   });
@@ -105,6 +106,35 @@ describe('huggingFaceService browse and stats fields', () => {
     expect([...NEW_RELEASE_PUBLISHERS].sort()).toEqual(['QuantFactory', 'bartowski', 'ggml-org', 'lmstudio-community', 'unsloth']);
     expect(hf.requests().every(u => u.searchParams.get('sort') === 'createdAt')).toBe(true);
     expect(out.map(m => m.id)).toEqual(['ggml-org/New-GGUF', 'unsloth/Old-GGUF']);
+  });
+
+  it('browse drops a row with no model file at the top level', async () => {
+    const hf = installHfApiFake();
+    const chat = (id: string, siblings?: string[]) => ({ id, pipeline_tag: 'text-generation',
+      ...(siblings ? { siblings: siblings.map(rfilename => ({ rfilename })) } : {}) });
+    hf.setList(() => [
+      chat('peasantsmith/GLM-5.3-Flash-Maya-GGUF', ['DFlash2/GLM-5.3-Flash-DFlash2-Q4_K_M.gguf',
+        'Maya-L/GLM-5.3-Flash-Maya-L-IQ3_S-00001-of-00004.gguf', 'README.md']),
+      chat('a/only-pictures-GGUF', ['mmproj-F16.gguf']),
+      chat('a/good-GGUF', ['README.md', 'good-Q4_K_M.gguf']),
+      chat('a/no-siblings-GGUF'),
+    ]);
+    const out = await huggingFaceService.browseModels('', { sort: 'downloads', maxParamsB: 13 });
+    expect(out.map(m => m.id)).toEqual(['a/good-GGUF', 'a/no-siblings-GGUF']);
+    expect(out.every(m => m.files.length === 0)).toBe(true);
+    expect(hf.requests()[0].searchParams.getAll('expand[]')).toContain('siblings');
+  });
+
+  it('new releases drops a row with no model file at the top level', async () => {
+    const hf = installHfApiFake();
+    hf.setList(url => (url.searchParams.get('author') === 'unsloth' ? [
+      { id: 'unsloth/Nested-GGUF', pipeline_tag: 'text-generation', createdAt: '2026-11-02T00:00:00.000Z',
+        siblings: [{ rfilename: 'sub/Nested-Q4_K_M.gguf' }] },
+      { id: 'unsloth/Good-GGUF', pipeline_tag: 'text-generation', createdAt: '2026-11-01T00:00:00.000Z',
+        siblings: [{ rfilename: 'Good-Q4_K_M.gguf' }] },
+    ] : []));
+    const out = await huggingFaceService.browseModels('', { sort: 'newest', maxParamsB: 13 });
+    expect(out.map(m => m.id)).toEqual(['unsloth/Good-GGUF']);
   });
 
   it('new releases rejects when every publisher fails', async () => {
