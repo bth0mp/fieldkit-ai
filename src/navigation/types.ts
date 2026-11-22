@@ -13,6 +13,7 @@ export type RootStackParamList = {
   KnowledgeBase: { projectId: string };
   GuideLibrary: undefined;
   KiwixFiles: undefined;
+  ModelGuide: undefined;
   QuickReference: { cardId?: string } | undefined;
   Checklists: { listId?: string } | undefined;
   Calculators: undefined;

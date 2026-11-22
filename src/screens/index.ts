@@ -12,6 +12,7 @@ export { ProjectEditScreen } from './ProjectEditScreen';
 export { KnowledgeBaseScreen } from './KnowledgeBaseScreen';
 export { GuideLibraryScreen } from './GuideLibraryScreen';
 export { KiwixFilesScreen } from './KiwixFilesScreen';
+export { ModelGuideScreen } from './ModelGuideScreen';
 export { QuickReferenceScreen } from './QuickReferenceScreen';
 export { HomeSearchScreen } from './HomeSearchScreen';
 export { ChecklistsScreen } from './ChecklistsScreen';

@@ -10,6 +10,7 @@ import { CustomAlert, hideAlert, showAlert, AlertState } from '../../components/
 import { consumePendingSpotlight, peekPendingSpotlight, setPendingSpotlight } from '../../components/onboarding/spotlightState';
 import { DOWNLOAD_MANAGER_STEP_INDEX } from '../../components/onboarding/spotlightConfig';
 import { useTheme, useThemedStyles } from '../../theme';
+import { ModelGuideButton } from './ModelGuideButton';
 import { needsVisionRepair as checkNeedsVisionRepair } from '../../utils/visionRepair';
 import { CREDIBILITY_LABELS } from '../../constants';
 import { ModelInfo, ModelFile } from '../../types';
@@ -381,6 +382,7 @@ export const TextModelsTab: React.FC<Props> = (props) => {
 
   return (
     <>
+      <ModelGuideButton />
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
