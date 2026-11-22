@@ -278,6 +278,7 @@ describe('useModelsScreen', () => {
         hasSearched: false,
         searchQuery: '',
         handleSearch: jest.fn(),
+        refreshText: jest.fn().mockResolvedValue(undefined),
         downloadProgress: {},
       });
 

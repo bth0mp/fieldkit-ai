@@ -50,6 +50,19 @@ describe('Models with no connection (rendered)', () => {
     expect(hf.requests().filter(u => u.pathname === '/api/models')).toHaveLength(0);
   });
 
+  it('pull to refresh with no connection keeps the numbers already on screen', async () => {
+    const { rtl, ui, hf } = await openModelsFromHome({
+      totalGB: 10.82,
+      hf: h => h.setDetails({ [QWEN]: { id: QWEN, downloads: 1234567, downloadsAllTime: 9800000, likes: 2300, lastModified: new Date().toISOString(), tags: ['gguf'] } }),
+    });
+    requireNetInfoFake();
+    await rtl.waitFor(() => expect(ui.getByText('1.2M downloads this month · 9.8M all time')).toBeTruthy(), TIMEOUT);
+    hf.setOffline(true);
+    await rtl.act(async () => { netInfoFake.setConnected(false); });
+    await rtl.act(async () => { await ui.getByTestId('models-list').props.refreshControl.props.onRefresh(); });
+    expect(ui.getByText('1.2M downloads this month · 9.8M all time')).toBeTruthy();
+  });
+
   it('shows the notice and the picks, makes no list request, and searches when the connection returns', async () => {
     const { rtl, ui, hf } = await openModelsFromHome({ totalGB: 10.82, hf: h => h.setList(() => [{ id: 'a/Qwen-GGUF', tags: ['gguf'], pipeline_tag: 'text-generation' }]) });
     requireNetInfoFake();

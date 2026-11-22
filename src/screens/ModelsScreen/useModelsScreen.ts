@@ -104,7 +104,7 @@ export function useModelsScreen() {
     text.setIsRefreshing(true);
     await text.loadDownloadedModels();
     await image.loadDownloadedImageModels();
-    await text.refreshText();
+    if (activeTab === 'text') await text.refreshText();
     if (activeTab === 'image') await image.loadHFModels(true);
     text.setIsRefreshing(false);
   };

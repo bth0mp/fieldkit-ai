@@ -237,6 +237,24 @@ describe('Server sorts (rendered)', () => {
     expect(ui.getByTestId('sort-option-likes').props.accessibilityState).toEqual({ selected: true });
   });
 
+  it('tapping the sort that is already chosen asks again, once', async () => {
+    const { rtl, ui, hf } = await openModelsFromHome({
+      totalGB: 10.82,
+      hf: h => h.setList(url => (url.searchParams.get('sort') === 'likes' ? [row('a/Liked-GGUF')] : [])),
+    });
+    rtl.fireEvent.press(ui.getByTestId('sort-pill'));
+    rtl.fireEvent.press(ui.getByTestId('sort-option-likes'));
+    await rtl.waitFor(() => expect(ui.getByText('Liked-GGUF')).toBeTruthy(), TIMEOUT);
+    const lists = () => hf.requests().filter(u => u.pathname === '/api/models').length;
+    const before = lists();
+    rtl.fireEvent.press(ui.getByTestId('sort-pill'));
+    rtl.fireEvent.press(ui.getByTestId('sort-option-likes'));
+    await rtl.waitFor(() => expect(lists()).toBe(before + 1), TIMEOUT);
+    await new Promise(r => setTimeout(r, 700));
+    expect(lists()).toBe(before + 1);
+    await rtl.waitFor(() => expect(ui.getByText('Liked-GGUF')).toBeTruthy(), TIMEOUT);
+  });
+
   it('stops loading after a stale answer is ignored', async () => {
     const { rtl, ui, hf } = await openModelsFromHome({
       totalGB: 10.82,

@@ -127,7 +127,9 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadDownloadedModels(); }, []);
 
-  const loadPickDetails = useCallback(() => fetchRecommendedModelDetails().then(setRecommendedModelDetails), []);
+  // Merged into what is already there, so a refresh that fails (or fails for one pick) keeps the numbers on screen.
+  const loadPickDetails = useCallback(
+    () => fetchRecommendedModelDetails().then(d => setRecommendedModelDetails(prev => ({ ...prev, ...d }))), []);
 
   useEffect(() => {
     let cancelled = false;
