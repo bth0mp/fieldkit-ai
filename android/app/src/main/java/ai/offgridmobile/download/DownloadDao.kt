@@ -26,6 +26,8 @@ interface DownloadDao {
     @Query("UPDATE downloads SET downloadedBytes = :bytes, totalBytes = :totalBytes, status = :status WHERE id = :downloadId AND status != 'CANCELLED'")
     suspend fun updateProgress(downloadId: String, bytes: Long, totalBytes: Long, status: DownloadStatus)
 
-    @Query("UPDATE downloads SET status = :status, error = :error WHERE id = :downloadId")
+    // Cancel is the one status that stays: a late RUNNING or QUEUED from work that has not stopped yet must
+    // not revive the row. Retry starts from FAILED, so it is not affected.
+    @Query("UPDATE downloads SET status = :status, error = :error WHERE id = :downloadId AND status != 'CANCELLED'")
     suspend fun updateStatus(downloadId: String, status: DownloadStatus, error: String? = null)
 }

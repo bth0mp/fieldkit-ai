@@ -32,7 +32,9 @@ import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
 class WorkerDownload(
@@ -47,6 +49,10 @@ class WorkerDownload(
         val downloadId = inputData.getString(KEY_DOWNLOAD_ID) ?: return Result.failure()
         val progressInterval = inputData.getLong(KEY_PROGRESS_INTERVAL, DEFAULT_PROGRESS_INTERVAL)
         val download = downloadDao.getDownload(downloadId) ?: return Result.failure()
+
+        // A run that was stopped after the last byte may be scheduled again once the row says COMPLETED. The
+        // file is whole: asking for bytes past its end would earn a 416 that deletes it.
+        if (download.status == DownloadStatus.COMPLETED) return Result.success()
 
         // Run as a foreground service so a multi-GB download keeps progressing when the
         // app is backgrounded or the screen is off. A plain CoroutineWorker gets WorkManager's
@@ -116,9 +122,9 @@ class WorkerDownload(
     }
 
     /**
-     * Non-null only when the user cancelled. Used once the whole file is on disk: a system stop there
-     * must not requeue (the retry would ask for a Range past the end and a 416 would delete the file),
-     * but a Cancel must still win over a late size or SHA failure that would turn the row into FAILED.
+     * Non-null only when the user cancelled. Used once the whole file is on disk: that step runs to its end
+     * even when the system stops the work (see `finishStreamedFile`), so nothing here requeues, and a Cancel
+     * still wins over a late size or SHA failure that would turn the row into FAILED.
      */
     private suspend fun cancelledOrNull(downloadId: String, download: DownloadEntity): Result? =
         if (downloadDao.getDownload(downloadId)?.status == DownloadStatus.CANCELLED) {
@@ -290,6 +296,16 @@ class WorkerDownload(
             }
         }
 
+        // Every byte is on disk. From here the check and the COMPLETED write run to their end even if the system
+        // stops the work: a stopped coroutine would throw from the database calls, the row would stay RUNNING,
+        // and the next run would ask for bytes past the end, get a 416 and delete the finished file.
+        return withContext(NonCancellable) { finishStreamedFile(params, bytesWritten) }
+    }
+
+    /** Checks a fully streamed file (a user's cancel, its size, its SHA) and records the outcome. */
+    private suspend fun finishStreamedFile(params: StreamParams, bytesWritten: Long): Result {
+        val (_, targetFile, code, download, downloadId, currentFileBytes, totalBytes, _) = params
+        val appendMode = code == 206
         cancelledOrNull(downloadId, download)?.let { return it }
 
         val authoritativeExpectedBytes = when {

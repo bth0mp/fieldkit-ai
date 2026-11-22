@@ -55,4 +55,15 @@ class DownloadDaoTest {
         dao.updateProgress("d1", 60L, 100L, DownloadStatus.RUNNING)
         assertEquals(DownloadStatus.RUNNING, dao.getDownload("d1")!!.status)
     }
+
+    @Test
+    fun `a late running or queued status does not revive a cancelled row`() = runBlocking {
+        dao.insertDownload(row(DownloadStatus.RUNNING))
+        dao.updateStatus("d1", DownloadStatus.CANCELLED, DownloadReason.USER_CANCELLED)
+
+        dao.updateStatus("d1", DownloadStatus.RUNNING)
+        dao.updateStatus("d1", DownloadStatus.QUEUED)
+
+        assertEquals(DownloadStatus.CANCELLED, dao.getDownload("d1")!!.status)
+    }
 }
