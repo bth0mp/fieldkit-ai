@@ -7,7 +7,10 @@ export type MemoryTier = 4 | 6 | 8 | 12 | 16;
 
 export const MEMORY_TIERS: MemoryTier[] = [4, 6, 8, 12, 16];
 
-const CODING_REGEX = /(^|[^a-z])cod(e|er|ing)/i;
+// "code", "coder" and "coding" as a word, and the StarCoder and WizardCoder families; never "decoder" or "encoder".
+const CODING_REGEX = /(^|[^a-z])cod(e|er|ing)|starcoder|wizardcoder/i;
+const CAMEL_CODER_REGEX = /[a-z]Cod(e|er)/;
+const MILLIONS_REGEX = /\b(\d+)\s?[Mm]\b/;
 const VISION_PIPELINE_TAG = 'image-text-to-text';
 const SMALL_PARAMS_MAX = 2;
 const DAY_MS = 86400000;
@@ -74,12 +77,21 @@ export function autoLabels(m: {
   tags?: string[];
   pipelineTag?: string;
   paramCount?: number;
+  /** A card of type 'vision' already shows the Vision badge, so it gets no Vision label. */
+  modelType?: string;
 }): string[] {
   const labels: string[] = [];
-  if (m.pipelineTag === VISION_PIPELINE_TAG || m.tags?.includes(VISION_PIPELINE_TAG)) labels.push('Vision');
-  if (CODING_REGEX.test(m.name) || m.tags?.includes('code')) labels.push('Coding');
+  const isVision = m.pipelineTag === VISION_PIPELINE_TAG || m.tags?.includes(VISION_PIPELINE_TAG);
+  if (isVision && m.modelType !== 'vision') labels.push('Vision');
+  const isCoding = CODING_REGEX.test(m.name) || CAMEL_CODER_REGEX.test(m.name) || m.tags?.some(t => t === 'code' || t === 'coder');
+  if (isCoding) labels.push('Coding');
   const nameMatch = PARAM_COUNT_REGEX.exec(m.name);
-  const params = m.paramCount ?? (nameMatch ? Number.parseFloat(nameMatch[1]) : undefined);
+  // A name in millions ("SmolLM2-360M") counts, unless it also states billions ("9B ... 1M context").
+  const millions = nameMatch ? undefined : MILLIONS_REGEX.exec(m.name);
+  let nameParams: number | undefined;
+  if (nameMatch) nameParams = Number.parseFloat(nameMatch[1]);
+  else if (millions) nameParams = Number.parseFloat(millions[1]) / 1000;
+  const params = m.paramCount ?? nameParams;
   if (params !== undefined && params <= SMALL_PARAMS_MAX) labels.push('Small, fast');
   return labels.slice(0, 2);
 }

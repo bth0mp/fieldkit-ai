@@ -48,6 +48,30 @@ describe('model guide helpers', () => {
     expect(autoLabels({ name: 'CodeLlama-7B-GGUF' })).toEqual(['Coding']);
   });
 
+  it('labels names in millions as small, but not a billions name that mentions a million', () => {
+    expect(autoLabels({ name: 'SmolLM2-360M-Instruct-GGUF' })).toEqual(['Small, fast']);
+    expect(autoLabels({ name: 'gemma-3-270m-it-GGUF' })).toEqual(['Small, fast']);
+    expect(autoLabels({ name: 'Foo-9B-Context-1M-GGUF' })).toEqual([]);
+    expect(autoLabels({ name: 'Foo-9B-Context-1M-GGUF', paramCount: 9 })).toEqual([]);
+  });
+
+  it('labels coder families as Coding, and never decoder or encoder', () => {
+    for (const name of ['StarCoder2-3B-GGUF', 'WizardCoder-15B-GGUF', 'starcoder2-15b', 'Qwen2.5-Coder-14B', 'CodeLlama-34B']) {
+      expect(autoLabels({ name })).toContain('Coding');
+    }
+    for (const name of ['t5-decoder-14B', 'Encoder-14B-GGUF', 'ModernBERT-encoder-14B', 'DECODER-14B']) {
+      expect(autoLabels({ name })).not.toContain('Coding');
+    }
+    expect(autoLabels({ name: 'Foo-14B', tags: ['coder'] })).toEqual(['Coding']);
+    expect(autoLabels({ name: 'Foo-14B', tags: ['code'] })).toEqual(['Coding']);
+  });
+
+  it('does not repeat Vision on a card that shows the Vision badge', () => {
+    const m = { name: 'gemma-4-E4B-it-GGUF', pipelineTag: 'image-text-to-text', paramCount: 4 };
+    expect(autoLabels({ ...m, modelType: 'vision' })).toEqual([]);
+    expect(autoLabels(m)).toEqual(['Vision']);
+  });
+
   it('updated ago', () => {
     const now = new Date('2026-11-21T12:00:00Z');
     const ago = (d: number) => new Date(now.getTime() - d * 86400000).toISOString();
