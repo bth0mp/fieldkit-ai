@@ -130,6 +130,14 @@ describe('chunked storage', () => {
     await expect(createChunkedStorage(store).getItem('chat')).rejects.toThrow(/missing/);
   });
 
+  it('fails the read when a part inside the saved count is blank', async () => {
+    const { store, values } = memoryStore();
+    await createChunkedStorage(store).setItem('chat', 'x'.repeat(3 * 256 * 1024));
+    values.set('chat::chunk:1', '');
+
+    await expect(createChunkedStorage(store).getItem('chat')).rejects.toThrow(/missing/);
+  });
+
   it('reads a value saved by an older build as it is, then writes it in parts', async () => {
     const { store, values } = memoryStore(LIMIT, { chat: '{"state":{"a":1}}' });
     const storage = createChunkedStorage(store);

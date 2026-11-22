@@ -73,7 +73,9 @@ export function createChunkedStorage(
         Array.from({ length: count }, (_, index) => chunkKey(name, index)),
       );
       const parts = pairs.map(([, value]) => value);
-      if (parts.some(part => part === null)) {
+      // A real part is never empty (an empty value has no parts), and unused parts are blanked, so an
+      // empty part inside the count is as lost as a missing one.
+      if (parts.some(part => !part)) {
         throw new Error(`${name}: part of the saved value is missing`);
       }
       partCounts.set(name, Math.max(partCounts.get(name) ?? 0, count));
