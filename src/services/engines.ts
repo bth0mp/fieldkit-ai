@@ -251,7 +251,7 @@ export function getActiveEngineService(): typeof llmService | typeof liteRTServi
  * (remote before local), so what the screen names is what answers, whatever local model is loaded for another job
  * (the image classifier, an enhancement).
  */
-function remoteTextModelChosen(): boolean {
+export function remoteTextModelChosen(): boolean {
   const { activeServerId, activeRemoteTextModelId, discoveredModels } = useRemoteServerStore.getState();
   if (!activeServerId || !activeRemoteTextModelId) return false;
   if (!providerRegistry.hasProvider(activeServerId)) return false;
