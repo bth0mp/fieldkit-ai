@@ -1,0 +1,77 @@
+import { activeModelService } from './activeModelService';
+import { generationService } from './generationService';
+import { imageGenerationService } from './imageGenerationService';
+import { stopAllTextEngines } from './engines';
+import { providerRegistry } from './providers';
+import { remoteServerManager } from './remoteServerManager';
+import { stopReply } from './stopReply';
+import { useAppStore, useRemoteServerStore } from '../stores';
+
+const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+const writing = () => generationService.getState().isGenerating || imageGenerationService.getState().isGenerating;
+
+let tail: Promise<unknown> = Promise.resolve();
+
+/** Choices run one at a time. Each counts as a running turn, so nothing queued is sent until it ends. */
+function exclusively(work: () => Promise<void>): Promise<void> {
+  const finish = async () => { await work(); await sleep(0); }; // the chat's queue processor reads its last render
+  const run = tail.then(() => generationService.runTurn(async () => {
+    // A turn still being prepared cannot be stopped, and would load its own model when it got there. Polled
+    // because turns are not observable; gives up after 15 s so a hung one cannot block choosing for good.
+    const until = Date.now() + 15_000;
+    while (generationService.turnsRunning() > 1 && !writing() && Date.now() < until) await sleep(50);
+    if (!generationService.getState().isGenerating) return finish();
+    const stopped = stopReply();                  // clears every claim, ours too, and schedules a queue drain,
+    return generationService.runTurn(async () => { // so claim again in the same tick
+      await stopped;
+      await stopAllTextEngines();                 // stopGeneration returns before the engine is idle
+      await finish();
+    });
+  }));
+  tail = run.catch(() => { });
+  return run;
+}
+
+export function chooseTextModel(modelId: string): Promise<void> {
+  return exclusively(async () => {
+    if (modelId !== useAppStore.getState().activeModelId) await activeModelService.unloadTextModel(true);
+    // No await from here: the new choice is marked before the remote one is cleared, so there is never no model.
+    activeModelService.selectTextModel(modelId);
+    useAppStore.getState().setTextModelEvicted(false);
+    remoteServerManager.clearActiveRemoteModel();
+  });
+}
+
+export function chooseRemoteTextModel(serverId: string, modelId: string): Promise<void> {
+  return exclusively(async () => {
+    const { activeServerId, activeRemoteTextModelId } = useRemoteServerStore.getState();
+    const providerId = providerRegistry.getActiveProviderId();
+    const restore = () => {
+      const store = useRemoteServerStore.getState();
+      store.setActiveServerId(activeServerId);
+      store.setActiveRemoteTextModelId(activeRemoteTextModelId);
+      providerRegistry.setActiveProvider(providerId);
+    };
+    try { await remoteServerManager.setActiveRemoteTextModel(serverId, modelId); }
+    catch (e) { restore(); throw e; }
+    if (!providerRegistry.hasProvider(serverId)) { restore(); throw new Error('the server is not available'); }
+    await activeModelService.unloadTextModel();
+  });
+}
+
+export async function chooseImageModel(modelId: string): Promise<void> {
+  useRemoteServerStore.getState().setActiveRemoteImageModelId(null);
+  useAppStore.getState().setActiveImageModelId(modelId);
+}
+
+export function dropTextModel(): Promise<void> {
+  return exclusively(async () => {
+    remoteServerManager.clearActiveRemoteModel();
+    await activeModelService.unloadTextModel();
+  });
+}
+
+export async function dropImageModel(): Promise<void> {
+  await activeModelService.unloadImageModel();
+  useRemoteServerStore.getState().setActiveRemoteImageModelId(null);
+}

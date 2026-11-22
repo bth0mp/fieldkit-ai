@@ -15,6 +15,7 @@ import { invalidateActiveConversation, activeLocalTextCapabilities, wantsLeading
 import { needsVisionRepair } from '../../utils/visionRepair';
 import { ensureDefaultClassifier } from '../../services/classifierProvisioning';
 import { abortPreload } from '../../services/modelPreloader';
+import { stopReply } from '../../services/stopReply';
 import { modelResidencyManager } from '../../services/modelResidency';
 import { reportModelFailure } from '../../services/modelFailureHandler';
 import { embeddingService } from '../../services/rag/embedding';
@@ -614,10 +615,7 @@ export async function handleSendFn(deps: GenerationDeps, call: SendCall): Promis
   await dispatchGenerationFn(deps, { text, attachments, conversationId: targetConversationId, imageMode }, startGeneration);
 }
 export async function handleStopFn(deps: Pick<GenerationDeps, 'isGeneratingImage'>): Promise<void> {
-  generationSession.end('stopped');
-  callHook(HOOKS.audioStop); // abort must silence TTS too — buffered-ahead sentences keep playing otherwise
-  try { await generationService.stopGeneration().catch(() => { }); }
-  catch (e) { logger.error('Error stopping generation:', e); }
+  await stopReply();
   if (deps.isGeneratingImage) imageGenerationService.cancelGeneration().catch(() => { });
 }
 export async function executeDeleteConversationFn(

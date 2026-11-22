@@ -154,6 +154,9 @@ class GenerationService {
   /** Whether a turn started with runTurn is still running, its model possibly still loading. */
   isTurnInFlight(): boolean { return this.turnsInFlight.size > 0; }
 
+  /** How many turns started with runTurn are still running. */
+  turnsRunning(): number { return this.turnsInFlight.size; }
+
   subscribe(listener: GenerationListener): () => void {
     this.listeners.add(listener); listener(this.getState()); return () => this.listeners.delete(listener);
   }
