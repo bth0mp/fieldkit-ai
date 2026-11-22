@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { remoteServerManager } from '../../services/remoteServerManager';
 import { useRemoteServerStore } from '../../stores';
 import { RemoteServer, RemoteModel } from '../../types';
@@ -18,9 +18,12 @@ export function useRemoteServerForm({ server, visible, onSave, onClose }: FormOp
   const [apiKey, setApiKeyValue] = useState('');
   // Whether the person typed in the key field. The field starts from the Keychain, which may not answer.
   const [apiKeyEdited, setApiKeyEdited] = useState(false);
+  // The same fact for the Keychain's late answer, which must not replace what the person typed meanwhile.
+  const apiKeyTyped = useRef(false);
   const setApiKey = useCallback((value: string) => {
     setApiKeyValue(value);
     setApiKeyEdited(true);
+    apiKeyTyped.current = true;
   }, []);
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -37,9 +40,10 @@ export function useRemoteServerForm({ server, visible, onSave, onClose }: FormOp
       setEndpoint(server.endpoint);
       setNotes(server.notes || '');
       // Load existing API key from keychain so user can see it's set
+      apiKeyTyped.current = false;
       remoteServerManager.getApiKey(server.id).then((key) => {
-        if (!cancelled) setApiKeyValue(key || '');
-      }).catch(() => { if (!cancelled) setApiKeyValue(''); });
+        if (!cancelled && !apiKeyTyped.current) setApiKeyValue(key || '');
+      }).catch(() => { if (!cancelled && !apiKeyTyped.current) setApiKeyValue(''); });
     } else {
       // Reset form for new server
       setName('');
@@ -48,6 +52,7 @@ export function useRemoteServerForm({ server, visible, onSave, onClose }: FormOp
       setNotes('');
     }
     setApiKeyEdited(false);
+    apiKeyTyped.current = false;
     setErrors({});
     setTestResult(null);
     setDiscoveredModels([]);

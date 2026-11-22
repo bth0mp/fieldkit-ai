@@ -18,9 +18,12 @@ jest.mock('react-native-keychain', () => {
   const g = globalThis as unknown as { __KEYCHAIN__?: { vault: Map<string, string>; fail: { set: boolean; get: boolean; reset: boolean } } };
   g.__KEYCHAIN__ ??= { vault: new Map<string, string>(), fail: { set: false, get: false, reset: false } };
   const { vault, fail } = g.__KEYCHAIN__;
+  // A test can hold the Keychain's answer to a read until it chooses to release it.
+  const hold: { get: Promise<void> | null } = { get: null };
   return {
     __vault: vault,
     __fail: fail,
+    __hold: hold,
     ACCESSIBLE: { WHEN_UNLOCKED: 'AccessibleWhenUnlocked' },
     setGenericPassword: jest.fn(async (_user: string, password: string, options: { service: string }) => {
       if (fail.set) throw new Error('Keychain is locked');
@@ -28,6 +31,7 @@ jest.mock('react-native-keychain', () => {
       return true;
     }),
     getGenericPassword: jest.fn(async (options: { service: string }) => {
+      if (hold.get) await hold.get;
       if (fail.get) throw new Error('Keychain is locked');
       const password = vault.get(options.service);
       return password === undefined ? false : { username: 'server', password, service: options.service };
@@ -51,7 +55,7 @@ jest.setTimeout(30000);
 const SERVICE = 'ai.offgridmobile.servers';
 const ENDPOINT = 'http://192.168.1.50:11434';
 const keychain = () => require('react-native-keychain') as {
-  __vault: Map<string, string>; __fail: { set: boolean; get: boolean; reset: boolean };
+  __vault: Map<string, string>; __hold: { get: Promise<void> | null }; __fail: { set: boolean; get: boolean; reset: boolean };
 };
 const vaultKey = (id: string) => keychain().__vault.get(`${SERVICE}.${id}`);
 
@@ -111,6 +115,7 @@ beforeEach(() => {
   keychain().__fail.set = false;
   keychain().__fail.get = false;
   keychain().__fail.reset = false;
+  keychain().__hold.get = null;
   (['log', 'warn', 'error'] as const).forEach(level => (console[level] as jest.Mock).mockClear());
   installNetwork();
   useRemoteServerStore.setState({ servers: [], serverHealth: {}, discoveredModels: {} });
@@ -301,5 +306,27 @@ describe('server keys live only in the Keychain', () => {
 
     await waitFor(() => expect(useRemoteServerStore.getState().servers).toHaveLength(1));
     expect(vaultKey(useRemoteServerStore.getState().servers[0].id)).toBe('sk-secret-1');
+  });
+
+  it('does not put a late Keychain answer over a key the person already typed', async () => {
+    keychain().__vault.set(`${SERVICE}.a`, 'sk-old');
+    let release!: () => void;
+    keychain().__hold.get = new Promise<void>(resolve => { release = resolve; });
+    useRemoteServerStore.setState({ servers: [record('a')] as never });
+    const ui = render(<RemoteServersScreen />);
+
+    fireEvent.press(ui.getByText('Edit'));
+    const key = await waitFor(() => ui.getByPlaceholderText('sk-...'));
+    fireEvent.changeText(key, 'sk-new');
+    fireEvent.press(ui.getByText('Test Connection'));
+    await waitFor(() => expect(ui.queryByText(/Connected \(/)).not.toBeNull());
+    // The Keychain answers only now, after the typing.
+    keychain().__hold.get = null;
+    await act(async () => { release(); });
+    expect(ui.getByDisplayValue('sk-new')).toBeTruthy();
+    expect(ui.queryByDisplayValue('sk-old')).toBeNull();
+    await act(async () => { fireEvent.press(ui.getByText('Update Server')); });
+
+    await waitFor(() => expect(vaultKey('a')).toBe('sk-new'));
   });
 });
