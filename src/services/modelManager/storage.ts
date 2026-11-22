@@ -64,18 +64,33 @@ export async function saveImageModelsList(models: ONNXImageModel[]): Promise<voi
   await AsyncStorage.setItem(IMAGE_MODELS_STORAGE_KEY, JSON.stringify(models));
 }
 
+/**
+ * Existence probe that never reads a filesystem error as "file absent". RNFS.exists can reject on a
+ * momentary hiccup (I/O error, container not yet mounted). Reading that as "gone" would prune the model
+ * from the saved list and persist the shorter list, so a fully downloaded model would vanish.
+ * `verifiable: false` means "could not tell"; callers keep the model then.
+ */
+async function probeExists(path: string): Promise<{ exists: boolean; verifiable: boolean }> {
+  try {
+    return { exists: await RNFS.exists(path), verifiable: true };
+  } catch (e) {
+    logger.warn(`[ModelManagerStorage] existence check could not be verified for ${path}, keeping the model`, e);
+    return { exists: false, verifiable: false };
+  }
+}
+
 async function tryResolveTextModelPath(
   model: DownloadedModel,
   modelsDir: string,
-): Promise<{ exists: boolean; updated: boolean }> {
+): Promise<{ exists: boolean; updated: boolean; verifiable: boolean }> {
   const resolved = resolveStoredPath(model.filePath, modelsDir);
-  if (!resolved || resolved === model.filePath) return { exists: false, updated: false };
-  const exists = await RNFS.exists(resolved);
+  if (!resolved || resolved === model.filePath) return { exists: false, updated: false, verifiable: true };
+  const { exists, verifiable } = await probeExists(resolved);
   if (exists) {
     model.filePath = resolved;
-    return { exists: true, updated: true };
+    return { exists: true, updated: true, verifiable };
   }
-  return { exists: false, updated: false };
+  return { exists: false, updated: false, verifiable };
 }
 
 async function tryResolveMmProjPath(
@@ -103,12 +118,12 @@ async function validateAndResolveModels(
   let pathsUpdated = false;
 
   const existenceChecks = await Promise.all(
-    models.map(m => RNFS.exists(m.filePath))
+    models.map(m => probeExists(m.filePath))
   );
 
   const modelsToResolve: Array<{ model: DownloadedModel; idx: number }> = [];
   for (let i = 0; i < models.length; i++) {
-    if (!existenceChecks[i]) {
+    if (!existenceChecks[i].exists) {
       modelsToResolve.push({ model: models[i], idx: i });
     }
   }
@@ -124,7 +139,7 @@ async function validateAndResolveModels(
 
   const modelsToCheckMmProj: Array<{ model: DownloadedModel; idx: number }> = [];
   for (let i = 0; i < models.length; i++) {
-    const mainExists = existenceChecks[i];
+    const mainExists = existenceChecks[i].exists;
     if (!mainExists) {
       const idx = modelsToResolve.findIndex(m => m.idx === i);
       if (idx >= 0 && resolutionResults[idx].exists) {
@@ -144,15 +159,19 @@ async function validateAndResolveModels(
   }
 
   for (let i = 0; i < models.length; i++) {
-    const mainExists = existenceChecks[i];
+    const { exists: mainExists, verifiable: mainVerifiable } = existenceChecks[i];
     let exists = mainExists;
+    // Provably gone only when every probe cleanly answered "absent". If one threw, we do not know.
+    let verifiable = mainVerifiable;
     if (!mainExists) {
       const idx = modelsToResolve.findIndex(m => m.idx === i);
       if (idx >= 0) {
         exists = resolutionResults[idx].exists;
+        verifiable = verifiable && resolutionResults[idx].verifiable;
       }
     }
-    if (exists) {
+    // Pruning, and saving the shorter list, is for files provably gone; an unverifiable one stays.
+    if (exists || !verifiable) {
       validModels.push(models[i]);
     }
   }
