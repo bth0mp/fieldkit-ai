@@ -121,7 +121,7 @@ export const useChatScreen = () => {
   const generatingConversationId = useGeneratingConversationId();
   // Stashed, with the chat it was written in, when a message needs a text model and none was ever chosen; sent
   // once when that chat is focused again with a model in use. A list: a second message must not replace the first.
-  const pendingMessagesRef = useRef<Array<{ text: string; attachments?: MediaAttachment[]; conversationId: string }>>([]);
+  const pendingMessagesRef = useRef<Array<{ text: string; attachments?: MediaAttachment[]; conversationId: string; imageMode?: 'auto' | 'force' | 'disabled' }>>([]);
 
   // The text model is intentionally NOT loaded on chat open. It loads lazily on
   // send, when the generation path recognizes a local text model is needed
@@ -267,7 +267,7 @@ export const useChatScreen = () => {
     // Nothing in use (Unload or Disconnect while it waited): a fresh send is refused, so this waits too, and goes out
     // once a model is chosen, instead of loading one nobody chose.
     if (!genDepsRef.current.hasActiveModel) {
-      pendingMessagesRef.current.push({ text: item.text, attachments: item.attachments, conversationId: item.conversationId });
+      pendingMessagesRef.current.push({ text: item.text, attachments: item.attachments, conversationId: item.conversationId, imageMode: item.imageMode });
       return;
     }
     // Pass the queued send's forced modality (imageMode) so a message the user forced to image mode
@@ -377,7 +377,9 @@ export const useChatScreen = () => {
     if (mine.length === 0) return;
     pendingMessagesRef.current = pendingMessagesRef.current.filter(p => !mine.includes(p));
     const attachments = mine.flatMap(p => p.attachments || []);
-    handleSendRef.current(mine.map(p => p.text).join('\n\n'), attachments.length ? attachments : undefined);
+    // Joined the way the send queue joins: forced to image if any is, else the first one's mode.
+    const imageMode = mine.some(p => p.imageMode === 'force') ? 'force' : mine[0].imageMode;
+    handleSendRef.current(mine.map(p => p.text).join('\n\n'), attachments.length ? attachments : undefined, imageMode);
   }, [hasTextModel, activeConversationId]));
 
   return {

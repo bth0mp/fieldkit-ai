@@ -382,6 +382,32 @@ describe('Choosing a model from a chat (rendered)', () => {
     expect(await byText('Hi there.')).toBeTruthy();
   });
 
+  it('a queued message forced to image that waits after Unload everything is not sent as plain text when a text model is chosen', async () => {
+    await boot({ models: [FIRST, SECOND], imageModels: [SD_ONE] }, { text: 'first', image: 'sd1' });
+    t.boundary.llama!.scriptCompletion({ text: 'one two three', pauseAfter: 'one' });
+    await newChat();
+    send('question one');
+    await t.rtl.waitFor(() => expect(stores().useChatStore.getState().streamingMessage).toContain('one'), TIMEOUT);
+    press(await t.rtl.waitFor(() => t.ui.getByTestId('quick-settings-button'), TIMEOUT));
+    press(await t.rtl.waitFor(() => t.ui.getByTestId('quick-image-mode'), TIMEOUT));
+    await t.rtl.waitFor(() => expect(shown('image-mode-force-badge')).toBe(true), TIMEOUT);
+    send('tell me about cats');
+    await openFromHeader();
+    press(await byText('Image Models'));
+    press(await byLabel('Unload SD One'));
+    await t.rtl.waitFor(() => expect(state().activeImageModelId).toBeNull(), TIMEOUT);
+    press(await byText('Text Models'));
+    press(await byLabel('Unload First')); // stops the reply: the queued message is sent now, with nothing in use
+    await t.rtl.waitFor(() => expect(state().activeModelId).toBeNull(), TIMEOUT);
+    await settle(500);
+    t.boundary.llama!.scriptCompletion({ text: 'A text answer.' });
+    press(await byLabel('Use Second'));
+    await settle(1000);
+    // The app's own answer to a forced image with no image model: the text model is told so, never given it as plain text.
+    const sent = t.boundary.llama!.calls.completion.map((c: any) => c[0].messages.at(-1).content);
+    expect(sent).toEqual(['question one', '[User wanted an image but no image model is loaded] tell me about cats']);
+  });
+
   it('a half-typed message in a new chat survives Unload then Use', async () => {
     await boot({ models: [FIRST, SECOND] }, { text: 'first' });
     await newChat();
