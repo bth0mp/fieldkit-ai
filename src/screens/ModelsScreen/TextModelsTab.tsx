@@ -22,7 +22,7 @@ import { modelSupportsNpuGpu, isAccelerableQuant } from '../../utils/acceleratio
 import { aggregateActiveDownloads } from '../../utils/downloadAggregate';
 import { TextFiltersSection } from './TextFiltersSection';
 import { FilterState, SortOption } from './types';
-import { SORT_OPTIONS } from './constants';
+import { SORT_OPTIONS, SERVER_SORTS } from './constants';
 import { formatNumber, getTextModelCompatibility } from './utils';
 import { curatedLiteRTDownloadWarning, LITERT_PARENT_ID } from '../../services/curatedLiteRTRegistry';
 import { LITERT_NOTES } from '../../features/modelGuide/notes';
@@ -321,7 +321,7 @@ const SortPanel: React.FC<SortPanelProps> = ({ filterState, setSortOption, style
   <View style={styles.filterExpandedContent}>
     <View style={styles.filterChipWrap}>
       {SORT_OPTIONS.map(option => (
-        <TouchableOpacity key={option.key} testID={`sort-option-${option.key}`} style={[styles.filterChip, filterState.sort === option.key && styles.filterChipActive]} onPress={() => setSortOption(option.key)}>
+        <TouchableOpacity key={option.key} testID={`sort-option-${option.key}`} style={[styles.filterChip, filterState.sort === option.key && styles.filterChipActive]} onPress={() => setSortOption(option.key)} accessibilityRole="button" accessibilityState={{ selected: filterState.sort === option.key }}>
           <Icon name={option.icon} size={12} color={filterState.sort === option.key ? colors.primary : colors.textSecondary} />
           <Text style={[styles.filterChipText, filterState.sort === option.key && styles.filterChipTextActive]}>{option.label}</Text>
         </TouchableOpacity>
@@ -401,6 +401,8 @@ export const TextModelsTab: React.FC<Props> = (props) => {
           onPress={() => toggleFilterDimension('sort')}
           hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
           testID="sort-pill"
+          accessibilityRole="button"
+          accessibilityLabel={`Sort: ${currentSort.label}`}
         >
           <Icon name={currentSort.icon} size={14} color={sortToggleActive ? colors.primary : colors.textMuted} />
           {isSortActive && <View style={styles.filterDot} />}
@@ -419,7 +421,7 @@ export const TextModelsTab: React.FC<Props> = (props) => {
       {offline && (
         <View style={styles.offlineNotice}>
           <Icon name="wifi-off" size={14} color={colors.textMuted} />
-          <Text testID="models-offline-notice" style={styles.offlineNoticeText}>Needs a connection to search, sort or show download numbers.</Text>
+          <Text testID="models-offline-notice" accessibilityLiveRegion="polite" style={styles.offlineNoticeText}>Needs a connection to search, sort or show download numbers.</Text>
         </View>
       )}
 
@@ -452,7 +454,11 @@ export const TextModelsTab: React.FC<Props> = (props) => {
           contentContainerStyle={styles.listContent}
           testID="models-list"
           refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} />}
-          ListHeaderComponent={hasSearched ? null : (
+          ListHeaderComponent={hasSearched ? (
+            SERVER_SORTS.includes(filterState.sort) ? (
+              <Text testID="results-heading" accessibilityRole="header" style={styles.resultsHeading}>{currentSort.label}</Text>
+            ) : null
+          ) : (
             <DeviceBanner ramGB={ramGB} rec={deviceRecommendation} showTitle={recommendedAsModelInfo.length > 0} styles={styles} />
           )}
           ListEmptyComponent={

@@ -229,6 +229,7 @@ const createTextModelsStyles = (colors: ThemeColors, _shadows: ThemeShadows) => 
     marginBottom: 16,
   },
   recommendedTitle: { ...TYPOGRAPHY.meta, color: colors.textMuted, marginBottom: SPACING.md },
+  resultsHeading: { ...TYPOGRAPHY.meta, color: colors.textMuted, marginBottom: SPACING.md },
 });
 
 export const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({

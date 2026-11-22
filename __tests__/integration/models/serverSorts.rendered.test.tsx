@@ -216,6 +216,27 @@ describe('Server sorts (rendered)', () => {
     expect(ui.queryByText('Tiny-GGUF')).toBeNull();
   });
 
+  it('the sort is readable: pill label, chip state and a heading over the results', async () => {
+    const { rtl, ui } = await openModelsFromHome({
+      totalGB: 10.82,
+      hf: h => h.setList(url => (url.searchParams.get('sort') === 'likes' ? [row('a/Liked-GGUF')] : [])),
+    });
+    const pill = () => ui.getByTestId('sort-pill').props;
+    expect(pill().accessibilityRole).toBe('button');
+    expect(pill().accessibilityLabel).toBe('Sort: Smart');
+    expect(ui.queryByTestId('results-heading')).toBeNull();
+    rtl.fireEvent.press(ui.getByTestId('sort-pill'));
+    expect(ui.getByTestId('sort-option-likes').props.accessibilityRole).toBe('button');
+    expect(ui.getByTestId('sort-option-likes').props.accessibilityState).toEqual({ selected: false });
+    expect(ui.getByTestId('sort-option-recommended').props.accessibilityState).toEqual({ selected: true });
+    rtl.fireEvent.press(ui.getByTestId('sort-option-likes'));
+    await rtl.waitFor(() => expect(ui.getByText('Liked-GGUF')).toBeTruthy(), TIMEOUT);
+    expect(pill().accessibilityLabel).toBe('Sort: Most liked');
+    expect(rtl.within(ui.getByTestId('results-heading')).getByText('Most liked')).toBeTruthy();
+    rtl.fireEvent.press(ui.getByTestId('sort-pill'));
+    expect(ui.getByTestId('sort-option-likes').props.accessibilityState).toEqual({ selected: true });
+  });
+
   it('stops loading after a stale answer is ignored', async () => {
     const { rtl, ui, hf } = await openModelsFromHome({
       totalGB: 10.82,

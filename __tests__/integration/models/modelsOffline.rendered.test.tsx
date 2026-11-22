@@ -42,6 +42,7 @@ describe('Models with no connection (rendered)', () => {
     await rtl.waitFor(() => expect(ui.getByText(PICKS)).toBeTruthy(), TIMEOUT);
     await new Promise(r => setTimeout(r, 500)); // let the picks' failing detail requests settle
     expect(ui.getByTestId('models-offline-notice')).toBeTruthy();
+    expect(ui.getByTestId('models-offline-notice').props.accessibilityLiveRegion).toBe('polite');
     expect(ui.getByText(noteFor(QWEN)!.goodFor, { exact: false })).toBeTruthy();
     expect(ui.queryByText(/downloads this month/)).toBeNull();
     expect(ui.queryByText('Search Error')).toBeNull();
@@ -55,6 +56,7 @@ describe('Models with no connection (rendered)', () => {
     await rtl.act(async () => { netInfoFake.setConnected(false); });
     await rtl.waitFor(() => expect(ui.getByText(PICKS)).toBeTruthy(), TIMEOUT);
     expect(ui.getByTestId('models-offline-notice')).toBeTruthy();
+    expect(ui.getByTestId('models-offline-notice').props.accessibilityLiveRegion).toBe('polite');
     expect(ui.getByText(NOTICE)).toBeTruthy();
     expect(ui.getAllByText(/Good for:/).length).toBeGreaterThan(0);
     expect(ui.queryByText(/downloads this month/)).toBeNull();
