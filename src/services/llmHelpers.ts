@@ -10,7 +10,7 @@ import { ensureNativeLogCapture, resetNativeLogCapture, recentNativeLog } from '
 
 import { HTP_ENABLED } from '../config/featureFlags';
 import { tryGpuInit, tryGpuFallback } from './llmGpuInit';
-import { CONTEXT_OUTPUT_BUDGET_RATIO } from '../utils/contextBudget';
+import { maxTokensCeiling } from '../utils/contextBudget';
 
 const RESPONSE_RESERVE = 512;
 const DEFAULT_THREADS = 4; // targets performance cores only; over-threading onto efficiency cores (A520) hurts
@@ -413,7 +413,7 @@ export function buildCompletionParams(settings: {
   maxTokens?: number; temperature?: number; topP?: number; repeatPenalty?: number;
 }, options?: { disableCtxShift?: boolean; contextLength?: number }): Record<string, any> {
   const requested = Math.max(1, Math.floor(settings.maxTokens || RESPONSE_RESERVE));
-  const outputLimit = options?.contextLength ? Math.max(1, Math.floor(options.contextLength * CONTEXT_OUTPUT_BUDGET_RATIO)) : requested;
+  const outputLimit = options?.contextLength ? maxTokensCeiling(options.contextLength) : requested;
   return {
     // A reply as long as the whole context leaves no room for the prompt, and llama.cpp refuses the turn.
     n_predict: Math.min(requested, outputLimit),

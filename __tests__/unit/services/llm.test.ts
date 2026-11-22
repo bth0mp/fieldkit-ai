@@ -2212,7 +2212,7 @@ describe('LLMService', () => {
       await llmService.loadModel('/models/test.gguf');
       jest.spyOn(hardwareService, 'getProcessMemory').mockRejectedValue(new Error('memory read failed'));
 
-      await llmService.unloadModel().catch(() => {});
+      await expect(llmService.unloadModel()).resolves.toBeUndefined();
 
       expect(llmService.isModelLoaded()).toBe(false);
       const msgs = [{ id: '1', role: 'user' as const, content: 'hi', timestamp: 0 }];
@@ -2468,6 +2468,25 @@ describe('LLMService', () => {
       const second = mockedInitLlama.mock.calls[1][0] as Record<string, unknown>;
       expect(second.devices).toBeUndefined();
       expect(second.n_gpu_layers).toBeGreaterThan(0);
+    });
+
+    it('does not try the GPU when no GPU layers were asked for: the NPU fails, the CPU is used', async () => {
+      jest.spyOn(Platform, 'OS', 'get').mockReturnValue('android');
+      jest.spyOn(hardwareService, 'getSoCInfo').mockResolvedValue({ vendor: 'qualcomm', hasNPU: true, qnnVariant: '8gen3' });
+      jest.spyOn(hardwareService, 'getOpenCLCapability').mockResolvedValue({ supported: true });
+      mockedInitLlama.mockRejectedValueOnce(new Error('HTP init failed'));
+      mockedInitLlama.mockResolvedValueOnce(createMockLlamaContext() as any);
+      useAppStore.setState({
+        settings: { ...useAppStore.getState().settings, inferenceBackend: 'htp' as const, gpuLayers: 0 },
+      });
+
+      await llmService.loadModel('/models/test.gguf');
+
+      expect(mockedInitLlama).toHaveBeenCalledTimes(2);
+      expect((mockedInitLlama.mock.calls[0][0] as Record<string, unknown>).n_gpu_layers).toBe(0);
+      const second = mockedInitLlama.mock.calls[1][0] as Record<string, unknown>;
+      expect(second.n_gpu_layers).toBe(0);
+      expect(second.devices).toBeUndefined();
     });
 
     it('goes to the CPU when the NPU init fails and the device has no usable GPU', async () => {

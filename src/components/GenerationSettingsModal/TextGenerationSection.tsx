@@ -5,7 +5,7 @@ import { AdvancedToggle } from '../AdvancedToggle';
 import { useThemedStyles } from '../../theme';
 import { useAppStore, selectIsLiteRT } from '../../stores';
 import { hardwareService } from '../../services';
-import { maxTokensSliderMax, boundedMaxTokens } from '../../utils/contextBudget';
+import { maxTokensCeiling, boundedMaxTokens } from '../../utils/contextBudget';
 import { createStyles } from './styles';
 import {
   CpuThreadsSlider,
@@ -60,7 +60,7 @@ function buildLlamaConfig(modelMaxContext: number | null = null, contextLength =
     {
       key: 'maxTokens',
       label: 'Max Tokens',
-      min: 64, max: maxTokensSliderMax(contextLength), step: 64,
+      min: 64, max: maxTokensCeiling(contextLength), step: 64,
       bound: (v) => boundedMaxTokens(v, contextLength),
       format: (v) => v >= 1024 ? `${(v / 1024).toFixed(1)}K` : v.toString(),
       description: 'Maximum length of generated response',

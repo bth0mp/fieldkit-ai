@@ -506,8 +506,12 @@ describe('buildCompletionParams', () => {
   it('never lets n_predict take the space the prompt needs', () => {
     const params = buildCompletionParams({ ...defaultSettings, maxTokens: 8192 }, { contextLength: 2048 });
     expect(params.n_predict).toBeLessThan(2048);
-    expect(params.n_predict).toBe(Math.floor(2048 * 0.4));
+    expect(params.n_predict).toBe(768);
     expect(2048 - params.n_predict).toBeGreaterThanOrEqual(Math.floor(2048 * 0.55));
+  });
+
+  it('steps the bound in 64s: 4096 gives 1600, and 8192 at 4096 is sent as 1600', () => {
+    expect(buildCompletionParams({ ...defaultSettings, maxTokens: 8192 }, { contextLength: 4096 }).n_predict).toBe(1600);
   });
 
   it('keeps the requested Max Tokens when it already leaves prompt space', () => {

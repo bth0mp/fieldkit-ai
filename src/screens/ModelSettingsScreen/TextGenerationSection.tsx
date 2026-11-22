@@ -5,7 +5,7 @@ import { SliderSetting } from '../../components/SliderSetting';
 import { useThemedStyles } from '../../theme';
 import { useAppStore, selectIsLiteRT } from '../../stores';
 import { hardwareService } from '../../services';
-import { maxTokensSliderMax, boundedMaxTokens } from '../../utils/contextBudget';
+import { maxTokensCeiling, boundedMaxTokens } from '../../utils/contextBudget';
 import { createStyles } from './styles';
 import { TextGenerationAdvanced, LiteRTTextGenerationAdvanced } from './TextGenerationAdvanced';
 import { ShowGenerationDetailsToggle } from '../../components/settings/textGenAdvancedSections';
@@ -91,7 +91,7 @@ const LlamaTextSettings: React.FC = () => {
         label="Max Tokens"
         description="Maximum response length"
         value={boundedMaxTokens(maxTokens, contextLength)}
-        min={64} max={maxTokensSliderMax(contextLength)} step={64}
+        min={64} max={maxTokensCeiling(contextLength)} step={64}
         formatValue={formatMaxTokens}
         onChange={(value) => updateSettings({ maxTokens: value })}
       />
