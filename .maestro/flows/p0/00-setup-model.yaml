@@ -191,16 +191,6 @@ tags:
       - evalScript: "${console.log('SETUP - Model tapped')}"
       - takeScreenshot: 14-tapped
 
-      # Handle low memory warning
-      - runFlow:
-          when:
-            visible:
-              text: "Load Anyway"
-          commands:
-            - evalScript: "${console.log('SETUP - Low memory, load anyway')}"
-            - tapOn:
-                text: "Load Anyway"
-
       # Wait for model to load
       - evalScript: "${console.log('SETUP - Waiting for load')}"
       - extendedWaitUntil:

@@ -113,6 +113,10 @@ tags:
     timeout: 10000
 - tapOn:
     text: "Image Models"
+- extendedWaitUntil:
+    visible:
+      id: "your-models-image"
+    timeout: 10000
 - assertVisible:
     text: "In use"
 - tapOn:

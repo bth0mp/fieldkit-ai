@@ -168,16 +168,6 @@ tags:
     timeout: 30000
 - takeScreenshot: 04-selected
 
-# Handle low memory warning
-- runFlow:
-    when:
-      visible:
-        text: "Load Anyway"
-    commands:
-      - evalScript: "${console.log('SELECTION - Load anyway')}"
-      - tapOn:
-          text: "Load Anyway"
-
 # ==============================
 # Verify model loaded
 # ==============================
@@ -189,6 +179,7 @@ tags:
 
 - assertVisible:
     id: "model-chip-label"
+    text: "(?!No model$).+"
 - assertNotVisible:
     id: "setup-card"
 - evalScript: "${console.log('SELECTION - PASSED')}"
