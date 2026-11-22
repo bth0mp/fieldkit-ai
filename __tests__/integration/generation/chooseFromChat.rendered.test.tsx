@@ -382,6 +382,31 @@ describe('Choosing a model from a chat (rendered)', () => {
     expect(await byText('Hi there.')).toBeTruthy();
   });
 
+  it('Unload with a message queued behind the reply: nothing is loaded and nothing is sent; Use then sends it once, to the new model', async () => {
+    await boot({ models: [FIRST, SECOND] });
+    const { llmService } = require('../../../src/services/llm');
+    t.boundary.llama!.scriptCompletion({ text: 'one two three', pauseAfter: 'one' });
+    press(t.ui.getByTestId('new-chat-button'));
+    press(await byLabel('Use First')); // marks it as the model to come back to, as every Use does
+    await t.rtl.waitFor(() => expect(shown('chat-input')).toBe(true), TIMEOUT);
+    send('question one');
+    await t.rtl.waitFor(() => expect(stores().useChatStore.getState().streamingMessage).toContain('one'), TIMEOUT);
+    send('question two');
+    await t.rtl.waitFor(() => expect(t.ui.queryByText('question two') !== null).toBe(true), TIMEOUT);
+    await openFromHeader();
+    press(await byLabel('Unload First'));
+    await t.rtl.waitFor(() => expect(state().activeModelId).toBeNull(), TIMEOUT);
+    await settle(500);
+    expect(t.boundary.llama!.calls.completion).toHaveLength(1);
+    expect([llmService.isModelLoaded(), state().activeModelId]).toEqual([false, null]);
+    t.boundary.llama!.scriptCompletion({ text: 'Answer two.' });
+    press(await byLabel('Use Second'));
+    expect(await byText('Answer two.')).toBeTruthy();
+    await settle(300);
+    expect(t.boundary.llama!.calls.completion).toHaveLength(2);
+    expect(llmService.getLoadedModelPath()).toBe(pathOf('second.gguf'));
+  });
+
   it('a chosen remote model answers while a local model is loaded for another job (the image classifier)', async () => {
     await boot({ models: [FIRST], imageModels: [SD_ONE] }, { image: 'sd1' });
     t.rtl.act(() => { state().updateSettings({ imageGenerationMode: 'auto', autoDetectMethod: 'llm', classifierModelId: 'first' }); });
