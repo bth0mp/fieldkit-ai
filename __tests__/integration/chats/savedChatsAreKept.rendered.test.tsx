@@ -12,10 +12,14 @@
 import { installNativeBoundary, requireRTL } from '../../harness/nativeBoundary';
 import { setupChatScreen } from '../../harness/chatHarness';
 import {
+  LIVE_DATABASE_FILE,
+  TORN_DATABASE,
   failReadsOf,
   markOversized,
   rawRow,
   seedRow,
+  sqliteOpens,
+  sqliteStillOpen,
   stopFailingReads,
   wipeFlakyStorage,
   writtenKeys,
@@ -67,6 +71,16 @@ function storedText(): string {
   return Array.from({ length: Number(head.slice(MANIFEST.length)) }, (_, i) => rawRow(`${KEY}::chunk:${i}`) ?? '').join('');
 }
 
+/** AsyncStorage's database file on the phone's disk, as the file system fake holds it. */
+async function putLiveDatabase(fs: NonNullable<ReturnType<typeof installNativeBoundary>['fs']>, content = 'sqlite') {
+  fs.seedDir('/caches');
+  await (fs.module.writeFile as (path: string, text: string) => Promise<void>)(LIVE_DATABASE_FILE, content);
+}
+
+/** Files the app left in the cache folder. */
+const cacheFiles = async (fs: { module: Record<string, unknown> }) =>
+  ((await (fs.module.readDir as (path: string) => Promise<{ name: string }[]>)('/caches')) ?? []).map(f => f.name);
+
 /** The real Chats list, as the Chats tab shows it. */
 function openChatsList() {
   const React = require('react');
@@ -102,7 +116,7 @@ describe('saved chats are kept', () => {
   it('opens a history too large for Android to read in one row', async () => {
     seedRow(KEY, savedValue('Long history'));
     markOversized(KEY);
-    const h = await setupChatScreen({ engine: 'llama' });
+    const h = await setupChatScreen({ engine: 'llama', beforeHome: boundary => putLiveDatabase(boundary.fs!) });
     h.render();
 
     const list = openChatsList();
@@ -112,6 +126,31 @@ describe('saved chats are kept', () => {
     await h.rtl.waitFor(() => expect(h.view!.queryByText(/Noted\./)).not.toBeNull());
     await h.rtl.waitFor(() => expect(rawRow(KEY)?.startsWith(MANIFEST)).toBe(true));
     expect(storedTitles()).toEqual(expect.arrayContaining(['Long history', 'one more']));
+    // The history was read from a copy: the live database was never opened, and the copy is gone.
+    expect(sqliteOpens().length).toBeGreaterThan(0);
+    expect(sqliteOpens().map(open => open.name)).not.toContain('RKStorage');
+    expect(sqliteStillOpen()).toBe(0);
+    expect(await cacheFiles(h.boundary.fs!)).toEqual([]);
+  });
+
+  it('says so when the copy of a too large history was taken mid-write, and Try again reads a fresh one', async () => {
+    const boundary = installNativeBoundary({ fs: true });
+    const rtl = requireRTL();
+    seedRow(KEY, savedValue('Long history'));
+    markOversized(KEY);
+    await putLiveDatabase(boundary.fs!, TORN_DATABASE);
+    const list = openChatsList();
+
+    // A copy that fails the database check is a failed read, not an empty history.
+    await rtl.waitFor(() => expect(list.getByText(NOTICE)).toBeTruthy(), { timeout: 5000 });
+    expect(list.queryByText('Long history')).toBeNull();
+    expect(await cacheFiles(boundary.fs!)).toEqual([]);
+    expect(sqliteStillOpen()).toBe(0);
+
+    await putLiveDatabase(boundary.fs!);
+    rtl.fireEvent.press(list.getByRole('button', { name: 'Try again' }));
+    await rtl.waitFor(() => expect(list.getByText('Long history')).toBeTruthy());
+    expect(await cacheFiles(boundary.fs!)).toEqual([]);
   });
 
   it('says so when saved chats cannot be read, and Try again brings them back', async () => {

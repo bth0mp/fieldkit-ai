@@ -4,7 +4,7 @@
  * The data lives in one in-memory map on `globalThis`, so it survives `jest.resetModules()` (a relaunch)
  * as the device disk does. A read can be made to fail once, or for good. A row can be marked oversized:
  * AsyncStorage's own read of it rejects (Android's cursor window), while op-sqlite, which opens the same
- * database (`RKStorage`), can still read it in pieces. A write to that key replaces the row.
+ * database (`RKStorage`), can still read it in pieces from a copy of the file. A write to that key replaces the row.
  *
  * Use both as modules at the top of the test file (jest hoists them):
  *
@@ -18,11 +18,13 @@ type Disk = {
   failing: Map<string, { message: string; times: number }>;
   oversized: Set<string>;
   writtenKeys: string[];
+  sqliteOpens: { name: string; location?: string }[];
+  sqliteOpen: number;
 };
 
 function disk(): Disk {
   const g = globalThis as unknown as { __FLAKY_STORAGE_DISK__?: Disk };
-  g.__FLAKY_STORAGE_DISK__ ??= { data: {}, failing: new Map(), oversized: new Set(), writtenKeys: [] };
+  g.__FLAKY_STORAGE_DISK__ ??= { data: {}, failing: new Map(), oversized: new Set(), writtenKeys: [], sqliteOpens: [], sqliteOpen: 0 };
   return g.__FLAKY_STORAGE_DISK__;
 }
 
@@ -33,6 +35,8 @@ export function wipeFlakyStorage(): void {
   d.failing.clear();
   d.oversized.clear();
   d.writtenKeys = [];
+  d.sqliteOpens = [];
+  d.sqliteOpen = 0;
 }
 
 /** Put a value on the disk without going through the app. */
@@ -112,11 +116,41 @@ export function flakyAsyncStorageModule() {
   return { __esModule: true, default: module, ...module };
 }
 
-/** op-sqlite: `RKStorage` answers the length and substr reads of an oversized row; anything else is empty. */
+/** Where Android keeps AsyncStorage's database, as op-sqlite reports it (with the trailing slash). */
+export const LIVE_DATABASE_DIRECTORY = '/data/user/0/app/databases/';
+export const LIVE_DATABASE_FILE = `${LIVE_DATABASE_DIRECTORY}RKStorage`;
+/** What a database file must hold for quick_check to report damage (a copy taken mid-write). */
+export const TORN_DATABASE = 'torn';
+
+/** Every database op-sqlite was asked to open since the last wipe. */
+export function sqliteOpens(): { name: string; location?: string }[] {
+  return [...disk().sqliteOpens];
+}
+
+/** How many opened databases have not been closed yet. */
+export function sqliteStillOpen(): number {
+  return disk().sqliteOpen;
+}
+
+/**
+ * op-sqlite as a phone has it: a database is a file the test put on the file system (the react-native-fs
+ * fake). Opening `RKStorage` itself is refused, since a second SQLite copy must not touch the live file.
+ * A database file holding `TORN_DATABASE` fails PRAGMA quick_check. The row an `oversized` key names is
+ * served in pieces from any database file that exists.
+ */
 export function flakyOpSqliteModule() {
   const none = { rows: [], insertId: 0, rowsAffected: 0 };
-  const execute = (name: string, sql: string, params: unknown[] = []) => {
-    if (name !== 'RKStorage') return none;
+  const execute = async (name: string, location: string | undefined, sql: string, params: unknown[] = []) => {
+    const fs = require('react-native-fs');
+    let content: string;
+    try {
+      content = await fs.readFile(`${location}/${name}`, 'utf8');
+    } catch {
+      throw new Error('unable to open database file');
+    }
+    if (/quick_check/.test(sql)) {
+      return { ...none, rows: [{ quick_check: content === TORN_DATABASE ? 'database disk image is malformed' : 'ok' }] };
+    }
     const d = disk();
     const key = String(params[params.length - 1]);
     const value = d.oversized.has(key) ? d.data[key] : undefined;
@@ -129,11 +163,18 @@ export function flakyOpSqliteModule() {
     return none;
   };
   return {
-    open: jest.fn(({ name }: { name: string }) => ({
-      execute: jest.fn(async (sql: string, params?: unknown[]) => execute(name, sql, params)),
-      executeSync: jest.fn((sql: string, params?: unknown[]) => execute(name, sql, params)),
-      close: jest.fn(),
-      delete: jest.fn(),
-    })),
+    ANDROID_DATABASE_PATH: LIVE_DATABASE_DIRECTORY,
+    open: jest.fn(({ name, location }: { name: string; location?: string }) => {
+      const d = disk();
+      d.sqliteOpens.push({ name, location });
+      if (name === 'RKStorage') throw new Error('The live AsyncStorage database must not be opened here');
+      d.sqliteOpen += 1;
+      return {
+        execute: jest.fn(async (sql: string, params?: unknown[]) => execute(name, location, sql, params)),
+        executeSync: jest.fn(() => none),
+        close: jest.fn(() => { d.sqliteOpen -= 1; }),
+        delete: jest.fn(),
+      };
+    }),
   };
 }

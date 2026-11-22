@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { open } from '@op-engineering/op-sqlite';
+import { ANDROID_DATABASE_PATH, open } from '@op-engineering/op-sqlite';
 import { Platform } from 'react-native';
+import RNFS from 'react-native-fs';
 import type { StateStorage } from 'zustand/middleware';
 
 /** The AsyncStorage calls a chunked value needs; the multi-key calls run as one transaction on Android. */
@@ -107,36 +108,65 @@ export function createChunkedStorage(
   };
 }
 
-// AsyncStorage's Android database, in the app's databases folder where op-sqlite opens by name.
+// AsyncStorage's Android database, in the app's databases folder (op-sqlite reports that folder, with a
+// trailing slash, as ANDROID_DATABASE_PATH).
 const ASYNC_STORAGE_DB = 'RKStorage';
 const ASYNC_STORAGE_TABLE = 'catalystLocalStorage';
 
+let copies = 0;
+
+/** Delete a file if it is there; a copy that is already gone is not an error. */
+async function removeQuietly(path: string): Promise<void> {
+  try {
+    await RNFS.unlink(path);
+  } catch {
+    // Nothing to delete.
+  }
+}
+
 /**
  * Read an Android AsyncStorage row that outgrew the cursor window, in pieces through op-sqlite.
+ *
+ * op-sqlite carries its own SQLite, and two SQLite copies in one process do not see each other's file
+ * locks: opening AsyncStorage's live database could roll back a write the other copy is committing. So the
+ * database file is copied to the cache folder first (never its journal) and the copy is read, then deleted.
+ * A copy taken in the middle of a write fails `quick_check`; that throws, and Try again copies afresh.
  *
  * Runs once per affected store: the next write replaces the row with a chunked value.
  */
 export const readOversizedRow: OversizedReader = async key => {
   if (Platform.OS !== 'android') return null;
-  const db = open({ name: ASYNC_STORAGE_DB });
+  copies += 1;
+  const copyName = `chats-copy-${Date.now()}-${copies}.db`;
+  const copyPath = `${RNFS.CachesDirectoryPath}/${copyName}`;
   try {
-    const { rows } = await db.execute(
-      `SELECT length(value) AS units FROM ${ASYNC_STORAGE_TABLE} WHERE key = ?`,
-      [key],
-    );
-    const units = rows[0]?.units;
-    if (typeof units !== 'number') return null;
-    const parts: string[] = [];
-    // SQLite counts characters from 1 in both length() and substr().
-    for (let start = 1; start <= units; start += CHUNK_UNITS) {
-      const piece = await db.execute(
-        `SELECT substr(value, ?, ?) AS part FROM ${ASYNC_STORAGE_TABLE} WHERE key = ?`,
-        [start, CHUNK_UNITS, key],
+    await RNFS.copyFile(`${ANDROID_DATABASE_PATH}${ASYNC_STORAGE_DB}`, copyPath);
+    const db = open({ name: copyName, location: RNFS.CachesDirectoryPath });
+    try {
+      const check = await db.execute('PRAGMA quick_check');
+      const verdict = Object.values(check.rows[0] ?? {})[0];
+      if (verdict !== 'ok') throw new Error('the copy of the saved chats database is damaged');
+      const { rows } = await db.execute(
+        `SELECT length(value) AS units FROM ${ASYNC_STORAGE_TABLE} WHERE key = ?`,
+        [key],
       );
-      parts.push(String(piece.rows[0]?.part ?? ''));
+      const units = rows[0]?.units;
+      if (typeof units !== 'number') return null;
+      const parts: string[] = [];
+      // SQLite counts characters from 1 in both length() and substr().
+      for (let start = 1; start <= units; start += CHUNK_UNITS) {
+        const piece = await db.execute(
+          `SELECT substr(value, ?, ?) AS part FROM ${ASYNC_STORAGE_TABLE} WHERE key = ?`,
+          [start, CHUNK_UNITS, key],
+        );
+        parts.push(String(piece.rows[0]?.part ?? ''));
+      }
+      return parts.join('');
+    } finally {
+      db.close();
     }
-    return parts.join('');
   } finally {
-    db.close();
+    await removeQuietly(copyPath);
+    await removeQuietly(`${copyPath}-journal`);
   }
 };
