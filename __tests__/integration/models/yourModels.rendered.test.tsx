@@ -15,7 +15,6 @@ import { GB } from '../../harness/nativeBoundary';
 jest.mock('@react-navigation/native', () => jest.requireActual('@react-navigation/native'));
 jest.mock('../../../src/hooks/useFocusTrigger', () => ({ useFocusTrigger: () => 0 }));
 
-jest.setTimeout(40000);
 
 const TIMEOUT = { timeout: 4000 };
 const EMPTY = 'No text models yet. Download one below, or add a remote server.';

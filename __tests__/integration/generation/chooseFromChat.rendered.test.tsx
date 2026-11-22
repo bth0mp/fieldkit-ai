@@ -17,7 +17,6 @@ jest.mock('@react-navigation/native', () => jest.requireActual('@react-navigatio
 jest.mock('../../../src/hooks/useFocusTrigger', () => ({ useFocusTrigger: () => 0 }));
 
 
-jest.setTimeout(40000);
 
 const TIMEOUT = { timeout: 4000 };
 const FIRST = { id: 'first', name: 'First', fileSize: 1 * GB };

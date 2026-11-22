@@ -14,7 +14,6 @@ import { GB } from '../../harness/nativeBoundary';
 jest.mock('@react-navigation/native', () => jest.requireActual('@react-navigation/native'));
 jest.mock('../../../src/hooks/useFocusTrigger', () => ({ useFocusTrigger: () => 0 }));
 
-jest.setTimeout(40000);
 
 const TIMEOUT = { timeout: 4000 };
 const REPO = 'org/Test-GGUF';
@@ -186,5 +185,5 @@ describe('Use on file, image and transcription cards (rendered)', () => {
     press(t.ui.getByTestId('transcription-models-tab'));
     await t.rtl.waitFor(() => expect(t.ui.queryByTestId('transcription-model-card-0-use') !== null).toBe(true), TIMEOUT);
     expect(hiddenByGroup(t.ui.getByLabelText('Use Tiny'))).toBe(false);
-  }, 30000);
+  });
 });

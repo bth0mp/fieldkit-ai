@@ -9,6 +9,9 @@ import type { DownloadedModel, ONNXImageModel } from '../../src/types';
 import { installHfApiFake, type HfApiFake } from './hfApiFake';
 import { setDeviceMemory } from './deviceMemory';
 
+// The whole app boots in each of these tests: the first takes longer than Jest's 10 s default on a slow machine.
+jest.setTimeout(40000);
+
 const TIMEOUT = { timeout: 4000 };
 
 export interface ModelsAppOptions {
