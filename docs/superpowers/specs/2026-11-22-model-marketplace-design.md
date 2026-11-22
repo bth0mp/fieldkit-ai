@@ -1,6 +1,6 @@
 # Choosing a model opens the Models screen
 
-Status: draft for the owner's approval, 2026-11-22.
+Status: approved by the owner, 2026-11-22.
 
 ## Intent
 
