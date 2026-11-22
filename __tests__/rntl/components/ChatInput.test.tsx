@@ -14,6 +14,9 @@ import React from 'react';
 import { Keyboard, Platform } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { ChatInput } from '../../../src/components/ChatInput';
+import { activeModelService } from '../../../src/services/activeModelService';
+import { audioRecorderService } from '../../../src/services/audioRecorderService';
+import { whisperService } from '../../../src/services/whisperService';
 
 // Mock image picker
 jest.mock('react-native-image-picker', () => ({
@@ -1469,6 +1472,86 @@ describe('ChatInput', () => {
       rerender(<ChatInput {...defaultProps} conversationId="conv-2" />);
 
       expect(mockClearResult).toHaveBeenCalled();
+    });
+
+    describe('a dictation stays in the chat it was spoken in', () => {
+      const whisperHook = (finalResult: string | null) => ({
+        isRecording: false,
+        isModelLoaded: true,
+        isModelLoading: false,
+        isTranscribing: false,
+        partialResult: '',
+        finalResult,
+        error: null,
+        startRecording: jest.fn().mockResolvedValue(undefined),
+        stopRecording: jest.fn(),
+        clearResult: jest.fn(),
+      });
+      const withWhisperModel = () => mockUseWhisperStore.mockReturnValue({ downloadedModelId: 'whisper-model-1' });
+
+      it('realtime: a transcript that arrives after switching chats is not put in the new chat', () => {
+        withWhisperModel();
+        mockUseWhisperTranscription.mockReturnValue(whisperHook(null));
+        const onSend = jest.fn();
+        const view = render(<ChatInput {...defaultProps} onSend={onSend} conversationId="conv-1" />);
+        fireEvent.press(view.getByTestId('voice-record-button'));
+        view.rerender(<ChatInput {...defaultProps} onSend={onSend} conversationId="conv-2" />);
+
+        mockUseWhisperTranscription.mockReturnValue(whisperHook('Meant for chat one'));
+        view.rerender(<ChatInput {...defaultProps} onSend={onSend} conversationId="conv-2" />);
+
+        expect(view.getByTestId('chat-input').props.value).toBe('');
+        expect(onSend).not.toHaveBeenCalled();
+      });
+
+      it('realtime: a transcript that arrives in the same chat is put in its box', () => {
+        withWhisperModel();
+        mockUseWhisperTranscription.mockReturnValue(whisperHook(null));
+        const view = render(<ChatInput {...defaultProps} conversationId="conv-1" />);
+        fireEvent.press(view.getByTestId('voice-record-button'));
+        mockUseWhisperTranscription.mockReturnValue(whisperHook('Meant for chat one'));
+        view.rerender(<ChatInput {...defaultProps} conversationId="conv-1" />);
+        expect(view.getByTestId('chat-input').props.value).toBe('Meant for chat one');
+      });
+
+      describe('direct audio model', () => {
+        let finishTranscription: (text: string) => void;
+        const spies: jest.SpyInstance[] = [];
+        afterEach(() => spies.splice(0).forEach(spy => spy.mockRestore()));
+        beforeEach(() => {
+          withWhisperModel();
+          mockUseWhisperTranscription.mockReturnValue(whisperHook(null));
+          spies.push(jest.spyOn(activeModelService, 'supportsAudioInput').mockReturnValue(true));
+          spies.push(jest.spyOn(audioRecorderService, 'supportsDirectAudioInput').mockReturnValue(true));
+          spies.push(jest.spyOn(audioRecorderService, 'startRecording').mockResolvedValue(undefined));
+          spies.push(jest.spyOn(audioRecorderService, 'stopRecording').mockResolvedValue({ path: '/rec.wav', durationSeconds: 2 }));
+          spies.push(jest.spyOn(whisperService, 'isModelLoaded').mockReturnValue(true));
+          spies.push(jest.spyOn(whisperService, 'transcribeFile').mockImplementation(
+            () => new Promise(resolve => { finishTranscription = (text: string) => resolve(text); }),
+          ));
+        });
+
+        const dictate = async (switchTo: string) => {
+          const view = render(<ChatInput {...defaultProps} conversationId="conv-1" />);
+          await act(async () => { fireEvent.press(view.getByTestId('voice-record-button')); });
+          await waitFor(() => expect(view.getByText('Stop')).toBeTruthy());
+          await act(async () => { fireEvent.press(view.getByTestId('voice-record-button')); });
+          await waitFor(() => expect(whisperService.transcribeFile).toHaveBeenCalled());
+          view.rerender(<ChatInput {...defaultProps} conversationId={switchTo} />);
+          await act(async () => { finishTranscription('Meant for chat one'); });
+          return view;
+        };
+
+        it('a transcript that arrives after switching chats is not put in the new chat', async () => {
+          const view = await dictate('conv-2');
+          expect(view.getByTestId('chat-input').props.value).toBe('');
+        });
+
+        it('a transcript that arrives in the same chat is put in its box', async () => {
+          const view = await dictate('conv-1');
+          await waitFor(() => expect(view.getByTestId('chat-input').props.value).toBe('Meant for chat one'));
+        });
+      });
     });
 
     it('calls stopRecording and clearResult on cancel recording', () => {

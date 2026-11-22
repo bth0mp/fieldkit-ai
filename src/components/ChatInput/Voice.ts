@@ -20,6 +20,10 @@ interface UseVoiceInputParams {
 
 export function useVoiceInput({ conversationId, onTranscript, onAudioAttachment, onAutoSend }: UseVoiceInputParams) {
   const recordingConversationIdRef = useRef<string | null>(null);
+  // The chat on screen now. Transcription takes seconds and the person can open another chat meanwhile;
+  // the callbacks then belong to that chat, so a result is checked against this right before dispatch.
+  const conversationIdRef = useRef<string | null>(conversationId ?? null);
+  conversationIdRef.current = conversationId ?? null;
   const onTranscriptRef = useRef(onTranscript);
   onTranscriptRef.current = onTranscript;
   const onAudioAttachmentRef = useRef(onAudioAttachment);
@@ -136,6 +140,7 @@ export function useVoiceInput({ conversationId, onTranscript, onAudioAttachment,
       const { path, durationSeconds } = await audioRecorderService.stopRecording();
       setIsDirectRecording(false);
       if (!recordingConversationIdRef.current || recordingConversationIdRef.current === conversationId) {
+        const recordedIn = conversationIdRef.current;
         const format = audioRecorderService.getFormat();
         // In Audio Mode, transcribe FIRST, then auto-send with the text.
         // Sending audio with EMPTY text made the intent router classify on "" — so a
@@ -147,7 +152,9 @@ export function useVoiceInput({ conversationId, onTranscript, onAudioAttachment,
           const { whisperReady, transcript } = await transcribeRecordedFile(path, '[Voice] transcription error:');
           // NEVER dispatch an empty transcript — that misroutes to the text model.
           const outcome = resolveTranscription(whisperReady, transcript);
-          if (outcome.dispatch) {
+          if (recordedIn !== conversationIdRef.current) {
+            logger.log('[Voice] transcript dropped - its chat is no longer open');
+          } else if (outcome.dispatch) {
             onAutoSendRef.current(outcome.text, { uri: path, format, durationSeconds });
           } else {
             setDirectError(outcome.message);
@@ -161,7 +168,9 @@ export function useVoiceInput({ conversationId, onTranscript, onAudioAttachment,
           // are unused here now (no attachment) — the temp recording file is transient.
           const { whisperReady, transcript } = await transcribeRecordedFile(path, '[Voice] chat-mode dictation transcription error:');
           const outcome = resolveTranscription(whisperReady, transcript);
-          if (outcome.dispatch) {
+          if (recordedIn !== conversationIdRef.current) {
+            logger.log('[Voice] transcript dropped - its chat is no longer open');
+          } else if (outcome.dispatch) {
             onTranscriptRef.current(outcome.text);
           } else {
             setDirectError(outcome.message);
@@ -185,6 +194,7 @@ export function useVoiceInput({ conversationId, onTranscript, onAudioAttachment,
         recordingConversationIdRef.current = null;
         return;
       }
+      const recordedIn = conversationIdRef.current;
       setIsTranscribingFile(true);
       let whisperReady = false;
       let transcript = '';
@@ -198,7 +208,9 @@ export function useVoiceInput({ conversationId, onTranscript, onAudioAttachment,
       recordingConversationIdRef.current = null;
       // NEVER dispatch an empty transcript — that misroutes to the text model.
       const outcome = resolveTranscription(whisperReady, transcript);
-      if (outcome.dispatch) {
+      if (recordedIn !== conversationIdRef.current) {
+        logger.log('[Voice] transcript dropped - its chat is no longer open');
+      } else if (outcome.dispatch) {
         if (onAutoSendRef.current) {
           onAutoSendRef.current(outcome.text, { uri: path, format: 'wav', durationSeconds });
         } else {
@@ -269,10 +281,12 @@ export function useVoiceInput({ conversationId, onTranscript, onAudioAttachment,
     recordingController.setPhase(isRecording ? 'recording' : isTranscribing ? 'transcribing' : 'idle');
   }, [isRecording, isTranscribing]);
 
+  // Switching chats discards a finished whisper result from the old chat. The recording keeps its chat:
+  // forgetting it here made a result that arrived after the switch look unowned and land in the new chat.
+  // The finalResult effect and the stop paths release it.
   useEffect(() => {
     if (recordingConversationIdRef.current && recordingConversationIdRef.current !== conversationId) {
       clearResult();
-      recordingConversationIdRef.current = null;
     }
   }, [conversationId, clearResult]);
 
