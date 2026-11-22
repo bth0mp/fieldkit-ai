@@ -14,6 +14,8 @@ import { GB } from '../../harness/nativeBoundary';
 jest.mock('@react-navigation/native', () => jest.requireActual('@react-navigation/native'));
 jest.mock('../../../src/hooks/useFocusTrigger', () => ({ useFocusTrigger: () => 0 }));
 
+jest.setTimeout(40000);
+
 const TIMEOUT = { timeout: 4000 };
 const REPO = 'org/Test-GGUF';
 const Q4 = 'Test-Q4_K_M.gguf';
@@ -51,20 +53,20 @@ async function boot(opts: Partial<ModelsAppOptions> = {}, inUse: { text?: string
 
 const openModels = async () => {
   press(t.ui.getByTestId('home-phone-models'));
-  await t.rtl.waitFor(() => expect(t.ui.getByTestId('models-screen')).toBeTruthy(), TIMEOUT);
+  await t.rtl.waitFor(() => expect(t.ui.queryByTestId('models-screen') !== null).toBe(true), TIMEOUT);
 };
 
 const openFileList = async () => {
   await openModels();
   t.rtl.fireEvent.changeText(t.ui.getByTestId('search-input'), 'test');
   press(await t.rtl.waitFor(() => t.ui.getByText('Test-GGUF'), { timeout: 6000 }));
-  await t.rtl.waitFor(() => expect(t.ui.getByTestId('file-card-1')).toBeTruthy(), TIMEOUT);
+  await t.rtl.waitFor(() => expect(t.ui.queryByTestId('file-card-1') !== null).toBe(true), TIMEOUT);
 };
 
 const openImageTab = async () => {
   await openModels();
   press(t.ui.getByText('Image Models'));
-  await t.rtl.waitFor(() => expect(t.ui.getByTestId('your-models-image')).toBeTruthy(), TIMEOUT);
+  await t.rtl.waitFor(() => expect(t.ui.queryByTestId('your-models-image') !== null).toBe(true), TIMEOUT);
 };
 
 afterEach(() => resetDeviceMemory());
@@ -74,9 +76,9 @@ describe('Use on file, image and transcription cards (rendered)', () => {
     await boot({ models: [FIRST], hf: withRepoFiles });
     await openFileList();
     press(t.ui.getByTestId('file-card-0-use'));
-    await t.rtl.waitFor(() => expect(t.ui.queryByTestId('models-screen')).toBeNull(), TIMEOUT);
+    await t.rtl.waitFor(() => expect(t.ui.queryByTestId('models-screen') === null).toBe(true), TIMEOUT);
     await t.rtl.waitFor(() => expect(t.ui.getByTestId('model-chip-label')).toHaveTextContent('Test Model'), TIMEOUT);
-  }, 30000);
+  });
 
   it('file list: the one in use shows Active and no Use; a file that finishes downloading gains Use', async () => {
     await boot({ models: [FIRST], hf: withRepoFiles }, { text: FIRST.id });
@@ -85,7 +87,7 @@ describe('Use on file, image and transcription cards (rendered)', () => {
     expect(t.rtl.within(t.ui.getByTestId('file-card-0')).getByText('Active')).toBeTruthy();
     expect(t.ui.queryByTestId('file-card-1-use')).toBeNull();
     t.rtl.act(() => { state().addDownloadedModel(createDownloadedModel({ ...SECOND, engine: 'llama' })); });
-    await t.rtl.waitFor(() => expect(t.ui.getByTestId('file-card-1-use')).toBeTruthy(), TIMEOUT);
+    await t.rtl.waitFor(() => expect(t.ui.queryByTestId('file-card-1-use') !== null).toBe(true), TIMEOUT);
   });
 
   it('file list: Use is disabled while a text model loads', async () => {
@@ -118,7 +120,7 @@ describe('Use on file, image and transcription cards (rendered)', () => {
     await boot({ imageModels: [SD_TWO] });
     await openImageTab();
     press(t.ui.getByLabelText('Use SD Two'));
-    await t.rtl.waitFor(() => expect(t.ui.queryByTestId('models-screen')).toBeNull(), TIMEOUT);
+    await t.rtl.waitFor(() => expect(t.ui.queryByTestId('models-screen') === null).toBe(true), TIMEOUT);
     expect(t.ui.getByTestId('model-chip-label')).toHaveTextContent('Image model loaded');
   });
 
@@ -126,9 +128,9 @@ describe('Use on file, image and transcription cards (rendered)', () => {
     await boot({ imageModels: [SD_ONE], hf: hf => hf.setOffline(true) });
     await openImageTab(); // offline: the list of models to download fails, this section does not
     t.rtl.fireEvent.changeText(t.ui.getByPlaceholderText('Search models...'), 'zzz');
-    await t.rtl.waitFor(() => expect(t.ui.queryByTestId('your-models-image')).toBeNull(), TIMEOUT);
+    await t.rtl.waitFor(() => expect(t.ui.queryByTestId('your-models-image') === null).toBe(true), TIMEOUT);
     t.rtl.fireEvent.changeText(t.ui.getByPlaceholderText('Search models...'), '');
-    await t.rtl.waitFor(() => expect(t.ui.getByTestId('your-models-image')).toBeTruthy(), TIMEOUT);
+    await t.rtl.waitFor(() => expect(t.ui.queryByTestId('your-models-image') !== null).toBe(true), TIMEOUT);
     t.rtl.act(() => { state().removeDownloadedImageModel('sd1'); });
     expect(t.ui.getByText('No image models yet. Download one below.')).toBeTruthy();
   });

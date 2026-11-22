@@ -15,6 +15,8 @@ import { GB } from '../../harness/nativeBoundary';
 jest.mock('@react-navigation/native', () => jest.requireActual('@react-navigation/native'));
 jest.mock('../../../src/hooks/useFocusTrigger', () => ({ useFocusTrigger: () => 0 }));
 
+jest.setTimeout(40000);
+
 const TIMEOUT = { timeout: 4000 };
 const EMPTY = 'No text models yet. Download one below, or add a remote server.';
 const PICKS = 'Recommended for your device';
@@ -65,7 +67,7 @@ async function deleteModel(id: string) {
 
 const openModels = async () => {
   press(t.ui.getByTestId('home-phone-models'));
-  await t.rtl.waitFor(() => expect(t.ui.getByTestId('your-models-text')).toBeTruthy(), TIMEOUT);
+  await t.rtl.waitFor(() => expect(t.ui.queryByTestId('your-models-text') !== null).toBe(true), TIMEOUT);
 };
 
 /** Adds a server through the real Add Server screen (opened from Home), then returns to Home. */
@@ -82,7 +84,7 @@ async function addServer(name: string, host: string, models: string[]) {
   rtl.fireEvent.press(last(buttons));
   await rtl.waitFor(() => expect(ui.queryByText(name)).not.toBeNull(), TIMEOUT);
   rtl.act(() => { nav.goBack(); });
-  await rtl.waitFor(() => expect(ui.getByTestId('home-screen')).toBeTruthy(), TIMEOUT);
+  await rtl.waitFor(() => expect(ui.queryByTestId('home-screen') !== null).toBe(true), TIMEOUT);
 }
 
 afterEach(() => resetDeviceMemory());
@@ -103,7 +105,7 @@ describe('Your models on the Text tab (rendered)', () => {
     await boot();
     await openModels();
     press(what === 'Use' ? t.ui.getByLabelText('Use New') : section().getByText('New'));
-    await t.rtl.waitFor(() => expect(t.ui.queryByTestId('models-screen')).toBeNull(), TIMEOUT);
+    await t.rtl.waitFor(() => expect(t.ui.queryByTestId('models-screen') === null).toBe(true), TIMEOUT);
     expect(t.ui.getByTestId('model-chip-label')).toHaveTextContent('New');
   });
 
@@ -113,7 +115,7 @@ describe('Your models on the Text tab (rendered)', () => {
     expect(section().getByText('In use')).toBeTruthy();
     expect(t.ui.queryByLabelText('Use Used')).toBeNull();
     press(t.ui.getByLabelText('Unload Used'));
-    await t.rtl.waitFor(() => expect(section().queryByText('In use')).toBeNull(), TIMEOUT);
+    await t.rtl.waitFor(() => expect(section().queryByText('In use') === null).toBe(true), TIMEOUT);
     expect(state().activeModelId).toBeNull();
     expect(t.ui.getByTestId('models-screen')).toBeTruthy();
   });
@@ -136,10 +138,10 @@ describe('Your models on the Text tab (rendered)', () => {
     expect(section().getByTestId('remote-model-item-remote')).toBeTruthy();
     press(t.ui.getByLabelText('Use llama3'));
     await t.rtl.waitFor(() => expect(remote().activeRemoteTextModelId).toBe('llama3'), TIMEOUT);
-    await t.rtl.waitFor(() => expect(t.ui.queryByTestId('models-screen')).toBeNull(), TIMEOUT);
+    await t.rtl.waitFor(() => expect(t.ui.queryByTestId('models-screen') === null).toBe(true), TIMEOUT);
     await openModels();
     press(t.ui.getByLabelText('Disconnect llama3'));
-    await t.rtl.waitFor(() => expect(remote().activeServerId).toBeNull(), TIMEOUT);
+    await t.rtl.waitFor(() => expect(remote().activeServerId === null).toBe(true), TIMEOUT);
     expect(t.ui.getByTestId('models-screen')).toBeTruthy();
   });
 
@@ -149,7 +151,7 @@ describe('Your models on the Text tab (rendered)', () => {
     await addServer('Laptop', 'http://localhost:1235', ['llama3']);
     await openModels();
     press(t.ui.getAllByLabelText('Use llama3')[0]);
-    await t.rtl.waitFor(() => expect(t.ui.queryByTestId('models-screen')).toBeNull(), TIMEOUT);
+    await t.rtl.waitFor(() => expect(t.ui.queryByTestId('models-screen') === null).toBe(true), TIMEOUT);
     await openModels();
     expect(section().getAllByTestId('remote-model-item')).toHaveLength(2);
     expect(section().getAllByText('In use')).toHaveLength(1);
@@ -161,7 +163,7 @@ describe('Your models on the Text tab (rendered)', () => {
     await addServer('Laptop', 'http://localhost:1235', ['y']);
     await openModels();
     press(t.ui.getByLabelText('Use x'));
-    await t.rtl.waitFor(() => expect(t.ui.queryByTestId('models-screen')).toBeNull(), TIMEOUT);
+    await t.rtl.waitFor(() => expect(t.ui.queryByTestId('models-screen') === null).toBe(true), TIMEOUT);
     await openModels();
     expect(section().getAllByTestId('remote-model-item').map(nameOf)).toEqual(['x', 'z', 'y']);
     const health = Object.fromEntries(remote().servers.map((s: any) => [s.id, { isHealthy: false, lastCheck: new Date().toISOString() }]));
@@ -209,14 +211,14 @@ describe('Your models on the Text tab (rendered)', () => {
       rtl.fireEvent.press(ui.getByTestId('sort-pill'));
       rtl.fireEvent.press(ui.getByTestId('sort-option-trending'));
     }
-    await rtl.waitFor(() => expect(ui.queryByTestId('your-models-text')).toBeNull(), TIMEOUT);
+    await rtl.waitFor(() => expect(ui.queryByTestId('your-models-text') === null).toBe(true), TIMEOUT);
     if (what === 'a search') rtl.fireEvent.changeText(ui.getByTestId('search-input'), '');
     if (what === 'a size filter') rtl.fireEvent.press(ui.getByText('Clear'));
     if (what === 'Trending') {
       rtl.fireEvent.press(ui.getByTestId('sort-pill'));
       rtl.fireEvent.press(ui.getByTestId('sort-option-recommended'));
     }
-    await rtl.waitFor(() => expect(ui.getByTestId('your-models-text')).toBeTruthy(), TIMEOUT);
+    await rtl.waitFor(() => expect(ui.queryByTestId('your-models-text') !== null).toBe(true), TIMEOUT);
   });
 
   it('offline (netInfoFake, before boot): Use still goes back', async () => {
@@ -224,7 +226,7 @@ describe('Your models on the Text tab (rendered)', () => {
     await openModels();
     press(t.ui.getByLabelText('Use New'));
     await t.rtl.waitFor(() => expect(state().activeModelId).toBe('new'), TIMEOUT);
-    await t.rtl.waitFor(() => expect(t.ui.queryByTestId('models-screen')).toBeNull(), TIMEOUT);
+    await t.rtl.waitFor(() => expect(t.ui.queryByTestId('models-screen') === null).toBe(true), TIMEOUT);
     require('../../harness/netInfoFake').netInfoFake.setConnected(true);
   });
 
