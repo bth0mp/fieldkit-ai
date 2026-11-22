@@ -77,8 +77,7 @@ export const InMemory: React.FC<Props> = ({ onOpenTab, setAlertState }) => {
         accessibilityRole="button"
         accessibilityLabel={text}
       >
-        <Icon name="cpu" size={20} color={colors.primary} />
-        <Text style={styles.importButtonText} numberOfLines={1} testID="in-memory-label">{text}</Text>
+        <Text style={styles.importButtonText} testID="in-memory-label">{text}</Text>
         <Icon name="chevron-right" size={16} color={colors.textMuted} />
       </TouchableOpacity>
       <ModelsManagerSheet
