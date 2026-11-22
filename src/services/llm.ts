@@ -237,6 +237,9 @@ class LLMService {
     // Until the context is cleared below, no caller may be handed the one being released.
     this.releasingContext = true;
     try {
+      // A turn still preparing has not reached the native completion: tell it to stop, as a Stop does,
+      // so it does not start on a context that is going away and the unload does not wait for its reply.
+      if (this.isGenerating || this.activeCompletionPromise !== null) this.stopRequested = true;
       if (this.isGenerating) {
         try { await context.stopCompletion(); } catch (e) { logger.log('[LLM] Stop during unload:', e); }
         this.isGenerating = false;

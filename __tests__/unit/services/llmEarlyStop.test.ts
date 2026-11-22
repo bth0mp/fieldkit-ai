@@ -95,4 +95,26 @@ describe('a Stop that lands around the start of a completion', () => {
     await stopping;
     await reply;
   });
+
+  it('an unload that lands while the turn is preparing stops it, and the next turn runs', async () => {
+    const ctx = await loadModel();
+
+    const reply = llmService.generateResponse([createUserMessage('Tell me a story')]).catch(() => '');
+    await llmService.unloadModel(); // lands while the turn is still preparing its messages
+    const answer = await reply;
+
+    expect(answer).toBe('');
+    expect(ctx.completion).not.toHaveBeenCalled();
+    expect(llmService.isModelLoaded()).toBe(false);
+    expect(llmService.isCurrentlyGenerating()).toBe(false);
+
+    const next = await loadModel({
+      completion: jest.fn((_p: any, cb: any) => {
+        cb({ token: 'Back again' });
+        return Promise.resolve({ text: 'Back again' });
+      }),
+    });
+    expect(await llmService.generateResponse([createUserMessage('Hello')])).toBe('Back again');
+    expect(next.completion).toHaveBeenCalledTimes(1);
+  });
 });
