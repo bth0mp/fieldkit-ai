@@ -90,45 +90,29 @@ tags:
       - takeScreenshot: 04-setup-card
 
       # First, check if there are any downloaded models
-      # Open Text picker to see if models exist
+      # Open the Models screen from the model chip to see if models exist
       - evalScript: "${console.log('SETUP - Check for existing models')}"
       - tapOn:
           id: "models-summary"
-      - tapOn:
-          id: "models-row-text"
       - extendedWaitUntil:
           visible:
-            text: "Text Models"
-          timeout: 5000
+            id: "models-screen"
+          timeout: 10000
+      - extendedWaitUntil:
+          visible:
+            id: "your-models-text"
+          timeout: 10000
       - takeScreenshot: 05-picker
 
-      # Check if "No models" message is visible
+      # Check if the "No text models yet" message is visible
       - runFlow:
           when:
             visible:
-              text: "No text models downloaded"
+              id: "your-models-empty"
           commands:
-            # No models exist, need to download one
+            # No models exist, need to download one (already on the Models screen)
             - evalScript: "${console.log('SETUP - No models, need to download')}"
             - takeScreenshot: 06-no-models
-
-            # Close picker by tapping outside or back
-            - tapOn:
-                point: "50%,10%"
-
-            # Open Models from the Phone card on Home
-            - evalScript: "${console.log('SETUP - Go to Models')}"
-            - scrollUntilVisible:
-                element:
-                  id: "home-phone-models"
-                direction: DOWN
-            - tapOn:
-                id: "home-phone-models"
-
-            - extendedWaitUntil:
-                visible:
-                  id: "models-screen"
-                timeout: 10000
             - evalScript: "${console.log('SETUP - On models screen')}"
             - takeScreenshot: 07-models-screen
 
@@ -142,8 +126,7 @@ tags:
             - tapOn:
                 id: "search-input"
             - inputText: "SmolLM2-135M-Instruct-GGUF unsloth"
-            - tapOn:
-                id: "search-button"
+            - pressKey: Enter
             - takeScreenshot: 08-search
             # Wait for result
             - extendedWaitUntil:
@@ -185,24 +168,26 @@ tags:
                 timeout: 10000
             - takeScreenshot: 12-home
 
-            # Open Text picker again
+            # Open the Models screen again
             - evalScript: "${console.log('SETUP - Open picker again')}"
             - tapOn:
                 id: "models-summary"
-            - tapOn:
-                id: "models-row-text"
             - extendedWaitUntil:
                 visible:
-                  text: "Text Models"
-                timeout: 5000
+                  id: "your-models-text"
+                timeout: 10000
             - takeScreenshot: 13-picker
 
-      # At this point, picker is open and there should be at least one model
-      # Select the first available model
+      # At this point, the Models screen is open and there should be at least one model
+      # Select the first available model (Use leaves the Models screen for Home)
       - evalScript: "${console.log('SETUP - Select first model')}"
       - tapOn:
           index: 0
           id: "model-item"
+      - extendedWaitUntil:
+          visible:
+            id: "home-screen"
+          timeout: 30000
       - evalScript: "${console.log('SETUP - Model tapped')}"
       - takeScreenshot: 14-tapped
 

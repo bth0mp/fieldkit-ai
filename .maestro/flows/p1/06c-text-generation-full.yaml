@@ -100,8 +100,10 @@ tags:
 - evalScript: "${console.log('TEXT_GEN - Verify model selector')}"
 - assertVisible:
     id: "model-selector"
+# The header names the model that is in use, never "No model" or "Image model"
 - assertVisible:
     id: "model-loaded-indicator"
+    text: "(?!No model$|Image model$).+"
 - takeScreenshot: 02-model-info
 
 # ==============================

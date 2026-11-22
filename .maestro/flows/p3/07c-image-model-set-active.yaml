@@ -57,66 +57,71 @@ tags:
 # ==============================
 # Ensure model is unloaded first
 # ==============================
-# If a model is already loaded (not showing "Tap to select"), unload it
+# The Home chip opens the Models screen; the Image Models tab lists the downloaded image models
+- evalScript: "${console.log('IMG_SET_ACTIVE - Open Models')}"
+- tapOn:
+    id: "models-summary"
+
+- extendedWaitUntil:
+    visible:
+      id: "models-screen"
+    timeout: 10000
+- tapOn:
+    text: "Image Models"
+- extendedWaitUntil:
+    visible:
+      id: "your-models-image"
+    timeout: 10000
+
+# If an image model is already in use, unload it (Unload keeps the Models screen open)
 - runFlow:
     when:
-      notVisible:
-        text: "Tap to select"
+      visible:
+        text: "In use"
     commands:
       - evalScript: "${console.log('IMG_SET_ACTIVE - Model already loaded, unloading...')}"
       - tapOn:
-          id: "image-model-card"
+          text: "Unload"
 
-      # Wait for picker
+      # Wait for model to unload: no row is in use now
       - extendedWaitUntil:
-          visible:
-            text: "Image Models"
-          timeout: 5000
-
-      # Tap "Unload current model"
-      - tapOn:
-          text: "Unload current model"
-
-      # Wait for model to unload
-      - extendedWaitUntil:
-          visible:
-            text: "Tap to select"
+          notVisible:
+            text: "In use"
           timeout: 30000
 
 # ==============================
 # Select image model
 # ==============================
-- evalScript: "${console.log('IMG_SET_ACTIVE - Verify Tap to select shown')}"
-- extendedWaitUntil:
-    visible:
-      text: "Tap to select"
-    timeout: 5000
-
-# Tap on Image card to open picker
-- evalScript: "${console.log('IMG_SET_ACTIVE - Open picker')}"
-- tapOn:
-    id: "image-model-card"
-
-# Wait for picker to appear
-- extendedWaitUntil:
-    visible:
-      text: "Image Models"
-    timeout: 5000
-
-# Select first model
 - evalScript: "${console.log('IMG_SET_ACTIVE - Select model')}"
 - tapOn:
     id: "model-item"
     index: 0
 
-# Wait for model to load
+# Use leaves the Models screen for Home
 - evalScript: "${console.log('IMG_SET_ACTIVE - Waiting for model to load...')}"
 - extendedWaitUntil:
-    notVisible:
-      text: "Tap to select"
+    visible:
+      id: "home-screen"
     timeout: 30000
 
-# Verify model name is shown (don't check exact name as it could be any model)
+# Verify the model is now in use (don't check exact name as it could be any model)
+- tapOn:
+    id: "models-summary"
+- extendedWaitUntil:
+    visible:
+      id: "models-screen"
+    timeout: 10000
+- tapOn:
+    text: "Image Models"
+- assertVisible:
+    text: "In use"
+- tapOn:
+    id: "models-back"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 10000
+
 - evalScript: "${console.log('IMG_SET_ACTIVE - Model loaded successfully')}"
 
 - evalScript: "${console.log('IMG_SET_ACTIVE - PASSED')}"
