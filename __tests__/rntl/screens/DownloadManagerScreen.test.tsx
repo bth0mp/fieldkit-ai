@@ -615,7 +615,7 @@ describe('DownloadManagerScreen', () => {
       fireEvent.press(getByTestId('alert-button-Delete'));
     });
 
-    expect(mockShowAlert).toHaveBeenCalledWith('Error', 'Failed to delete model');
+    expect(mockShowAlert).toHaveBeenCalledWith('Model not removed', "Couldn't remove the model files. Try again.", expect.any(Array));
   });
 
   it('confirming delete image model calls deleteImageModel and removeDownloadedImageModel', async () => {
@@ -677,7 +677,7 @@ describe('DownloadManagerScreen', () => {
       fireEvent.press(getByTestId('alert-button-Delete'));
     });
 
-    expect(mockShowAlert).toHaveBeenCalledWith('Error', 'Failed to delete image model');
+    expect(mockShowAlert).toHaveBeenCalledWith('Model not removed', "Couldn't remove the model files. Try again.", expect.any(Array));
   });
 
   it('confirming remove active download cancels the native download', async () => {
