@@ -116,8 +116,13 @@ const ASYNC_STORAGE_DB = 'RKStorage';
 const ASYNC_STORAGE_TABLE = 'catalystLocalStorage';
 
 let copies = 0;
+// The copies live in a folder of their own that is emptied before each read and after it, so what a
+// killed launch left behind (the copy and any -journal, -wal or -shm beside it) goes on the next read.
+const RECOVERY_DIRECTORY = 'chat-recovery';
+// Reads run one at a time: one read's clean-up must not remove the copy another is still reading.
+let lastRead: Promise<unknown> = Promise.resolve();
 
-/** Delete a file if it is there; a copy that is already gone is not an error. */
+/** Delete a file or folder if it is there; one that is already gone is not an error. */
 async function removeQuietly(path: string): Promise<void> {
   try {
     await RNFS.unlink(path);
@@ -136,14 +141,22 @@ async function removeQuietly(path: string): Promise<void> {
  *
  * Runs once per affected store: the next write replaces the row with a chunked value.
  */
-export const readOversizedRow: OversizedReader = async key => {
-  if (Platform.OS !== 'android') return null;
+export const readOversizedRow: OversizedReader = key => {
+  if (Platform.OS !== 'android') return Promise.resolve(null);
+  const read = lastRead.then(() => readFromCopy(key));
+  lastRead = read.catch(() => undefined);
+  return read;
+};
+
+async function readFromCopy(key: string): Promise<string | null> {
   copies += 1;
+  const directory = `${RNFS.CachesDirectoryPath}/${RECOVERY_DIRECTORY}`;
   const copyName = `chats-copy-${Date.now()}-${copies}.db`;
-  const copyPath = `${RNFS.CachesDirectoryPath}/${copyName}`;
   try {
-    await RNFS.copyFile(`${ANDROID_DATABASE_PATH}${ASYNC_STORAGE_DB}`, copyPath);
-    const db = open({ name: copyName, location: RNFS.CachesDirectoryPath });
+    await removeQuietly(directory);
+    await RNFS.mkdir(directory);
+    await RNFS.copyFile(`${ANDROID_DATABASE_PATH}${ASYNC_STORAGE_DB}`, `${directory}/${copyName}`);
+    const db = open({ name: copyName, location: directory });
     try {
       const check = await db.execute('PRAGMA quick_check');
       const verdict = Object.values(check.rows[0] ?? {})[0];
@@ -168,7 +181,6 @@ export const readOversizedRow: OversizedReader = async key => {
       db.close();
     }
   } finally {
-    await removeQuietly(copyPath);
-    await removeQuietly(`${copyPath}-journal`);
+    await removeQuietly(directory);
   }
-};
+}

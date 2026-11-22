@@ -116,7 +116,14 @@ describe('saved chats are kept', () => {
   it('opens a history too large for Android to read in one row', async () => {
     seedRow(KEY, savedValue('Long history'));
     markOversized(KEY);
-    const h = await setupChatScreen({ engine: 'llama', beforeHome: boundary => putLiveDatabase(boundary.fs!) });
+    const h = await setupChatScreen({
+      engine: 'llama',
+      beforeHome: async boundary => {
+        await putLiveDatabase(boundary.fs!);
+        // A copy left behind by a launch that was killed while it was reading.
+        await (boundary.fs!.module.writeFile as (path: string, text: string) => Promise<void>)('/caches/chat-recovery/chats-copy-old.db', 'leftover');
+      },
+    });
     h.render();
 
     const list = openChatsList();
@@ -130,6 +137,7 @@ describe('saved chats are kept', () => {
     expect(sqliteOpens().length).toBeGreaterThan(0);
     expect(sqliteOpens().map(open => open.name)).not.toContain('RKStorage');
     expect(sqliteStillOpen()).toBe(0);
+    // The leftover from the killed launch went with the folder the copies are made in.
     expect(await cacheFiles(h.boundary.fs!)).toEqual([]);
   });
 
