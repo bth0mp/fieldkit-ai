@@ -12,7 +12,8 @@ describe('a finished download and a failed download', () => {
   const originalFetch = global.fetch;
   afterEach(() => { global.fetch = originalFetch; });
 
-  it('shows the success pop-up and the failure pop-up, one after the other', async () => {
+  // The person closes the first pop-up with its own button, with the sheet's Done control, or with Back.
+  it.each(['button', 'done', 'back'] as const)('shows the success pop-up and the failure pop-up, one after the other (closed by %s)', async (closeBy) => {
     const boundary = installNativeBoundary({ download: true, fs: true, ram: { platform: 'ios', totalBytes: 12 * GB, availBytes: 8 * GB } });
     global.fetch = async input => {
       const url = String(input);
@@ -68,15 +69,35 @@ describe('a finished download and a failed download', () => {
     const readyFirst = screen.queryByText(ready) !== null;
     expect(readyFirst ? screen.queryByText(failed) : screen.queryByText(ready)).toBeNull();
 
-    // The user closes the first pop-up with its own button.
-    rtl.fireEvent.press(screen.getByText('OK'));
-    await rtl.waitFor(() => expect(readyFirst ? screen.queryByText(failed) : screen.queryByText(ready)).toBeTruthy());
+    const closeFirst = () => {
+      if (closeBy === 'button') rtl.fireEvent.press(screen.getByText('OK'));
+      else if (closeBy === 'done') rtl.fireEvent.press(screen.getByText('Done'));
+      else rtl.fireEvent(screen.UNSAFE_getByType(require('react-native').Modal), 'requestClose');
+    };
+    closeFirst();
+    await rtl.waitFor(() => expect(readyFirst ? screen.queryByText(failed) : screen.queryByText(ready)).toBeTruthy(), { timeout: 3000 });
     expect(readyFirst ? screen.queryByText(ready) : screen.queryByText(failed)).toBeNull();
 
     // Closing the second leaves no pop-up.
     rtl.fireEvent.press(screen.getByText('OK'));
     await rtl.waitFor(() => expect(screen.queryByText(failed)).toBeNull());
     expect(screen.queryByText(ready)).toBeNull();
+
+    // A pop-up raised after both were closed is seen too.
+    // (the file that failed is removed and downloaded again; that download fails too)
+    rtl.fireEvent.press(screen.getByText('Remove'));
+    await rtl.waitFor(() => expect(screen.queryByTestId('file-card-1-download')).toBeTruthy());
+    rtl.fireEvent.press(screen.getByTestId('file-card-1-download'));
+    await rtl.waitFor(() => expect(boundary.download!.active().some(d => d.downloadId !== done.downloadId)).toBe(true));
+    const again = boundary.download!.active().filter(d => d.downloadId !== done.downloadId)[0];
+    await rtl.act(async () => {
+      boundary.download!.events.emit('DownloadError', {
+        downloadId: again.downloadId, fileName: again.fileName, modelId: again.modelId,
+        status: 'failed', reason: 'Connection lost again',
+      });
+      await new Promise(r => setTimeout(r, 0));
+    });
+    await rtl.waitFor(() => expect(screen.queryByText(failed)).toBeTruthy(), { timeout: 3000 });
     screen.unmount();
   }, 30000);
 });

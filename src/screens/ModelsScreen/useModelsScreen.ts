@@ -78,7 +78,7 @@ export function useModelsScreen() {
   const navigation = useNavigation<NavigationProp>();
   const focusTrigger = useFocusTrigger();
   const [activeTab, setActiveTabState] = useState<ModelTab>('text');
-  const { alertState, setAlertState } = useAlertQueue();
+  const { alertState, setAlertState, alertKey } = useAlertQueue();
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState<{ fraction: number; fileName: string } | null>(null);
 
@@ -230,6 +230,7 @@ export function useModelsScreen() {
     activeTab,
     setActiveTab,
     alertState,
+    alertKey,
     setAlertState,
     isImporting,
     importProgress,

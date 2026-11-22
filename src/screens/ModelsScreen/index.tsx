@@ -262,7 +262,7 @@ export const ModelsScreen: React.FC = () => {
       {/* Transcription Models Tab (speech-to-text, core). */}
       {vm.activeTab === 'transcription' && <TranscriptionModelsTab />}
 
-      <CustomAlert {...vm.alertState} onClose={() => vm.setAlertState(hideAlert())} />
+      <CustomAlert key={vm.alertKey} {...vm.alertState} onClose={() => vm.setAlertState(hideAlert())} />
     </SafeAreaView>
   );
 };
