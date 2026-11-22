@@ -32,6 +32,7 @@ import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import org.json.JSONObject
 
 class WorkerDownload(
@@ -70,16 +71,32 @@ class WorkerDownload(
 
         downloadDao.updateStatus(downloadId, DownloadStatus.RUNNING)
 
-        val call = client.newCall(buildRequest(download.url, existingBytes))
-        val cancelHandle = coroutineContext[Job]?.invokeOnCompletion { call.cancel() }
-        return try {
-            call.execute().use { response ->
-                handleResponse(response, existingBytes, download, downloadId, targetFile, progressInterval)
+        // A transfer cut after new bytes (a CDN stream reset, a dropped connection) resumes here with a
+        // Range request: the download is still moving. Only a request that wrote nothing ends the
+        // worker, so WorkManager's bounded retries count stalls, not every hiccup of a long download.
+        var requestStartBytes = existingBytes
+        var resumes = 0
+        while (true) {
+            val call = client.newCall(buildRequest(download.url, requestStartBytes))
+            val cancelHandle = coroutineContext[Job]?.invokeOnCompletion { call.cancel() }
+            try {
+                return call.execute().use { response ->
+                    handleResponse(response, requestStartBytes, download, downloadId, targetFile, progressInterval)
+                }
+            } catch (e: Exception) {
+                if (isStopped) return handleStoppedState(downloadId, download, download.downloadedBytes)
+                val reason = DownloadReason.fromThrowable(e)
+                val bytesNow = if (targetFile.exists()) targetFile.length() else 0L
+                if (!DownloadReason.resumesInPlace(reason, bytesNow > requestStartBytes, resumes)) {
+                    return handleDownloadException(downloadId, download, e)
+                }
+                Log.w(TAG, "Transfer cut id=$downloadId at $bytesNow bytes reason=$reason (${e.javaClass.simpleName}); resuming")
+                requestStartBytes = bytesNow
+                resumes++
+            } finally {
+                cancelHandle?.dispose()
             }
-        } catch (e: Exception) {
-            handleDownloadException(downloadId, download, e)
-        } finally {
-            cancelHandle?.dispose()
+            delay(RESUME_DELAY_MS)
         }
     }
 
@@ -101,7 +118,16 @@ class WorkerDownload(
 
     private suspend fun handleDownloadException(downloadId: String, download: DownloadEntity, e: Exception): Result {
         if (isStopped) return handleStoppedState(downloadId, download, download.downloadedBytes)
-        return failDownload(downloadId, download, DownloadReason.fromThrowable(e))
+        val reason = DownloadReason.fromThrowable(e)
+        // The partial file is retained, so WorkManager can retry from its byte offset
+        // after a transient connection failure. Bound the retries so a persistently
+        // broken endpoint still becomes a visible, manually retryable failure.
+        if (DownloadReason.isRetryable(reason) && runAttemptCount < MAX_TRANSIENT_RETRIES) {
+            Log.w(TAG, "Transient download failure id=$downloadId attempt=$runAttemptCount reason=$reason; retrying")
+            downloadDao.updateStatus(downloadId, DownloadStatus.QUEUED)
+            return Result.retry()
+        }
+        return failDownload(downloadId, download, reason)
     }
 
     private data class StreamParams(
@@ -164,7 +190,7 @@ class WorkerDownload(
         targetFile: File,
     ): Result? {
         return when {
-            existingBytes > 0L && code == 200 -> {
+            restartsFromZero(code, existingBytes) -> {
                 if (!targetFile.delete()) Log.w(TAG, "Failed to delete stale file for re-download: ${targetFile.path}")
                 null
             }
@@ -183,14 +209,20 @@ class WorkerDownload(
         var bytesWritten = currentFileBytes
         var lastProgressAt = 0L
 
-        FileOutputStream(targetFile, appendMode).buffered().use { output ->
+        // Unbuffered: the loop already writes whole buffers, and a full disk must fail on the write itself
+        // (as DiskWriteException), never later in a flush that reads like a network cut.
+        FileOutputStream(targetFile, appendMode).use { output ->
             input.use { src ->
-                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                val buffer = ByteArray(WRITE_CHUNK_BYTES)
                 var read = src.read(buffer)
                 while (read >= 0) {
                     if (isStopped) return handleStoppedState(downloadId, download, bytesWritten)
 
-                    output.write(buffer, 0, read)
+                    try {
+                        output.write(buffer, 0, read)
+                    } catch (e: java.io.IOException) {
+                        throw DiskWriteException(e)
+                    }
                     bytesWritten += read
 
                     val now = System.currentTimeMillis()
@@ -286,6 +318,9 @@ class WorkerDownload(
 
     companion object {
         private const val TAG = "WorkerDownload"
+        private const val MAX_TRANSIENT_RETRIES = 5
+        private const val RESUME_DELAY_MS = 1000L
+        private const val WRITE_CHUNK_BYTES = 64 * 1024
 
         val httpClient: OkHttpClient = OkHttpClient.Builder()
             .retryOnConnectionFailure(true)
@@ -300,6 +335,14 @@ class WorkerDownload(
         const val KEY_PROGRESS = "progress"
         const val KEY_TOTAL = "total"
         const val KEY_PROGRESS_INTERVAL = "progress_interval"
+
+        /**
+         * A Range request that comes back 200 got the whole file, not the rest of it. Appending that
+         * to the kept partial file would mix two transfers, so the partial file is dropped and the
+         * body is written from byte zero.
+         */
+        internal fun restartsFromZero(code: Int, requestStartBytes: Long): Boolean =
+            requestStartBytes > 0L && code == 200
 
         /**
          * The authoritative total size for the download. A successful response's
