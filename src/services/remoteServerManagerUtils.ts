@@ -4,7 +4,7 @@
  */
 import * as Keychain from 'react-native-keychain';
 import type { RemoteServer } from '../types';
-import { useRemoteServerStore } from '../stores/remoteServerStore';
+import { useRemoteServerStore, setRemoteServerKeyReader } from '../stores/remoteServerStore';
 import { createOpenAIProvider, OpenAICompatibleProvider } from './providers/openAICompatibleProvider';
 import { providerRegistry } from './providers/registry';
 import logger from '../utils/logger';
@@ -44,6 +44,45 @@ export async function getApiKeyImpl(serverId: string): Promise<string | null> {
   }
 }
 
+/** Like getApiKeyImpl, but a failing Keychain throws instead of reading as "no key". */
+async function readApiKeyStrict(serverId: string): Promise<string | null> {
+  const credentials = await Keychain.getGenericPassword({ service: `${KEYCHAIN_SERVICE}.${serverId}` });
+  return credentials ? credentials.password : null;
+}
+
+/**
+ * The key to use for a server: the one in the Keychain. A server whose key an older version saved only in
+ * its record, and whose move to the Keychain has not happened yet, still works with that copy.
+ */
+export async function resolveApiKeyImpl(serverId: string): Promise<string | undefined> {
+  const stored = await getApiKeyImpl(serverId);
+  if (stored) return stored;
+  return useRemoteServerStore.getState().getServerById(serverId)?.apiKey || undefined;
+}
+setRemoteServerKeyReader(resolveApiKeyImpl);
+
+/**
+ * Move keys an older version saved in the server records into the Keychain. The key goes into the
+ * Keychain first and leaves the record only once that worked, so a key is never lost: if the Keychain
+ * fails, the record keeps it and the next launch tries again. A key already in the Keychain is the
+ * newer one and stays. Call only once the store has read its saved servers.
+ */
+export async function moveStoredKeysToKeychainImpl(): Promise<void> {
+  for (const server of useRemoteServerStore.getState().servers) {
+    if (!server.apiKey) continue;
+    try {
+      const inKeychain = await readApiKeyStrict(server.id);
+      // The key may have been replaced or cleared while the Keychain was read.
+      const saved = useRemoteServerStore.getState().getServerById(server.id)?.apiKey;
+      if (!saved) continue;
+      if (!inKeychain) await storeApiKeyImpl(server.id, saved);
+      useRemoteServerStore.getState().forgetSavedApiKey(server.id);
+    } catch {
+      logger.warn('[RemoteServerManager] Could not move the saved key of server', server.id, 'to the Keychain; trying again next launch');
+    }
+  }
+}
+
 export async function removeApiKeyImpl(serverId: string): Promise<void> {
   try {
     await Keychain.resetGenericPassword({ service: `${KEYCHAIN_SERVICE}.${serverId}` });
@@ -66,7 +105,7 @@ export { detectVisionCapability, detectToolCallingCapability } from '../utils/re
 // ---------------------------------------------------------------------------
 
 export async function createProviderForServerImpl(server: RemoteServer): Promise<void> {
-  const apiKey = await getApiKeyImpl(server.id);
+  const apiKey = await resolveApiKeyImpl(server.id);
   logger.log('[RemoteServerManager] createProvider:', server.name, '| endpoint:', server.endpoint, '| hasApiKey:', !!apiKey);
   const provider = createOpenAIProvider(server.id, server.endpoint, { apiKey: apiKey || undefined });
   providerRegistry.registerProvider(server.id, provider);
@@ -162,7 +201,7 @@ export async function initializeProvidersImpl(
       // Re-discover models on startup to refresh capability data from the server
       // (persisted data may be stale if models were added/removed while offline)
       try {
-        const models = await store.discoverModels(server.id);
+        const models = await store.discoverModels(server.id, await resolveApiKeyImpl(server.id));
         logger.log('[RemoteServerManager] Discovered', models.length, 'models for', server.name);
       } catch (discoverError) {
         logger.warn('[RemoteServerManager] Failed to discover models for', server.name, discoverError);

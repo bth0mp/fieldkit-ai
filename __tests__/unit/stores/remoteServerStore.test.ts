@@ -741,7 +741,9 @@ describe('remoteServerStore', () => {
         });
       });
 
-      await useRemoteServerStore.getState().discoverModels(serverId);
+      // The record never holds the key; the caller passes the one from the Keychain.
+      expect(useRemoteServerStore.getState().getServerById(serverId)).not.toHaveProperty('apiKey');
+      await useRemoteServerStore.getState().discoverModels(serverId, 'secret-key');
 
       expect(mockFetch).toHaveBeenCalled();
       const callArgs = mockFetch.mock.calls[0];

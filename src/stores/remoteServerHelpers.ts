@@ -12,6 +12,7 @@ import logger from '../utils/logger';
 import {
   fetchModelCapabilities,
   isGenerativeModel,
+  RemoteAuthenticationError,
 } from './remoteModelCapabilities';
 import {
   detectVisionCapability,
@@ -163,6 +164,10 @@ export async function fetchModelsFromServer(server: RemoteServer): Promise<Remot
 
     clearTimeout(timeoutId);
 
+    // A refused key is an authentication failure, not "this server has no models".
+    if (response.status === 401 || response.status === 403) {
+      throw new RemoteAuthenticationError(response.status);
+    }
     if (response.ok) {
       const data = await response.json();
 
@@ -173,7 +178,7 @@ export async function fetchModelsFromServer(server: RemoteServer): Promise<Remot
         const generativeModels = data.data.filter((model: { id: string; kind?: unknown }) => isTextModel(model));
         const modelInfos = await Promise.all(
           generativeModels.map((model: { id: string }) =>
-            fetchModelCapabilities(url, model.id, nameDetect)
+            fetchModelCapabilities(url, model.id, nameDetect, server.apiKey)
           )
         );
         return generativeModels.map((model: { id: string; kind?: unknown; owned_by?: string; max_context_length?: number }, i: number) => ({
@@ -202,7 +207,7 @@ export async function fetchModelsFromServer(server: RemoteServer): Promise<Remot
         );
         const modelInfos = await Promise.all(
           generativeModels.map((model: { name: string }) =>
-            fetchModelCapabilities(url, model.name, nameDetect)
+            fetchModelCapabilities(url, model.name, nameDetect, server.apiKey)
           )
         );
         return generativeModels.map(
@@ -224,6 +229,7 @@ export async function fetchModelsFromServer(server: RemoteServer): Promise<Remot
       }
     }
   } catch (error) {
+    if (error instanceof RemoteAuthenticationError) throw error;
     logger.warn('[RemoteServer] Failed to fetch from /v1/models:', error);
   }
 
@@ -241,6 +247,9 @@ export async function fetchModelsFromServer(server: RemoteServer): Promise<Remot
 
     clearTimeout(timeoutId);
 
+    if (response.status === 401 || response.status === 403) {
+      throw new RemoteAuthenticationError(response.status);
+    }
     if (response.ok) {
       const data = await response.json();
 
@@ -251,7 +260,7 @@ export async function fetchModelsFromServer(server: RemoteServer): Promise<Remot
         );
         const modelInfos = await Promise.all(
           generativeModels.map((model: { name: string }) =>
-            fetchModelCapabilities(url, model.name, nameDetect)
+            fetchModelCapabilities(url, model.name, nameDetect, server.apiKey)
           )
         );
         return generativeModels.map(
@@ -273,6 +282,7 @@ export async function fetchModelsFromServer(server: RemoteServer): Promise<Remot
       }
     }
   } catch (error) {
+    if (error instanceof RemoteAuthenticationError) throw error;
     logger.warn('[RemoteServer] Failed to fetch from /api/tags:', error);
   }
 

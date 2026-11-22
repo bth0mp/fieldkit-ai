@@ -8,6 +8,25 @@
 
 import logger from '../utils/logger';
 import { templateEmitsReasoning, REASONING_DELIMITERS } from '../utils/messageContent';
+import { API_KEY_REFUSED_MESSAGE } from '../services/httpClientUtils';
+
+/**
+ * The server refused the request's credentials (401/403). A refused probe is not evidence that the
+ * model lacks a feature, so it is reported as a failure instead of an all-false capability record.
+ */
+export class RemoteAuthenticationError extends Error {
+  constructor(readonly status: number) {
+    super(API_KEY_REFUSED_MESSAGE);
+    this.name = 'RemoteAuthenticationError';
+  }
+}
+
+function isAuthRejection(status: number): boolean {
+  return status === 401 || status === 403;
+}
+
+const bearer = (apiKey?: string): Record<string, string> =>
+  apiKey ? { Authorization: `Bearer ${apiKey}` } : {};
 
 export interface RemoteModelInfo {
   contextLength: number;
@@ -93,6 +112,7 @@ function extractOllamaCapabilities(data: Record<string, unknown>): RemoteModelIn
 export async function fetchRemoteModelInfo(
   endpoint: string,
   modelName: string,
+  apiKey?: string,
 ): Promise<RemoteModelInfo> {
   try {
     const controller = new AbortController();
@@ -100,18 +120,20 @@ export async function fetchRemoteModelInfo(
 
     const response = await fetch(`${endpoint}/api/show`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...bearer(apiKey) },
       body: JSON.stringify({ name: modelName }),
       signal: controller.signal,
     });
 
     clearTimeout(timeoutId);
 
+    if (isAuthRejection(response.status)) throw new RemoteAuthenticationError(response.status);
     if (!response.ok) return { contextLength: 4096, supportsVision: false };
 
     const data = await response.json();
     return extractOllamaCapabilities(data);
-  } catch {
+  } catch (error) {
+    if (error instanceof RemoteAuthenticationError) throw error;
     // Timeout, network error, parse error
   }
 
@@ -126,6 +148,7 @@ export async function fetchRemoteModelInfo(
 export async function fetchLmStudioModelInfo(
   endpoint: string,
   modelId: string,
+  apiKey?: string,
 ): Promise<RemoteModelInfo> {
   try {
     const controller = new AbortController();
@@ -133,12 +156,13 @@ export async function fetchLmStudioModelInfo(
 
     const response = await fetch(`${endpoint}/api/v1/models`, {
       method: 'GET',
-      headers: { Accept: 'application/json' },
+      headers: { Accept: 'application/json', ...bearer(apiKey) },
       signal: controller.signal,
     });
 
     clearTimeout(timeoutId);
 
+    if (isAuthRejection(response.status)) throw new RemoteAuthenticationError(response.status);
     if (!response.ok) return { contextLength: 4096, supportsVision: false };
 
     const data = await response.json();
@@ -165,7 +189,7 @@ export async function fetchLmStudioModelInfo(
 
     // LM Studio doesn't expose thinking capability in /api/v1/models.
     // Probe via a 1-token streaming request to learn whether THIS model thinks.
-    const supportsThinking = await probeLmStudioThinking(endpoint, modelId);
+    const supportsThinking = await probeLmStudioThinking(endpoint, modelId, apiKey);
 
     return {
       contextLength,
@@ -215,7 +239,11 @@ function deltaHasThinking(delta: Record<string, unknown>): boolean {
   return false;
 }
 
-async function probeLmStudioThinking(endpoint: string, modelId: string): Promise<boolean> {
+async function probeLmStudioThinking(
+  endpoint: string,
+  modelId: string,
+  apiKey?: string,
+): Promise<boolean> {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -224,7 +252,7 @@ async function probeLmStudioThinking(endpoint: string, modelId: string): Promise
     // Read the full SSE response as text (RN fetch supports .text() but not ReadableStream).
     const response = await fetch(`${endpoint}/v1/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...bearer(apiKey) },
       body: JSON.stringify({
         model: modelId,
         messages: [{ role: 'user', content: 'Say hi' }],
@@ -278,20 +306,23 @@ async function probeLmStudioThinking(endpoint: string, modelId: string): Promise
  */
 export async function fetchLlamaCppProps(
   endpoint: string,
+  apiKey?: string,
 ): Promise<RemoteModelInfo | null> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 3000);
   try {
     const response = await fetch(`${endpoint}/props`, {
       method: 'GET',
-      headers: { Accept: 'application/json' },
+      headers: { Accept: 'application/json', ...bearer(apiKey) },
       signal: controller.signal,
     });
 
+    if (isAuthRejection(response.status)) throw new RemoteAuthenticationError(response.status);
     if (!response.ok) return null;
 
     return parsePropsCapabilities(await response.json());
   } catch (error) {
+    if (error instanceof RemoteAuthenticationError) throw error;
     // A non-llama.cpp server simply has no /props (network error / abort) — that's
     // expected and silent. Only an unexpected shape after a 200 is worth flagging,
     // but that path returns null from parsePropsCapabilities, not throw. Log at warn
@@ -315,7 +346,13 @@ export async function fetchLlamaCppProps(
 const propsInFlight = new Map<string, Promise<RemoteModelInfo | null>>();
 
 /** De-duplicated wrapper around fetchLlamaCppProps — one /props call per endpoint. */
-export function fetchLlamaCppPropsCached(endpoint: string): Promise<RemoteModelInfo | null> {
+export function fetchLlamaCppPropsCached(
+  endpoint: string,
+  apiKey?: string,
+): Promise<RemoteModelInfo | null> {
+  // An authenticated probe is never shared: two saved servers at the same endpoint can hold
+  // different keys, and one must not receive a result fetched with the other's credentials.
+  if (apiKey) return fetchLlamaCppProps(endpoint, apiKey);
   // Deliberate in-flight-promise cache: return the pending promise un-awaited so concurrent
   // callers share one fetch. Explicit presence check (not a truthiness/await smell) so the
   // Promise-in-conditional rule (S6544) doesn't misread it as a forgotten await.
@@ -397,24 +434,36 @@ function hasRealData(info: RemoteModelInfo): boolean {
  * Grid AI Gateway's vision/thinking/tools now resolve correctly instead of
  * false-negativing through name-based detection.
  */
+// eslint-disable-next-line max-params -- the optional key rides after the three existing arguments
 export async function fetchModelCapabilities(
   endpoint: string,
   modelId: string,
   nameBasedDetect: { vision: (id: string) => boolean; toolCalling: (id: string) => boolean },
+  apiKey?: string,
 ): Promise<RemoteModelInfo> {
-  const [propsInfo, ollamaInfo, lmInfo] = await Promise.all([
+  const [props, ollama, lm] = await Promise.allSettled([
     // Deduped per endpoint — /props is server-wide, so all models on one server
     // share a single request instead of firing one each.
-    fetchLlamaCppPropsCached(endpoint),
-    fetchRemoteModelInfo(endpoint, modelId),
-    fetchLmStudioModelInfo(endpoint, modelId),
+    fetchLlamaCppPropsCached(endpoint, apiKey),
+    fetchRemoteModelInfo(endpoint, modelId, apiKey),
+    fetchLmStudioModelInfo(endpoint, modelId, apiKey),
   ]);
+  const propsInfo = props.status === 'fulfilled' ? props.value : null;
+  const ollamaInfo = ollama.status === 'fulfilled' ? ollama.value : null;
+  const lmInfo = lm.status === 'fulfilled' ? lm.value : null;
 
   // /props wins whenever it answered at all: on a llama.cpp server it is the
   // ground truth, even when every flag is false (a genuine text-only model).
   if (propsInfo) return propsInfo;
-  if (hasRealData(ollamaInfo)) return ollamaInfo;
-  if (hasRealData(lmInfo)) return lmInfo;
+  if (ollamaInfo && hasRealData(ollamaInfo)) return ollamaInfo;
+  if (lmInfo && hasRealData(lmInfo)) return lmInfo;
+
+  // No probe returned real data. If one was refused for its credentials, the model's features are
+  // unknown, not absent: report the refusal so the last known data is kept.
+  const refused = [props, ollama, lm].find(
+    result => result.status === 'rejected' && result.reason instanceof RemoteAuthenticationError,
+  );
+  if (refused?.status === 'rejected') throw refused.reason;
 
   // No API returned real data — fall back to name-based detection
   return {

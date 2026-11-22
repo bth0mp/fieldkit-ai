@@ -114,6 +114,9 @@ export function isPrivateNetworkEndpoint(endpoint: string): boolean {
   }
 }
 
+/** What the person is told when a server answers 401 or 403. */
+export const API_KEY_REFUSED_MESSAGE = 'The server refused the API key.';
+
 /**
  * Check if endpoint URL is valid and reachable
  */
@@ -144,6 +147,11 @@ export async function testEndpoint(
 
     clearTimeout(timeoutId);
     const latency = Date.now() - startTime;
+
+    // A refused key is the answer. A health page that answers 200 must not hide it.
+    if (response.status === 401 || response.status === 403) {
+      return { success: false, error: API_KEY_REFUSED_MESSAGE, latency };
+    }
 
     if (!response.ok) {
       // Try alternate health endpoints

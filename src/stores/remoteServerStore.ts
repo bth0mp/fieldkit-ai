@@ -45,6 +45,8 @@ interface RemoteServerState {
   addServer: (server: Omit<RemoteServer, 'id' | 'createdAt'>) => string;
   updateServer: (id: string, updates: Partial<RemoteServer>) => void;
   removeServer: (id: string) => void;
+  /** Drop the key an older version saved in the server's record. Keys belong in the Keychain. */
+  forgetSavedApiKey: (id: string) => void;
 
   // Active server
   setActiveServerId: (id: string | null) => void;
@@ -57,12 +59,12 @@ interface RemoteServerState {
   getActiveRemoteImageModel: () => RemoteModel | null;
 
   // Model discovery
-  discoverModels: (serverId: string) => Promise<RemoteModel[]>;
+  discoverModels: (serverId: string, apiKey?: string) => Promise<RemoteModel[]>;
   setDiscoveredModels: (serverId: string, models: RemoteModel[]) => void;
   clearDiscoveredModels: (serverId: string) => void;
 
   // Health check
-  testConnection: (serverId: string) => Promise<ServerTestResult>;
+  testConnection: (serverId: string, apiKey?: string) => Promise<ServerTestResult>;
   testConnectionByEndpoint: (endpoint: string, apiKey?: string) => Promise<ServerTestResult>;
   updateServerHealth: (serverId: string, isHealthy: boolean) => void;
 
@@ -77,6 +79,12 @@ type PersistedRemoteServerState = Pick<
   'servers' | 'activeServerId' | 'activeRemoteTextModelId' | 'activeRemoteImageModelId' | 'discoveredModels'
 >;
 const remoteServerStorage = createHydrationGatedStorage<PersistedRemoteServerState>();
+
+let readApiKey: ((serverId: string) => Promise<string | undefined>) | null = null;
+/** The Keychain reader, set by the remote server manager. Checks made without a key look it up here. */
+export function setRemoteServerKeyReader(reader: (serverId: string) => Promise<string | undefined>): void {
+  readApiKey = reader;
+}
 
 export const useRemoteServerStore = create<RemoteServerState>()(
   persist(
@@ -94,8 +102,10 @@ export const useRemoteServerStore = create<RemoteServerState>()(
       // Server CRUD
       addServer: (serverData) => {
         const id = generateId();
+        // A key is never saved in the record, whoever asks.
+        const { apiKey: _key, ...publicData } = serverData as typeof serverData & { apiKey?: string };
         const server: RemoteServer = {
-          ...serverData,
+          ...publicData,
           id,
           createdAt: new Date().toISOString(),
         };
@@ -107,12 +117,23 @@ export const useRemoteServerStore = create<RemoteServerState>()(
       },
 
       updateServer: (id, updates) => {
+        const { apiKey: _key, ...publicUpdates } = updates;
         set((state) => ({
           servers: state.servers.map((s) =>
-            s.id === id ? { ...s, ...updates } : s
+            s.id === id ? { ...s, ...publicUpdates } : s
           ),
         }));
         logger.log('[RemoteServer] Updated server:', id);
+      },
+
+      forgetSavedApiKey: (id) => {
+        set((state) => ({
+          servers: state.servers.map((s) => {
+            if (s.id !== id || s.apiKey === undefined) return s;
+            const { apiKey: _key, ...publicServer } = s;
+            return publicServer;
+          }),
+        }));
       },
 
       removeServer: (id) => {
@@ -174,7 +195,7 @@ export const useRemoteServerStore = create<RemoteServerState>()(
       },
 
       // Model discovery
-      discoverModels: async (serverId) => {
+      discoverModels: async (serverId, apiKey) => {
         const { servers } = get();
         const server = servers.find((s) => s.id === serverId);
         if (!server) {
@@ -184,7 +205,9 @@ export const useRemoteServerStore = create<RemoteServerState>()(
         set({ discoveringServerId: serverId, isLoading: true });
 
         try {
-          const models = await fetchModelsFromServer(server);
+          // The key comes from the caller (the Keychain), never from the saved record.
+          const key = apiKey ?? (await readApiKey?.(serverId));
+          const models = await fetchModelsFromServer({ ...server, apiKey: key });
           set((state) => ({
             discoveredModels: {
               ...state.discoveredModels,
@@ -219,7 +242,7 @@ export const useRemoteServerStore = create<RemoteServerState>()(
       },
 
       // Health check
-      testConnection: async (serverId) => {
+      testConnection: async (serverId, apiKey) => {
         const { servers } = get();
         const server = servers.find((s) => s.id === serverId);
         if (!server) {
@@ -229,7 +252,8 @@ export const useRemoteServerStore = create<RemoteServerState>()(
         set({ testingServerId: serverId, isLoading: true });
 
         try {
-          const result = await testServerConnection(server);
+          const key = apiKey ?? (await readApiKey?.(serverId));
+          const result = await testServerConnection({ ...server, apiKey: key });
 
           set((state) => ({
             serverHealth: {
