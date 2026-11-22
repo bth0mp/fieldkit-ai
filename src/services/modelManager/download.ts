@@ -24,11 +24,16 @@ import { extractBaseName } from './scan';
  */
 export function mmProjLocalName(ggufFileName: string, mmProjSourceName?: string): string {
   const base = extractBaseName(ggufFileName);
-  // Keep the projector's OWN precision (mmproj-F16 / mmproj-BF16) from its source filename, but strip any
-  // model prefix the repo added — so the on-disk name is `<model-base>-mmproj-<precision>.gguf`:
-  //  - model-prefixed  → two repos that both ship `mmproj-F16.gguf` can't collide on disk (the original loss),
+  // The on-disk name is `<model-base>-mmproj-<precision>.gguf`: only the projector's own precision is kept
+  // from its source name, and every model-name token is dropped wherever it sits.
+  //  - `<model-base>` prefix → two repos that both ship `mmproj-F16.gguf` can't collide on disk.
   //  - MODEL-quant-independent (extractBaseName drops the model quant) → every quant shares ONE projector file.
-  const proj = mmProjSourceName?.match(/mmproj.*$/i)?.[0] ?? 'mmproj.gguf';
+  //  - precision only → the stem always matches the model. ggml-org ships `mmproj-<ModelName>-<quant>.gguf`;
+  //    keeping that model name doubled the stem and the model loaded without vision.
+  // The precision is the token just before `.gguf`; anchoring there keeps the match linear and takes the
+  // trailing token, so a precision-like token inside a model name cannot win.
+  const precision = mmProjSourceName?.match(/[-_.](iq\d[a-z0-9_]*|q\d[a-z0-9_]*|bf16|fp16|f16|f32)\.gguf$/i)?.[1];
+  const proj = precision ? `mmproj-${precision}.gguf` : 'mmproj.gguf';
   return `${base}-${proj}`;
 }
 

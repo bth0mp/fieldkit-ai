@@ -24,21 +24,44 @@ export function isMMProjFile(fileName: string): boolean {
  * The model-identity stem of a gguf/mmproj filename: lowercased, with the extension, any `mmproj` marker,
  * and the QUANTIZATION token removed — so name + variant remain and quant is ignored. Both
  * gemma-4-E2B-it-Q4_K_M.gguf and gemma-4-E2B-it-Q8_0-mmproj.gguf reduce to `gemma4e2bit`; E4B reduces to
- * `gemma4e4bit` (distinct). Packaging/variant suffixes (UD, instruct, …) are kept, so they must match too.
+ * `gemma4e4bit` (distinct). Model-variant tokens (E2B/E4B, instruct, …) are kept, so they must match too;
+ * only quant packaging (the `UD-` dynamic-quant prefix) and the `-text-model` role marker are normalized out.
  */
 function modelIdentityStem(fileName: string): string {
   return fileName
     .toLowerCase()
     .replace(/\.gguf$/, '')
     .replace(/[-_.]?mmproj/g, '')
+    // moondream ships its weights as `<name>-text-model-<prec>` beside `<name>-mmproj-<prec>`; drop the
+    // role marker so both reduce to the same stem.
+    .replace(/[-_.]text[-_]?model/g, '')
+    // unsloth dynamic quants are `UD-<quant>` (for example `-UD-IQ2_M`). `UD` is quant packaging, not a model
+    // variant: strip it only when it directly precedes a quant token.
+    .replace(/[-_.]ud(?=[-_.](?:iq\d|q\d|f\d|fp16|bf16))/gi, '')
     // quant / precision tokens: Q4_K_M, Q8_0, Q5_K_S, Q6_K, IQ4_XS, F16, FP16, F32, BF16, …
     .replace(/[-_.]?(iq\d+[a-z0-9_]*|q\d+[a-z0-9_]*|fp16|f16|f32|bf16)/gi, '')
     .replace(/[^a-z0-9]+/g, '');
 }
 
+/**
+ * Older versions named a downloaded projector `<model-base>-<everything from "mmproj" on in the repo's name>`,
+ * so a ggml-org projector (`mmproj-<ModelName>-<precision>`) was saved with the model name twice, and
+ * `mmproj-model-<precision>` was saved with the word "model" after it. Those files are still on phones. Their
+ * stem is the model's stem plus a repeat of it, or plus "model"; accept exactly those two shapes so a vision
+ * file downloaded under the old name is still found. Another model or variant never reduces to either.
+ */
+function isOldNamedProjectorStem(modelStem: string, projectorStem: string): boolean {
+  return modelStem !== '' && (projectorStem === modelStem + modelStem || projectorStem === `${modelStem}model`);
+}
+
+function projectorMatchesStem(modelStem: string, mmProjFileName: string): boolean {
+  const stem = modelIdentityStem(mmProjFileName);
+  return stem === modelStem || isOldNamedProjectorStem(modelStem, stem);
+}
+
 /** True when a projector filename belongs to a model filename (same quant-stripped name+variant stem). */
 export function mmProjBelongsToModel(modelFileName: string, mmProjFileName: string): boolean {
-  return modelIdentityStem(modelFileName) === modelIdentityStem(mmProjFileName);
+  return projectorMatchesStem(modelIdentityStem(modelFileName), mmProjFileName);
 }
 
 /**
@@ -52,7 +75,8 @@ export function mmProjBelongsToModel(modelFileName: string, mmProjFileName: stri
  */
 export function pickMmProjForModel(modelFileName: string, candidateNames: string[]): string | undefined {
   const modelStem = modelIdentityStem(modelFileName);
-  return candidateNames.find(name => modelIdentityStem(name) === modelStem);
+  return candidateNames.find(name => modelIdentityStem(name) === modelStem)
+    ?? candidateNames.find(name => projectorMatchesStem(modelStem, name));
 }
 
 /**
@@ -85,10 +109,14 @@ export function pickMmProjForDownload(
   const exact = candidateNames.find(name => modelIdentityStem(name) === modelStem);
   if (exact) return exact;
 
-  // (A) Projectors with NO model-name token (empty identity stem) are generic to the repo's single model.
+  // (A) GENERIC projectors serve the repo's single model: no model-name token (empty identity stem), or the
+  // literal placeholder `model` (ggml-org gemma-3 and openbmb MiniCPM ship `mmproj-model-<precision>`).
   // Prefer F16 (not BF16), else the first. A NAMED-but-different projector is excluded here, so it can
   // never be chosen as the generic fallback (case B refusal).
-  const generic = candidateNames.filter(name => modelIdentityStem(name) === '');
+  const generic = candidateNames.filter(name => {
+    const stem = modelIdentityStem(name);
+    return stem === '' || stem === 'model';
+  });
   if (generic.length > 0) {
     const f16 = generic.find(name => {
       const lower = name.toLowerCase();
