@@ -105,4 +105,94 @@ describe('Server sorts (rendered)', () => {
     rtl.fireEvent.press(ui.getByTestId('sort-option-trending'));
     await rtl.waitFor(() => expect(ui.getByText('No models found. Try a different search term.')).toBeTruthy(), TIMEOUT);
   });
+
+  it('a filter applies to a server sort, and removing it asks again', async () => {
+    const { rtl, ui, hf } = await openModelsFromHome({
+      totalGB: 10.82,
+      hf: h => h.setList(url => {
+        if (url.searchParams.get('sort') !== 'trendingScore') return [];
+        return url.searchParams.get('pipeline_tag')
+          ? [row('a/Llava-GGUF', { pipeline_tag: 'image-text-to-text' })]
+          : [row('a/Plain-GGUF')];
+      }),
+    });
+    rtl.fireEvent.press(ui.getByTestId('sort-pill'));
+    rtl.fireEvent.press(ui.getByTestId('sort-option-trending'));
+    await rtl.waitFor(() => expect(ui.getByText('Plain-GGUF')).toBeTruthy(), TIMEOUT);
+    rtl.fireEvent.press(ui.getByTestId('text-filter-toggle'));
+    rtl.fireEvent.press(ui.getByText(/^Type [▴▾]/));
+    rtl.fireEvent.press(ui.getByText('Vision'));
+    await rtl.waitFor(() => expect(ui.getByText('Llava-GGUF')).toBeTruthy(), TIMEOUT);
+    expect(ui.queryByText('Plain-GGUF')).toBeNull();
+    rtl.fireEvent.press(ui.getByText(/^Vision [▴▾]/));
+    rtl.fireEvent.press(ui.getByText('All Types'));
+    await rtl.waitFor(() => expect(ui.getByText('Plain-GGUF')).toBeTruthy(), TIMEOUT);
+    expect(ui.queryByText('Llava-GGUF')).toBeNull();
+    expect(hf.requests().filter(u => u.pathname === '/api/models').at(-1)!.searchParams.has('pipeline_tag')).toBe(false);
+  });
+
+  it('choosing a sort right after typing leaves only that sort\'s results', async () => {
+    const { rtl, ui, hf } = await openModelsFromHome({
+      totalGB: 10.82,
+      hf: h => h.setList(url => (url.searchParams.get('sort') === 'likes' ? [row('a/Liked-GGUF')] : [row('a/Default-GGUF')])),
+    });
+    rtl.fireEvent.changeText(ui.getByTestId('search-input'), 'qwen');
+    rtl.fireEvent.press(ui.getByTestId('sort-pill'));
+    rtl.fireEvent.press(ui.getByTestId('sort-option-likes'));
+    await new Promise(r => setTimeout(r, 900));
+    await rtl.waitFor(() => expect(ui.getByText('Liked-GGUF')).toBeTruthy(), TIMEOUT);
+    expect(ui.queryByText('Default-GGUF')).toBeNull();
+    const lists = hf.requests().filter(u => u.pathname === '/api/models');
+    expect(lists.length).toBeGreaterThan(0);
+    expect(lists.every(u => u.searchParams.get('sort') === 'likes')).toBe(true);
+  });
+
+  it('moving between Smart, For You and Size does not ask again, and leaving a server sort does', async () => {
+    const { rtl, ui, hf } = await openModelsFromHome({
+      totalGB: 10.82,
+      hf: h => h.setList(url => (url.searchParams.get('sort') === 'likes' ? [row('a/Liked-GGUF')] : [row('a/Plain-GGUF')])),
+    });
+    const lists = () => hf.requests().filter(u => u.pathname === '/api/models');
+    rtl.fireEvent.changeText(ui.getByTestId('search-input'), 'qwen');
+    await rtl.waitFor(() => expect(ui.getByText('Plain-GGUF')).toBeTruthy(), { timeout: 6000 });
+    const before = lists().length;
+    for (const key of ['bestfit', 'size', 'recommended']) {
+      rtl.fireEvent.press(ui.getByTestId('sort-pill'));
+      rtl.fireEvent.press(ui.getByTestId(`sort-option-${key}`));
+      expect(ui.queryByText('Loading models...')).toBeNull();
+    }
+    await new Promise(r => setTimeout(r, 300));
+    expect(lists().length).toBe(before);
+    expect(ui.getByText('Plain-GGUF')).toBeTruthy();
+
+    rtl.fireEvent.press(ui.getByTestId('sort-pill'));
+    rtl.fireEvent.press(ui.getByTestId('sort-option-likes'));
+    await rtl.waitFor(() => expect(ui.getByText('Liked-GGUF')).toBeTruthy(), TIMEOUT);
+    rtl.fireEvent.press(ui.getByTestId('sort-pill'));
+    rtl.fireEvent.press(ui.getByTestId('sort-option-size'));
+    await rtl.waitFor(() => expect(ui.getByText('Plain-GGUF')).toBeTruthy(), TIMEOUT);
+    const last = lists().at(-1)!;
+    expect(last.searchParams.has('num_parameters')).toBe(false);
+    expect(last.searchParams.get('search')).toBe('qwen');
+  });
+
+  it('stops loading after a stale answer is ignored', async () => {
+    const { rtl, ui, hf } = await openModelsFromHome({
+      totalGB: 10.82,
+      hf: h => h.setList(url => (url.searchParams.get('sort') === 'likes' ? [row('a/Liked-GGUF')] : [row('a/Old-Trend-GGUF')])),
+    });
+    const held = hf.hold();
+    rtl.fireEvent.press(ui.getByTestId('sort-pill'));
+    rtl.fireEvent.press(ui.getByTestId('sort-option-trending'));
+    await rtl.waitFor(() => expect(held.count()).toBe(1), TIMEOUT);
+    rtl.fireEvent.press(ui.getByTestId('sort-pill'));
+    rtl.fireEvent.press(ui.getByTestId('sort-option-likes'));
+    await rtl.waitFor(() => expect(held.count()).toBe(2), TIMEOUT);
+    await rtl.act(async () => { held.release(0); });
+    expect(ui.getByText('Loading models...')).toBeTruthy();
+    await rtl.act(async () => { held.release(1); });
+    await rtl.waitFor(() => expect(ui.getByText('Liked-GGUF')).toBeTruthy(), TIMEOUT);
+    expect(ui.queryByText('Loading models...')).toBeNull();
+    expect(ui.queryByText('Old-Trend-GGUF')).toBeNull();
+  });
 });

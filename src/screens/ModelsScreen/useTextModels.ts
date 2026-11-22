@@ -144,6 +144,7 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
 
   // Each search takes a number; an answer whose number is no longer the latest is dropped.
   const requestCounter = useRef(0);
+  const ramGB = hardwareService.getTotalMemoryGB();
 
   const runSearch = async () => {
     const requestId = ++requestCounter.current;
@@ -164,7 +165,7 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
       const results = isServerSort
         ? await huggingFaceService.browseModels(effectiveQuery, {
           sort: filterState.sort as BrowseSort,
-          maxParamsB: maxParamsForTier(memoryTierGB(hardwareService.getTotalMemoryGB())),
+          maxParamsB: maxParamsForTier(memoryTierGB(ramGB)),
           pipelineTag,
           limit: 30,
         })
@@ -185,12 +186,16 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
     await runSearch();
   };
 
+  // The pending typing debounce; a sort change cancels it, since it would search with the old sort.
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
   useEffect(() => {
     if (!searchQuery.trim() && !SERVER_SORTS.includes(filterState.sort)) {
       requestCounter.current++;
       setHasSearched(false); setSearchResults([]); setIsLoading(false); return;
     }
     const timer = setTimeout(() => { runSearch(); }, 500);
+    debounceTimer.current = timer;
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
@@ -198,7 +203,9 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
   // Auto-search when searchable filters change (type/size/org) even with empty query
   // Uses runSearch directly to avoid collapsing the expanded filter dimension
   useEffect(() => {
-    if (filterState.type === 'all' && filterState.size === 'all' && filterState.orgs.length === 0) return;
+    const noFilters = filterState.type === 'all' && filterState.size === 'all' && filterState.orgs.length === 0;
+    // A server sort is a search of its own, so removing the last filter must ask again.
+    if (noFilters && !SERVER_SORTS.includes(filterState.sort)) return;
     runSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterState.type, filterState.size, filterState.orgs.length]);
@@ -206,8 +213,12 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
   // Choosing a sort searches again: a server sort asks Hugging Face, a client sort with nothing typed shows the picks.
   const lastSort = useRef(filterState.sort);
   useEffect(() => {
-    if (lastSort.current === filterState.sort) return; // opening the tab fetches nothing new
+    const previous = lastSort.current;
     lastSort.current = filterState.sort;
+    if (previous === filterState.sort) return; // opening the tab fetches nothing new
+    // Smart, For You and Size only reorder the list on screen.
+    if (!SERVER_SORTS.includes(previous) && !SERVER_SORTS.includes(filterState.sort)) return;
+    clearTimeout(debounceTimer.current);
     runSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterState.sort]);
@@ -326,11 +337,7 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
     setFilterState(prev => ({ ...prev, sort, expandedDimension: null })), []);
 
   // Computed
-  const ramGB = hardwareService.getTotalMemoryGB();
   const deviceRecommendation = useMemo(() => hardwareService.getModelRecommendation(), []);
-  const hasActiveFilters = filterState.orgs.length > 0 || filterState.type !== 'all' ||
-    filterState.source !== 'all' || filterState.size !== 'all' || filterState.quant !== 'all' ||
-    filterState.sort !== 'recommended';
 
   const filteredResults = useMemo(
     () => applySort(computeFilteredResults(searchResults, filterState, ramGB), filterState.sort, ramGB),
@@ -380,7 +387,7 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
     filterState, setFilterState,
     textFiltersVisible, setTextFiltersVisible,
     downloadedModels,
-    hasActiveFilters, ramGB, deviceRecommendation,
+    ramGB, deviceRecommendation,
     filteredResults, recommendedAsModelInfo, trendingAsModelInfo,
     handleSearch, handleSelectModel, handleDownload, handleRepairMmProj, handleCancelDownload, handleDeleteModel, loadDownloadedModels,
     clearFilters, toggleFilterDimension, toggleOrg,

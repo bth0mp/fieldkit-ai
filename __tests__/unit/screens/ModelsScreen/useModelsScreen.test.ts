@@ -78,7 +78,6 @@ jest.mock('../../../../src/screens/ModelsScreen/useTextModels', () => ({
     textFiltersVisible: false,
     setTextFiltersVisible: jest.fn(),
     downloadProgress: {},
-    hasActiveFilters: false,
     ramGB: 8,
     deviceRecommendation: 'medium',
     filteredResults: [],

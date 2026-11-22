@@ -253,7 +253,6 @@ export function useModelsScreen() {
     textFiltersVisible: text.textFiltersVisible,
     setTextFiltersVisible: text.setTextFiltersVisible,
     downloadedModels: text.downloadedModels,
-    hasActiveFilters: text.hasActiveFilters,
     ramGB: text.ramGB,
     deviceRecommendation: text.deviceRecommendation,
     filteredResults: text.filteredResults,
