@@ -55,6 +55,7 @@ class RemoteServerManager {
         await this.storeApiKey(id, apiKey);
       } catch (error) {
         // No server without its key: a retry must not meet the record and be taken for a duplicate.
+        await this.removeApiKeyAnyway(id);
         store.removeServer(id);
         throw error;
       }
@@ -258,7 +259,9 @@ class RemoteServerManager {
     try {
       await removeApiKeyImpl(serverId);
     } catch {
-      // The server goes even though its key could not be cleared.
+      // The server goes even though its key could not be cleared (the Keychain helper logged it): no record
+      // points at the leftover entry and it is never sent, and failing here would make a server
+      // undeletable while the Keychain is broken.
     }
   }
 
