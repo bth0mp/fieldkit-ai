@@ -9,6 +9,7 @@ import { templateEmitsReasoning } from '../utils/messageContent';
 import { ensureNativeLogCapture, resetNativeLogCapture, recentNativeLog } from './llmNativeLog';
 
 import { HTP_ENABLED } from '../config/featureFlags';
+import { CONTEXT_OUTPUT_BUDGET_RATIO } from '../utils/contextBudget';
 
 const RESPONSE_RESERVE = 512;
 const DEFAULT_THREADS = 4; // targets performance cores only; over-threading onto efficiency cores (A520) hurts
@@ -453,9 +454,12 @@ export { validateModelFile, checkMemoryForModel, safeCompletion, resolveSafeCont
 const STOP_TOKENS = ['</s>', '<|end|>', '<|eot_id|>'];
 export function buildCompletionParams(settings: {
   maxTokens?: number; temperature?: number; topP?: number; repeatPenalty?: number;
-}, options?: { disableCtxShift?: boolean }): Record<string, any> {
+}, options?: { disableCtxShift?: boolean; contextLength?: number }): Record<string, any> {
+  const requested = Math.max(1, Math.floor(settings.maxTokens || RESPONSE_RESERVE));
+  const outputLimit = options?.contextLength ? Math.max(1, Math.floor(options.contextLength * CONTEXT_OUTPUT_BUDGET_RATIO)) : requested;
   return {
-    n_predict: settings.maxTokens || RESPONSE_RESERVE,
+    // A reply as long as the whole context leaves no room for the prompt, and llama.cpp refuses the turn.
+    n_predict: Math.min(requested, outputLimit),
     temperature: settings.temperature ?? 0.7,
     top_k: 40,
     top_p: settings.topP ?? 0.95,

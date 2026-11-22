@@ -502,6 +502,22 @@ describe('buildCompletionParams', () => {
     expect(params.penalty_repeat).toBe(1.1);
     expect(params.stop).toBeDefined();
   });
+
+  it('never lets n_predict take the space the prompt needs', () => {
+    const params = buildCompletionParams({ ...defaultSettings, maxTokens: 8192 }, { contextLength: 2048 });
+    expect(params.n_predict).toBeLessThan(2048);
+    expect(params.n_predict).toBe(Math.floor(2048 * 0.4));
+    expect(2048 - params.n_predict).toBeGreaterThanOrEqual(Math.floor(2048 * 0.55));
+  });
+
+  it('keeps the requested Max Tokens when it already leaves prompt space', () => {
+    const params = buildCompletionParams({ ...defaultSettings, maxTokens: 512 }, { contextLength: 4096 });
+    expect(params.n_predict).toBe(512);
+  });
+
+  it('falls back to the default reserve when Max Tokens is unset', () => {
+    expect(buildCompletionParams({}, { contextLength: 4096 }).n_predict).toBe(512);
+  });
 });
 
 describe('initContextWithFallback — HTP device stripping and timeout', () => {
