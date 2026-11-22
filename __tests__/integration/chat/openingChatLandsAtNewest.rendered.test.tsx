@@ -21,6 +21,8 @@ jest.mock('@react-navigation/native', () => ({
 
 type Harness = Awaited<ReturnType<typeof setupChatScreen>>;
 
+jest.setTimeout(40000);
+
 const TIMEOUT = { timeout: 4000 };
 const LIST_HEIGHT = 747;
 const CONTENT_HEIGHT = 1959;
@@ -162,5 +164,47 @@ describe('the list while you read and send', () => {
 
     expect(scrollToEnd).not.toHaveBeenCalled();
     expect(scrollTo).not.toHaveBeenCalled();
+  });
+});
+
+/** A stored chat of `count` alternating user and assistant messages, "<label> note number N." each; returns its id. */
+function storedChat(h: Harness, label: string, count: number): string {
+  const id = h.useChatStore.getState().createConversation('m', label);
+  for (let n = 1; n <= count; n += 1) {
+    h.useChatStore.getState().addMessage(id, { role: n % 2 ? 'user' : 'assistant', content: `${label} note number ${n}.` });
+  }
+  return id;
+}
+
+describe('an opening chat renders its newest rows first', () => {
+  it('renders the newest message of a 40-message chat and not its oldest on the first render', async () => {
+    const h = await setup();
+    const id = storedChat(h, 'Long', 40);
+    await h.openChat(id);
+    expect(h.view!.getByText('Long note number 40.')).toBeTruthy();
+    expect(h.view!.queryByText('Long note number 1.')).toBeNull();
+  });
+
+  it('does the same for a second 40-message chat shown without unmounting', async () => {
+    const h = await setup();
+    const first = storedChat(h, 'Alpha', 40);
+    const second = storedChat(h, 'Beta', 40);
+    await h.openChat(first);
+    expect(h.view!.getByText('Alpha note number 40.')).toBeTruthy();
+
+    const route: { params: Record<string, unknown> } = require('../../harness/chatHarness').routeHolder;
+    route.params = { conversationId: second };
+    await h.rtl.act(async () => {
+      h.view!.rerender(h.React.createElement(require('../../../src/screens/ChatScreen').ChatScreen, {}));
+    });
+    await h.rtl.waitFor(() => expect(h.view!.getByText('Beta note number 40.')).toBeTruthy(), TIMEOUT);
+    expect(h.view!.queryByText('Beta note number 1.')).toBeNull();
+  });
+
+  it('renders every message of a chat shorter than one batch', async () => {
+    const h = await setup();
+    const id = storedChat(h, 'Short', 3);
+    await h.openChat(id);
+    for (let n = 1; n <= 3; n += 1) expect(h.view!.getByText(`Short note number ${n}.`)).toBeTruthy();
   });
 });

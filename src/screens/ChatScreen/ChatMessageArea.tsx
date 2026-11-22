@@ -27,6 +27,10 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 
 const KEEP_POSITION = { minIndexForVisible: 0 } as const;
+// How many rows a chat renders first, counted back from its newest message. The list otherwise renders from
+// the oldest row in timed batches, so a long chat would show its oldest rows until every batch had run.
+const OPENING_ROWS = 15;
+const ignoreScrollToIndexFailure = () => undefined;
 
 export type ChatMessageAreaProps = {
   flatListRef: React.RefObject<FlatList | null>;
@@ -129,18 +133,25 @@ export const ChatMessageArea: React.FC<ChatMessageAreaProps> = ({
   const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shrinkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const contentHeightRef = useRef(0);
+  // The first row a chat renders, fixed per chat: it only matters when the list mounts.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const firstRow = useMemo(() => Math.max(0, chat.displayMessages.length - OPENING_ROWS), [chat.activeConversationId]);
   React.useEffect(() => {
     openingRef.current = true;
+    isNearBottomRef.current = true;
     contentHeightRef.current = 0;
     setSettled(false);
-    // Never unsettled for long: whatever the content does, keep-position is on within 800 ms.
-    const fallback = setTimeout(() => setSettled(true), 800);
+    // Never unsettled for long: whatever the content does, the opening phase ends within 800 ms.
+    const fallback = setTimeout(() => {
+      openingRef.current = false;
+      setSettled(true);
+    }, 800);
     return () => {
       clearTimeout(fallback);
       if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
       if (shrinkTimerRef.current) clearTimeout(shrinkTimerRef.current);
     };
-  }, [chat.activeConversationId]);
+  }, [chat.activeConversationId, isNearBottomRef]);
   const interfaceMode = useUiModeStore((s) => s.interfaceMode);
   const tabNav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { toolCountHintDismissed } = useAppStore();
@@ -179,11 +190,15 @@ export const ChatMessageArea: React.FC<ChatMessageAreaProps> = ({
     }
     return undefined;
   }, [chat.displayMessages]);
+  const lastSentRef = useRef<{ conversationId: string | null; id?: string }>({ conversationId: null });
   useEffect(() => {
-    if (!lastSentId) return;
+    // Only a message sent while this chat is open counts, not the one a chat shows when it opens.
+    const prev = lastSentRef.current;
+    lastSentRef.current = { conversationId: chat.activeConversationId, id: lastSentId };
+    if (!lastSentId || prev.conversationId !== chat.activeConversationId || prev.id === lastSentId) return;
     const frame = requestAnimationFrame(() => scrollToContentEnd(flatListRef.current, true));
     return () => cancelAnimationFrame(frame);
-  }, [lastSentId, flatListRef]);
+  }, [lastSentId, chat.activeConversationId, flatListRef]);
 
   // Bottom safe-area for the input footer. We own it here (rather than on the
   // screen's SafeAreaView) so the inset replaces — not stacks on top of — the
@@ -228,6 +243,13 @@ export const ChatMessageArea: React.FC<ChatMessageAreaProps> = ({
         <FlatList
           {...LIST_CLIPPING_PROPS}
           testID="chat-message-list"
+          // Each chat opens in a new list, so its first render starts at its newest rows.
+          key={chat.activeConversationId ?? 'new-chat'}
+          initialNumToRender={OPENING_ROWS}
+          initialScrollIndex={firstRow}
+          // The rows above are not measured yet, so the list cannot scroll to that index itself; the
+          // opening pin below brings it to the end instead.
+          onScrollToIndexFailed={ignoreScrollToIndexFailure}
           ref={flatListRef}
           data={chat.displayMessages}
           renderItem={renderItem}
@@ -262,6 +284,7 @@ export const ChatMessageArea: React.FC<ChatMessageAreaProps> = ({
             if (openingRef.current && contentHeightRef.current > 0) {
               scrollToContentEnd(flatListRef.current, false, contentExtent());
             } else if (prevHeight > 0 && newHeight < prevHeight) {
+              if (shrinkTimerRef.current) clearTimeout(shrinkTimerRef.current);
               shrinkTimerRef.current = setTimeout(() => scrollToContentEnd(flatListRef.current, true), 50);
             }
           }}
