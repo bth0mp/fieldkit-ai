@@ -4,8 +4,8 @@
  * after the Assistant card, and shows only while something is downloading.
  */
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { persist } from 'zustand/middleware';
+import { createHydrationGatedStorage } from '../../utils/hydrationGatedStorage';
 
 export type HomeCardId = 'assistant' | 'fieldKit' | 'library' | 'checklists' | 'today' | 'phone';
 
@@ -35,14 +35,18 @@ export function readLayout(saved: unknown): HomeLayout {
   return { order, hidden };
 }
 
+const layoutStorage = createHydrationGatedStorage<HomeLayout>();
+
 export const useHomeLayoutStore = create<HomeLayout>()(persist(
   (): HomeLayout => ({ order: [...DEFAULT_ORDER], hidden: [] }),
   {
     name: '@fieldkit/home_layout',
-    storage: createJSONStorage(() => AsyncStorage),
-    merge: (saved, current) => ({ ...current, ...readLayout(saved) }),
+    storage: layoutStorage.storage,
+    onRehydrateStorage: layoutStorage.onRehydrateStorage(),
+    merge: layoutStorage.merge<HomeLayout>((saved, current) => ({ ...current, ...readLayout(saved) })),
   },
 ));
+layoutStorage.attach(useHomeLayoutStore);
 
 /** The cards to show, in order. */
 export function shownCards(layout: HomeLayout): HomeCardId[] {

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { persist } from 'zustand/middleware';
+import { createHydrationGatedStorage } from '../utils/hydrationGatedStorage';
 import type { SpeechPhase, SpeechVoice } from '../services/speech/speechTypes';
 
 /**
@@ -34,6 +34,9 @@ interface SpeechState extends SpeechData {
   set: (partial: SpeechPatch) => void;
 }
 
+type PersistedSpeechState = Pick<SpeechState, 'selectedVoiceId' | 'rate' | 'pitch' | 'autoSpeak'>;
+const speechStorage = createHydrationGatedStorage<PersistedSpeechState>();
+
 export const useSpeechStore = create<SpeechState>()(
   persist(
     (set) => ({
@@ -51,7 +54,9 @@ export const useSpeechStore = create<SpeechState>()(
     }),
     {
       name: 'local-llm-speech-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: speechStorage.storage,
+      onRehydrateStorage: speechStorage.onRehydrateStorage(),
+      merge: speechStorage.merge<SpeechState>(),
       partialize: (state) => ({
         selectedVoiceId: state.selectedVoiceId,
         rate: state.rate,
@@ -61,3 +66,4 @@ export const useSpeechStore = create<SpeechState>()(
     },
   ),
 );
+speechStorage.attach(useSpeechStore);

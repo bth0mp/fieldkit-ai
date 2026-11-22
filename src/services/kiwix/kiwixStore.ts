@@ -2,8 +2,8 @@
  * The Kiwix files the user added, for the screen to render. Only kiwixService writes it.
  */
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { persist } from 'zustand/middleware';
+import { createHydrationGatedStorage } from '../../utils/hydrationGatedStorage';
 
 export interface KiwixFile {
   id: string;
@@ -27,11 +27,16 @@ interface KiwixState {
   adding: { done: number; total: number } | null;
 }
 
+const kiwixStorage = createHydrationGatedStorage<Omit<KiwixState, 'adding'>>();
+
 export const useKiwixStore = create<KiwixState>()(persist(
   (): KiwixState => ({ files: {}, folders: [], removed: [], refused: [], adding: null }),
   {
     name: '@fieldkit/kiwix_files',
-    storage: createJSONStorage(() => AsyncStorage),
+    storage: kiwixStorage.storage,
+    onRehydrateStorage: kiwixStorage.onRehydrateStorage(),
+    merge: kiwixStorage.merge<KiwixState>(),
     partialize: ({ adding: _adding, ...saved }) => saved,
   },
 ));
+kiwixStorage.attach(useKiwixStore);

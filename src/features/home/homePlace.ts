@@ -3,8 +3,8 @@
  * location: the user types it. Only homePlaceService writes the store, which is the screens' read-only copy.
  */
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { persist } from 'zustand/middleware';
+import { createHydrationGatedStorage } from '../../utils/hydrationGatedStorage';
 import { positionOf } from '../../services/tools/coordinateTools';
 
 export interface HomePlace { typed: string; lat: number; lon: number }
@@ -22,14 +22,18 @@ function readPlace(saved: unknown): HomePlace | null {
   return { typed: place.typed, lat: place.lat, lon: place.lon };
 }
 
+const placeStorage = createHydrationGatedStorage<HomePlaceState>();
+
 export const useHomePlaceStore = create<HomePlaceState>()(persist(
   (): HomePlaceState => ({ place: null }),
   {
     name: '@fieldkit/home_place',
-    storage: createJSONStorage(() => AsyncStorage),
-    merge: (saved, current) => ({ ...current, place: readPlace(saved) }),
+    storage: placeStorage.storage,
+    onRehydrateStorage: placeStorage.onRehydrateStorage(),
+    merge: placeStorage.merge<HomePlaceState>((saved, current) => ({ ...current, place: readPlace(saved) })),
   },
 ));
+placeStorage.attach(useHomePlaceStore);
 
 export const homePlaceService = {
   /** Reads the typed text as a position and keeps it. Throws an Error written for the user when it can't. */

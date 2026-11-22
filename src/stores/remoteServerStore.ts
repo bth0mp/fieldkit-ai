@@ -7,8 +7,8 @@
  */
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { persist } from 'zustand/middleware';
+import { createHydrationGatedStorage } from '../utils/hydrationGatedStorage';
 import {
   RemoteServer,
   RemoteModel,
@@ -72,6 +72,11 @@ interface RemoteServerState {
   clearAllServers: () => void;
 }
 
+type PersistedRemoteServerState = Pick<
+  RemoteServerState,
+  'servers' | 'activeServerId' | 'activeRemoteTextModelId' | 'activeRemoteImageModelId' | 'discoveredModels'
+>;
+const remoteServerStorage = createHydrationGatedStorage<PersistedRemoteServerState>();
 
 export const useRemoteServerStore = create<RemoteServerState>()(
   persist(
@@ -310,7 +315,9 @@ export const useRemoteServerStore = create<RemoteServerState>()(
     }),
     {
       name: 'remote-servers',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: remoteServerStorage.storage,
+      onRehydrateStorage: remoteServerStorage.onRehydrateStorage(),
+      merge: remoteServerStorage.merge<RemoteServerState>(),
       partialize: (state) => ({
         servers: state.servers,
         activeServerId: state.activeServerId,
@@ -322,4 +329,5 @@ export const useRemoteServerStore = create<RemoteServerState>()(
     }
   )
 );
+remoteServerStorage.attach(useRemoteServerStore);
 

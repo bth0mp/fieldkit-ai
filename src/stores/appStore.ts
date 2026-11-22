@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
 import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createHydrationGatedStorage } from '../utils/hydrationGatedStorage';
 import { DeviceInfo, DownloadedModel, ModelRecommendation, ONNXImageModel, ImageGenerationMode, AutoDetectMethod, CacheType, InferenceBackend, INFERENCE_BACKENDS, LiteRTBackend, GeneratedImage } from '../types';
 
 function isUnknownLike(value: string): boolean {
@@ -295,6 +295,31 @@ function migratePersistedState(persistedState: any, currentState: AppState): App
 export const selectIsLiteRT = (state: AppState): boolean =>
   state.downloadedModels.find(m => m.id === state.activeModelId)?.engine === 'litert';
 
+const persistedAppState = (state: AppState) => ({
+  themeMode: state.themeMode,
+  hasCompletedOnboarding: state.hasCompletedOnboarding,
+  onboardingChecklist: state.onboardingChecklist,
+  checklistDismissed: state.checklistDismissed,
+  activeModelId: state.activeModelId,
+  lastTextModelId: state.lastTextModelId,
+  settings: state.settings,
+  activeImageModelId: state.activeImageModelId,
+  generatedImages: state.generatedImages,
+  shownSpotlights: state.shownSpotlights,
+  warmedImageModels: state.warmedImageModels,
+  textGenerationCount: state.textGenerationCount, imageGenerationCount: state.imageGenerationCount,
+  hasEngagedSharePrompt: state.hasEngagedSharePrompt,
+  hasRegisteredPro: state.hasRegisteredPro,
+  devProDisabled: state.devProDisabled,
+  proBannerDismissed: state.proBannerDismissed,
+  desktopPromoDismissed: state.desktopPromoDismissed,
+  proAhaTriggeredBy: state.proAhaTriggeredBy,
+  loadedSettings: state.loadedSettings,
+});
+
+type PersistedAppState = ReturnType<typeof persistedAppState>;
+const appStorage = createHydrationGatedStorage<PersistedAppState>();
+
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
@@ -431,29 +456,11 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'local-llm-app-storage',
-      storage: createJSONStorage(() => AsyncStorage),
-      merge: migratePersistedState,
-      partialize: (state) => ({
-        themeMode: state.themeMode,
-        hasCompletedOnboarding: state.hasCompletedOnboarding,
-        onboardingChecklist: state.onboardingChecklist,
-        checklistDismissed: state.checklistDismissed,
-        activeModelId: state.activeModelId,
-        lastTextModelId: state.lastTextModelId,
-        settings: state.settings,
-        activeImageModelId: state.activeImageModelId,
-        generatedImages: state.generatedImages,
-        shownSpotlights: state.shownSpotlights,
-        warmedImageModels: state.warmedImageModels,
-        textGenerationCount: state.textGenerationCount, imageGenerationCount: state.imageGenerationCount,
-        hasEngagedSharePrompt: state.hasEngagedSharePrompt,
-        hasRegisteredPro: state.hasRegisteredPro,
-        devProDisabled: state.devProDisabled,
-        proBannerDismissed: state.proBannerDismissed,
-        desktopPromoDismissed: state.desktopPromoDismissed,
-        proAhaTriggeredBy: state.proAhaTriggeredBy,
-        loadedSettings: state.loadedSettings,
-      }),
+      storage: appStorage.storage,
+      onRehydrateStorage: appStorage.onRehydrateStorage(),
+      merge: appStorage.merge<AppState>(migratePersistedState),
+      partialize: persistedAppState,
     }
   )
 );
+appStorage.attach(useAppStore);
