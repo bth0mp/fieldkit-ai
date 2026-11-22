@@ -90,7 +90,10 @@ class AuthService {
     if (!isValid) {
       return false;
     }
-    return this.setPassphrase(newPassphrase);
+    if (!(await this.setPassphrase(newPassphrase))) {
+      throw new PassphraseSaveFailed();
+    }
+    return true;
   }
 }
 
@@ -101,5 +104,13 @@ export class PassphraseCheckUnavailable extends Error {
   constructor() {
     super("Couldn't check your passphrase. Try again.");
     this.name = 'PassphraseCheckUnavailable';
+  }
+}
+
+/** The keychain refused the new passphrase; the old one is still stored (not a wrong current passphrase). */
+export class PassphraseSaveFailed extends Error {
+  constructor() {
+    super("Couldn't save your new passphrase. Try again.");
+    this.name = 'PassphraseSaveFailed';
   }
 }

@@ -73,6 +73,7 @@ const mockChangePassphrase = jest.fn(() => Promise.resolve(true));
 
 jest.mock('../../../src/services/authService', () => ({
   PassphraseCheckUnavailable: class PassphraseCheckUnavailable extends Error {},
+  PassphraseSaveFailed: class PassphraseSaveFailed extends Error {},
   authService: {
     setPassphrase: (...args: any[]) => (mockSetPassphrase as any)(...args),
     changePassphrase: (...args: any[]) => (mockChangePassphrase as any)(...args),
@@ -422,6 +423,26 @@ describe('PassphraseSetupScreen', () => {
     });
 
     expect(mockShowAlert).toHaveBeenCalledWith('Error', "Couldn't check your passphrase. Try again.");
+    expect(defaultProps.onComplete).not.toHaveBeenCalled();
+  });
+
+  it('says the new passphrase could not be saved, not that the current one is wrong, when the keychain write fails', async () => {
+    const { PassphraseSaveFailed } = require('../../../src/services/authService');
+    mockChangePassphrase.mockRejectedValue(new PassphraseSaveFailed());
+
+    const { getByPlaceholderText, getAllByText } = render(
+      <PassphraseSetupScreen {...defaultProps} isChanging />,
+    );
+    fireEvent.changeText(getByPlaceholderText('Enter current passphrase'), 'oldpassword');
+    fireEvent.changeText(getByPlaceholderText('Enter passphrase (min 6 characters)'), 'newpassword');
+    fireEvent.changeText(getByPlaceholderText('Re-enter passphrase'), 'newpassword');
+    const matches = getAllByText('Change Passphrase');
+    await act(async () => {
+      fireEvent.press(matches[matches.length - 1]);
+    });
+
+    expect(mockShowAlert).toHaveBeenCalledWith("Couldn't save your new passphrase", 'Try again.');
+    expect(mockShowAlert).not.toHaveBeenCalledWith('Error', 'Current passphrase is incorrect');
     expect(defaultProps.onComplete).not.toHaveBeenCalled();
   });
 

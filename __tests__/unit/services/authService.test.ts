@@ -17,7 +17,7 @@ jest.mock('react-native-keychain', () => ({
   },
 }));
 
-import { authService, PassphraseCheckUnavailable } from '../../../src/services/authService';
+import { authService, PassphraseCheckUnavailable, PassphraseSaveFailed } from '../../../src/services/authService';
 import * as Keychain from 'react-native-keychain';
 
 describe('AuthService', () => {
@@ -224,6 +224,24 @@ describe('AuthService', () => {
 
       await expect(authService.changePassphrase('oldPass', 'newPass')).rejects.toBeInstanceOf(PassphraseCheckUnavailable);
       expect(Keychain.setGenericPassword).not.toHaveBeenCalled();
+    });
+
+    it('throws, not "incorrect", when the new passphrase cannot be saved, and the old one still verifies', async () => {
+      let stored = '';
+      (Keychain.setGenericPassword as jest.Mock).mockImplementation((_k: string, hash: string) => {
+        stored = hash;
+        return Promise.resolve(true);
+      });
+      (Keychain.getGenericPassword as jest.Mock).mockImplementation(() =>
+        Promise.resolve({ username: 'passphrase_hash', password: stored, service: 'ai.offgridmobile.auth' }),
+      );
+      await authService.setPassphrase('oldPass');
+
+      (Keychain.setGenericPassword as jest.Mock).mockRejectedValue(new Error('Keychain write error'));
+      await expect(authService.changePassphrase('oldPass', 'newPass')).rejects.toBeInstanceOf(PassphraseSaveFailed);
+
+      expect(await authService.verifyPassphrase('oldPass')).toBe(true);
+      expect(await authService.verifyPassphrase('newPass')).toBe(false);
     });
 
     it('returns false when old passphrase is incorrect', async () => {
