@@ -3,6 +3,20 @@ import { HF_API, QUANTIZATION_INFO, LMSTUDIO_AUTHORS, OFFICIAL_MODEL_AUTHORS, VE
 import { looksLikeVisionModel } from '../utils/visionModel';
 import { isMMProjFile, pickMmProjForDownload } from './mmproj';
 
+export type BrowseSort = 'trending' | 'downloads' | 'likes' | 'newest';
+
+export const NEW_RELEASE_PUBLISHERS = ['unsloth', 'bartowski', 'ggml-org', 'lmstudio-community', 'QuantFactory'] as const;
+
+// With any expand[] Hugging Face returns only _id, id and the fields asked for, so every field that
+// transformModelResult reads is named here. Never add 'gguf': it sends each model's whole chat template.
+const LIST_EXPAND = ['author', 'downloads', 'downloadsAllTime', 'likes', 'lastModified', 'createdAt', 'tags', 'pipeline_tag', 'cardData'];
+const DETAIL_EXPAND = [...LIST_EXPAND, 'siblings'];
+
+const BROWSE_SORT: Record<BrowseSort, string> = { trending: 'trendingScore', downloads: 'downloads', likes: 'likes', newest: 'createdAt' };
+const BROWSE_PIPELINES = new Set(['text-generation', 'image-text-to-text']);
+
+const expandParams = (fields: string[]) => fields.map(f => `expand[]=${f}`).join('&');
+
 class HuggingFaceService {
   private baseUrl = HF_API.baseUrl;
   private apiUrl = HF_API.apiUrl;
@@ -21,12 +35,47 @@ class HuggingFaceService {
     const params = new URLSearchParams({ filter: 'gguf', sort, direction, limit: limit.toString() });
     if (query) params.append('search', query);
     if (pipelineTag) params.append('pipeline_tag', pipelineTag);
-    const results = await this.fetchJson<HFModelSearchResult[]>(`${this.apiUrl}/models?${params.toString()}`);
+    return this.fetchList(params);
+  }
+
+  private async fetchList(params: URLSearchParams): Promise<ModelInfo[]> {
+    const results = await this.fetchJson<HFModelSearchResult[]>(`${this.apiUrl}/models?${params.toString()}&${expandParams(LIST_EXPAND)}`);
     return results.map(this.transformModelResult);
   }
 
+  /** Server-side sorted browse, limited to models small enough for the phone. */
+  async browseModels(
+    query: string,
+    opts: { sort: BrowseSort; maxParamsB: number; pipelineTag?: string; limit?: number }
+  ): Promise<ModelInfo[]> {
+    const { sort, maxParamsB, pipelineTag, limit = 30 } = opts;
+    const make = (author?: string) => {
+      const params = new URLSearchParams({
+        filter: 'gguf', sort: BROWSE_SORT[sort], direction: '-1', limit: limit.toString(),
+        num_parameters: `min:0,max:${maxParamsB}B`,
+      });
+      if (query) params.append('search', query);
+      if (pipelineTag) params.append('pipeline_tag', pipelineTag);
+      if (author) params.append('author', author);
+      return params;
+    };
+    let models: ModelInfo[];
+    if (sort === 'newest') {
+      const settled = await Promise.allSettled(NEW_RELEASE_PUBLISHERS.map(a => this.fetchList(make(a))));
+      const failed = settled.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+      if (failed.length === settled.length) throw failed[0].reason;
+      models = settled.flatMap(r => (r.status === 'fulfilled' ? r.value : []));
+      models.sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
+    } else {
+      models = await this.fetchList(make());
+    }
+    return models
+      .filter(m => m.pipelineTag === undefined || BROWSE_PIPELINES.has(m.pipelineTag))
+      .slice(0, limit);
+  }
+
   async getModelDetails(modelId: string): Promise<ModelInfo> {
-    const result = await this.fetchJson<HFModelSearchResult>(`${this.apiUrl}/models/${modelId}`);
+    const result = await this.fetchJson<HFModelSearchResult>(`${this.apiUrl}/models/${modelId}?${expandParams(DETAIL_EXPAND)}`);
     return this.transformModelResult(result);
   }
 
@@ -92,9 +141,12 @@ class HuggingFaceService {
       author,
       description: this.extractDescription(result),
       downloads: result.downloads || 0,
+      downloadsAllTime: result.downloadsAllTime,
       likes: result.likes || 0,
       tags: result.tags || [],
       lastModified: result.lastModified,
+      createdAt: result.createdAt,
+      pipelineTag: result.pipeline_tag,
       files,
       credibility,
     };

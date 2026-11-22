@@ -13,10 +13,14 @@ export interface ModelInfo {
   name: string;
   author: string;
   description: string;
+  /** Downloads in the last 30 days (Hugging Face `downloads`). */
   downloads: number;
+  downloadsAllTime?: number;
   likes: number;
   tags: string[];
   lastModified: string;
+  createdAt?: string;
+  pipelineTag?: string;
   files: ModelFile[];
   credibility?: ModelCredibility;
   modelType?: 'text' | 'vision' | 'code';
@@ -263,6 +267,9 @@ export interface HFModelSearchResult {
   disabled: boolean;
   gated: boolean | string;
   downloads: number;
+  downloadsAllTime?: number;
+  createdAt?: string;
+  pipeline_tag?: string;
   likes: number;
   tags: string[];
   cardData?: {

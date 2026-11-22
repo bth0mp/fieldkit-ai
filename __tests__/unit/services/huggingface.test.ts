@@ -412,7 +412,7 @@ describe('HuggingFaceService', () => {
       await huggingFaceService.searchModels('test');
 
       const url = mockFetch.mock.calls[0][0];
-      expect(url).not.toContain('pipeline_tag');
+      expect(new URL(url).searchParams.get('pipeline_tag')).toBeNull();
     });
 
     it('combines query and pipeline_tag in the same request', async () => {
