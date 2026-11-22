@@ -36,17 +36,17 @@ const GEMMA_NOT = 'Open-ended or very complex tasks';
 
 export const TEXT_NOTES: Record<string, ModelNote> = {
   'unsloth/gemma-4-E2B-it-GGUF': {
-    goodFor: 'Chat, summaries, and questions about pictures or speech',
+    goodFor: 'Chat, summaries, and questions about pictures',
     notFor: GEMMA_NOT,
     source: `${HF}google/gemma-4-E2B-it`,
   },
   'unsloth/gemma-4-E4B-it-GGUF': {
-    goodFor: 'Chat, summaries, pictures and speech; bigger than E2B',
+    goodFor: 'Chat, summaries and pictures; bigger than E2B',
     notFor: GEMMA_NOT,
     source: `${HF}google/gemma-4-E4B-it`,
   },
   'unsloth/Qwen3.5-0.8B-GGUF': {
-    goodFor: 'Short chats and quick questions on phones with little memory',
+    goodFor: 'Short chats on phones with little memory',
     notFor: 'Leave Thinking off; it can loop and not finish',
     source: `${HF}Qwen/Qwen3.5-0.8B`,
   },
@@ -56,8 +56,8 @@ export const TEXT_NOTES: Record<string, ModelNote> = {
     source: `${HF}Qwen/Qwen3.5-2B`,
   },
   'unsloth/Qwen3.5-9B-GGUF': {
-    goodFor: 'Chat and questions in over 200 languages; the biggest Qwen',
-    notFor: 'Phones with less than 8 GB of memory',
+    goodFor: 'Chat and questions in over 200 languages; bigger than Qwen 2B',
+    notFor: 'Quick replies; it thinks first unless you turn that off',
     source: `${HF}Qwen/Qwen3.5-9B`,
   },
   'ggml-org/SmolLM3-3B-GGUF': {
@@ -67,7 +67,7 @@ export const TEXT_NOTES: Record<string, ModelNote> = {
   },
   'bartowski/Mistral-7B-Instruct-v0.3-GGUF': {
     goodFor: 'Everyday chat and quick questions',
-    notFor: 'Blocking unsafe replies; it has no filter built in',
+    notFor: 'No built-in safety filter',
     source: `${HF}mistralai/Mistral-7B-Instruct-v0.3`,
   },
   'ggml-org/SmolVLM2-500M-Video-Instruct-GGUF': {
@@ -116,13 +116,13 @@ export const WHISPER_NOTES: Record<string, ModelNote> = {
   small: whisperMulti('bigger than Base'),
   medium: whisperMulti('bigger than Small'),
   'large-v3-turbo': {
-    goodFor: 'Speech to text in 99 languages; faster than Large v3',
-    notFor: 'Live transcription as you speak',
+    goodFor: 'Speech to text in 99 languages; smaller than Large v3',
+    notFor: 'Languages it is less accurate in',
     source: `${HF}openai/whisper-large-v3-turbo`,
   },
   'large-v3': {
     goodFor: 'Speech to text in 99 languages; the biggest Whisper',
-    notFor: 'It can add words that were not spoken',
+    notFor: 'Languages it is less accurate in',
     source: `${HF}openai/whisper-large-v3`,
   },
 };
