@@ -115,6 +115,18 @@ class WorkerDownload(
         return null
     }
 
+    /**
+     * Non-null only when the user cancelled. Used once the whole file is on disk: a system stop there
+     * must not requeue (the retry would ask for a Range past the end and a 416 would delete the file),
+     * but a Cancel must still win over a late size or SHA failure that would turn the row into FAILED.
+     */
+    private suspend fun cancelledOrNull(downloadId: String, download: DownloadEntity): Result? =
+        if (downloadDao.getDownload(downloadId)?.status == DownloadStatus.CANCELLED) {
+            handleStoppedState(downloadId, download, download.downloadedBytes)
+        } else {
+            null
+        }
+
     /** Non-null when the work was stopped or the user cancelled: the partial file is dealt with there. */
     private suspend fun stoppedOrCancelled(downloadId: String, download: DownloadEntity): Result? {
         val cancelled = downloadDao.getDownload(downloadId)?.status == DownloadStatus.CANCELLED
@@ -151,7 +163,7 @@ class WorkerDownload(
         return failDownload(downloadId, download, reason)
     }
 
-    private data class StreamParams(
+    internal data class StreamParams(
         val input: java.io.InputStream,
         val targetFile: File,
         val code: Int,
@@ -242,7 +254,7 @@ class WorkerDownload(
         }
     }
 
-    private suspend fun streamToFile(params: StreamParams): Result {
+    internal suspend fun streamToFile(params: StreamParams): Result {
         val (input, targetFile, code, download, downloadId, currentFileBytes, totalBytes, progressInterval) = params
         val appendMode = code == 206
         var bytesWritten = currentFileBytes
@@ -277,6 +289,8 @@ class WorkerDownload(
                 }
             }
         }
+
+        cancelledOrNull(downloadId, download)?.let { return it }
 
         val authoritativeExpectedBytes = when {
             totalBytes > 0L -> totalBytes
@@ -314,6 +328,7 @@ class WorkerDownload(
         }
         if (needsShaCheck(resumed, expectedSha256, sizeMatches)) {
             val actual = computeFileSha256(targetFile)
+            cancelledOrNull(downloadId, download)?.let { return it }
             val shaMatches = actual.lowercase() == expectedSha256!!.lowercase()
             Log.w(
                 TAG,
