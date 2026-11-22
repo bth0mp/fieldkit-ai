@@ -21,7 +21,9 @@ interface DownloadDao {
     @Delete
     suspend fun deleteDownload(download: DownloadEntity)
 
-    @Query("UPDATE downloads SET downloadedBytes = :bytes, totalBytes = :totalBytes, status = :status WHERE id = :downloadId")
+    // A cancelled row stays cancelled: a late progress tick from a worker that has not stopped yet
+    // must not turn it back into a running download.
+    @Query("UPDATE downloads SET downloadedBytes = :bytes, totalBytes = :totalBytes, status = :status WHERE id = :downloadId AND status != 'CANCELLED'")
     suspend fun updateProgress(downloadId: String, bytes: Long, totalBytes: Long, status: DownloadStatus)
 
     @Query("UPDATE downloads SET status = :status, error = :error WHERE id = :downloadId")

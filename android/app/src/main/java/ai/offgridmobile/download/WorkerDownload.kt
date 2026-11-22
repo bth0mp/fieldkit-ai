@@ -191,13 +191,12 @@ class WorkerDownload(
         val body = response.body ?: return failDownload(downloadId, download, DownloadReason.EMPTY_RESPONSE)
 
         // The partial file can change between building the Range request and this response (a cancel
-        // deletes it). Bytes that belong at offset N must never be written anywhere else.
+        // deletes it). Bytes that belong at offset N must never be written anywhere else. The file is
+        // measured once here; that length is the offset streamToFile appends at, and it re-checks it.
         val localLength = if (targetFile.exists()) targetFile.length() else 0L
-        if (!partialFileMatchesRequest(code, existingBytes, localLength, response.header("Content-Range"))) {
-            throw java.io.IOException("Resume mismatch: asked for offset $existingBytes, file has $localLength bytes")
-        }
+        checkResumable(code, existingBytes, localLength, response.header("Content-Range"), targetFile)
 
-        val currentFileBytes = if (targetFile.exists() && code == 206) targetFile.length() else 0L
+        val currentFileBytes = if (code == 206) localLength else 0L
         val contentLength = body.contentLength()
         val totalBytes = calculateTotalBytes(code, currentFileBytes, contentLength, download.totalBytes)
         Log.i(
@@ -207,6 +206,18 @@ class WorkerDownload(
         downloadDao.updateProgress(downloadId, currentFileBytes, totalBytes, DownloadStatus.RUNNING)
 
         return streamToFile(StreamParams(body.byteStream().buffered(), targetFile, code, download, downloadId, currentFileBytes, totalBytes, progressInterval))
+    }
+
+    /** Throws (an interrupted transfer) before anything is written when a 206 cannot be appended. */
+    private fun checkResumable(code: Int, requestStartBytes: Long, localLength: Long, contentRange: String?, targetFile: File) {
+        if (!contentRangeStartsAt(code, requestStartBytes, contentRange)) {
+            // The same answer would come back on every retry, so start the next request from zero.
+            if (!targetFile.delete()) Log.w(TAG, "Failed to delete file after unusable Content-Range: ${targetFile.path}")
+            throw java.io.IOException("Unusable Content-Range '$contentRange' for offset $requestStartBytes")
+        }
+        if (!partialFileMatchesRequest(code, requestStartBytes, localLength, contentRange)) {
+            throw java.io.IOException("Resume mismatch: asked for offset $requestStartBytes, file has $localLength bytes")
+        }
     }
 
     private suspend fun handleResponseCode(
@@ -233,13 +244,17 @@ class WorkerDownload(
 
     private suspend fun streamToFile(params: StreamParams): Result {
         val (input, targetFile, code, download, downloadId, currentFileBytes, totalBytes, progressInterval) = params
-        val appendMode = targetFile.exists() && code == 206
+        val appendMode = code == 206
         var bytesWritten = currentFileBytes
         var lastProgressAt = 0L
 
         // Unbuffered: the loop already writes whole buffers, and a full disk must fail on the write itself
         // (as DiskWriteException), never later in a flush that reads like a network cut.
         FileOutputStream(targetFile, appendMode).use { output ->
+            // The file must still be exactly where the validated offset says, or the bytes would land wrong.
+            if (appendMode && output.channel.size() != currentFileBytes) {
+                throw java.io.IOException("Partial file changed before resuming: expected $currentFileBytes bytes, found ${output.channel.size()}")
+            }
             input.use { src ->
                 val buffer = ByteArray(WRITE_CHUNK_BYTES)
                 var read = src.read(buffer)
@@ -278,30 +293,35 @@ class WorkerDownload(
         // its LiteRT models. A transient Content-Length / payload undershoot from
         // the CDN should not be treated as corruption when no SHA is available.
         val skipSizeValidation = parseSkipSizeValidation(download.metadataJson)
+        var sizeMatches = true
         if (authoritativeExpectedBytes > 0L && !skipSizeValidation) {
             val sizeDiffPercent = abs(bytesWritten - authoritativeExpectedBytes).toDouble() / authoritativeExpectedBytes
-            if (sizeDiffPercent > 0.001) {
-                // A meaningful final size mismatch is corruption unless a known SHA can
-                // explicitly prove the downloaded file is still the expected artifact.
-                val expectedSha256 = download.expectedSha256
-                if (expectedSha256.isNullOrEmpty()) {
-                    Log.w(
-                        TAG,
-                        "streamToFile size mismatch without SHA id=$downloadId file=${download.fileName} actualBytes=$bytesWritten authoritativeExpectedBytes=$authoritativeExpectedBytes dbExpectedBytes=${download.totalBytes} responseExpectedBytes=$totalBytes",
-                    )
-                    if (!targetFile.delete()) Log.w(TAG, "Failed to delete size-mismatched file: ${targetFile.path}")
-                    return failDownload(downloadId, download, DownloadReason.FILE_CORRUPTED)
-                }
-
-                val actual = computeFileSha256(targetFile)
-                Log.w(
-                    TAG,
-                    "streamToFile size mismatch with SHA id=$downloadId file=${download.fileName} actualBytes=$bytesWritten authoritativeExpectedBytes=$authoritativeExpectedBytes shaMatch=${actual.lowercase() == expectedSha256.lowercase()}",
-                )
-                if (actual.lowercase() != expectedSha256.lowercase()) {
-                    if (!targetFile.delete()) Log.w(TAG, "Failed to delete corrupted file: ${targetFile.path}")
-                    return failDownload(downloadId, download, DownloadReason.FILE_CORRUPTED)
-                }
+            sizeMatches = sizeDiffPercent <= 0.001
+        }
+        // A file that was appended to (in this run or an earlier one) may mix two versions of the
+        // content, which a matching size cannot reveal; skipSizeValidation does not waive that.
+        val resumed = appendMode && currentFileBytes > 0L
+        val expectedSha256 = download.expectedSha256
+        if (!sizeMatches && expectedSha256.isNullOrEmpty()) {
+            // A meaningful final size mismatch is corruption unless a known SHA can
+            // explicitly prove the downloaded file is still the expected artifact.
+            Log.w(
+                TAG,
+                "streamToFile size mismatch without SHA id=$downloadId file=${download.fileName} actualBytes=$bytesWritten authoritativeExpectedBytes=$authoritativeExpectedBytes dbExpectedBytes=${download.totalBytes} responseExpectedBytes=$totalBytes",
+            )
+            if (!targetFile.delete()) Log.w(TAG, "Failed to delete size-mismatched file: ${targetFile.path}")
+            return failDownload(downloadId, download, DownloadReason.FILE_CORRUPTED)
+        }
+        if (needsShaCheck(resumed, expectedSha256, sizeMatches)) {
+            val actual = computeFileSha256(targetFile)
+            val shaMatches = actual.lowercase() == expectedSha256!!.lowercase()
+            Log.w(
+                TAG,
+                "streamToFile SHA check id=$downloadId file=${download.fileName} actualBytes=$bytesWritten resumed=$resumed sizeMatches=$sizeMatches shaMatch=$shaMatches",
+            )
+            if (!shaMatches) {
+                if (!targetFile.delete()) Log.w(TAG, "Failed to delete corrupted file: ${targetFile.path}")
+                return failDownload(downloadId, download, DownloadReason.FILE_CORRUPTED)
             }
         }
 
@@ -377,13 +397,27 @@ class WorkerDownload(
          * asked for, and the server's Content-Range (when present) starts at that same offset.
          * Anything else would put bytes at the wrong place in the file.
          */
-        internal fun partialFileMatchesRequest(code: Int, requestStartBytes: Long, localLength: Long, contentRange: String?): Boolean {
+        internal fun partialFileMatchesRequest(code: Int, requestStartBytes: Long, localLength: Long, contentRange: String?): Boolean =
+            code != 206 || (localLength == requestStartBytes && contentRangeStartsAt(code, requestStartBytes, contentRange))
+
+        /**
+         * A single-part 206 must carry a Content-Range that starts at the requested offset (RFC 9110).
+         * Missing (a multipart/byteranges reply), unreadable or elsewhere means it cannot be appended.
+         */
+        internal fun contentRangeStartsAt(code: Int, requestStartBytes: Long, contentRange: String?): Boolean {
             if (code != 206) return true
-            if (localLength != requestStartBytes) return false
-            if (contentRange == null) return true
-            val start = Regex("""^bytes (\d+)-""").find(contentRange)?.groupValues?.get(1)?.toLongOrNull()
+            val start = contentRange?.let { Regex("""^bytes (\d+)-""", RegexOption.IGNORE_CASE).find(it) }
+                ?.groupValues?.get(1)?.toLongOrNull()
             return start == requestStartBytes
         }
+
+        /**
+         * Whether the finished file is checked against the known SHA-256: always when the size is off,
+         * and also when it was resumed, since content that changed on the server between attempts
+         * still adds up to the right size. Without a known SHA nothing is checked here.
+         */
+        internal fun needsShaCheck(resumed: Boolean, expectedSha256: String?, sizeMatches: Boolean): Boolean =
+            !expectedSha256.isNullOrEmpty() && (resumed || !sizeMatches)
 
         /**
          * The authoritative total size for the download. A successful response's

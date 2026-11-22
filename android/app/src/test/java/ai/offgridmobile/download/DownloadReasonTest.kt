@@ -70,24 +70,42 @@ class DownloadReasonTest {
 
     @Test
     fun `a 206 is only appended when the local file is exactly where the request asked to resume`() {
-        assertTrue(WorkerDownload.partialFileMatchesRequest(code = 206, requestStartBytes = 4096L, localLength = 4096L, contentRange = null))
+        val range = "bytes 4096-9999/10000"
+        assertTrue(WorkerDownload.partialFileMatchesRequest(code = 206, requestStartBytes = 4096L, localLength = 4096L, contentRange = range))
         // The file was deleted (a cancel) or cut back: its bytes no longer line up with the offset.
-        assertFalse(WorkerDownload.partialFileMatchesRequest(code = 206, requestStartBytes = 4096L, localLength = 0L, contentRange = null))
-        assertFalse(WorkerDownload.partialFileMatchesRequest(code = 206, requestStartBytes = 4096L, localLength = 1000L, contentRange = null))
+        assertFalse(WorkerDownload.partialFileMatchesRequest(code = 206, requestStartBytes = 4096L, localLength = 0L, contentRange = range))
+        assertFalse(WorkerDownload.partialFileMatchesRequest(code = 206, requestStartBytes = 4096L, localLength = 1000L, contentRange = range))
         // The file grew or was replaced by a longer one.
-        assertFalse(WorkerDownload.partialFileMatchesRequest(code = 206, requestStartBytes = 4096L, localLength = 8192L, contentRange = null))
+        assertFalse(WorkerDownload.partialFileMatchesRequest(code = 206, requestStartBytes = 4096L, localLength = 8192L, contentRange = range))
         // Only a 206 is an append.
         assertTrue(WorkerDownload.partialFileMatchesRequest(code = 200, requestStartBytes = 4096L, localLength = 0L, contentRange = null))
     }
 
     @Test
-    fun `a 206 whose Content-Range starts anywhere else than the requested offset is not appended`() {
-        fun ok(range: String?) = WorkerDownload.partialFileMatchesRequest(206, 4096L, 4096L, range)
+    fun `a 206 whose Content-Range is missing, unreadable or starts elsewhere is never appended`() {
+        fun ok(range: String?) = WorkerDownload.contentRangeStartsAt(206, 4096L, range)
         assertTrue(ok("bytes 4096-9999/10000"))
+        assertTrue(ok("Bytes 4096-9999/10000"))
         assertFalse(ok("bytes 0-9999/10000"))
         assertFalse(ok("bytes 4097-9999/10000"))
         assertFalse(ok("bytes */10000"))
         assertFalse(ok("garbage"))
-        assertTrue(ok(null))
+        // A single-part 206 must carry it; a multipart/byteranges reply has none.
+        assertFalse(ok(null))
+        assertFalse(WorkerDownload.partialFileMatchesRequest(206, 4096L, 4096L, null))
+        assertTrue(WorkerDownload.contentRangeStartsAt(200, 4096L, null))
+    }
+
+    @Test
+    fun `a resumed file with a known checksum is verified even when its size matches`() {
+        val sha = "a".repeat(64)
+        assertTrue(WorkerDownload.needsShaCheck(resumed = true, expectedSha256 = sha, sizeMatches = true))
+        assertTrue(WorkerDownload.needsShaCheck(resumed = false, expectedSha256 = sha, sizeMatches = false))
+        assertTrue(WorkerDownload.needsShaCheck(resumed = true, expectedSha256 = sha, sizeMatches = false))
+        // One uninterrupted transfer of the right size is trusted as before.
+        assertFalse(WorkerDownload.needsShaCheck(resumed = false, expectedSha256 = sha, sizeMatches = true))
+        // Without a known checksum nothing changes.
+        assertFalse(WorkerDownload.needsShaCheck(resumed = true, expectedSha256 = null, sizeMatches = true))
+        assertFalse(WorkerDownload.needsShaCheck(resumed = true, expectedSha256 = "", sizeMatches = false))
     }
 }
