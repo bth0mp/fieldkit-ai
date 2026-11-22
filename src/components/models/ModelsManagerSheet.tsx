@@ -66,7 +66,7 @@ export const ModelsManagerSheet: React.FC<Props> = ({
   };
 
   return (
-    <AppSheet visible={visible} onClose={onClose} onClosed={onClosed} title="MODELS" enableDynamicSizing>
+    <AppSheet visible={visible} onClose={onClose} onClosed={onClosed} title="IN USE" enableDynamicSizing>
       <View style={styles.content}>
         {ROWS.map((row) => {
           const isLoading = loadingState.isLoading && loadingState.type === row.type;
