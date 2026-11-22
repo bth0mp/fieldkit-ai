@@ -234,14 +234,14 @@ describe('ModelCard', () => {
       expect(getByText('A great model for testing')).toBeTruthy();
     });
 
-    it('shows download count in compact mode', () => {
+    it('shows downloads this month in compact mode', () => {
       const { getByText } = render(
         <ModelCard
           model={{ ...baseModel, downloads: 15000 }}
           compact={true}
         />
       );
-      expect(getByText('15.0K dl')).toBeTruthy();
+      expect(getByText('15.0K downloads this month')).toBeTruthy();
     });
 
     it('shows model type badge in compact mode for vision', () => {

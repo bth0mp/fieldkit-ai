@@ -14,7 +14,8 @@ import { ModelInfo, ModelFile, DownloadedModel } from '../../types';
 import { FilterDimension, FilterState, ModelTypeFilter, CredibilityFilter, SizeFilter, SortOption } from './types';
 import { initialFilterState, SIZE_OPTIONS, VISION_PIPELINE_TAG, CODE_FALLBACK_QUERY } from './constants';
 import { getModelType } from './utils';
-import { PARAM_COUNT_REGEX } from '../../features/modelGuide/guide';
+import { PARAM_COUNT_REGEX, autoLabels } from '../../features/modelGuide/guide';
+import { noteFor } from '../../features/modelGuide/notes';
 import logger from '../../utils/logger';
 import { getUserFacingDownloadMessage } from '../../utils/downloadErrors';
 
@@ -52,11 +53,17 @@ function matchesOrgFilter(model: ModelInfo, orgs: string[]): boolean {
   });
 }
 
+// What a card says about a model: its note's "Good for" phrase, or automatic labels when it has no note.
+function withGuide(m: ModelInfo): ModelInfo {
+  const goodFor = noteFor(m.id)?.goodFor;
+  return goodFor ? { ...m, goodFor } : { ...m, labels: autoLabels(m) };
+}
+
 function mapCuratedModel(m: typeof RECOMMENDED_MODELS[number], details: Record<string, ModelInfo>): ModelInfo {
   const fetched = details[m.id];
   const curatedFields = { modelType: m.type, paramCount: m.params, minRamGB: m.minRam };
-  if (fetched) return { ...fetched, name: m.name, description: m.description, ...curatedFields };
-  return { id: m.id, name: m.name, author: m.id.split('/')[0], description: m.description, downloads: -1, likes: 0, tags: [], lastModified: '', files: [], ...curatedFields };
+  if (fetched) return withGuide({ ...fetched, name: m.name, description: m.description, ...curatedFields });
+  return withGuide({ id: m.id, name: m.name, author: m.id.split('/')[0], description: m.description, downloads: -1, likes: 0, tags: [], lastModified: '', files: [], ...curatedFields });
 }
 
 async function fetchRecommendedModelDetails(): Promise<Record<string, ModelInfo>> {
@@ -91,7 +98,7 @@ function computeFilteredResults(
   return filtered.map(model => {
     const type = getModelType(model);
     const params = parseParamCount(model);
-    return { ...model, modelType: type === 'image-gen' ? undefined : type as 'text' | 'vision' | 'code', paramCount: params ?? undefined };
+    return withGuide({ ...model, modelType: type === 'image-gen' ? undefined : type as 'text' | 'vision' | 'code', paramCount: params ?? undefined });
   });
 }
 

@@ -8,6 +8,7 @@ import { createStyles } from './ModelCard.styles';
 import { huggingFaceService } from '../services/huggingface';
 import { ModelCredibility } from '../types';
 import { triggerHaptic } from '../utils/haptics';
+import { formatUpdatedAgo } from '../features/modelGuide/guide';
 
 interface CredibilityInfo {
   color: string;
@@ -46,10 +47,17 @@ interface CompactModelCardContentProps {
     author: string;
     description?: string;
     downloads?: number;
+    downloadsAllTime?: number;
+    likes?: number;
+    lastModified?: string;
     modelType?: 'text' | 'vision' | 'code';
     paramCount?: number;
     minRamGB?: number;
   };
+  /** One "Good for" phrase from the hand-written notes; labels are shown only when there is none. */
+  goodFor?: string;
+  labels?: string[];
+  testID?: string;
   credibility?: ModelCredibility;
   credibilityInfo: CredibilityInfo | null;
   isTrending?: boolean;
@@ -62,6 +70,20 @@ function formatNumber(num: number): string {
   if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
   if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
   return num.toString();
+}
+
+// The number lines a card shows. Each part appears only when the model has it (a count of -1 or 0 means "not
+// fetched" or "none"), and no line is returned when it would be empty.
+function statsLine(m: { downloads?: number; downloadsAllTime?: number }): string | null {
+  if (!m.downloads || m.downloads <= 0) return null;
+  const allTime = m.downloadsAllTime && m.downloadsAllTime > 0 ? ` · ${formatNumber(m.downloadsAllTime)} all time` : '';
+  return `${formatNumber(m.downloads)} downloads this month${allTime}`;
+}
+
+function likesUpdatedLine(m: { likes?: number; lastModified?: string }): string | null {
+  const likes = m.likes && m.likes > 0 ? `${formatNumber(m.likes)} likes` : null;
+  const parts = [likes, formatUpdatedAgo(m.lastModified, new Date())].filter((p): p is string => !!p);
+  return parts.length ? parts.join(' · ') : null;
 }
 
 type ModelType = 'text' | 'vision' | 'code';
@@ -90,8 +112,32 @@ function modelTypeTextStyle(
   return null;
 }
 
+const CompactStatLines: React.FC<{
+  model: Parameters<typeof statsLine>[0] & Parameters<typeof likesUpdatedLine>[0];
+  goodFor?: string;
+  labels?: string[];
+  testID?: string;
+}> = ({ model, goodFor, labels, testID }) => {
+  const styles = useThemedStyles(createStyles);
+  const stats = statsLine(model);
+  const likesUpdated = likesUpdatedLine(model);
+  const guideLine = goodFor ? `Good for: ${goodFor}` : labels?.join(' · ');
+  return (
+    <>
+      {!!stats && <Text style={styles.statsLine} testID={`${testID}-stats`}>{stats}</Text>}
+      {!!likesUpdated && <Text style={styles.statsLine} testID={`${testID}-likes`}>{likesUpdated}</Text>}
+      {!!guideLine && (
+        <Text style={styles.statsLine} testID={`${testID}-${goodFor ? 'good-for' : 'labels'}`}>{guideLine}</Text>
+      )}
+    </>
+  );
+};
+
 export const CompactModelCardContent: React.FC<CompactModelCardContentProps> = ({
   model,
+  goodFor,
+  labels,
+  testID,
   credibility,
   credibilityInfo,
   isTrending,
@@ -129,11 +175,6 @@ export const CompactModelCardContent: React.FC<CompactModelCardContentProps> = (
             </View>
           )}
         </View>
-        {model.downloads !== undefined && model.downloads > 0 && (
-          <View style={styles.authorTag}>
-            <Text style={styles.authorTagText}>{formatNumber(model.downloads)} dl</Text>
-          </View>
-        )}
       </View>
       {/* One common description line for EVERY compact card: model description +
           any recommended highlight, same slot (under the name), same muted style. */}
@@ -142,6 +183,7 @@ export const CompactModelCardContent: React.FC<CompactModelCardContentProps> = (
           {description}
         </Text>
       )}
+      <CompactStatLines model={model} goodFor={goodFor} labels={labels} testID={testID} />
       {recommended?.chips && recommended.chips.length > 0 ? (
         <View style={[styles.infoRow, styles.infoRowCompact]}>
           {recommended.chips.map(chip => (

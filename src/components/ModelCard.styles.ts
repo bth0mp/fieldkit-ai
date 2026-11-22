@@ -105,6 +105,11 @@ export const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
     color: colors.textSecondary,
     marginBottom: 12,
   },
+  statsLine: {
+    marginBottom: 2,
+    ...TYPOGRAPHY.meta,
+    color: colors.textMuted,
+  },
   descriptionCompact: {
     marginBottom: 4,
     ...TYPOGRAPHY.meta,

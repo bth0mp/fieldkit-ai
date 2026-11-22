@@ -26,6 +26,10 @@ export interface ModelInfo {
   modelType?: 'text' | 'vision' | 'code';
   paramCount?: number;
   minRamGB?: number;
+  /** The hand-written "Good for" phrase for a card, when the model has a note. */
+  goodFor?: string;
+  /** Automatic labels for a card, only when there is no note. */
+  labels?: string[];
 }
 
 export interface ModelFile {

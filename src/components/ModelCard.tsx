@@ -24,13 +24,18 @@ interface ModelCardProps {
     author: string;
     description?: string;
     downloads?: number;
+    downloadsAllTime?: number;
     likes?: number;
+    lastModified?: string;
     credibility?: ModelCredibility;
     files?: ModelFile[];
     modelType?: 'text' | 'vision' | 'code';
     paramCount?: number;
     minRamGB?: number;
   };
+  /** "Good for" phrase from the model notes; labels show only when there is none. */
+  goodFor?: string;
+  labels?: string[];
   file?: ModelFile;
   downloadedModel?: DownloadedModel;
   isDownloaded?: boolean;
@@ -186,6 +191,8 @@ export const ModelCard: React.FC<ModelCardProps> = ({
   isTrending,
   recommended,
   supportsAcceleration,
+  goodFor,
+  labels,
   failedState,
 }) => {
   const styles = useThemedStyles(createStyles);
@@ -229,6 +236,9 @@ export const ModelCard: React.FC<ModelCardProps> = ({
           {compact ? (
             <CompactModelCardContent
               model={model}
+              goodFor={goodFor}
+              labels={labels}
+              testID={testID}
               credibility={credibility}
               credibilityInfo={credibilityInfo}
               isTrending={isTrending}

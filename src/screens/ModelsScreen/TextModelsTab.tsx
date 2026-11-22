@@ -297,7 +297,7 @@ const ModelListItem: React.FC<ModelListItemProps> = ({ item, index, focusTrigger
   // Strip files for the LiteRT parent so ModelCard skips the size-range / "N files"
   // badges (curated chips cover it); the original item still flows through onPress.
   const cardModel = isLiteRTParent ? { ...item, files: undefined } : item;
-  const card = (<AnimatedEntry index={index} staggerMs={30} trigger={focusTrigger}><ModelCard model={cardModel} isDownloaded={isDownloaded} isDownloading={agg.downloading} isQueued={agg.queued} downloadProgress={agg.progress} downloadBytes={agg.bytes} downloadCount={agg.count} isCompatible={isCompatible} incompatibleReason={incompatibleReason} onPress={isCompatible ? onPress : undefined} testID={`model-card-${index}`} compact isTrending={isTrending} recommended={recommended} supportsAcceleration={!isLiteRTParent && modelSupportsNpuGpu(item)} /></AnimatedEntry>);
+  const card = (<AnimatedEntry index={index} staggerMs={30} trigger={focusTrigger}><ModelCard model={cardModel} isDownloaded={isDownloaded} isDownloading={agg.downloading} isQueued={agg.queued} downloadProgress={agg.progress} downloadBytes={agg.bytes} downloadCount={agg.count} isCompatible={isCompatible} incompatibleReason={incompatibleReason} onPress={isCompatible ? onPress : undefined} testID={`model-card-${index}`} compact isTrending={isTrending} recommended={recommended} supportsAcceleration={!isLiteRTParent && modelSupportsNpuGpu(item)} goodFor={item.goodFor} labels={item.labels} /></AnimatedEntry>);
   return index === 0 ? <AttachStep index={0} fill>{card}</AttachStep> : card;
 };
 
