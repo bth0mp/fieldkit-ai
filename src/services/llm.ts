@@ -18,6 +18,8 @@ import { modelResidencyManager } from './modelResidency';
 import { hardwareService } from './hardware';
 import { formatLlamaMessages, buildOAIMessages } from './llmMessages';
 import { generateWithToolsImpl } from './llmToolGeneration';
+import { dropMissingImageAttachments } from './llmImageInput';
+import { stopAware } from './llmStopAware';
 import type { ToolCall } from './tools/types';
 import type { MultimodalSupport, LLMPerformanceSettings, LLMPerformanceStats } from './llmTypes';
 import logger from '../utils/logger';
@@ -35,6 +37,8 @@ class LLMService {
   private currentModelPath: string | null = null;
   private isGenerating: boolean = false;
   private activeCompletionPromise: Promise<void> | null = null;
+  /** A Stop asked for during the current turn; see llmStopAware. */
+  private stopRequested = false;
   private multimodalSupport: MultimodalSupport | null = null;
   private multimodalInitialized: boolean = false;
   private performanceStats: LLMPerformanceStats = { lastTokensPerSecond: 0, lastDecodeTokensPerSecond: 0, lastTimeToFirstToken: 0, lastGenerationTime: 0, lastTokenCount: 0 };
@@ -58,6 +62,7 @@ class LLMService {
     this.contextMutexPromise = new Promise<void>(resolve => { release = resolve; });
     return { release, ready: prev.catch(() => {}) };
   }
+  private stopAware(ctx: LlamaContext): LlamaContext { return stopAware(ctx, () => this.stopRequested); }
   private hashString(value: string): string { return hashString(value); }
   private ensureSessionCacheDir(): Promise<void> { return ensureSessionCacheDir(this.sessionCacheDir); }
   private getSessionPath(promptHash: string): string { return getSessionPath(this.sessionCacheDir, promptHash); }
@@ -287,7 +292,8 @@ class LLMService {
     if (!this.context) throw new Error('No model loaded');
     if (this.isGenerating) throw new Error('Generation already in progress');
     this.isGenerating = true;
-    const ctx = this.context;
+    const ctx = this.stopAware(this.context);
+    this.stopRequested = false;
     const completionWork = (async () => {
       const managed = await this.dropMissingImageAttachments(await this.manageContextWindow(messages));
       const hasImages = managed.some(m => m.attachments?.some(a => a.type === 'image'));
@@ -337,8 +343,9 @@ class LLMService {
     try { return await completionWork; } finally { this.isGenerating = false; this.activeCompletionPromise = null; }
   }
   async generateResponseWithTools(messages: Message[], options: { tools: any[]; onStream?: StreamCallback; onComplete?: CompleteCallback }): Promise<{ fullResponse: string; toolCalls: ToolCall[]; interrupted?: boolean }> {
+    if (!this.isGenerating) this.stopRequested = false;
     const work = generateWithToolsImpl({
-      context: this.context, isGenerating: this.isGenerating,
+      context: this.context ? this.stopAware(this.context) : null, isGenerating: this.isGenerating,
       isThinkingEnabled: this.isThinkingEnabled(),
       isGemma4Model: this.isGemma4Model(),
       disableCtxShift: this.shouldDisableCtxShift(),
@@ -359,32 +366,7 @@ class LLMService {
   private async manageContextWindow(messages: Message[], _extraReserve = 0): Promise<Message[]> {
     return messages;
   }
-  /**
-   * Drop image attachments whose files no longer exist before they reach the native
-   * layer. A generated image's uri is a temp/cache path that gets cleaned up, so once
-   * it's in the conversation history EVERY later turn (even a voice note) flips to
-   * VISION mode and the native completion throws "File does not exist or cannot be
-   * opened", killing the whole turn (silent empty bubble). Validating file inputs at
-   * this boundary is the generation layer's own responsibility — a missing image is
-   * simply not sent, so the turn runs (TEXT-ONLY if none remain) instead of crashing.
-   */
-  private async dropMissingImageAttachments(messages: Message[]): Promise<Message[]> {
-    const out: Message[] = [];
-    for (const m of messages) {
-      const attachments = m.attachments;
-      if (!attachments?.some(a => a.type === 'image')) { out.push(m); continue; }
-      const kept: typeof attachments = [];
-      for (const a of attachments) {
-        if (a.type !== 'image') { kept.push(a); continue; }
-        const path = (a.uri || '').replace(/^file:\/\//, '');
-        const exists = path.length > 0 && await RNFS.exists(path).catch(() => false);
-        if (exists) kept.push(a);
-        else logger.warn(`[LLM] dropping missing image attachment (file gone): ${a.uri}`);
-      }
-      out.push(kept.length === attachments.length ? m : { ...m, attachments: kept });
-    }
-    return out;
-  }
+  private dropMissingImageAttachments(messages: Message[]): Promise<Message[]> { return dropMissingImageAttachments(messages); }
   /**
    * Whether this turn should run in VISION mode: at least one message carries an
    * (already-existence-validated by {@link dropMissingImageAttachments}) image
@@ -408,7 +390,8 @@ class LLMService {
     const oaiMessages = this.convertToOAIMessages(messages);
     const { settings } = useAppStore.getState();
     let fullResponse = '';
-    const ctx = this.context;
+    const ctx = this.stopAware(this.context);
+    this.stopRequested = false;
     const completionWork = safeCompletion(ctx, () => ctx.completion(
       { messages: oaiMessages, ...buildCompletionParams(settings, { disableCtxShift: this.shouldDisableCtxShift() }), n_predict: maxTokens },
       (data) => { if (this.isGenerating && data.token) fullResponse += data.token; },
@@ -426,6 +409,7 @@ class LLMService {
     return this.generateWithMaxTokens(messages, 64);
   }
   async stopGeneration(): Promise<void> {
+    if (this.isGenerating || this.activeCompletionPromise !== null) this.stopRequested = true;
     if (this.context) { try { await this.context.stopCompletion(); } catch (e) { logger.log('[LLM] Stop error:', e); } }
     // Declare idle only AFTER the in-flight completion actually unwinds — llama cannot honor a
     // stop during prefill (a 2.6k-token KB prefill unwound ~9s on-device), so clearing the flag
