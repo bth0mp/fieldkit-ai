@@ -176,6 +176,46 @@ describe('Server sorts (rendered)', () => {
     expect(last.searchParams.get('search')).toBe('qwen');
   });
 
+  it('a failed sort says so, clears the old list, and pull to refresh asks again', async () => {
+    let failLikes = true;
+    const { rtl, ui } = await openModelsFromHome({
+      totalGB: 10.82,
+      hf: h => h.setList(url => {
+        const sort = url.searchParams.get('sort');
+        if (sort === 'likes') return failLikes ? new Error('down') : [row('a/Liked-GGUF')];
+        return sort === 'trendingScore' ? [row('a/Trend-GGUF')] : [];
+      }),
+    });
+    rtl.fireEvent.press(ui.getByTestId('sort-pill'));
+    rtl.fireEvent.press(ui.getByTestId('sort-option-trending'));
+    await rtl.waitFor(() => expect(ui.getByText('Trend-GGUF')).toBeTruthy(), TIMEOUT);
+    rtl.fireEvent.press(ui.getByTestId('sort-pill'));
+    rtl.fireEvent.press(ui.getByTestId('sort-option-likes'));
+    await rtl.waitFor(() => expect(ui.getByTestId('models-search-failed')).toBeTruthy(), TIMEOUT);
+    expect(ui.getByText('Could not reach Hugging Face. Pull down to try again.')).toBeTruthy();
+    expect(ui.queryByText('Trend-GGUF')).toBeNull();
+    failLikes = false;
+    await rtl.act(async () => { await ui.getByTestId('models-list').props.refreshControl.props.onRefresh(); });
+    await rtl.waitFor(() => expect(ui.getByText('Liked-GGUF')).toBeTruthy(), TIMEOUT);
+    expect(ui.queryByTestId('models-search-failed')).toBeNull();
+  });
+
+  it('removing the last filter under Smart with nothing typed shows the picks again', async () => {
+    const { rtl, ui } = await openModelsFromHome({
+      totalGB: 10.82,
+      hf: h => h.setList(() => [row('a/Tiny-GGUF')]),
+    });
+    rtl.fireEvent.press(ui.getByTestId('text-filter-toggle'));
+    rtl.fireEvent.press(ui.getByText(/^Size [▴▾]/));
+    rtl.fireEvent.press(ui.getByText('< 1B'));
+    await rtl.waitFor(() => expect(ui.getByText('Tiny-GGUF')).toBeTruthy(), TIMEOUT);
+    expect(ui.queryByText(PICKS)).toBeNull();
+    rtl.fireEvent.press(ui.getByText(/^< 1B [▴▾]/));
+    rtl.fireEvent.press(ui.getByText('All Sizes'));
+    await rtl.waitFor(() => expect(ui.getByText(PICKS)).toBeTruthy(), TIMEOUT);
+    expect(ui.queryByText('Tiny-GGUF')).toBeNull();
+  });
+
   it('stops loading after a stale answer is ignored', async () => {
     const { rtl, ui, hf } = await openModelsFromHome({
       totalGB: 10.82,

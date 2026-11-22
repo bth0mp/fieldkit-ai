@@ -127,6 +127,8 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadDownloadedModels(); }, []);
 
+  const loadPickDetails = useCallback(() => fetchRecommendedModelDetails().then(setRecommendedModelDetails), []);
+
   useEffect(() => {
     let cancelled = false;
     fetchRecommendedModelDetails().then(d => { if (!cancelled) setRecommendedModelDetails(d); });
@@ -152,11 +154,18 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
   const offlineRef = useRef(offline);
   offlineRef.current = offline;
 
+  // Set when a search fails while online: the results are cleared and the list says to pull down to try again.
+  const [searchFailed, setSearchFailed] = useState(false);
+
+  const showPicks = () => {
+    setHasSearched(false); setSearchResults([]); setIsLoading(false); setSearchFailed(false);
+  };
+
   const runSearch = async () => {
     const requestId = ++requestCounter.current;
     if (offlineRef.current) {
       // Nothing can be asked: leave the picks showing and drop any answer still on its way.
-      setHasSearched(false); setSearchResults([]); setIsLoading(false); return;
+      showPicks(); return;
     }
     const isServerSort = SERVER_SORTS.includes(filterState.sort);
     const hasQuery = searchQuery.trim().length > 0;
@@ -164,13 +173,13 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
     const hasOrgFilter = filterState.orgs.length > 0;
     const hasSizeFilter = filterState.size !== 'all';
     if (!isServerSort && !hasQuery && !hasTypeFilter && !hasOrgFilter && !hasSizeFilter) {
-      setHasSearched(false); setSearchResults([]); setIsLoading(false); return;
+      showPicks(); return;
     }
     let pipelineTag: string | undefined;
     let effectiveQuery = searchQuery.trim();
     if (filterState.type === 'vision') pipelineTag = VISION_PIPELINE_TAG;
     else if (filterState.type === 'code' && !effectiveQuery) effectiveQuery = CODE_FALLBACK_QUERY;
-    setIsLoading(true); setHasSearched(true);
+    setIsLoading(true); setHasSearched(true); setSearchFailed(false);
     try {
       const results = isServerSort
         ? await huggingFaceService.browseModels(effectiveQuery, {
@@ -184,7 +193,9 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
       setSearchResults(results);
     } catch {
       if (requestId !== requestCounter.current) return;
-      if (offlineRef.current) { setHasSearched(false); setSearchResults([]); return; } // the notice says why
+      if (offlineRef.current) { showPicks(); return; } // the notice says why
+      // The old list must not stay under the new sort or filter.
+      setSearchResults([]); setSearchFailed(true);
       setAlertState(showAlert('Search Error', 'Failed to search models. Please try again.'));
     } finally {
       if (requestId === requestCounter.current) setIsLoading(false);
@@ -203,7 +214,7 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
   useEffect(() => {
     if (!searchQuery.trim() && !SERVER_SORTS.includes(filterState.sort)) {
       requestCounter.current++;
-      setHasSearched(false); setSearchResults([]); setIsLoading(false); return;
+      showPicks(); return;
     }
     const timer = setTimeout(() => { runSearch(); }, 500);
     debounceTimer.current = timer;
@@ -216,7 +227,12 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
   useEffect(() => {
     const noFilters = filterState.type === 'all' && filterState.size === 'all' && filterState.orgs.length === 0;
     // A server sort is a search of its own, so removing the last filter must ask again.
-    if (noFilters && !SERVER_SORTS.includes(filterState.sort)) return;
+    if (noFilters && !SERVER_SORTS.includes(filterState.sort) && !searchQuery.trim()) {
+      // Nothing left to search for: the picks come back (opening the tab lands here too and fetches no list).
+      requestCounter.current++;
+      showPicks(); return;
+    }
+    clearTimeout(debounceTimer.current);
     runSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterState.type, filterState.size, filterState.orgs.length]);
@@ -233,6 +249,12 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
     runSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterState.sort]);
+
+  // Pull to refresh: a search that is showing asks again (it may have failed); the picks fetch their numbers again.
+  const refreshText = async () => {
+    if (hasSearched) await runSearch();
+    else await loadPickDetails();
+  };
 
   // When the connection returns, ask for whatever the user had set up while it was gone.
   const wasOffline = useRef(offline);
@@ -356,8 +378,14 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
     setFilterState(prev => ({ ...prev, size, expandedDimension: null })), []);
   const setQuantFilter = useCallback((quant: string) =>
     setFilterState(prev => ({ ...prev, quant, expandedDimension: null })), []);
-  const setSortOption = useCallback((sort: SortOption) =>
-    setFilterState(prev => ({ ...prev, sort, expandedDimension: null })), []);
+  const setSortOption = (sort: SortOption) => {
+    setFilterState(prev => ({ ...prev, sort, expandedDimension: null }));
+    // Choosing the sort that is already chosen asks again (the sort effect only sees a change).
+    if (sort === filterState.sort && SERVER_SORTS.includes(sort)) {
+      clearTimeout(debounceTimer.current);
+      runSearch();
+    }
+  };
 
   // Computed
   const deviceRecommendation = useMemo(() => hardwareService.getModelRecommendation(), []);
@@ -403,7 +431,7 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
   return {
     searchQuery, setSearchQuery,
     isLoading, isRefreshing, setIsRefreshing,
-    hasSearched,
+    hasSearched, searchFailed, refreshText,
     selectedModel, setSelectedModel,
     modelFiles, setModelFiles,
     isLoadingFiles,

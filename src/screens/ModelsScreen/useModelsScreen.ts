@@ -104,7 +104,7 @@ export function useModelsScreen() {
     text.setIsRefreshing(true);
     await text.loadDownloadedModels();
     await image.loadDownloadedImageModels();
-    if (text.hasSearched && text.searchQuery.trim()) await text.handleSearch();
+    await text.refreshText();
     if (activeTab === 'image') await image.loadHFModels(true);
     text.setIsRefreshing(false);
   };
@@ -243,6 +243,7 @@ export function useModelsScreen() {
     isLoading: text.isLoading,
     isRefreshing: text.isRefreshing,
     hasSearched: text.hasSearched,
+    searchFailed: text.searchFailed,
     selectedModel: text.selectedModel,
     setSelectedModel: text.setSelectedModel,
     modelFiles: text.modelFiles,

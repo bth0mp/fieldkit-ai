@@ -44,7 +44,7 @@ function getEmptyText(hasSearched: boolean, hasActiveFilters: boolean): string {
 type Props = Pick<ModelsScreenViewModel,
   | 'searchQuery' | 'setSearchQuery'
   | 'isLoading' | 'isRefreshing'
-  | 'hasSearched'
+  | 'hasSearched' | 'searchFailed'
   | 'selectedModel' | 'setSelectedModel'
   | 'modelFiles' | 'setModelFiles'
   | 'isLoadingFiles'
@@ -330,7 +330,7 @@ const SortPanel: React.FC<SortPanelProps> = ({ filterState, setSortOption, style
 
 export const TextModelsTab: React.FC<Props> = (props) => {
   const {
-    searchQuery, setSearchQuery, isLoading, isRefreshing, hasSearched,
+    searchQuery, setSearchQuery, isLoading, isRefreshing, hasSearched, searchFailed,
     selectedModel, setSelectedModel, modelFiles, setModelFiles, isLoadingFiles,
     filterState, textFiltersVisible, setTextFiltersVisible,
     filteredResults, recommendedAsModelInfo, trendingAsModelInfo, ramGB, deviceRecommendation,
@@ -455,7 +455,9 @@ export const TextModelsTab: React.FC<Props> = (props) => {
           )}
           ListEmptyComponent={
             <Card style={styles.emptyCard}>
-              <Text style={styles.emptyText}>{getEmptyText(hasSearched, hasNonSortActiveFilters)}</Text>
+              {searchFailed
+                ? <Text testID="models-search-failed" style={styles.emptyText}>Could not reach Hugging Face. Pull down to try again.</Text>
+                : <Text style={styles.emptyText}>{getEmptyText(hasSearched, hasNonSortActiveFilters)}</Text>}
             </Card>
           }
         />

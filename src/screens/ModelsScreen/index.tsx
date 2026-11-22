@@ -181,6 +181,7 @@ export const ModelsScreen: React.FC = () => {
           isLoading={vm.isLoading}
           isRefreshing={vm.isRefreshing}
           hasSearched={vm.hasSearched}
+          searchFailed={vm.searchFailed}
           selectedModel={vm.selectedModel}
           setSelectedModel={vm.setSelectedModel}
           modelFiles={vm.modelFiles}
