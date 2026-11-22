@@ -194,7 +194,6 @@ export const ModelsScreen: React.FC = () => {
           trendingAsModelInfo={vm.trendingAsModelInfo}
           ramGB={vm.ramGB}
           deviceRecommendation={vm.deviceRecommendation}
-          hasActiveFilters={vm.hasActiveFilters}
           downloadedModels={vm.downloadedModels}
           alertState={vm.alertState}
           setAlertState={vm.setAlertState}

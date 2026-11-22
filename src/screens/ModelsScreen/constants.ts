@@ -66,9 +66,14 @@ export const SORT_OPTIONS: { key: SortOption; label: string; icon: string }[] = 
   { key: 'recommended', label: 'Smart', icon: 'zap' },
   { key: 'bestfit', label: 'For You', icon: 'smartphone' },
   { key: 'size', label: 'Size', icon: 'database' },
-  { key: 'downloads', label: 'Downloads', icon: 'download' },
-  { key: 'recency', label: 'Newest', icon: 'clock' },
+  { key: 'trending', label: 'Trending', icon: 'trending-up' },
+  { key: 'downloads', label: 'Most downloaded', icon: 'download' },
+  { key: 'likes', label: 'Most liked', icon: 'heart' },
+  { key: 'newest', label: 'New releases', icon: 'clock' },
 ];
+
+/** Sorts Hugging Face does itself; the others reorder what the phone already has. */
+export const SERVER_SORTS: SortOption[] = ['trending', 'downloads', 'likes', 'newest'];
 
 export const initialFilterState: FilterState = {
   orgs: [],

@@ -50,7 +50,6 @@ type Props = Pick<ModelsScreenViewModel,
   | 'textFiltersVisible' | 'setTextFiltersVisible'
   | 'filteredResults' | 'recommendedAsModelInfo' | 'trendingAsModelInfo'
   | 'ramGB' | 'deviceRecommendation'
-  | 'hasActiveFilters'
   | 'downloadedModels'
   | 'alertState' | 'setAlertState'
   | 'focusTrigger'
@@ -318,7 +317,7 @@ const SortPanel: React.FC<SortPanelProps> = ({ filterState, setSortOption, style
   <View style={styles.filterExpandedContent}>
     <View style={styles.filterChipWrap}>
       {SORT_OPTIONS.map(option => (
-        <TouchableOpacity key={option.key} style={[styles.filterChip, filterState.sort === option.key && styles.filterChipActive]} onPress={() => setSortOption(option.key)}>
+        <TouchableOpacity key={option.key} testID={`sort-option-${option.key}`} style={[styles.filterChip, filterState.sort === option.key && styles.filterChipActive]} onPress={() => setSortOption(option.key)}>
           <Icon name={option.icon} size={12} color={filterState.sort === option.key ? colors.primary : colors.textSecondary} />
           <Text style={[styles.filterChipText, filterState.sort === option.key && styles.filterChipTextActive]}>{option.label}</Text>
         </TouchableOpacity>
@@ -333,7 +332,7 @@ export const TextModelsTab: React.FC<Props> = (props) => {
     selectedModel, setSelectedModel, modelFiles, setModelFiles, isLoadingFiles,
     filterState, textFiltersVisible, setTextFiltersVisible,
     filteredResults, recommendedAsModelInfo, trendingAsModelInfo, ramGB, deviceRecommendation,
-    hasActiveFilters, downloadedModels,
+    downloadedModels,
     alertState, setAlertState, focusTrigger,
     handleSearch, handleRefresh, handleSelectModel, handleDownload, handleRepairMmProj, handleCancelDownload, handleDeleteModel,
     clearFilters, toggleFilterDimension, toggleOrg,
@@ -445,7 +444,7 @@ export const TextModelsTab: React.FC<Props> = (props) => {
           )}
           ListEmptyComponent={
             <Card style={styles.emptyCard}>
-              <Text style={styles.emptyText}>{getEmptyText(hasSearched, hasActiveFilters)}</Text>
+              <Text style={styles.emptyText}>{getEmptyText(hasSearched, hasNonSortActiveFilters)}</Text>
             </Card>
           }
         />

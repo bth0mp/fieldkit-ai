@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Keyboard, BackHandler } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { showAlert, AlertState } from '../../components/CustomAlert';
@@ -12,11 +12,12 @@ import { ramFitScore } from '../../utils/recommendedModels';
 import { modelSupportsNpuGpu } from '../../utils/acceleration';
 import { ModelInfo, ModelFile, DownloadedModel } from '../../types';
 import { FilterDimension, FilterState, ModelTypeFilter, CredibilityFilter, SizeFilter, SortOption } from './types';
-import { initialFilterState, SIZE_OPTIONS, VISION_PIPELINE_TAG, CODE_FALLBACK_QUERY } from './constants';
+import { initialFilterState, SERVER_SORTS, SIZE_OPTIONS, VISION_PIPELINE_TAG, CODE_FALLBACK_QUERY } from './constants';
 import { getModelType } from './utils';
-import { PARAM_COUNT_REGEX, autoLabels } from '../../features/modelGuide/guide';
+import { PARAM_COUNT_REGEX, autoLabels, memoryTierGB, maxParamsForTier } from '../../features/modelGuide/guide';
 import { noteFor } from '../../features/modelGuide/notes';
 import logger from '../../utils/logger';
+import type { BrowseSort } from '../../services/huggingface';
 import { getUserFacingDownloadMessage } from '../../utils/downloadErrors';
 
 function parseParamCount(model: ModelInfo): number | null {
@@ -32,14 +33,11 @@ function bestFitScore(model: ModelInfo, ramGB: number): number {
 }
 
 function applySort<T extends ModelInfo>(models: T[], sort: SortOption, ramGB = 0): T[] {
-  if (sort === 'recommended') return models;
+  // Hugging Face already ordered the server sorts, and 'recommended' is the editorial order.
+  if (sort !== 'bestfit' && sort !== 'size') return models;
   return [...models].sort((a, b) => {
     if (sort === 'bestfit') return bestFitScore(a, ramGB) - bestFitScore(b, ramGB);
-    if (sort === 'size') return (a.paramCount ?? parseParamCount(a) ?? 0) - (b.paramCount ?? parseParamCount(b) ?? 0);
-    if (sort === 'downloads') return (b.downloads ?? 0) - (a.downloads ?? 0);
-    const da = a.lastModified ? new Date(a.lastModified).getTime() : 0;
-    const db = b.lastModified ? new Date(b.lastModified).getTime() : 0;
-    return db - da;
+    return (a.paramCount ?? parseParamCount(a) ?? 0) - (b.paramCount ?? parseParamCount(b) ?? 0);
   });
 }
 
@@ -144,13 +142,18 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
     }, [selectedModel])
   );
 
+  // Each search takes a number; an answer whose number is no longer the latest is dropped.
+  const requestCounter = useRef(0);
+
   const runSearch = async () => {
+    const requestId = ++requestCounter.current;
+    const isServerSort = SERVER_SORTS.includes(filterState.sort);
     const hasQuery = searchQuery.trim().length > 0;
     const hasTypeFilter = filterState.type !== 'all';
     const hasOrgFilter = filterState.orgs.length > 0;
     const hasSizeFilter = filterState.size !== 'all';
-    if (!hasQuery && !hasTypeFilter && !hasOrgFilter && !hasSizeFilter) {
-      setHasSearched(false); setSearchResults([]); return;
+    if (!isServerSort && !hasQuery && !hasTypeFilter && !hasOrgFilter && !hasSizeFilter) {
+      setHasSearched(false); setSearchResults([]); setIsLoading(false); return;
     }
     let pipelineTag: string | undefined;
     let effectiveQuery = searchQuery.trim();
@@ -158,12 +161,21 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
     else if (filterState.type === 'code' && !effectiveQuery) effectiveQuery = CODE_FALLBACK_QUERY;
     setIsLoading(true); setHasSearched(true);
     try {
-      const results = await huggingFaceService.searchModels(effectiveQuery, { limit: 30, pipelineTag });
+      const results = isServerSort
+        ? await huggingFaceService.browseModels(effectiveQuery, {
+          sort: filterState.sort as BrowseSort,
+          maxParamsB: maxParamsForTier(memoryTierGB(hardwareService.getTotalMemoryGB())),
+          pipelineTag,
+          limit: 30,
+        })
+        : await huggingFaceService.searchModels(effectiveQuery, { limit: 30, pipelineTag });
+      if (requestId !== requestCounter.current) return;
       setSearchResults(results);
     } catch {
+      if (requestId !== requestCounter.current) return;
       setAlertState(showAlert('Search Error', 'Failed to search models. Please try again.'));
     } finally {
-      setIsLoading(false);
+      if (requestId === requestCounter.current) setIsLoading(false);
     }
   };
 
@@ -174,7 +186,10 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
   };
 
   useEffect(() => {
-    if (!searchQuery.trim()) { setHasSearched(false); setSearchResults([]); return; }
+    if (!searchQuery.trim() && !SERVER_SORTS.includes(filterState.sort)) {
+      requestCounter.current++;
+      setHasSearched(false); setSearchResults([]); setIsLoading(false); return;
+    }
     const timer = setTimeout(() => { runSearch(); }, 500);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -187,6 +202,15 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
     runSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterState.type, filterState.size, filterState.orgs.length]);
+
+  // Choosing a sort searches again: a server sort asks Hugging Face, a client sort with nothing typed shows the picks.
+  const lastSort = useRef(filterState.sort);
+  useEffect(() => {
+    if (lastSort.current === filterState.sort) return; // opening the tab fetches nothing new
+    lastSort.current = filterState.sort;
+    runSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterState.sort]);
 
   const handleSelectModel = async (model: ModelInfo) => {
     setSelectedModel(model); setIsLoadingFiles(true);
