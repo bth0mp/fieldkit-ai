@@ -39,7 +39,7 @@ function split(value: string): string[] {
  * Persist one large value as several rows, so a phone can read back what it saved.
  *
  * The chat store is one JSON value. On Android a row over the cursor window is written but can never be
- * read again, so a long history vanished at launch The
+ * read again, so a long history vanished at launch. The
  * value's own key holds a manifest; the parts sit beside it. A value saved by an older build is read as
  * before, and `readOversized` recovers one that already outgrew the window.
  */

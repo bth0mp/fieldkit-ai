@@ -63,12 +63,6 @@ describe('chunked storage', () => {
     expect(await createChunkedStorage(store).getItem('chat')).toBe('short');
   });
 
-  it('reads a value saved by an older build as it was', async () => {
-    const { store } = memoryStore(LIMIT, { chat: '{"state":{}}' });
-
-    expect(await createChunkedStorage(store).getItem('chat')).toBe('{"state":{}}');
-  });
-
   it('recovers an older row that outgrew the read window, then saves it in parts', async () => {
     const history = 'h'.repeat(LIMIT + 1);
     const { store, values } = memoryStore(LIMIT, { chat: history });

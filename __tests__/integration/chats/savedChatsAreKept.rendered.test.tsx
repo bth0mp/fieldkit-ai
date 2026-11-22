@@ -60,6 +60,13 @@ function storedTitles(): string[] {
   return JSON.parse(json).state.conversations.map((c: { title: string }) => c.title);
 }
 
+/** Every stored message text, to check that a finished reply was saved. */
+function storedText(): string {
+  const head = rawRow(KEY) ?? '';
+  if (!head.startsWith(MANIFEST)) return head;
+  return Array.from({ length: Number(head.slice(MANIFEST.length)) }, (_, i) => rawRow(`${KEY}::chunk:${i}`) ?? '').join('');
+}
+
 /** The real Chats list, as the Chats tab shows it. */
 function openChatsList() {
   const React = require('react');
@@ -89,6 +96,7 @@ describe('saved chats are kept', () => {
     expect(list.getByText('hello')).toBeTruthy();
     expect(storedTitles()).toContain('Saved before');
     expect(storedTitles()).toContain('hello');
+    expect(storedText()).toContain('Hi there.');
   });
 
   it('opens a history too large for Android to read in one row', async () => {
@@ -124,9 +132,11 @@ describe('saved chats are kept', () => {
     expect(rawRow(KEY)).toBe(saved);
 
     stopFailingReads(KEY);
-    rtl.fireEvent.press(list.getByText('Try again'));
+    rtl.fireEvent.press(list.getByRole('button', { name: 'Try again' }));
     await rtl.waitFor(() => expect(list.getByText('Saved before')).toBeTruthy());
     expect(list.queryByText(NOTICE)).toBeNull();
+    // The chat made while the history could not be read joins the saved one.
+    expect(list.getByText('Meanwhile')).toBeTruthy();
   });
 
   it('does not write the chat history while a reply streams', async () => {

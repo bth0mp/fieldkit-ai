@@ -384,3 +384,51 @@ describe('hydration-gated storage when saved state cannot be read', () => {
     expect(device.writes).toBe(0);
   });
 });
+
+describe('hydration-gated storage when the app leaves the foreground', () => {
+  it('writes the waiting change at once, and the newest value is what ends up stored', async () => {
+    let onChange: (state: string) => void = () => {};
+    let gate: ReturnType<typeof createHydrationGatedStorage<{ text: string }>> | undefined;
+    const written: string[] = [];
+    const releases: Array<() => void> = [];
+    const disk = new Map<string, string>();
+    // Every write is held until the test releases it, like a slow disk.
+    const slowBase: StateStorage = {
+      getItem: async name => disk.get(name) ?? null,
+      setItem: (name, value) => {
+        written.push(JSON.parse(value).state.text);
+        return new Promise<void>(resolve => {
+          releases.push(() => {
+            disk.set(name, value);
+            resolve();
+          });
+        });
+      },
+      removeItem: async name => {
+        disk.delete(name);
+      },
+    };
+    // The gate registers its AppState listener once per module load, so load a fresh copy.
+    jest.isolateModules(() => {
+      const { AppState } = require('react-native');
+      jest.spyOn(AppState, 'addEventListener').mockImplementation(((_event: string, listener: (s: string) => void) => {
+        onChange = listener;
+        return { remove: () => {} };
+      }) as never);
+      gate = require('../../../src/utils/hydrationGatedStorage').createHydrationGatedStorage(slowBase);
+    });
+    gate!.markHydrated();
+
+    gate!.storage.setItem('chat', { state: { text: 'first' }, version: 0 });
+    gate!.storage.setItem('chat', { state: { text: 'newest' }, version: 0 });
+    // One write is on its way; the newer one waits behind it.
+    expect(written).toEqual(['first']);
+
+    onChange('background');
+    expect(written).toEqual(['first', 'newest']);
+
+    releases.splice(0).forEach(release => release());
+    await gate!.waitForWrites();
+    expect(JSON.parse(disk.get('chat')!).state.text).toBe('newest');
+  });
+});
