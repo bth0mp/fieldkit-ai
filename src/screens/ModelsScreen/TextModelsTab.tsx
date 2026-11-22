@@ -12,7 +12,7 @@ import { DOWNLOAD_MANAGER_STEP_INDEX } from '../../components/onboarding/spotlig
 import { useTheme, useThemedStyles } from '../../theme';
 import { ModelGuideButton } from './ModelGuideButton';
 import { needsVisionRepair as checkNeedsVisionRepair } from '../../utils/visionRepair';
-import { CREDIBILITY_LABELS } from '../../constants';
+import { CREDIBILITY_LABELS, SPACING } from '../../constants';
 import { ModelInfo, ModelFile, DownloadedModel } from '../../types';
 import { createStyles } from './styles';
 import { ModelsScreenViewModel } from './useModelsScreen';
@@ -331,10 +331,12 @@ interface SortRowProps {
   styles: ReturnType<typeof createStyles>;
   colors: ReturnType<typeof useTheme>['colors'];
 }
+/** Inside the row's own padding, so the 36 dp chips take a 48 dp touch. */
+const SORT_HIT_SLOP = { top: SPACING.sm, bottom: SPACING.sm };
 const SortRow: React.FC<SortRowProps> = ({ filterState, setSortOption, styles, colors }) => (
   <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={styles.sortRow} contentContainerStyle={styles.sortRowContent}>
     {SORT_OPTIONS.map(option => (
-      <TouchableOpacity key={option.key} testID={`sort-option-${option.key}`} style={[styles.filterChip, styles.sortChip, filterState.sort === option.key && styles.filterChipActive]} onPress={() => setSortOption(option.key)} accessibilityRole="button" accessibilityState={{ selected: filterState.sort === option.key }}>
+      <TouchableOpacity key={option.key} testID={`sort-option-${option.key}`} hitSlop={SORT_HIT_SLOP} accessibilityLabel={option.label} style={[styles.filterChip, filterState.sort === option.key && styles.filterChipActive]} onPress={() => setSortOption(option.key)} accessibilityRole="button" accessibilityState={{ selected: filterState.sort === option.key }}>
         <Icon name={option.icon} size={12} color={filterState.sort === option.key ? colors.primary : colors.textSecondary} />
         <Text style={[styles.filterChipText, filterState.sort === option.key && styles.filterChipTextActive]}>{option.label}</Text>
       </TouchableOpacity>
