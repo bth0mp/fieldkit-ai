@@ -15,8 +15,9 @@ let tail: Promise<void> = Promise.resolve();
 /**
  * Choices run one at a time. Each counts as a running turn, so nothing queued is sent until it ends. The next
  * choice starts when the work is done, while this one's claim is still held, so its end drains nothing.
+ * `check` runs in the choice's turn, before it claims or stops anything: if it throws, nothing else happens.
  */
-function exclusively(work: () => Promise<void>): Promise<void> {
+function exclusively(work: () => Promise<void>, check?: () => Promise<void>): Promise<void> {
   const before = tail;
   let workDone!: () => void;
   tail = new Promise<void>(resolve => { workDone = resolve; });
@@ -24,7 +25,7 @@ function exclusively(work: () => Promise<void>): Promise<void> {
     try { await work(); } finally { workDone(); }
     await sleep(0); // the chat's queue processor reads its last render
   };
-  const run = before.then(() => generationService.runTurn(async () => {
+  const run = before.then(check).then(() => generationService.runTurn(async () => {
     // A turn still being prepared cannot be stopped, and would load its own model when it got there. Polled
     // because turns are not observable; gives up after 15 s so a hung one cannot block choosing for good.
     const until = Date.now() + 15_000;
@@ -65,6 +66,10 @@ export function chooseRemoteTextModel(serverId: string, modelId: string): Promis
     catch (e) { restore(); throw e; }
     if (!providerRegistry.hasProvider(serverId)) { restore(); throw new Error('the server is not available'); }
     await activeModelService.unloadTextModel();
+  }, async () => {
+    // The server may be off or out of reach (health is not kept): say so before anything is stopped or unloaded.
+    const result = await remoteServerManager.testConnection(serverId);
+    if (!result.success) throw new Error(result.error ?? 'the server did not answer');
   });
 }
 

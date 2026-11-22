@@ -32,6 +32,16 @@ let useRemoteServerStore: typeof import('../../../src/stores').useRemoteServerSt
 let hardwareService: typeof import('../../../src/services/hardware').hardwareService;
 let conversationId: string;
 
+/** The servers' network: they answer for their models, unless the test switches them off (a PC asleep, no Wi-Fi). */
+let serversUp = true;
+const SERVER_MODELS: Record<string, string[]> = { 's1.local': ['x'], 's2.local': ['y'] };
+const serverFetch = jest.fn(async (url: string) => {
+  const host = Object.keys(SERVER_MODELS).find(h => url.includes(h));
+  if (!serversUp || !host) throw new TypeError('Network request failed');
+  if (!url.includes('/v1/models')) return { ok: false, status: 404, json: async () => ({}) };
+  return { ok: true, status: 200, json: async () => ({ object: 'list', data: SERVER_MODELS[host].map(id => ({ id, object: 'model', owned_by: 'local' })) }) };
+});
+
 const state = () => useAppStore.getState();
 const remote = () => useRemoteServerStore.getState();
 const settle = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
@@ -47,6 +57,8 @@ const make = (engine: string, id: string): DownloadedModel => createDownloadedMo
 const litert = (id: string) => make('litert', id);
 
 async function boot(models: DownloadedModel[]) {
+  serversUp = true;
+  (global as any).fetch = serverFetch;
   boundary = installNativeBoundary({ llama: true, fs: true, ram: { platform: 'android', totalBytes: 12 * GB, availBytes: 8 * GB } });
   rtl = requireRTL();
   ({ chooseTextModel, chooseRemoteTextModel, chooseImageModel, dropTextModel, dropImageModel } = require('../../../src/services/modelChoice'));
@@ -146,6 +158,29 @@ describe('modelChoice', () => {
     expect([remote().activeServerId, remote().activeRemoteTextModelId, state().activeModelId]).toEqual([null, null, 'a']);
     expect(llmService.isModelLoaded()).toBe(true);
     expect(providerRegistry.getActiveProviderId()).toBe('local');
+  });
+
+  it('remote whose server does not answer: says so, and the earlier choice stays in use and loaded', async () => {
+    await bootDefault();
+    serversUp = false;
+    await expect(chooseRemoteTextModel('s1', 'x')).rejects.toThrow();
+    expect([remote().activeServerId, remote().activeRemoteTextModelId, state().activeModelId]).toEqual([null, null, 'a']);
+    expect(llmService.isModelLoaded()).toBe(true);
+    expect(providerRegistry.getActiveProviderId()).toBe('local');
+  });
+
+  it('a server that does not answer leaves the reply being written alone, and the next choice still goes through', async () => {
+    await bootDefault();
+    const { finished } = await replying();
+    serversUp = false;
+    await expect(chooseRemoteTextModel('s1', 'x')).rejects.toThrow();
+    expect(generationService.getState().isGenerating).toBe(true);
+    expect(llmService.isModelLoaded()).toBe(true);
+    boundary.llama!.releaseStream();
+    await finished;
+    expect(lastMessage().content).toBe('one two three');
+    await chooseTextModel('b');
+    expect(state().activeModelId).toBe('b');
   });
 
   it('the same, with another remote model in use: that one and its provider come back', async () => {

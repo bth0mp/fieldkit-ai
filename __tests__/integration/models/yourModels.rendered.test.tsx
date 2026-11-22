@@ -24,6 +24,7 @@ const settle = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, 
 // The harness resets modules when it boots the app, so everything of ours is required after that.
 let t: Awaited<ReturnType<typeof bootHome>>;
 let lan: Record<string, string[]>;
+let down: string[]; // servers that are off: the connection fails
 const stores = () => require('../../../src/stores');
 const state = () => stores().useAppStore.getState();
 const remote = () => stores().useRemoteServerStore.getState();
@@ -44,10 +45,12 @@ async function boot(opts: Partial<ModelsAppOptions> = {}, inUse: string | null =
   t.rtl.act(() => { stores().useAppStore.setState({ activeModelId: inUse }); });
   // LAN servers answer for the hosts in `lan`; everything else goes on to the Hugging Face fake.
   lan = {};
+  down = [];
   const hfFetch = (global as any).fetch;
   (global as any).fetch = jest.fn(async (url: string, init?: unknown) => {
     const host = Object.keys(lan).find(h => String(url).startsWith(h));
     if (!host) return hfFetch(url, init);
+    if (down.includes(host)) throw new TypeError('Network request failed');
     if (!String(url).includes('/v1/models')) return { ok: false, status: 404, json: async () => ({}) };
     return { ok: true, status: 200, json: async () => ({ object: 'list', data: lan[host].map(id => ({ id, object: 'model', owned_by: 'local' })) }) };
   });
@@ -201,6 +204,30 @@ describe('Your models on the Text tab (rendered)', () => {
     await t.rtl.waitFor(() => expect(t.ui.getByText(/Failed to connect to remote model/)).toBeTruthy(), TIMEOUT);
     expect([state().activeModelId, remote().activeServerId]).toEqual(['used', null]);
     expect(t.ui.getByTestId('models-screen')).toBeTruthy();
+  });
+
+  it('a server that does not answer: alert, stays, the earlier model still in use and loaded, and a reply being written is not stopped', async () => {
+    await boot({ models: [{ ...USED, fileSize: 2 * GB }, NEW] });
+    await addServer('Study PC', 'http://localhost:1234', ['llama3']);
+    await openModels();
+    const { activeModelService } = require('../../../src/services/activeModelService');
+    const { generationService } = require('../../../src/services/generationService');
+    const { llmService } = require('../../../src/services/llm');
+    await t.rtl.act(() => activeModelService.loadTextModel('used'));
+    const chat = stores().useChatStore.getState();
+    const conversationId = chat.createConversation('used');
+    chat.addMessage(conversationId, { role: 'user', content: 'hi' });
+    t.boundary.llama!.scriptCompletion({ text: 'one two three', pauseAfter: 'one' });
+    const finished = generationService.generateResponse(conversationId, []);
+    await t.rtl.waitFor(() => expect(stores().useChatStore.getState().streamingMessage).toContain('one'), TIMEOUT);
+    down.push('http://localhost:1234');
+    press(t.ui.getByLabelText('Use llama3'));
+    await t.rtl.waitFor(() => expect(t.ui.getByText(/Failed to connect to remote model/)).toBeTruthy(), TIMEOUT);
+    expect([state().activeModelId, remote().activeServerId, llmService.isModelLoaded(), generationService.getState().isGenerating]).toEqual(['used', null, true, true]);
+    expect(t.ui.getByTestId('models-screen')).toBeTruthy();
+    t.boundary.llama!.releaseStream();
+    await t.rtl.act(() => finished);
+    expect(last(stores().useChatStore.getState().getConversationMessages(conversationId)).content).toBe('one two three');
   });
 
   it('none at all: the empty text, and Add remote server opens Remote Servers', async () => {

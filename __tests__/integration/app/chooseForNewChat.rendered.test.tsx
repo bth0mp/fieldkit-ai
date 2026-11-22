@@ -75,6 +75,27 @@ describe('Every other way in to choosing a model (rendered)', () => {
     expect(shown('models-screen')).toBe(false);
   });
 
+  it('Use on a remote model whose server does not answer: the alert comes, Models stays and no chat is started', async () => {
+    await boot({ models: [FIRST] });
+    stores().useRemoteServerStore.setState({
+      servers: [{ id: 's1', name: 'Study PC', endpoint: 'http://localhost:1234', providerType: 'openai-compatible', createdAt: '2026-11-01T00:00:00.000Z' }],
+      discoveredModels: { s1: [{ id: 'llama3', name: 'llama3', serverId: 's1', lastUpdated: '2026-11-01T00:00:00.000Z', capabilities: {} }] },
+    });
+    const hfFetch = (global as any).fetch;
+    (global as any).fetch = jest.fn(async (url: string, init?: unknown) => {
+      if (String(url).startsWith('http://localhost:1234')) throw new TypeError('Network request failed');
+      return hfFetch(url, init);
+    });
+    press(t.ui.getByTestId('new-chat-button'));
+    await wait(() => shown('your-models-text'));
+    press(await t.rtl.waitFor(() => t.ui.getByLabelText('Use llama3'), TIMEOUT));
+    await find('Failed to connect to remote model: Network request failed');
+    expect(shown('models-screen')).toBe(true);
+    expect(shown('chat-screen')).toBe(false);
+    expect(stores().useChatStore.getState().conversations).toHaveLength(0);
+    expect(stores().useRemoteServerStore.getState().activeServerId).toBeNull();
+  });
+
   it('the same trip choosing an image model on the Image tab opens a new chat', async () => {
     await boot({ models: [FIRST], imageModels: [SD_ONE] });
     await openChatsTab();
