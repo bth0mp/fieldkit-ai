@@ -13,7 +13,6 @@ import logger from '../../utils/logger';
 import { textOverheadMultiplier } from './types';
 import type {
   ActiveModelInfo,
-  ResourceUsage,
   ModelType,
   MemoryCheckResult,
   ModelChangeListener,
@@ -24,10 +23,7 @@ import {
   getCurrentlyLoadedMemoryGB as _getCurrentlyLoadedMemoryGB,
 } from './memory';
 import { doLoadTextModel, doLoadImageModel, checkImageModelCanLoad } from './loaders';
-import {
-  getResourceUsage as _getResourceUsage,
-  syncWithNativeState as _syncWithNativeState,
-} from './utils';
+import { syncWithNativeState as _syncWithNativeState } from './utils';
 ;
 class ActiveModelService {
   private readonly listeners: Set<ModelChangeListener> = new Set();
@@ -431,9 +427,6 @@ class ActiveModelService {
     }
     logger.log(`[MODEL-SM] ejectAll → done count=${count}`);
     return { count };
-  }
-  async getResourceUsage(): Promise<ResourceUsage> {
-    return _getResourceUsage();
   }
   private getIds() {
     return { loadedTextModelId: this.loadedTextModelId, loadedImageModelId: this.loadedImageModelId };

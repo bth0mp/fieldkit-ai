@@ -131,6 +131,7 @@ describe('Every other way in to choosing a model (rendered)', () => {
     await openChatsTab();
     await find('Choose or download a model on the Models screen to start chatting.');
     expect(t.rtl.within(t.ui.getByTestId('chats-open-models')).getByText('Open Models')).toBeTruthy();
+    expect(t.ui.getByTestId('chats-open-models').props.accessibilityRole).toBe('button');
     t.rtl.act(() => { stores().useAppStore.setState({ activeModelId: 'first' }); });
     await find('Start a new conversation to begin chatting with your local AI.');
     expect(shown('chats-open-models')).toBe(false);

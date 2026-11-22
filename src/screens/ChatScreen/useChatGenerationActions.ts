@@ -532,7 +532,7 @@ async function dispatchResolvedTurn(
     return { handled: true };
   }
   logger.log(`[ROUTE-SM] dispatch → TEXT generation (shouldGenerateImage=${shouldGenerateImage})`);
-  // Text route, no text model selected (image-only device): load one / open selector.
+  // Text route, no text model selected (image-only device): load the remembered one, else the Models screen opens.
   if (!shouldGenerateImage && deps.hasTextModel === false && !deps.activeModelInfo?.isRemote) {
     const ready = await deps.ensureTextModelForChat();
     if (!ready) {

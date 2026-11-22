@@ -28,7 +28,7 @@ const ROWS: RowDef[] = [
 type Props = {
   visible: boolean;
   onClose: () => void;
-  /** Fired once the sheet has fully closed — used to open a picker safely after. */
+  /** Fired once the sheet has fully closed — used to open the Models screen safely after. */
   onClosed?: () => void;
   labels: Record<ModelRowType, string>;
   /** Rows whose active selection lives on a REMOTE server (gateway) — shown with a cloud marker,
@@ -43,8 +43,8 @@ type Props = {
 
 /**
  * Bottom sheet that manages all four model types via progressive disclosure: a
- * compact row per type showing the current selection; tapping a row opens that
- * type's picker.
+ * compact row per type showing the current selection; tapping a row opens
+ * the Models screen on that type's tab.
  */
 export const ModelsManagerSheet: React.FC<Props> = ({
   visible, onClose, onClosed, labels, remote, loadingState, isEjecting, hasActiveModel, onOpenRow, onEject,

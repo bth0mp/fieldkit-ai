@@ -38,8 +38,8 @@ const MODEL_FILE_EXT = /\.(gguf|bin|safetensors|task|litertlm|pte)$/i;
 
 /**
  * Human-readable label for a remote model. Some gateways report the model id as a
- * full file path (e.g. "/Users/admin/.offgrid/models/Qwen3.5-9B-Q4_K_M.gguf"),
- * which is unreadable in the picker. Show the basename without the extension while
+ * full file path (e.g. "/Users/admin/models/Qwen3.5-9B-Q4_K_M.gguf"),
+ * which is unreadable in the Models list. Show the basename without the extension while
  * keeping the raw id for loading.
  *
  * Only basename-strip when the id actually LOOKS like a filesystem path — an

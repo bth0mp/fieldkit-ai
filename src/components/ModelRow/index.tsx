@@ -14,7 +14,7 @@ export interface ModelRowProps {
   quant?: string;
   /** Show the Vision badge. */
   isVision?: boolean;
-  /** Optional RAM-fit hint under the meta row (home sheet shows this; chat omits it). */
+  /** Optional RAM-fit hint under the meta row (the Your models list shows it). */
   ramHint?: string;
   /** Highlight as the active/selected model. */
   isActive?: boolean;

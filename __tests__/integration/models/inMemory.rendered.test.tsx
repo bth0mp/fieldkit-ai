@@ -12,7 +12,6 @@ import { resetDeviceMemory } from '../../harness/deviceMemory';
 jest.mock('@react-navigation/native', () => jest.requireActual('@react-navigation/native'));
 jest.mock('../../../src/hooks/useFocusTrigger', () => ({ useFocusTrigger: () => 0 }));
 
-
 const TIMEOUT = { timeout: 4000 };
 const ROWS = ['text', 'image', 'voice', 'speech'];
 

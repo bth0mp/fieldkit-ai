@@ -14,7 +14,6 @@ import { GB } from '../../harness/nativeBoundary';
 jest.mock('@react-navigation/native', () => jest.requireActual('@react-navigation/native'));
 jest.mock('../../../src/hooks/useFocusTrigger', () => ({ useFocusTrigger: () => 0 }));
 
-
 const TIMEOUT = { timeout: 4000 };
 const FIRST = { id: 'first', name: 'First', fileSize: 1 * GB };
 const SECOND = { id: 'second', name: 'Second', fileSize: 1 * GB };

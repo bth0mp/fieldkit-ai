@@ -6,6 +6,7 @@ import { providerRegistry } from './providers';
 import { remoteServerManager } from './remoteServerManager';
 import { stopReply } from './stopReply';
 import { useAppStore, useRemoteServerStore } from '../stores';
+import logger from '../utils/logger';
 
 const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
 const writing = () => generationService.getState().isGenerating || imageGenerationService.getState().isGenerating;
@@ -30,6 +31,7 @@ function exclusively(work: () => Promise<void>, check?: () => Promise<void>): Pr
     // because turns are not observable; gives up after 15 s so a hung one cannot block choosing for good.
     const until = Date.now() + 15_000;
     while (generationService.turnsRunning() > 1 && !writing() && Date.now() < until) await sleep(50);
+    if (generationService.turnsRunning() > 1 && !writing()) logger.warn('[modelChoice] gave up waiting for a turn still being prepared');
     if (!generationService.getState().isGenerating) return finish();
     const stopped = stopReply();                  // clears every claim, ours too, and schedules a queue drain,
     return generationService.runTurn(async () => { // so claim again in the same tick

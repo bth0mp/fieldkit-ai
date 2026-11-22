@@ -457,6 +457,7 @@ export const TextModelsTab: React.FC<Props> = (props) => {
           keyExtractor={item => item.id}
           contentContainerStyle={styles.listContent}
           testID="models-list"
+          keyboardShouldPersistTaps="handled"
           refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} />}
           ListHeaderComponent={hasSearched ? (
             SERVER_SORTS.includes(filterState.sort) ? (

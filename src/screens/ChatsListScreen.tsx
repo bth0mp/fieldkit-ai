@@ -204,6 +204,7 @@ export const ChatsListScreen: React.FC = () => {
             style={styles.emptyButton}
             onPress={handleNewChat}
             testID={hasModels ? undefined : 'chats-open-models'}
+            accessibilityRole="button"
           >
             <Icon name={hasModels ? 'plus' : 'layers'} size={18} color={colors.primary} />
             <Text style={styles.emptyButtonText}>{hasModels ? 'New Chat' : 'Open Models'}</Text>

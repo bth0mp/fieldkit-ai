@@ -1,5 +1,5 @@
 import React from 'react';
-import { type StyleProp, type ViewStyle } from 'react-native';
+import { type AccessibilityRole, type StyleProp, type ViewStyle } from 'react-native';
 import { AnimatedEntry } from './AnimatedEntry';
 import { AnimatedPressable } from './AnimatedPressable';
 import { type HapticType } from '../utils/haptics';
@@ -27,6 +27,7 @@ export interface AnimatedListItemProps {
   disabled?: boolean;
   /** Test ID */
   testID?: string;
+  accessibilityRole?: AccessibilityRole;
   children: React.ReactNode;
 }
 
@@ -46,6 +47,7 @@ export function AnimatedListItem({
   onLongPress,
   disabled,
   testID,
+  accessibilityRole,
   children,
 }: AnimatedListItemProps) {
   return (
@@ -58,6 +60,7 @@ export function AnimatedListItem({
         onLongPress={onLongPress}
         disabled={disabled}
         testID={testID}
+        accessibilityRole={accessibilityRole}
       >
         {children}
       </AnimatedPressable>

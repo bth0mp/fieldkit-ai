@@ -941,22 +941,6 @@ describe('ActiveModelService Integration', () => {
     });
   });
 
-  describe('getResourceUsage', () => {
-    it('returns memory usage information', async () => {
-      mockHardwareService.refreshMemoryInfo.mockResolvedValue({
-        totalMemory: 8 * 1024 * 1024 * 1024,
-        usedMemory: 3 * 1024 * 1024 * 1024,
-        availableMemory: 5 * 1024 * 1024 * 1024,
-      } as any);
-
-      const usage = await activeModelService.getResourceUsage();
-
-      expect(usage.memoryTotal).toBe(8 * 1024 * 1024 * 1024);
-      expect(usage.memoryAvailable).toBe(5 * 1024 * 1024 * 1024);
-      expect(usage.memoryUsagePercent).toBeCloseTo(37.5, 0);
-      expect(usage.estimatedModelMemory).toBeDefined();
-    });
-  });
 
   describe('checkMemoryForModel with image type', () => {
     it('checks memory for image model with correct overhead', async () => {
@@ -1144,60 +1128,6 @@ describe('ActiveModelService Integration', () => {
       await expect(
         activeModelService.loadImageModel('nonexistent')
       ).rejects.toThrow('Model not found');
-    });
-  });
-
-  describe('getEstimatedModelMemory branches', () => {
-    it('includes text model memory when active', async () => {
-      const textModel = createDownloadedModel({
-        id: 'text-est',
-        fileSize: 4 * 1024 * 1024 * 1024,
-      });
-      useAppStore.setState({
-        downloadedModels: [textModel],
-        activeModelId: 'text-est',
-      });
-
-      const usage = await activeModelService.getResourceUsage();
-      // estimatedModelMemory should include text model memory
-      expect(usage.estimatedModelMemory).toBeGreaterThan(0);
-    });
-
-    it('includes image model memory when active', async () => {
-      const imageModel = createONNXImageModel({
-        id: 'img-est',
-        size: 2 * 1024 * 1024 * 1024,
-      });
-      useAppStore.setState({
-        downloadedImageModels: [imageModel],
-        activeImageModelId: 'img-est',
-      });
-
-      const usage = await activeModelService.getResourceUsage();
-      expect(usage.estimatedModelMemory).toBeGreaterThan(0);
-    });
-
-    it('includes both text and image model memory', async () => {
-      const textModel = createDownloadedModel({
-        id: 'text-both',
-        fileSize: 4 * 1024 * 1024 * 1024,
-      });
-      const imageModel = createONNXImageModel({
-        id: 'img-both',
-        size: 2 * 1024 * 1024 * 1024,
-      });
-      useAppStore.setState({
-        downloadedModels: [textModel],
-        activeModelId: 'text-both',
-        downloadedImageModels: [imageModel],
-        activeImageModelId: 'img-both',
-      });
-
-      const usage = await activeModelService.getResourceUsage();
-      // Should be sum of both model memories
-      const textOnly = textModel.fileSize * 1.2;
-      const imageOnly = imageModel.size * 1.3;
-      expect(usage.estimatedModelMemory).toBeCloseTo(textOnly + imageOnly, -5);
     });
   });
 

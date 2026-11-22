@@ -4,7 +4,8 @@ import Icon from 'react-native-vector-icons/Feather';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
 import { AttachStep, useSpotlightTour } from 'react-native-spotlight-tour';
 import { ModelCard } from '../../components';
-import { consumePendingSpotlight } from '../../components/onboarding/spotlightState';
+import { consumePendingSpotlight, peekPendingSpotlight } from '../../components/onboarding/spotlightState';
+import { IMAGE_DOWNLOAD_STEP_INDEX } from '../../components/onboarding/spotlightConfig';
 import { useTheme, useThemedStyles } from '../../theme';
 import { HFImageModel, getVariantLabel } from '../../services/huggingFaceModelBrowser';
 import { ImageModelRecommendation } from '../../types';
@@ -159,7 +160,8 @@ const ImageModelsScrollContent: React.FC<ScrollContentProps> = ({
   // Consume pending spotlight from the onboarding flow (queued when user taps "Try image generation")
   useEffect(() => {
     if (!hfModelsLoading && filteredHFModels.length > 0) {
-      const pending = consumePendingSpotlight();
+      // Only its own step: another one (Load a model, 11) stays pending for the tab that owns it.
+      const pending = peekPendingSpotlight() === IMAGE_DOWNLOAD_STEP_INDEX ? consumePendingSpotlight() : null;
       if (pending !== null) {
         const task = InteractionManager.runAfterInteractions(() => goTo(pending));
         return () => task.cancel();
