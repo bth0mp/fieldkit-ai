@@ -96,23 +96,21 @@ export const AssistantCard: React.FC<Props> = ({ chip, onOpenModels, canChat, se
       <View style={styles.header}>
         <Text style={styles.title}>Assistant</Text>
         {/* Both the text (1) and image (13) tour steps anchor on the model chip. */}
-        <AttachStep index={1} style={styles.chipAnchor}>
-          <AttachStep index={13} style={styles.chipAnchor}>
-            <AnimatedPressable
-              testID="models-summary"
-              style={styles.chip}
-              hapticType="selection"
-              onPress={onOpenModels}
-              accessibilityRole="button"
-              accessibilityLabel={`${chip.label}${chip.loading ? ', loading' : ''}. Opens Models`}
-            >
-              {chip.remote && <Icon testID="model-chip-remote" name="server" size={12} color={colors.textMuted} />}
-              <Text testID="model-chip-label" style={styles.chipLabel} numberOfLines={1}>{chip.label}</Text>
-              {chip.loading
-                ? <ActivityIndicator size="small" color={colors.primary} />
-                : <Icon name="chevron-right" size={14} color={colors.textMuted} />}
-            </AnimatedPressable>
-          </AttachStep>
+        <AttachStep index={[1, 13]} style={styles.chipAnchor}>
+          <AnimatedPressable
+            testID="models-summary"
+            style={styles.chip}
+            hapticType="selection"
+            onPress={onOpenModels}
+            accessibilityRole="button"
+            accessibilityLabel={`${chip.label}${chip.loading ? ', loading' : ''}. Opens Models`}
+          >
+            {chip.remote && <Icon testID="model-chip-remote" name="server" size={12} color={colors.textMuted} />}
+            <Text testID="model-chip-label" style={styles.chipLabel} numberOfLines={1}>{chip.label}</Text>
+            {chip.loading
+              ? <ActivityIndicator size="small" color={colors.primary} />
+              : <Icon name="chevron-right" size={14} color={colors.textMuted} />}
+          </AnimatedPressable>
         </AttachStep>
       </View>
       {canChat ? <AskBox onAsk={onAsk} /> : setup}
