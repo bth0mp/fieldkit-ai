@@ -10,7 +10,7 @@ import { createSpotlightSteps } from '../../../src/components/onboarding/spotlig
 describe('Spotlight Tooltip Content', () => {
   const expectedTooltips: Array<{ index: number; title: string; description: string }> = [
     { index: 0, title: 'Download a model', description: 'Tap this recommended model to see downloadable files' },
-    { index: 1, title: 'Load a model', description: 'Tap here to select and load a text model for chatting.' },
+    { index: 1, title: 'Load a model', description: 'Tap here to open the Models screen and choose a text model.' },
     { index: 2, title: 'Start a new chat', description: 'Tap the New button to create a conversation.' },
     { index: 3, title: 'Send a message', description: 'Type your message here and tap the send button.' },
     { index: 4, title: 'Try image generation', description: 'Switch to Image Models, download a model, then generate images from any chat' },
@@ -22,7 +22,7 @@ describe('Spotlight Tooltip Content', () => {
     { index: 10, title: 'Download Manager', description: 'Track your download progress here' },
     { index: 11, title: 'Select a model', description: 'Tap Use to choose this model for chatting' },
     { index: 12, title: 'Try voice input', description: 'Download a speech model in Voice Settings to send voice messages' },
-    { index: 13, title: 'Load your image model', description: 'Tap here to load the image model you downloaded' },
+    { index: 13, title: 'Load your image model', description: 'Tap here, then open Image Models and tap Use.' },
     { index: 14, title: 'Generate an image', description: 'Start a new chat and try asking for an image' },
     { index: 15, title: 'Draw something', description: "Try typing 'draw a dog' and send it" },
     { index: 16, title: 'Image generation settings', description: 'Control when images are generated: auto, always, or off. Configure more in Settings.' },

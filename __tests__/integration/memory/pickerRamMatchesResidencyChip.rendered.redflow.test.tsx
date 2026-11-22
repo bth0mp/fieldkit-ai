@@ -12,7 +12,7 @@
  * show the SAME number of GB. On HEAD the picker shows ~3.0 GB (1.5×) while the sheet chip shows 4.4 GB
  * (2.2×) → RED. The fix routes the picker label through the SAME backend-aware multiplier owner.
  *
- * Real HomeScreen + real picker/sheet gestures + real activeModelService/modelResidencyManager; fakes only
+ * Real Models-screen list and In memory sheet + real gestures + real activeModelService/modelResidencyManager; fakes only
  * at the native llama/fs/RAM boundary. Backend is switched to GPU via the REAL BackendSelector control
  * (the same store action the settings screen dispatches), before the load, so the resident registers at 2.2×.
  */
@@ -25,7 +25,7 @@ jest.mock('@react-navigation/native', () => ({
   useFocusEffect: () => {}, useIsFocused: () => true,
 }));
 
-/** Invoke the onPress bound at/above a testID host (AnimatedPressable's onPress lives on the composite). */
+/** Invoke the onPress bound at/above a testID host (the button's onPress lives on the composite). */
 function pressByWalkingUp(node: unknown): void {
   type N = { props?: Record<string, unknown>; parent?: N | null } | null;
   let n = node as N;
@@ -75,7 +75,8 @@ describe('RAM display agreement — picker label matches the residency chip for 
     const { useAppStore } = require('../../../src/stores');
     const AsyncStorage = require('@react-native-async-storage/async-storage').default ?? require('@react-native-async-storage/async-storage');
     const { activeModelService } = require('../../../src/services/activeModelService');
-    const { HomeScreen } = require('../../../src/screens/HomeScreen');
+    const { YourModels } = require('../../../src/screens/ModelsScreen/YourModels');
+    const { InMemory } = require('../../../src/screens/ModelsScreen/InMemory');
     const { ResidentsProbe } = require('../../harness/ResidentsProbe');
     const { BackendSelector } = require('../../../src/components/settings/textGenAdvancedSections');
     const { ModelSelectorModal } = require('../../../src/components/ModelSelectorModal');
@@ -92,16 +93,18 @@ describe('RAM display agreement — picker label matches the residency chip for 
     require('../../../src/components/onboarding/spotlightState').setPendingSpotlight(null);
     useAppStore.setState({ checklistDismissed: true, shownSpotlights: { input: true, voiceHint: true, imageSettings: true } });
 
-    const nav = { navigate: () => {}, goBack: () => {}, setOptions: () => {}, addListener: () => () => {} };
+    // Home's hydration used to load the record; the Models screen does it from the same service.
+    const { modelManager } = require('../../../src/services/modelManager');
+    useAppStore.getState().setDownloadedModels(await modelManager.getDownloadedModels());
     const view = rtl.render(React.createElement(
       React.Fragment, null,
       React.createElement(ResidentsProbe, {}),
-      React.createElement(HomeScreen, { navigation: nav }),
+      React.createElement(YourModels, { kind: 'text', onChosen: () => {}, onError: () => {} }),
+      React.createElement(InMemory, { onOpenTab: () => {}, setAlertState: () => {} }),
     ));
     await rtl.waitFor(() => { expect(useAppStore.getState().downloadedModels.length).toBeGreaterThan(0); }, { timeout: 10000 });
 
-    // GESTURE: select the text model the way a user does — open the picker, tap the row.
-    rtl.fireEvent.press(await rtl.waitFor(() => view.getByTestId('browse-models-button')));
+    // GESTURE: select the text model the way a user does: tap Use on its row in "Your models".
     const rows = await rtl.waitFor(() => { const r = view.queryAllByTestId('model-item'); expect(r.length).toBeGreaterThan(0); return r; }, { timeout: 10000 });
     rtl.fireEvent.press(rows[0]);
     await rtl.waitFor(() => { expect(useAppStore.getState().activeModelId).toBe('m'); }, { timeout: 10000 });
@@ -117,9 +120,9 @@ describe('RAM display agreement — picker label matches the residency chip for 
     await rtl.act(async () => { await activeModelService.loadTextModel('m'); });
     await rtl.waitFor(() => { expect(view.getByTestId('probe-residents').props.children).toContain('text'); }, { timeout: 10000 });
 
-    // The manager-sheet RAM chip (residency surface) — open the sheet, then read its GB figure.
-    await rtl.act(async () => { pressByWalkingUp(view.getByTestId('models-summary')); });
-    await rtl.waitFor(() => { expect(view.queryByTestId('models-row-text')).not.toBeNull(); }, { timeout: 10000 });
+    // The In memory sheet RAM chip (residency surface): open the sheet, then read its GB figure.
+    await rtl.act(async () => { pressByWalkingUp(view.getByTestId('in-memory-button')); });
+    await rtl.waitFor(() => { expect(view.queryByTestId('models-row-text') !== null).toBe(true); }, { timeout: 10000 });
     const chipGb = ramGb(await rtl.waitFor(() => view.getByTestId('models-row-text-ram'), { timeout: 10000 }));
 
     // The Select-Model picker "Currently Loaded" RAM label — mounted with the real loaded path.

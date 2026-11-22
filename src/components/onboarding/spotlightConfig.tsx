@@ -100,7 +100,7 @@ export function createSpotlightSteps(): TourStep[] {
       render: ({ stop }) => (
         <Tooltip
           title="Load a model"
-          description="Tap here to select and load a text model for chatting."
+          description="Tap here to open the Models screen and choose a text model."
           stop={stop}
         />
       ),
@@ -244,7 +244,7 @@ export function createSpotlightSteps(): TourStep[] {
       render: ({ stop }) => (
         <Tooltip
           title="Load your image model"
-          description="Tap here to load the image model you downloaded"
+          description="Tap here, then open Image Models and tap Use."
           stop={stop}
         />
       ),

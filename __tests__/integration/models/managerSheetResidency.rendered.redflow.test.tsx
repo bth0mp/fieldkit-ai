@@ -1,10 +1,10 @@
 /**
  * RED-FLOW (UI integration, HEAVY entry point) — the MODELS manager sheet is the residency surface
  * (agreed design 2026-07-14): each modality row shows a RAM chip when its model is RESIDENT plus a
- * per-row eject control; "Eject All" stays; row tap still opens that type's picker. And "In Memory"
+ * per-row eject control; "Eject All" stays; row tap still goes to that type's tab. And "In Memory"
  * moves OUT of the Select Model picker (the manager sheet replaces it).
  *
- * Real HomeScreen + real picker gestures + real activeModelService/modelResidencyManager; fakes only
+ * Real Models-screen list and In memory sheet + real gestures + real activeModelService/modelResidencyManager; fakes only
  * at the native llama/fs/RAM boundary. The ResidentsProbe (test-only) is the sanctioned observable
  * for the raw resident set; every product assertion rides the real sheet/picker surfaces.
  *
@@ -44,7 +44,9 @@ async function setupHome() {
   const { useAppStore } = require('../../../src/stores');
   const AsyncStorage = require('@react-native-async-storage/async-storage').default ?? require('@react-native-async-storage/async-storage');
   const { activeModelService } = require('../../../src/services/activeModelService');
-  const { HomeScreen } = require('../../../src/screens/HomeScreen');
+  const { YourModels } = require('../../../src/screens/ModelsScreen/YourModels');
+  const { InMemory } = require('../../../src/screens/ModelsScreen/InMemory');
+  const { modelManager } = require('../../../src/services/modelManager');
   const { ResidentsProbe } = require('../../harness/ResidentsProbe');
 
   // BOUNDARY: a downloaded model = the persisted record + the file on disk (a real download's artifact).
@@ -57,21 +59,23 @@ async function setupHome() {
   require('../../../src/components/onboarding/spotlightState').setPendingSpotlight(null);
   useAppStore.setState({ checklistDismissed: true, shownSpotlights: { input: true, voiceHint: true, imageSettings: true } });
 
-  const nav = { navigate: () => {}, goBack: () => {}, setOptions: () => {}, addListener: () => () => {} };
+  // Home's hydration used to load the record; the Models screen does it from the same service.
+  useAppStore.getState().setDownloadedModels(await modelManager.getDownloadedModels());
+  const onOpenTab = jest.fn();
   const view = rtl.render(React.createElement(
     React.Fragment, null,
     React.createElement(ResidentsProbe, {}),
-    React.createElement(HomeScreen, { navigation: nav }),
+    React.createElement(YourModels, { kind: 'text', onChosen: () => {}, onError: () => {} }),
+    React.createElement(InMemory, { onOpenTab, setAlertState: () => {} }),
   ));
   await rtl.waitFor(() => { expect(useAppStore.getState().downloadedModels.length).toBeGreaterThan(0); }, { timeout: 10000 });
 
-  // GESTURE: select the text model the way a user does — open the picker, tap the row.
-  rtl.fireEvent.press(await rtl.waitFor(() => view.getByTestId('browse-models-button')));
+  // GESTURE: select the text model the way a user does — tap Use on its row in "Your models".
   const rows = await rtl.waitFor(() => { const r = view.queryAllByTestId('model-item'); expect(r.length).toBeGreaterThan(0); return r; }, { timeout: 10000 });
   rtl.fireEvent.press(rows[0]);
   await rtl.waitFor(() => { expect(useAppStore.getState().activeModelId).toBe('m'); }, { timeout: 10000 });
 
-  return { boundary, React, rtl, useAppStore, activeModelService, view };
+  return { boundary, React, rtl, useAppStore, activeModelService, view, onOpenTab };
 }
 
 describe('manager sheet residency — RAM chip + per-row eject (agreed design 2026-07-14)', () => {
@@ -79,12 +83,12 @@ describe('manager sheet residency — RAM chip + per-row eject (agreed design 20
   // waitFor budgets and the overall timeout were raised after this flaked on a loaded CI runner
   // (the residency state settled just past the old 4s window; passed everywhere else). Behaviour
   // is unchanged — this only gives the async settling more headroom under load.
-  it('shows the RAM chip + eject on a resident row, ejects it, and the row still opens the picker', async () => {
+  it('shows the RAM chip + eject on a resident row, ejects it, and the row still goes to its tab', async () => {
     const h = await setupHome();
-    const { rtl, view } = h;
+    const { rtl, view, onOpenTab } = h;
 
     // PRE (falsifier baseline): sheet open BEFORE any load → NO chip, NO eject on any row.
-    rtl.fireEvent.press(await rtl.waitFor(() => view.getByTestId('models-summary')));
+    await rtl.act(async () => { pressByWalkingUp(view.getByTestId('in-memory-button')); });
     await rtl.waitFor(() => { expect(view.queryByTestId('models-row-text')).not.toBeNull(); });
     for (const t of ['text', 'image', 'voice', 'speech']) {
       expect(view.queryByTestId(`models-row-${t}-ram`)).toBeNull();
@@ -108,9 +112,9 @@ describe('manager sheet residency — RAM chip + per-row eject (agreed design 20
     await rtl.waitFor(() => { expect(view.queryByTestId('models-row-text-ram')).toBeNull(); }, { timeout: 10000 });
     await rtl.waitFor(() => { expect(view.getByTestId('probe-residents').props.children).toBe('(none)'); }, { timeout: 10000 });
 
-    // The row itself still opens the text picker (eject must not swallow the row tap).
+    // The row itself still goes to the Text tab (eject must not swallow the row tap).
     await rtl.act(async () => { pressByWalkingUp(view.getByTestId('models-row-text')); });
-    await rtl.waitFor(() => { expect(view.queryAllByTestId('model-item').length).toBeGreaterThan(0); }, { timeout: 10000 });
+    await rtl.waitFor(() => { expect(onOpenTab.mock.calls.map((c: unknown[]) => c[0])).toEqual(['text']); }, { timeout: 10000 });
   }, 60000);
 
   it('the Select Model picker no longer renders the In Memory section (moved to the manager sheet)', async () => {

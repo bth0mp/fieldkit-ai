@@ -128,17 +128,19 @@ export async function setupChatScreen(opts: ChatHarnessOptions) {
   // screen mounts, so pro slots render in Home + ChatScreen. Reusable seam (proHarness.installPro).
   if (opts.pro) { const { installPro } = require('./proHarness'); await installPro(); }
 
-  // GESTURE: mount the real Home screen — its REAL hydration loads the record — then open the picker and TAP
-  // the model row. The real handleSelectTextModel sets it active (no setState activeModelId shortcut).
+  // GESTURE: mount the real Home screen — its REAL hydration loads the record — then TAP the model row in
+  // "Your models". The real choice path sets it active (no setState activeModelId shortcut).
   await opts.beforeHome?.(boundary);
   const home = rtl.render(React.createElement(HomeScreen, { navigation: { navigate: () => {}, goBack: () => {}, setOptions: () => {}, addListener: () => () => {} } }));
   await rtl.waitFor(() => { expect(useAppStore.getState().downloadedModels.length).toBeGreaterThan(0); }, { timeout: 4000 });
-  rtl.fireEvent.press(await rtl.waitFor(() => home.getByTestId('browse-models-button')));
-  const rows = await rtl.waitFor(() => { const r = home.queryAllByTestId('model-item'); expect(r.length).toBeGreaterThan(0); return r; }, { timeout: 4000 });
+  home.unmount();
+  // A model is chosen from "Your models" on the Models screen now: mount that list alone and tap the row.
+  const { YourModels } = require('../../src/screens/ModelsScreen/YourModels');
+  const picker = rtl.render(React.createElement(YourModels, { kind: 'text', onChosen: () => {}, onError: () => {} }));
+  const rows = await rtl.waitFor(() => { const r = picker.queryAllByTestId('model-item'); expect(r.length).toBeGreaterThan(0); return r; }, { timeout: 4000 });
   rtl.fireEvent.press(rows[0]);
   await rtl.waitFor(() => { expect(useAppStore.getState().activeModelId).toBe('m'); }, { timeout: 4000 });
-
-  home.unmount();
+  picker.unmount();
 
   // Load via the REAL load path (the app loads lazily on the first send; we trigger the same path so the
   // readiness gate passes deterministically). This is the real native-faked load, not a state shortcut.

@@ -1,5 +1,5 @@
 /**
- * RED-FLOW (UI integration) — the Home "Text Models" picker's "(may not fit)" hint must come from
+ * RED-FLOW (UI integration) — the Models screen's "Your models" list's "(may not fit)" hint must come from
  * the ONE owned memory budget (memoryBudget.fileExceedsBudget — device-tier fraction of TOTAL RAM,
  * reclaim-aware), not a hand-rolled "current free RAM minus 1.5GB" check.
  *
@@ -9,9 +9,9 @@
  * trivially. The picker's verdict compared against instantaneous FREE RAM, which the resident
  * model had consumed — the DR3 drift (third fit verdict bypassing memoryBudget.ts).
  *
- * The REAL ModelPickerSheet is mounted with the REAL activeModelService.getResourceUsage() read
- * over the seeded RAM boundary (12GB total, 4.5GB free — the resident-model device state), the
- * same wiring Home passes it. RED on HEAD: the 2.89GB model carries "(may not fit)". Falsifier:
+ * The REAL "Your models" list (the Models screen's, which replaced Home's picker) is mounted over
+ * the seeded RAM boundary (12GB total, 4.5GB free — the resident-model device state).
+ * RED on HEAD: the 2.89GB model carries "(may not fit)". Falsifier:
  * a model whose file genuinely exceeds the device budget (9.6GB > 8.4GB) KEEPS the tag.
  */
 import { installNativeBoundary, requireRTL, GB } from '../../harness/nativeBoundary';
@@ -23,7 +23,7 @@ jest.mock('@react-navigation/native', () => ({
   useFocusEffect: () => {}, useIsFocused: () => true,
 }));
 
-describe('Home picker fit hint — owned budget, not instantaneous free RAM (DR3, device 01:24)', () => {
+describe('Your models fit hint — owned budget, not instantaneous free RAM (DR3, device 01:24)', () => {
   it('a 2.89GB model on a 12GB phone shows NO "(may not fit)" even with RAM currently consumed', async () => {
     // Device boundary: the 01:24 screenshot state — 12GB phone, ~4.5GB currently free.
     const boundary = installNativeBoundary({ llama: true, fs: true, ram: { platform: 'android', totalBytes: 12 * GB, availBytes: 4.5 * GB } });
@@ -31,8 +31,8 @@ describe('Home picker fit hint — owned budget, not instantaneous free RAM (DR3
     const React = require('react');
     const rtl = requireRTL();
     const { hardwareService } = require('../../../src/services/hardware');
-    const { activeModelService } = require('../../../src/services/activeModelService');
-    const { ModelPickerSheet } = require('../../../src/screens/HomeScreen/components/ModelPickerSheet');
+    const { useAppStore } = require('../../../src/stores');
+    const { YourModels } = require('../../../src/screens/ModelsScreen/YourModels');
     /* eslint-enable @typescript-eslint/no-var-requires */
 
     const docs = boundary.fs!.DocumentDirectoryPath;
@@ -43,22 +43,9 @@ describe('Home picker fit hint — owned budget, not instantaneous free RAM (DR3
     // The device report's model (2.89GB) + a genuinely-over-budget one (9.6GB > 12GB × 0.70 ≈ 8.4GB).
     const models = [seed('gemma-e2b-gguf', 'e2b.gguf', 2.89 * GB), seed('huge-model', 'huge.gguf', 9.6 * GB)];
     await hardwareService.refreshMemoryInfo();
-    // The REAL memory numbers Home hands the sheet, read through the real service over the boundary.
-    const memoryInfo = await activeModelService.getResourceUsage();
+    useAppStore.setState({ downloadedModels: models, activeModelId: null });
 
-    const view = rtl.render(React.createElement(ModelPickerSheet, {
-      visible: true, pickerType: 'text', onClose: () => {},
-      downloadedModels: models, downloadedImageModels: [],
-      activeModelId: null, activeImageModelId: null,
-      activeRemoteTextModelId: null, activeRemoteImageModelId: null,
-      remoteTextModels: [], remoteImageModels: [],
-      memoryInfo, loadingState: { isLoading: false },
-      onSelectTextModel: () => {}, onSelectImageModel: () => {},
-      onUnloadTextModel: () => {}, onUnloadImageModel: () => {},
-      onSelectRemoteTextModel: () => {}, onUnloadRemoteTextModel: () => {},
-      onSelectRemoteImageModel: () => {}, onUnloadRemoteImageModel: () => {},
-      onBrowseModels: () => {}, onAddServer: () => {},
-    }));
+    const view = rtl.render(React.createElement(YourModels, { kind: 'text', onChosen: () => {}, onError: () => {} }));
     await rtl.waitFor(() => { expect(view.queryAllByTestId('model-item').length).toBeGreaterThanOrEqual(2); }, { timeout: 4000 });
     await rtl.waitFor(() => { expect(view.queryAllByText(/GB RAM/).length).toBeGreaterThanOrEqual(2); }, { timeout: 4000 });
 

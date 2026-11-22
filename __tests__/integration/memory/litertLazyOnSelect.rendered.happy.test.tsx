@@ -3,7 +3,7 @@
  * loading it into RAM; the model loads lazily on the first send, and only then does it appear "In Memory".
  *
  * The T020 device note ("eager warm on select") is STALE: the app deliberately removed eager-load-on-select
- * (useModelLoading.ts:27-31 — "Selecting a model only MARKS it active … Loading eagerly here used to race
+ * (Home's old model-loading hook, now the Models screen's choice — "Selecting a model only MARKS it active … Loading eagerly here used to race
  * that path and leave both a text and an image model resident at the same time") in favour of the lazy load
  * the user asked for (DEVICE_TEST_FINDINGS: "Lazy model loading — model loads on first send, not on select
  * ('exactly the lazy model loading I wanted')"). This guard protects that decision from regressing back to

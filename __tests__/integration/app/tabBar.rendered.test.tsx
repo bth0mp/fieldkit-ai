@@ -78,7 +78,7 @@ describe('Tab bar (rendered)', () => {
     expect(ui.getByTestId('setup-card')).toBeTruthy();
     expect(ui.queryByTestId('chat-input')).toBeNull();
 
-    // 3. Load the model through the setup card's picker; New chat now opens a chat with its input.
+    // 3. Choose the model from the setup card (it opens Models, where Use goes back Home); New chat now opens a chat with its input.
     rtl.fireEvent.press(ui.getByTestId('browse-models-button'));
     const rows = await rtl.waitFor(() => {
       const r = ui.queryAllByTestId('model-item');
