@@ -11,6 +11,9 @@ export const MODEL_RECOMMENDATIONS = {
   ],
 };
 
+/** Matches a parameter count such as "7B" or "1.5B" in a model name or id. */
+export const PARAM_COUNT_REGEX = /\b(\d+[.]\d+|\d+)\s?[Bb]\b/;
+
 // Curated list of recommended models for mobile (updated Apr 2026)
 // Ordered editorially: Gemma 4 featured first, then Qwen 3.5, then others.
 export const RECOMMENDED_MODELS = [

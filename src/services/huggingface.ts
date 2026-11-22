@@ -1,4 +1,5 @@
 import { HFModelSearchResult, ModelInfo, ModelFile, ModelCredibility } from '../types';
+import { PARAM_COUNT_REGEX } from '../constants/models';
 import { HF_API, QUANTIZATION_INFO, LMSTUDIO_AUTHORS, OFFICIAL_MODEL_AUTHORS, VERIFIED_QUANTIZERS } from '../constants';
 import { looksLikeVisionModel } from '../utils/visionModel';
 import { isMMProjFile, pickMmProjForDownload } from './mmproj';
@@ -9,11 +10,25 @@ export const NEW_RELEASE_PUBLISHERS = ['unsloth', 'bartowski', 'ggml-org', 'lmst
 
 // With any expand[] Hugging Face returns only _id, id and the fields asked for, so every field that
 // transformModelResult reads is named here. Never add 'gguf': it sends each model's whole chat template.
-const LIST_EXPAND = ['author', 'downloads', 'downloadsAllTime', 'likes', 'lastModified', 'createdAt', 'tags', 'pipeline_tag', 'cardData'];
-const DETAIL_EXPAND = [...LIST_EXPAND, 'siblings'];
+// cardData only goes with the detail request: on a list it made one answer 114 KB against 19 KB.
+const LIST_EXPAND = ['author', 'downloads', 'downloadsAllTime', 'likes', 'lastModified', 'createdAt', 'tags', 'pipeline_tag'];
+const DETAIL_EXPAND = [...LIST_EXPAND, 'cardData', 'siblings'];
 
 const BROWSE_SORT: Record<BrowseSort, string> = { trending: 'trendingScore', downloads: 'downloads', likes: 'likes', newest: 'createdAt' };
 const BROWSE_PIPELINES = new Set(['text-generation', 'image-text-to-text']);
+// Rows the phone cannot use are dropped after the answer, so a ranked sort asks for more than it shows.
+const RANKED_ROWS = 100;
+const NEWEST_ROWS_PER_PUBLISHER = 30;
+
+function isChatRow(m: ModelInfo): boolean {
+  if (m.pipelineTag !== undefined) return BROWSE_PIPELINES.has(m.pipelineTag);
+  return m.tags.includes('conversational');
+}
+
+function fitsParams(m: ModelInfo, maxParamsB: number): boolean {
+  const match = PARAM_COUNT_REGEX.exec(m.name);
+  return !match || Number.parseFloat(match[1]) <= maxParamsB;
+}
 
 const expandParams = (fields: string[]) => fields.map(f => `expand[]=${f}`).join('&');
 
@@ -51,8 +66,9 @@ class HuggingFaceService {
     const { sort, maxParamsB, pipelineTag, limit = 30 } = opts;
     const make = (author?: string) => {
       const params = new URLSearchParams({
-        filter: 'gguf', sort: BROWSE_SORT[sort], direction: '-1', limit: limit.toString(),
-        num_parameters: `min:0,max:${maxParamsB}B`,
+        filter: 'gguf', sort: BROWSE_SORT[sort], direction: '-1',
+        limit: (sort === 'newest' ? NEWEST_ROWS_PER_PUBLISHER : RANKED_ROWS).toString(),
+        gated: 'false', num_parameters: `min:0,max:${maxParamsB}B`,
       });
       if (query) params.append('search', query);
       if (pipelineTag) params.append('pipeline_tag', pipelineTag);
@@ -70,7 +86,7 @@ class HuggingFaceService {
       models = await this.fetchList(make());
     }
     return models
-      .filter(m => m.pipelineTag === undefined || BROWSE_PIPELINES.has(m.pipelineTag))
+      .filter(m => isChatRow(m) && fitsParams(m, maxParamsB))
       .slice(0, limit);
   }
 

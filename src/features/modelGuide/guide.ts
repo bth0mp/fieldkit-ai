@@ -1,4 +1,4 @@
-import { MODEL_RECOMMENDATIONS } from '../../constants/models';
+import { MODEL_RECOMMENDATIONS, PARAM_COUNT_REGEX } from '../../constants/models';
 import { fileExceedsBudget } from '../../services/memoryBudget';
 import { TEXT_MODEL_OVERHEAD_MULTIPLIER } from '../../services/activeModelService/types';
 import { PICK_SIZES } from './pickSizes';
@@ -6,9 +6,6 @@ import { PICK_SIZES } from './pickSizes';
 export type MemoryTier = 4 | 6 | 8 | 12 | 16;
 
 export const MEMORY_TIERS: MemoryTier[] = [4, 6, 8, 12, 16];
-
-/** Matches a parameter count such as "7B" or "1.5B" in a model name or id. */
-export const PARAM_COUNT_REGEX = /\b(\d+[.]\d+|\d+)\s?[Bb]\b/;
 
 const CODING_REGEX = /(^|[^a-z])cod(e|er|ing)/i;
 const VISION_PIPELINE_TAG = 'image-text-to-text';

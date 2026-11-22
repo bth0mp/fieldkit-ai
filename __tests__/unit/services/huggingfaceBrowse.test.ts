@@ -40,9 +40,54 @@ describe('huggingFaceService browse and stats fields', () => {
   it('browse keeps chat and vision models and drops other pipelines', async () => {
     const hf = installHfApiFake();
     hf.setList(() => [{ id: 'a/tts-GGUF', pipeline_tag: 'text-to-speech' }, { id: 'a/chat-GGUF', pipeline_tag: 'text-generation' },
-      { id: 'a/vlm-GGUF', pipeline_tag: 'image-text-to-text' }, { id: 'a/untagged-GGUF' }, { id: 'a/img-GGUF', pipeline_tag: 'text-to-image' }]);
+      { id: 'a/vlm-GGUF', pipeline_tag: 'image-text-to-text' }, { id: 'a/img-GGUF', pipeline_tag: 'text-to-image' }]);
     const out = await huggingFaceService.browseModels('', { sort: 'trending', maxParamsB: 8 });
-    expect(out.map(m => m.id)).toEqual(['a/chat-GGUF', 'a/vlm-GGUF', 'a/untagged-GGUF']);
+    expect(out.map(m => m.id)).toEqual(['a/chat-GGUF', 'a/vlm-GGUF']);
+  });
+
+  it('browse asks for ungated models, 100 rows for a ranked sort and 30 per publisher for newest', async () => {
+    const hf = installHfApiFake();
+    await huggingFaceService.browseModels('', { sort: 'downloads', maxParamsB: 8 });
+    await huggingFaceService.browseModels('', { sort: 'newest', maxParamsB: 8 });
+    const [ranked, ...publishers] = hf.requests();
+    expect(ranked.searchParams.get('gated')).toBe('false');
+    expect(ranked.searchParams.get('limit')).toBe('100');
+    expect(publishers.length).toBe(NEW_RELEASE_PUBLISHERS.length);
+    expect(publishers.every(u => u.searchParams.get('limit') === '30' && u.searchParams.get('gated') === 'false')).toBe(true);
+  });
+
+  it('lists leave the card data to the detail request', async () => {
+    const hf = installHfApiFake();
+    await huggingFaceService.browseModels('', { sort: 'likes', maxParamsB: 8 });
+    expect(hf.requests()[0].searchParams.getAll('expand[]')).not.toContain('cardData');
+  });
+
+  it('an untagged row is kept only when it is tagged conversational', async () => {
+    const hf = installHfApiFake();
+    hf.setList(() => [
+      { id: 'Serveurperso/YuE2-GGUF', tags: ['gguf', 'music-generation'] },
+      { id: 'HauhauCS/Qwen3.5-9B-Uncensored-HauhauCS-Aggressive', tags: ['gguf', 'conversational'] },
+    ]);
+    const out = await huggingFaceService.browseModels('', { sort: 'trending', maxParamsB: 13 });
+    expect(out.map(m => m.id)).toEqual(['HauhauCS/Qwen3.5-9B-Uncensored-HauhauCS-Aggressive']);
+  });
+
+  it('browse drops a row whose name states more billions than the phone allows', async () => {
+    const hf = installHfApiFake();
+    const chat = (id: string) => ({ id, pipeline_tag: 'text-generation' });
+    hf.setList(() => [chat('Edge0/Edge0-145B-NVFP4'), chat('cdiamond/Qwen3.8-27B-iMatrix-NVFP4-MTP-GGUF'),
+      chat('unsloth/gemma-4-12b-it-GGUF'), chat('LiquidAI/LFM3-1.7B-GGUF'), chat('nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB'),
+      chat('a/no-count-GGUF')]);
+    const out = await huggingFaceService.browseModels('', { sort: 'downloads', maxParamsB: 13 });
+    expect(out.map(m => m.id)).toEqual(['unsloth/gemma-4-12b-it-GGUF', 'LiquidAI/LFM3-1.7B-GGUF',
+      'nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB', 'a/no-count-GGUF']);
+  });
+
+  it('browse still shows at most 30 after filtering 100 rows', async () => {
+    const hf = installHfApiFake();
+    hf.setList(() => Array.from({ length: 100 }, (_, i) => ({ id: `a/m${i}-GGUF`, pipeline_tag: 'text-generation' })));
+    const out = await huggingFaceService.browseModels('', { sort: 'downloads', maxParamsB: 13 });
+    expect(out).toHaveLength(30);
   });
 
   it('new releases asks each publisher, merges newest first, and survives one failure', async () => {
@@ -50,8 +95,8 @@ describe('huggingFaceService browse and stats fields', () => {
     hf.setList(url => {
       const author = url.searchParams.get('author');
       if (author === 'bartowski') return new Error('boom');
-      if (author === 'unsloth') return [{ id: 'unsloth/Old-GGUF', createdAt: '2026-11-01T00:00:00.000Z' }];
-      if (author === 'ggml-org') return [{ id: 'ggml-org/New-GGUF', createdAt: '2026-11-20T00:00:00.000Z' }];
+      if (author === 'unsloth') return [{ id: 'unsloth/Old-GGUF', pipeline_tag: 'text-generation', createdAt: '2026-11-01T00:00:00.000Z' }];
+      if (author === 'ggml-org') return [{ id: 'ggml-org/New-GGUF', pipeline_tag: 'text-generation', createdAt: '2026-11-20T00:00:00.000Z' }];
       return [];
     });
     const out = await huggingFaceService.browseModels('', { sort: 'newest', maxParamsB: 13 });
