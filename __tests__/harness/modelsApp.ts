@@ -4,7 +4,8 @@
  * The two jest.mock lines (real navigation, no focus trigger) stay in each test file, because jest hoists them.
  */
 import { installNativeBoundary, requireRTL, GB } from './nativeBoundary';
-import { createDownloadedModel } from '../utils/factories';
+import { createDownloadedModel, createONNXImageModel } from '../utils/factories';
+import type { DownloadedModel, ONNXImageModel } from '../../src/types';
 import { installHfApiFake, type HfApiFake } from './hfApiFake';
 import { setDeviceMemory } from './deviceMemory';
 
@@ -14,9 +15,14 @@ export interface ModelsAppOptions {
   totalGB: number;
   platform?: 'android' | 'ios';
   hf?: (hf: HfApiFake) => void;
+  /** Downloaded text models (a file and a record each); default is one model, 'm'. */
+  models?: Partial<DownloadedModel>[];
+  /** Downloaded image models; default none. */
+  imageModels?: Partial<ONNXImageModel>[];
 }
 
-export async function openModelsFromHome(opts: ModelsAppOptions) {
+/** Boots the real app on Home. `nav` is the container ref, for tests that push or read routes. */
+export async function bootHome(opts: ModelsAppOptions) {
   const boundary = installNativeBoundary({ llama: true, fs: true });
   const hf = installHfApiFake();
   opts.hf?.(hf);
@@ -28,15 +34,21 @@ export async function openModelsFromHome(opts: ModelsAppOptions) {
   const { hardwareService } = require('../../src/services/hardware');
 
   // Boot leaves onboarding done and one text model downloaded (the app opens the model download screen without one).
-  const fileName = 'ggml-small.gguf';
-  const filePath = `${boundary.fs!.DocumentDirectoryPath}/models/${fileName}`;
-  boundary.fs!.seedFile(filePath, 500 * 1024 * 1024);
-  const model = createDownloadedModel({ id: 'm', name: 'Test Model', engine: 'llama', filePath, fileName, fileSize: 2 * GB });
-  await AsyncStorage.setItem('@local_llm/downloaded_models', JSON.stringify([model]));
+  const seeds: Partial<DownloadedModel>[] = opts.models ?? [{ id: 'm', name: 'Test Model', fileName: 'ggml-small.gguf' }];
+  const downloaded = seeds.map(seed => {
+    const fileName = seed.fileName ?? `${seed.id}.gguf`;
+    const filePath = `${boundary.fs!.DocumentDirectoryPath}/models/${fileName}`;
+    boundary.fs!.seedFile(filePath, 500 * 1024 * 1024);
+    const model = createDownloadedModel({ engine: 'llama', fileSize: 2 * GB, ...seed, filePath, fileName });
+    return 'downloadedAt' in seed ? { ...model, downloadedAt: seed.downloadedAt } as DownloadedModel : model;
+  });
+  const imageModels = (opts.imageModels ?? []).map(seed => createONNXImageModel(seed));
+  await AsyncStorage.setItem('@local_llm/downloaded_models', JSON.stringify(downloaded));
   await hardwareService.refreshMemoryInfo();
   useAppStore.setState({
     hasCompletedOnboarding: true,
-    downloadedModels: [model],
+    downloadedModels: downloaded,
+    downloadedImageModels: imageModels,
     // The onboarding tour is not under test; its spotlights would sit over the controls.
     checklistDismissed: true,
     shownSpotlights: { input: true, voiceHint: true, imageSettings: true },
@@ -44,11 +56,17 @@ export async function openModelsFromHome(opts: ModelsAppOptions) {
 
   const React = require('react');
   const rtl = requireRTL();
-  const { NavigationContainer } = require('@react-navigation/native');
+  const { NavigationContainer, createNavigationContainerRef } = require('@react-navigation/native');
   const { AppNavigator } = require('../../src/navigation/AppNavigator');
-  const ui = rtl.render(React.createElement(NavigationContainer, null, React.createElement(AppNavigator)));
+  const nav = createNavigationContainerRef();
+  const ui = rtl.render(React.createElement(NavigationContainer, { ref: nav }, React.createElement(AppNavigator)));
   await rtl.waitFor(() => expect(ui.getByTestId('home-screen')).toBeTruthy(), TIMEOUT);
+  return { rtl, ui, hf, boundary, nav };
+}
+
+export async function openModelsFromHome(opts: ModelsAppOptions) {
+  const { rtl, ui, hf, boundary, nav } = await bootHome(opts);
   rtl.fireEvent.press(ui.getByTestId('home-phone-models'));
   await rtl.waitFor(() => expect(ui.getByTestId('models-screen')).toBeTruthy(), TIMEOUT);
-  return { rtl, ui, hf };
+  return { rtl, ui, hf, boundary, nav };
 }

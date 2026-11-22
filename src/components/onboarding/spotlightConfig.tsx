@@ -215,12 +215,12 @@ export function createSpotlightSteps(): TourStep[] {
       onBackdropPress: 'stop',
       shape: { type: 'rectangle', padding: 8 },
     },
-    // 11: First model in ModelPickerSheet — loadedModel (part 2)
+    // 11: First model in Your models on the Models screen — loadedModel (part 2)
     {
       render: ({ stop }) => (
         <Tooltip
           title="Select a model"
-          description="Tap this model to load it for chatting"
+          description="Tap Use to choose this model for chatting"
           stop={stop}
         />
       ),

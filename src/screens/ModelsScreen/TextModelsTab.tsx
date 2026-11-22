@@ -21,6 +21,7 @@ import { makeModelKey } from '../../utils/modelKey';
 import { modelSupportsNpuGpu, isAccelerableQuant } from '../../utils/acceleration';
 import { aggregateActiveDownloads } from '../../utils/downloadAggregate';
 import { TextFiltersSection } from './TextFiltersSection';
+import { YourModels } from './YourModels';
 import { FilterState, SortOption } from './types';
 import { SORT_OPTIONS, SERVER_SORTS } from './constants';
 import { formatNumber, getTextModelCompatibility } from './utils';
@@ -62,7 +63,11 @@ type Props = Pick<ModelsScreenViewModel,
   | 'toggleFilterDimension' | 'toggleOrg'
   | 'setTypeFilter' | 'setSourceFilter' | 'setSizeFilter' | 'setQuantFilter' | 'setSortOption'
   | 'isModelDownloaded' | 'getDownloadedModel' | 'isRepairingVisionModel'
->;
+> & {
+  /** Called after "Your models" marks a model in use; the screen decides where to go. */
+  onChosen: () => void;
+  onError: (message: string) => void;
+};
 
 type DetailProps = Pick<Props,
   | 'modelFiles' | 'isLoadingFiles' | 'filterState' | 'ramGB'
@@ -342,6 +347,7 @@ export const TextModelsTab: React.FC<Props> = (props) => {
     clearFilters, toggleFilterDimension, toggleOrg,
     setTypeFilter, setSourceFilter, setSizeFilter, setQuantFilter, setSortOption,
     isModelDownloaded, getDownloadedModel, isRepairingVisionModel,
+    onChosen, onError,
   } = props;
   const hasNonSortActiveFilters = hasNonSortFilters(filterState);
   const currentSort = SORT_OPTIONS.find(o => o.key === filterState.sort) ?? SORT_OPTIONS[0];
@@ -459,7 +465,10 @@ export const TextModelsTab: React.FC<Props> = (props) => {
               <Text testID="results-heading" accessibilityRole="header" style={styles.resultsHeading}>{currentSort.label}</Text>
             ) : null
           ) : (
-            <DeviceBanner ramGB={ramGB} rec={deviceRecommendation} showTitle={recommendedAsModelInfo.length > 0} styles={styles} />
+            <>
+              <YourModels kind="text" onChosen={onChosen} onError={onError} />
+              <DeviceBanner ramGB={ramGB} rec={deviceRecommendation} showTitle={recommendedAsModelInfo.length > 0} styles={styles} />
+            </>
           )}
           ListEmptyComponent={
             <Card style={styles.emptyCard}>

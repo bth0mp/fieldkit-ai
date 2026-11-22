@@ -100,6 +100,7 @@ jest.mock('../../../src/services/hardware', () => ({
       if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
       return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
     }),
+    formatModelSize: jest.fn(() => '4.00 GB'),
     getTotalMemoryGB: jest.fn(() => 8),
     getModelRecommendation: jest.fn(() => ({
       maxParameters: 14,
@@ -135,6 +136,9 @@ jest.mock('../../../src/utils/coreMLModelUtils', () => ({
 jest.mock('../../../src/services/activeModelService', () => ({
   activeModelService: {
     unloadImageModel: jest.fn(() => Promise.resolve()),
+    // "Your models" at the top of the Text tab reads whether a model is loading.
+    getActiveModels: jest.fn(() => ({ text: { isLoading: false }, image: { isLoading: false } })),
+    subscribe: jest.fn(() => jest.fn()),
   },
 }));
 
@@ -170,6 +174,7 @@ jest.mock('../../../src/components', () => {
         )}
       </TouchableOpacity>
     ),
+    ModelRow: ({ name, testID }: any) => <Text testID={testID}>{name}</Text>,
     Button: ({ title, onPress, testID }: any) => (
       <TouchableOpacity testID={testID} onPress={onPress}>
         <Text>{title}</Text>

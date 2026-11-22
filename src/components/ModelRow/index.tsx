@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import { useTheme, useThemedStyles } from '../../theme';
+import { SPACING } from '../../constants';
 import { createModelRowStyles } from './styles';
 
 export interface ModelRowProps {
@@ -23,6 +24,12 @@ export interface ModelRowProps {
   loading?: boolean;
   /** Accent: text models use the primary (emerald) accent, image models the info accent. */
   variant?: 'text' | 'image';
+  /** The model lives on a remote server: a cloud mark follows the name (id `${testID}-remote`). */
+  remote?: boolean;
+  /** Trailing status text, e.g. "In use". */
+  status?: string;
+  /** Trailing button (id `${testID}-action`, label "<label> <name>"); disabled with the row. */
+  action?: { label: string; onPress: () => void };
   disabled?: boolean;
   onPress?: () => void;
   testID?: string;
@@ -34,11 +41,19 @@ export interface ModelRowProps {
  * render an identical card and can't drift into differential designs.
  */
 export const ModelRow: React.FC<ModelRowProps> = ({
-  name, size, quant, isVision, ramHint, isActive, isLoaded, loading, variant = 'text', disabled, onPress, testID,
+  name, size, quant, isVision, ramHint, isActive, isLoaded, loading, variant = 'text', remote, status, action, disabled, onPress, testID,
 }) => {
   const styles = useThemedStyles(createModelRowStyles);
   const { colors } = useTheme();
   const isImage = variant === 'image';
+  const title = (
+    <Text
+      style={[styles.name, remote && styles.nameBesideMark, isActive && (isImage ? styles.nameSelectedImage : styles.nameSelectedText)]}
+      numberOfLines={1}
+    >
+      {name}
+    </Text>
+  );
   return (
     <TouchableOpacity
       style={[styles.row, isActive && (isImage ? styles.rowSelectedImage : styles.rowSelectedText)]}
@@ -47,12 +62,12 @@ export const ModelRow: React.FC<ModelRowProps> = ({
       testID={testID}
     >
       <View style={styles.info}>
-        <Text
-          style={[styles.name, isActive && (isImage ? styles.nameSelectedImage : styles.nameSelectedText)]}
-          numberOfLines={1}
-        >
-          {name}
-        </Text>
+        {remote ? (
+          <View style={styles.nameRow}>
+            {title}
+            <Icon name="cloud" size={14} color={colors.primary} testID={`${testID}-remote`} />
+          </View>
+        ) : title}
         <View style={styles.meta}>
           <Text style={styles.metaText}>{size}</Text>
           {!!quant && (
@@ -73,6 +88,7 @@ export const ModelRow: React.FC<ModelRowProps> = ({
         </View>
         {!!ramHint && <Text style={styles.ramHint}>{ramHint}</Text>}
       </View>
+      {!!status && <Text style={styles.status}>{status}</Text>}
       {loading ? (
         <ActivityIndicator testID="model-row-loading" size="small" color={isImage ? colors.info : colors.primary} />
       ) : isLoaded ? (
@@ -80,6 +96,19 @@ export const ModelRow: React.FC<ModelRowProps> = ({
           <Icon name="check" size={16} color={colors.background} />
         </View>
       ) : null}
+      {action && (
+        <TouchableOpacity
+          style={styles.action}
+          onPress={action.onPress}
+          disabled={disabled}
+          hitSlop={{ top: SPACING.sm, bottom: SPACING.sm, left: SPACING.sm, right: SPACING.sm }}
+          accessibilityRole="button"
+          accessibilityLabel={`${action.label} ${name}`}
+          testID={`${testID}-action`}
+        >
+          <Text style={styles.actionText}>{action.label}</Text>
+        </TouchableOpacity>
+      )}
     </TouchableOpacity>
   );
 };

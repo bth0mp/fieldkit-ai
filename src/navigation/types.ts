@@ -33,7 +33,7 @@ export type RootStackParamList = {
   About: undefined;
   Tools: undefined;
   // Opened from Home's Phone and Your library cards (no longer tabs)
-  Models: { initialTab?: 'text' | 'image' | 'voice' | 'transcription'; repairModelId?: string; initialSearchQuery?: string } | undefined;
+  Models: { initialTab?: 'text' | 'image' | 'voice' | 'transcription'; repairModelId?: string; initialSearchQuery?: string; afterUse?: 'newChat' } | undefined;
   Projects: undefined;
 };
 

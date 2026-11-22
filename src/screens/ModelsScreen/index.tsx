@@ -5,7 +5,7 @@ import { useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/types';
 import Icon from 'react-native-vector-icons/Feather';
 import { AttachStep } from 'react-native-spotlight-tour';
-import { CustomAlert, hideAlert } from '../../components/CustomAlert';
+import { CustomAlert, hideAlert, showAlert } from '../../components/CustomAlert';
 import { RECOMMENDED_MODELS } from '../../constants';
 import { useTheme, useThemedStyles } from '../../theme';
 import { useModelsScreen } from './useModelsScreen';
@@ -57,6 +57,16 @@ export const ModelsScreen: React.FC = () => {
   );
 
   const isShowingDetail = vm.activeTab === 'text' && vm.selectedModel !== null;
+
+  const left = useRef(false);
+  const onChosen = () => {
+    // The owner may have left, or opened another screen, while the switch ran.
+    if (left.current || !vm.navigation.isFocused()) return;
+    left.current = true;
+    if (route.params?.afterUse === 'newChat') vm.navigation.replace('Chat', {});
+    else vm.navigation.goBack();
+  };
+  const onError = (message: string) => vm.setAlertState(showAlert('Error', message));
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']} testID="models-screen">
@@ -217,6 +227,8 @@ export const ModelsScreen: React.FC = () => {
           isModelDownloaded={vm.isModelDownloaded}
           getDownloadedModel={vm.getDownloadedModel}
           isRepairingVisionModel={vm.isRepairingVisionModel}
+          onChosen={onChosen}
+          onError={onError}
         />
       )}
 

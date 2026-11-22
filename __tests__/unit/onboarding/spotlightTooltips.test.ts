@@ -20,7 +20,7 @@ describe('Spotlight Tooltip Content', () => {
     { index: 8, title: 'Name your project', description: 'Give your project a name to get started' },
     { index: 9, title: 'Download this file', description: 'Tap the download icon to start downloading this model' },
     { index: 10, title: 'Download Manager', description: 'Track your download progress here' },
-    { index: 11, title: 'Select a model', description: 'Tap this model to load it for chatting' },
+    { index: 11, title: 'Select a model', description: 'Tap Use to choose this model for chatting' },
     { index: 12, title: 'Try voice input', description: 'Download a speech model in Voice Settings to send voice messages' },
     { index: 13, title: 'Load your image model', description: 'Tap here to load the image model you downloaded' },
     { index: 14, title: 'Generate an image', description: 'Start a new chat and try asking for an image' },

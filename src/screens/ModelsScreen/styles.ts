@@ -230,6 +230,10 @@ const createTextModelsStyles = (colors: ThemeColors, _shadows: ThemeShadows) => 
   },
   recommendedTitle: { ...TYPOGRAPHY.meta, color: colors.textMuted, marginBottom: SPACING.md },
   resultsHeading: { ...TYPOGRAPHY.meta, color: colors.textMuted, marginBottom: SPACING.md },
+  yourModelsHeader: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'center' as const },
+  yourModelsEmpty: { ...TYPOGRAPHY.bodySmall, color: colors.textSecondary, marginBottom: SPACING.md },
+  yourModelsAdd: { ...TYPOGRAPHY.meta, color: colors.primary, marginBottom: SPACING.md },
+  yourModelsServer: { ...TYPOGRAPHY.meta, color: colors.textMuted, marginTop: SPACING.sm, marginBottom: SPACING.sm },
 });
 
 export const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({

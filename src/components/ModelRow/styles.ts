@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { TYPOGRAPHY } from '../../constants';
+import { TYPOGRAPHY, SPACING } from '../../constants';
 import type { ThemeColors } from '../../theme';
 
 /**
@@ -31,6 +31,8 @@ export const createModelRowStyles = (colors: ThemeColors) => StyleSheet.create({
   name: { ...TYPOGRAPHY.body, color: colors.text, marginBottom: 4 },
   nameSelectedText: { color: colors.primary },
   nameSelectedImage: { color: colors.info },
+  nameRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: SPACING.xs, marginBottom: 4 },
+  nameBesideMark: { flexShrink: 1, marginBottom: 0 },
   meta: { flexDirection: 'row' as const, alignItems: 'center' as const },
   metaText: { ...TYPOGRAPHY.bodySmall, color: colors.textSecondary },
   metaMuted: { ...TYPOGRAPHY.bodySmall, color: colors.textMuted },
@@ -55,4 +57,15 @@ export const createModelRowStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   checkmarkText: { backgroundColor: colors.primary },
   checkmarkImage: { backgroundColor: colors.info },
+  status: { ...TYPOGRAPHY.label, color: colors.textMuted, marginLeft: SPACING.sm },
+  action: {
+    minHeight: 32,
+    justifyContent: 'center' as const,
+    paddingHorizontal: SPACING.md,
+    marginLeft: SPACING.sm,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  actionText: { ...TYPOGRAPHY.bodySmall, color: colors.text },
 });
