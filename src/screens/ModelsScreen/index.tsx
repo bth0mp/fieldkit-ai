@@ -58,11 +58,9 @@ export const ModelsScreen: React.FC = () => {
 
   const isShowingDetail = vm.activeTab === 'text' && vm.selectedModel !== null;
 
-  const left = useRef(false);
   const onChosen = () => {
     // The owner may have left, or opened another screen, while the switch ran.
-    if (left.current || !vm.navigation.isFocused()) return;
-    left.current = true;
+    if (!vm.navigation.isFocused()) return;
     if (route.params?.afterUse === 'newChat') vm.navigation.replace('Chat', {});
     else vm.navigation.goBack();
   };

@@ -118,6 +118,16 @@ describe('Your models on the Text tab (rendered)', () => {
     expect(t.ui.getByTestId('models-screen')).toBeTruthy();
   });
 
+  it('the row in use is not an accessibility group, so a screen reader reaches its Unload button', async () => {
+    await boot();
+    await openModels();
+    const rowInUse = section().getAllByTestId('model-item')[0];
+    expect(rowInUse.props.accessible).toBe(false);
+    const unload = t.ui.getByLabelText('Unload Used');
+    expect(unload.props.accessible).not.toBe(false);
+    expect(unload.props.accessibilityRole).toBe('button');
+  });
+
   it('remote models sit under their server with the cloud mark; Use connects; Disconnect drops', async () => {
     await boot();
     await addServer('Study PC', 'http://localhost:1234', ['llama3']);

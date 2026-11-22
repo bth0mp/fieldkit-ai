@@ -60,6 +60,8 @@ export const ModelRow: React.FC<ModelRowProps> = ({
       onPress={onPress}
       disabled={disabled || !onPress}
       testID={testID}
+      // The action button inside must stay reachable: a grouped row would hide it from a screen reader.
+      accessible={action ? false : undefined}
     >
       <View style={styles.info}>
         {remote ? (
@@ -68,7 +70,7 @@ export const ModelRow: React.FC<ModelRowProps> = ({
             <Icon name="cloud" size={14} color={colors.primary} testID={`${testID}-remote`} />
           </View>
         ) : title}
-        <View style={styles.meta}>
+        <View style={[styles.meta, !!action && styles.metaWrap]}>
           <Text style={styles.metaText}>{size}</Text>
           {!!quant && (
             <>

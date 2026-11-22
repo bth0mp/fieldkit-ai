@@ -34,6 +34,7 @@ export const createModelRowStyles = (colors: ThemeColors) => StyleSheet.create({
   nameRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: SPACING.xs, marginBottom: 4 },
   nameBesideMark: { flexShrink: 1, marginBottom: 0 },
   meta: { flexDirection: 'row' as const, alignItems: 'center' as const },
+  metaWrap: { flexWrap: 'wrap' as const },
   metaText: { ...TYPOGRAPHY.bodySmall, color: colors.textSecondary },
   metaMuted: { ...TYPOGRAPHY.bodySmall, color: colors.textMuted },
   separator: { ...TYPOGRAPHY.bodySmall, color: colors.textMuted, marginHorizontal: 6 },
