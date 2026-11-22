@@ -16,6 +16,7 @@ import { GB } from '../../harness/nativeBoundary';
 jest.mock('@react-navigation/native', () => jest.requireActual('@react-navigation/native'));
 jest.mock('../../../src/hooks/useFocusTrigger', () => ({ useFocusTrigger: () => 0 }));
 
+
 jest.setTimeout(40000);
 
 const TIMEOUT = { timeout: 4000 };
@@ -168,6 +169,8 @@ describe('Choosing a model from a chat (rendered)', () => {
     expect(flat(header().props.style).flexShrink).toBe(1);
     expect(flat(button.props.style).flexShrink).toBe(1);
     expect(shown('chat-settings-icon')).toBe(true);
+    // A font size in the icon's style would override its size of 12.
+    expect(flat(t.rtl.within(button).UNSAFE_getByProps({ name: 'chevron-right' }).props.style).fontSize).toBeUndefined();
   });
 
   it('LiteRT to LiteRT from a chat: the next message loads and is answered by the second file', async () => {
@@ -227,8 +230,9 @@ describe('Choosing a model from a chat (rendered)', () => {
     expect(userBubbles('hello')).toBe(1);
   });
 
-  it('a waiting message is not sent into another conversation opened meanwhile', async () => {
+  it('a waiting message is not sent into another conversation opened meanwhile, and goes out when its own chat is active again', async () => {
     await messageWaiting();
+    const own = stores().useChatStore.getState().activeConversationId;
     press(t.ui.getByTestId('models-back'));
     await t.rtl.waitFor(() => expect(shown('models-screen')).toBe(false), TIMEOUT);
     const other = await chatWithHistory('first');
@@ -240,6 +244,30 @@ describe('Choosing a model from a chat (rendered)', () => {
     expect(t.ui.queryByText('hello') === null).toBe(true);
     expect(stores().useChatStore.getState().getConversationMessages(other).map((m: any) => m.content)).toEqual(['earlier question', 'earlier answer']);
     expect(t.boundary.llama!.calls.completion).toHaveLength(0);
+    // Back in its own chat (the real container, as the Chats list does): it is sent there, once.
+    t.rtl.act(() => { t.nav.navigate('Chat', { conversationId: own }); });
+    await t.rtl.waitFor(() => expect(t.ui.queryAllByTestId('user-message').length).toBe(1), TIMEOUT);
+    expect(await byText('Hi there.')).toBeTruthy();
+    await settle(500);
+    expect(stores().useChatStore.getState().getConversationMessages(own).filter((m: any) => m.role === 'user').map((m: any) => m.content)).toEqual(['hello']);
+    expect(stores().useChatStore.getState().getConversationMessages(other)).toHaveLength(2);
+    expect(t.boundary.llama!.calls.completion).toHaveLength(1);
+  });
+
+  it('a second message typed while the first waits: after Use both go out once, in order, as one turn with one reply', async () => {
+    await messageWaiting();
+    const own = stores().useChatStore.getState().activeConversationId;
+    press(t.ui.getByTestId('models-back'));
+    await t.rtl.waitFor(() => expect(shown('models-screen')).toBe(false), TIMEOUT);
+    send('world');
+    await t.rtl.waitFor(() => expect(shown('your-models-text')).toBe(true), TIMEOUT);
+    t.boundary.llama!.scriptCompletion({ text: 'Hi there.' });
+    press(await byLabel('Use First'));
+    expect(await byText('Hi there.')).toBeTruthy();
+    await settle(500);
+    const messages = stores().useChatStore.getState().getConversationMessages(own).map((m: any) => m.content);
+    expect(messages).toEqual(['hello\n\nworld', 'Hi there.']);
+    expect(t.boundary.llama!.calls.completion).toHaveLength(1);
   });
 
   it('Use then Back at once: the message is sent once, and Back is not taken twice', async () => {

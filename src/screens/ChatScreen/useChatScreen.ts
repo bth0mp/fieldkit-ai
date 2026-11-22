@@ -120,8 +120,8 @@ export const useChatScreen = () => {
   // Owned by the generationSession service (single owner); observed reactively here.
   const generatingConversationId = useGeneratingConversationId();
   // Stashed, with the chat it was written in, when a message needs a text model and none was ever chosen; sent
-  // once when the chat is focused again with a model in use.
-  const pendingMessageRef = useRef<{ text: string; attachments?: MediaAttachment[]; conversationId: string } | null>(null);
+  // once when that chat is focused again with a model in use. A list: a second message must not replace the first.
+  const pendingMessagesRef = useRef<Array<{ text: string; attachments?: MediaAttachment[]; conversationId: string }>>([]);
 
   // The text model is intentionally NOT loaded on chat open. It loads lazily on
   // send, when the generation path recognizes a local text model is needed
@@ -235,7 +235,7 @@ export const useChatScreen = () => {
     setActiveConversation, removeImagesByConversationId, navigation, setShowSettingsPanel,
     ensureModelLoaded: async (onLoadedResume?: () => void) => ensureModelLoadedFn(modelDeps, onLoadedResume),
     ensureTextModelForChat: () => ensureTextModelForChatFn({ openModels, setLoadingModel, setIsModelLoading }),
-    setPendingMessage: (text: string, attachments: MediaAttachment[] | undefined, conversationId: string) => { pendingMessageRef.current = { text, attachments, conversationId }; },
+    setPendingMessage: (text: string, attachments: MediaAttachment[] | undefined, conversationId: string) => { pendingMessagesRef.current.push({ text, attachments, conversationId }); },
     createConversation,
     pendingProjectId,
     openModels,
@@ -360,16 +360,18 @@ export const useChatScreen = () => {
   useSendFirstMessage(route.params?.firstMessage, activeConversationId, handleSend);
 
   // A message that waited for a text model goes out once the chat is in front again with one in use: Use on the Models
-  // screen marks the model while this screen is not focused, and coming back runs this. It is cleared before it is
-  // sent, so it can never go twice, and only goes into the chat it was written in.
+  // screen marks the model while this screen is not focused, and coming back runs this. The active chat's messages
+  // come off the list before they are sent, so they can never go twice, as one turn joined like the send queue joins
+  // them; those of other chats stay for when their chat is active.
   const handleSendRef = useRef(handleSend);
   handleSendRef.current = handleSend;
   useFocusEffect(useCallback(() => {
-    const pending = pendingMessageRef.current;
-    if (!hasTextModel || !pending) return;
-    pendingMessageRef.current = null;
-    if (pending.conversationId !== activeConversationId) return;
-    handleSendRef.current(pending.text, pending.attachments);
+    if (!hasTextModel) return;
+    const mine = pendingMessagesRef.current.filter(p => p.conversationId === activeConversationId);
+    if (mine.length === 0) return;
+    pendingMessagesRef.current = pendingMessagesRef.current.filter(p => !mine.includes(p));
+    const attachments = mine.flatMap(p => p.attachments || []);
+    handleSendRef.current(mine.map(p => p.text).join('\n\n'), attachments.length ? attachments : undefined);
   }, [hasTextModel, activeConversationId]));
 
   return {
