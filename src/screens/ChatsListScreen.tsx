@@ -11,6 +11,7 @@ import { IMAGE_NEW_CHAT_STEP_INDEX, IMAGE_DRAW_STEP_INDEX } from '../components/
 import { setPendingSpotlight } from '../components/onboarding/spotlightState';
 import { Button } from '../components/Button';
 import { ModelSelectorModal } from '../components';
+import { ChatsUnreadableNotice } from '../components/ChatsUnreadableNotice';
 import { CustomAlert, showAlert, hideAlert, AlertState, initialAlertState } from '../components/CustomAlert';
 import { AnimatedEntry } from '../components/AnimatedEntry';
 import { AnimatedListItem } from '../components/AnimatedListItem';
@@ -230,6 +231,8 @@ export const ChatsListScreen: React.FC = () => {
           />
         </AttachStep>
       </View>
+
+      <ChatsUnreadableNotice />
 
       {sortedConversations.length === 0 ? (
         <View style={styles.emptyState}>
