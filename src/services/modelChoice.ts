@@ -4,6 +4,7 @@ import { imageGenerationService } from './imageGenerationService';
 import { stopAllTextEngines } from './engines';
 import { providerRegistry } from './providers';
 import { remoteServerManager } from './remoteServerManager';
+import { testEndpoint } from './httpClientUtils';
 import { stopReply } from './stopReply';
 import { useAppStore, useRemoteServerStore } from '../stores';
 import logger from '../utils/logger';
@@ -69,8 +70,11 @@ export function chooseRemoteTextModel(serverId: string, modelId: string): Promis
     if (!providerRegistry.hasProvider(serverId)) { restore(); throw new Error('the server is not available'); }
     await activeModelService.unloadTextModel();
   }, async () => {
-    // The server may be off or out of reach (health is not kept): say so before anything is stopped or unloaded.
-    const result = await remoteServerManager.testConnection(serverId);
+    // The server may be off or out of reach: say so before anything is stopped or unloaded. Only asks (the keychain's key,
+    // the one the provider uses): no rediscovery, nothing stored, so a refusal leaves the row there to press again.
+    const server = await remoteServerManager.getServerWithApiKey(serverId);
+    if (!server) throw new Error('the server is not available');
+    const result = await testEndpoint(server.endpoint, 10000, server.apiKey);
     if (!result.success) throw new Error(result.error ?? 'the server did not answer');
   });
 }

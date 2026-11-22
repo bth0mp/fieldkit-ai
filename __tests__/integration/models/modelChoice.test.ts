@@ -35,7 +35,7 @@ let conversationId: string;
 /** The servers' network: they answer for their models, unless the test switches them off (a PC asleep, no Wi-Fi). */
 let serversUp = true;
 const SERVER_MODELS: Record<string, string[]> = { 's1.local': ['x'], 's2.local': ['y'] };
-const serverFetch = jest.fn(async (url: string) => {
+const serverFetch = jest.fn(async (url: string, _init?: RequestInit) => {
   const host = Object.keys(SERVER_MODELS).find(h => url.includes(h));
   if (!serversUp || !host) throw new TypeError('Network request failed');
   if (!url.includes('/v1/models')) return { ok: false, status: 404, json: async () => ({}) };
@@ -167,6 +167,45 @@ describe('modelChoice', () => {
     expect([remote().activeServerId, remote().activeRemoteTextModelId, state().activeModelId]).toEqual([null, null, 'a']);
     expect(llmService.isModelLoaded()).toBe(true);
     expect(providerRegistry.getActiveProviderId()).toBe('local');
+  });
+
+  it('a server that now lists another model: Use still chooses x, and its row stays in Your models', async () => {
+    await bootDefault();
+    SERVER_MODELS['s1.local'] = ['z'];
+    try { await chooseRemoteTextModel('s1', 'x'); } finally { SERVER_MODELS['s1.local'] = ['x']; }
+    expect([remote().activeServerId, remote().activeRemoteTextModelId]).toEqual(['s1', 'x']);
+    expect(remote().discoveredModels.s1.map(m => m.id)).toEqual(['x']);
+  });
+
+  it('the check only asks the server: no POST (LM Studio would load a model for each one it lists)', async () => {
+    await bootDefault();
+    serverFetch.mockClear();
+    await chooseRemoteTextModel('s1', 'x');
+    const methods = serverFetch.mock.calls.map(([, init]) => init?.method ?? 'GET');
+    expect(methods.length).toBeGreaterThan(0);
+    expect(methods.filter(m => m !== 'GET')).toEqual([]);
+    expect(serverFetch.mock.calls.some(([url]) => url.includes('/v1/chat/completions'))).toBe(false);
+  });
+
+  it('the check sends the key kept in the keychain', async () => {
+    await bootDefault();
+    require('react-native-keychain').getGenericPassword.mockResolvedValue({ username: 'server_s1', password: 'keychain-key' });
+    serverFetch.mockClear();
+    await chooseRemoteTextModel('s1', 'x');
+    const headers = serverFetch.mock.calls.map(([, init]) => (init?.headers ?? {}) as Record<string, string>);
+    expect(headers.length).toBeGreaterThan(0);
+    expect(headers.every(h => h.Authorization === 'Bearer keychain-key')).toBe(true);
+  });
+
+  it('a server that refuses leaves its row in Your models, and Use works once it answers', async () => {
+    await bootDefault();
+    serversUp = false;
+    await expect(chooseRemoteTextModel('s1', 'x')).rejects.toThrow();
+    expect(remote().discoveredModels.s1.map(m => m.id)).toEqual(['x']);
+    expect(remote().serverHealth.s1?.isHealthy).not.toBe(false);
+    serversUp = true;
+    await chooseRemoteTextModel('s1', 'x');
+    expect([remote().activeServerId, remote().activeRemoteTextModelId]).toEqual(['s1', 'x']);
   });
 
   it('a server that does not answer leaves the reply being written alone, and the next choice still goes through', async () => {
