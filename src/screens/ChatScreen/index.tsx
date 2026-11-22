@@ -28,6 +28,8 @@ function countConversationImages(conv: Conversation | undefined): number {
 export const ChatScreen: React.FC = () => {
   const flatListRef = React.useRef<FlatList>(null);
   const isNearBottomRef = React.useRef(true);
+  // The conversation (null: a new chat) whose composer has been rendered; undefined until it has.
+  const composerShownForRef = React.useRef<string | null | undefined>(undefined);
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const chat = useChatScreen();
@@ -142,7 +144,10 @@ export const ChatScreen: React.FC = () => {
       onClose={() => chat.setAlertState(hideAlert())}
     />
   );
-  if (!chat.hasActiveModel && chat.displayMessages.length === 0) {
+  // Once this conversation's composer has been shown it stays (disabled, "No model" in the header) through an Unload,
+  // so a half-typed message in it survives Unload then Use. A chat opened with no model never shows it.
+  const composerShownFor = composerShownForRef.current === chat.activeConversationId;
+  if (!chat.hasActiveModel && chat.displayMessages.length === 0 && !composerShownFor) {
     return (
       <>
         <NoModelScreen
@@ -156,6 +161,8 @@ export const ChatScreen: React.FC = () => {
       </>
     );
   }
+
+  composerShownForRef.current = chat.activeConversationId;
 
   // Model loading is shown inline (a "Loading model" bar above the input via
   // ChatMessageArea), so the chat stays visible while a text/image model loads —

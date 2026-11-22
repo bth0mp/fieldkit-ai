@@ -382,6 +382,18 @@ describe('Choosing a model from a chat (rendered)', () => {
     expect(await byText('Hi there.')).toBeTruthy();
   });
 
+  it('a half-typed message in a new chat survives Unload then Use', async () => {
+    await boot({ models: [FIRST, SECOND] }, { text: 'first' });
+    await newChat();
+    type('half a thought');
+    await openFromHeader();
+    press(await byLabel('Unload First'));
+    await t.rtl.waitFor(() => expect(state().activeModelId).toBeNull(), TIMEOUT);
+    press(await byLabel('Use Second'));
+    await t.rtl.waitFor(() => expect(header()).toHaveTextContent('Second'), TIMEOUT);
+    expect(input().props.value).toBe('half a thought');
+  });
+
   it('Unload with a message queued behind the reply: nothing is loaded and nothing is sent; Use then sends it once, to the new model', async () => {
     await boot({ models: [FIRST, SECOND] });
     const { llmService } = require('../../../src/services/llm');
