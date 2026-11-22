@@ -7,6 +7,8 @@
  *   /tree/main           -> []
  *   anything else        -> rejects with TypeError('Network request failed')
  *
+ * After setOffline(true) every request rejects with TypeError('Network request failed'), as with no connection.
+ *
  * After hold(), list answers wait until release(i) is called for the i-th held request, in any order.
  */
 type Row = Record<string, unknown>;
@@ -16,6 +18,7 @@ export interface HfApiFake {
   requests(): URL[];
   setList(fn: (url: URL) => ListAnswer): void;
   setDetails(d: Record<string, Row>): void;
+  setOffline(offline: boolean): void;
   hold(): { count(): number; release(i: number, answer?: ListAnswer): void };
 }
 
@@ -26,6 +29,7 @@ export function installHfApiFake(): HfApiFake {
   const seen: URL[] = [];
   let listFn: (url: URL) => ListAnswer = (_url: URL) => [];
   let details: Record<string, Row> = {};
+  let offline = false;
   let held: Array<{ resolve: (answer?: ListAnswer) => void }> | null = null;
   const answer = (a: ListAnswer): Response => {
     if (a instanceof Error) throw a;
@@ -35,6 +39,7 @@ export function installHfApiFake(): HfApiFake {
   (global as { fetch: unknown }).fetch = jest.fn(async (input: unknown) => {
     const url = new URL(String(input));
     seen.push(url);
+    if (offline) throw new TypeError('Network request failed');
     const path = url.pathname;
     if (path.endsWith('/tree/main')) return json([]);
     if (path === '/api/models') {
@@ -61,6 +66,7 @@ export function installHfApiFake(): HfApiFake {
     requests: () => seen,
     setList: fn => { listFn = fn; },
     setDetails: d => { details = d; },
+    setOffline: next => { offline = next; },
     hold: () => {
       held = [];
       const queue = held;
