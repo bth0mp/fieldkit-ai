@@ -201,6 +201,17 @@ describe('an opening chat renders its newest rows first', () => {
     expect(h.view!.queryByText('Beta note number 1.')).toBeNull();
   });
 
+  it('renders the newest rows of a chat whose messages arrive after the chat is shown', async () => {
+    const h = await setup();
+    const id = h.useChatStore.getState().createConversation('m', 'Late');
+    await h.openChat(id);
+    for (let n = 1; n <= 40; n += 1) {
+      h.useChatStore.getState().addMessage(id, { role: n % 2 ? 'user' : 'assistant', content: `Late note number ${n}.` });
+    }
+    await h.rtl.waitFor(() => expect(h.view!.getByText('Late note number 40.')).toBeTruthy(), TIMEOUT);
+    expect(h.view!.queryByText('Late note number 1.')).toBeNull();
+  });
+
   it('renders every message of a chat shorter than one batch', async () => {
     const h = await setup();
     const id = storedChat(h, 'Short', 3);

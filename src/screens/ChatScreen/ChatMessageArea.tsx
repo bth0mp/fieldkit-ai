@@ -133,9 +133,12 @@ export const ChatMessageArea: React.FC<ChatMessageAreaProps> = ({
   const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shrinkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const contentHeightRef = useRef(0);
-  // The first row a chat renders, fixed per chat: it only matters when the list mounts.
+  // The first row a chat renders, fixed per chat: it only matters when the list mounts. It is worked out
+  // again when a chat that had no messages gets them, so one whose messages arrive after its id still opens
+  // at its newest rows.
+  const hasMessages = chat.displayMessages.length > 0;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const firstRow = useMemo(() => Math.max(0, chat.displayMessages.length - OPENING_ROWS), [chat.activeConversationId]);
+  const firstRow = useMemo(() => Math.max(0, chat.displayMessages.length - OPENING_ROWS), [chat.activeConversationId, hasMessages]);
   React.useEffect(() => {
     openingRef.current = true;
     isNearBottomRef.current = true;
