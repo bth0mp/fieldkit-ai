@@ -227,7 +227,7 @@ describe('Your models on the Text tab (rendered)', () => {
     expect(t.ui.getByTestId('models-screen')).toBeTruthy();
     t.boundary.llama!.releaseStream();
     await t.rtl.act(() => finished);
-    expect(last(stores().useChatStore.getState().getConversationMessages(conversationId)).content).toBe('one two three');
+    expect(last<{ content: string }>(stores().useChatStore.getState().getConversationMessages(conversationId)).content).toBe('one two three');
   });
 
   it('none at all: the empty text, and Add remote server opens Remote Servers', async () => {
