@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { LIST_CLIPPING_PROPS } from '../../constants/listClipping';
-import { View, FlatList, Text, Keyboard, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, FlatList, Text, Keyboard, ActivityIndicator } from 'react-native';
 import { useUiModeStore } from '../../stores/uiModeStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useKeyboardVisible } from '../../hooks/useKeyboardVisible';
@@ -14,6 +14,7 @@ import { generationService } from '../../services';
 import { EmptyChat, ImageProgressIndicator } from './ChatScreenComponents';
 import { getPlaceholderText, useChatScreen } from './useChatScreen';
 import { createStyles } from './styles';
+import { scrollToContentEnd } from './scrollToContentEnd';
 import { useTheme } from '../../theme';
 import { useAppStore } from '../../stores';
 import { getToolExtensions } from '../../services/tools/extensions';
@@ -24,6 +25,8 @@ import { getSlot, SLOTS } from '../../bootstrap/slotRegistry';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+
+const KEEP_POSITION = { minIndexForVisible: 0 } as const;
 
 export type ChatMessageAreaProps = {
   flatListRef: React.RefObject<FlatList | null>;
@@ -116,9 +119,28 @@ const ModelStatusBar: React.FC<{ loading: boolean; classifying: boolean; modelNa
 export const ChatMessageArea: React.FC<ChatMessageAreaProps> = ({
   flatListRef, isNearBottomRef, chat, styles, colors, handleScroll, renderItem, chatSpotlight,
 }) => {
-  // Hide FlatList until initial layout + scroll is complete to prevent visible scroll jump
-  const [isListReady, setIsListReady] = useState(false);
-  const hasScrolledRef = React.useRef(false);
+  // A chat opens at its newest message. The list renders in batches, so one scroll on the first layout
+  // lands at the end of the first batch only; until the content stops growing or the reader touches the
+  // list, every growth pins it to the end again. Opening a different chat starts a new opening phase.
+  const openingRef = React.useRef(true);
+  // While a chat opens, rows above the end are still measuring. Keeping the first visible row in place
+  // (maintainVisibleContentPosition) then pushes the end out of view, so it is switched on only once settled.
+  const [settled, setSettled] = useState(false);
+  const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shrinkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const contentHeightRef = useRef(0);
+  React.useEffect(() => {
+    openingRef.current = true;
+    contentHeightRef.current = 0;
+    setSettled(false);
+    // Never unsettled for long: whatever the content does, keep-position is on within 800 ms.
+    const fallback = setTimeout(() => setSettled(true), 800);
+    return () => {
+      clearTimeout(fallback);
+      if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
+      if (shrinkTimerRef.current) clearTimeout(shrinkTimerRef.current);
+    };
+  }, [chat.activeConversationId]);
   const interfaceMode = useUiModeStore((s) => s.interfaceMode);
   const tabNav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { toolCountHintDismissed } = useAppStore();
@@ -146,6 +168,22 @@ export const ChatMessageArea: React.FC<ChatMessageAreaProps> = ({
   const showSettingsDot = totalToolCount > 3 && !toolCountHintDismissed;
   const [inputHeight, setInputHeight] = useState(84);
   const flatListHeightRef = useRef(0);
+  // Where the list ends, from the latest layout: the scroll does not wait for the native mount.
+  const contentExtent = () => ({ contentHeight: contentHeightRef.current, listHeight: flatListHeightRef.current });
+
+  // Your own message comes into view the moment you send it, whatever the list was doing. Keyed on the
+  // newest USER message, not the last row: a thinking row can land in the same render as the sent one.
+  const lastSentId = useMemo(() => {
+    for (let i = chat.displayMessages.length - 1; i >= 0; i -= 1) {
+      if (chat.displayMessages[i].role === 'user') return chat.displayMessages[i].id;
+    }
+    return undefined;
+  }, [chat.displayMessages]);
+  useEffect(() => {
+    if (!lastSentId) return;
+    const frame = requestAnimationFrame(() => scrollToContentEnd(flatListRef.current, true));
+    return () => cancelAnimationFrame(frame);
+  }, [lastSentId, flatListRef]);
 
   // Bottom safe-area for the input footer. We own it here (rather than on the
   // screen's SafeAreaView) so the inset replaces — not stacks on top of — the
@@ -189,8 +227,8 @@ export const ChatMessageArea: React.FC<ChatMessageAreaProps> = ({
       ) : (
         <FlatList
           {...LIST_CLIPPING_PROPS}
+          testID="chat-message-list"
           ref={flatListRef}
-          style={isListReady ? undefined : hiddenStyle.hidden}
           data={chat.displayMessages}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
@@ -198,36 +236,47 @@ export const ChatMessageArea: React.FC<ChatMessageAreaProps> = ({
           contentContainerStyle={styles.messageList}
           onScroll={handleScroll}
           onContentSizeChange={(_w, h) => {
-            if (!hasScrolledRef.current && h > 0) {
-              // Initial layout: force scroll to bottom regardless of isNearBottom
-              flatListRef.current?.scrollToEnd({ animated: false });
-              hasScrolledRef.current = true;
-              // Reveal after a frame so the scroll position settles
-              requestAnimationFrame(() => {
-                requestAnimationFrame(() => setIsListReady(true));
-              });
+            contentHeightRef.current = h;
+            // Every opening pin goes to the end this layout reports: the first change arrives before any row
+            // has reported its height, so FlatList.scrollToEnd would scroll to 0, the oldest message.
+            if (openingRef.current && h > 0) {
+              scrollToContentEnd(flatListRef.current, false, contentExtent());
+              // Settled once the content has not grown for 400 ms: one last scroll, then the list keeps
+              // the reader's place as usual.
+              if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
+              settleTimerRef.current = setTimeout(() => {
+                if (openingRef.current) scrollToContentEnd(flatListRef.current, false, contentExtent());
+                openingRef.current = false;
+                setSettled(true);
+              }, 400);
             } else if (isNearBottomRef.current) {
-              flatListRef.current?.scrollToEnd({ animated: false });
+              scrollToContentEnd(flatListRef.current, false, contentExtent());
             }
           }}
+          onScrollBeginDrag={() => { openingRef.current = false; }}
           onLayout={(e) => {
             const newHeight = e.nativeEvent.layout.height;
             const prevHeight = flatListHeightRef.current;
             flatListHeightRef.current = newHeight;
-            if (prevHeight > 0 && newHeight < prevHeight) {
-              setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
+            // An opening chat stays at its end when the list changes height (a bar appears above the composer).
+            if (openingRef.current && contentHeightRef.current > 0) {
+              scrollToContentEnd(flatListRef.current, false, contentExtent());
+            } else if (prevHeight > 0 && newHeight < prevHeight) {
+              shrinkTimerRef.current = setTimeout(() => scrollToContentEnd(flatListRef.current, true), 50);
             }
           }}
           scrollEventThrottle={16}
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
           onTouchStart={() => Keyboard.dismiss()}
-          maintainVisibleContentPosition={{ minIndexForVisible: 0, autoscrollToTopThreshold: 100 }}
+          // Keep the reader's place when rows above them change, and nothing more. No autoscrollToTopThreshold:
+          // it is for inverted lists; here the top is the OLDEST message, so near the start it jumped there.
+          maintainVisibleContentPosition={settled ? KEEP_POSITION : undefined}
         />
       )}
       {chat.showScrollToBottom && chat.displayMessages.length > 0 && (
         <Animated.View entering={FadeIn.duration(150)} style={scrollToBottomStyle}>
-          <AnimatedPressable hapticType="impactLight" style={styles.scrollToBottomButton} onPress={() => flatListRef.current?.scrollToEnd({ animated: true })}>
+          <AnimatedPressable hapticType="impactLight" style={styles.scrollToBottomButton} onPress={() => scrollToContentEnd(flatListRef.current, true)}>
             <Icon name="chevron-down" size={20} color={colors.textSecondary} />
           </AnimatedPressable>
         </Animated.View>
@@ -327,7 +376,3 @@ export const ChatMessageArea: React.FC<ChatMessageAreaProps> = ({
     </>
   );
 };
-
-const hiddenStyle = StyleSheet.create({
-  hidden: { opacity: 0 },
-});
