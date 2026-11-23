@@ -22,8 +22,8 @@ S24 Ultra (arm64-v8a).
 
 ## Layout
 
-- `src/` is the app. Optional extra features plug in through `src/bootstrap/slotRegistry.ts`
-  and `src/navigation/screenRegistry.ts`; there is no `pro/` folder in this repo.
+- `src/` is the app. Optional extra features (see `src/features/`) plug in through
+  `src/bootstrap/slotRegistry.ts` (UI) and `src/bootstrap/hookRegistry.ts` (behaviour).
 - No other repository is pulled from. Push only our own `v*` tags (they trigger the
   release workflow).
 - Do not upgrade `llama.rn` without re-testing Gemma 4 and Qwen3.5 GGUFs.
