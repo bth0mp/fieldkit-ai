@@ -17,8 +17,11 @@ S24 Ultra (arm64-v8a).
   components (`.so`, models) to the `NATIVE` list in that script by hand.
 - App name comes from `BRAND` in `src/config/branding.ts` (set by `scripts/rebrand.sh`).
   The app's ids are `com.bth0mp.fieldkit` and `@fieldkit/`. The ids older versions saved
-  under live only in `src/services/earlierIds.ts`, which moves old data over. No other
-  file may name them (a test checks).
+  under live in `src/services/earlierIds.ts`, which moves old data over, and the old
+  download worker class name in `RenamedWorkerFactory.kt`; no other file may name them
+  (a test checks names, not pictures).
+- No logos, pictures or links of the project this one started from anywhere the user can
+  see them, including app icons and splash images.
 
 ## Layout
 
