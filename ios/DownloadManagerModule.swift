@@ -222,9 +222,9 @@ class DownloadManagerModule: RCTEventEmitter {
   var taskToDownloadId: [Int: String] = [:] // URLSessionTask.taskIdentifier -> downloadId
   var nextDownloadId: Int64 = 1
   var pollingTimer: Timer?
-  let queue = DispatchQueue(label: "ai.offgridmobile.downloadmanager", attributes: .concurrent)
+  let queue = DispatchQueue(label: "com.bth0mp.fieldkit.downloadmanager", attributes: .concurrent)
   var hasListeners = false
-  private let storageKey = "ai.offgridmobile.downloadmanager.state.v1"
+  private let storageKey = "com.bth0mp.fieldkit.downloadmanager.state.v1"
 
   // MARK: - Backup Exclusion
 
