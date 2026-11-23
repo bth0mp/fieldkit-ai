@@ -19,7 +19,7 @@
 - No business logic or authoritative state in screens or hooks. Services own it. A hook may hold an in-flight flag for a spinner.
 - One rendered integration test per behaviour. Mount the real screen, reach the state through real gestures, and fake only at the device boundary (`__tests__/harness/nativeBoundary.ts`, `global.fetch`, `deviceMemory.ts`, `netInfoFake.ts`). Never `jest.mock` our own modules in new tests.
 - No new dependency. No change to `llama.rn`.
-- No Off Grid or Wednesday names in anything the user sees.
+- No names, logos or links of the project this app started from in anything the user sees.
 - "In use" for text means what `useActiveTextModel` says (remote before local).
 - Test ids kept: `models-summary`, `model-selector`, `model-loaded-indicator`, `model-item`, `remote-model-item`, `models-row-*`, `sort-option-*`, `setup-card`, `browse-models-button`, `home-phone-models`.
 - Copy, exactly:
