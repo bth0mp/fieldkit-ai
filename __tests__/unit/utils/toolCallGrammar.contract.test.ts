@@ -2,7 +2,7 @@ import {
   TOOL_CALL_OPENERS,
   TOOL_CALL_CLOSERS,
   stripControlTokens,
-} from '@offgrid/core/utils/messageContent';
+} from '../../../src/utils/messageContent';
 import { ToolCallTokenFilter } from '../../../src/services/llmToolGeneration';
 
 /**

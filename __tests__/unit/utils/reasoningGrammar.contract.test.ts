@@ -1,7 +1,7 @@
 import {
   REASONING_DELIMITERS,
   parseThinkingContent,
-} from '@offgrid/core/utils/messageContent';
+} from '../../../src/utils/messageContent';
 import { ThinkTagParser } from '../../../src/services/providers/openAICompatibleStream';
 
 /**
