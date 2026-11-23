@@ -134,4 +134,36 @@ class WorkerDownloadCancelTest {
         assertEquals(DownloadStatus.COMPLETED, dao.getDownload("done")!!.status)
         assertTrue(file.exists())
     }
+
+    @Test
+    fun `a file that is gone or emptied when the check ends is recorded as failed, not completed`() = runBlocking {
+        val ctx = ApplicationProvider.getApplicationContext<Context>()
+        val dao = DownloadDatabase.getInstance(ctx).downloadDao()
+        val file = File(ctx.cacheDir, "vanished.gguf").apply { delete() }
+        val download = DownloadEntity(
+            id = "vanished", url = "https://huggingface.co/m", fileName = "vanished.gguf", modelId = "m",
+            destination = file.absolutePath, totalBytes = 10L, downloadedBytes = 0L,
+            status = DownloadStatus.RUNNING, createdAt = 1L,
+        )
+        dao.insertDownload(download)
+
+        // The next run of the same work removes the file's content while this one is still finishing (emptied
+        // rather than deleted, because an open file cannot be deleted on the machine the tests run on).
+        val input = object : InputStream() {
+            private var calls = 0
+            override fun read(): Int = -1
+            override fun read(b: ByteArray, off: Int, len: Int): Int {
+                calls++
+                if (calls == 1) return 10.also { java.util.Arrays.fill(b, off, off + it, 1) }
+                java.io.RandomAccessFile(file, "rw").use { it.setLength(0L) }
+                return -1
+            }
+        }
+        val result = worker(ctx).streamToFile(
+            WorkerDownload.StreamParams(input, file, 200, download, "vanished", 0L, 10L, Long.MAX_VALUE),
+        )
+
+        assertEquals(ListenableWorker.Result.failure(), result)
+        assertEquals(DownloadStatus.FAILED, dao.getDownload("vanished")!!.status)
+    }
 }

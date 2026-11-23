@@ -356,6 +356,12 @@ class WorkerDownload(
             }
         }
 
+        // A stopped run keeps checking while WorkManager may already have started the next one, which can
+        // delete the file. Never record COMPLETED for a file that is not there: FAILED can be retried.
+        if (targetFile.length() != bytesWritten) {
+            Log.w(TAG, "streamToFile file changed before completion id=$downloadId expected=$bytesWritten found=${targetFile.length()}")
+            return failDownload(downloadId, download, DownloadReason.FILE_CORRUPTED)
+        }
         downloadDao.updateProgress(downloadId, bytesWritten, totalBytes, DownloadStatus.COMPLETED)
         return Result.success()
     }
