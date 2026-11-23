@@ -367,6 +367,7 @@ jest.mock('react-native-image-picker', () => ({
 
 // react-native-keychain mock
 jest.mock('react-native-keychain', () => ({
+  ACCESSIBLE: { WHEN_UNLOCKED: 'AccessibleWhenUnlocked' },
   setGenericPassword: jest.fn(() => Promise.resolve(true)),
   getGenericPassword: jest.fn(() => Promise.resolve(false)),
   resetGenericPassword: jest.fn(() => Promise.resolve(true)),
