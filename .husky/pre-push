@@ -90,12 +90,19 @@ if [ -n "$PUSHED_SWIFT" ]; then
 fi
 
 if [ -n "$PUSHED_KOTLIN" ]; then
+  # The audio library's download task always runs, through `bash`, which Windows resolves to WSL's; WSL cannot see
+  # a subst drive, the way this repo builds on Windows. Once the arm64 binaries are in place it has nothing to fetch.
+  SKIP_AUDIO_DOWNLOAD=""
+  if [ -d node_modules/react-native-audio-api/common/cpp/audioapi/external/arm64-v8a ]; then
+    SKIP_AUDIO_DOWNLOAD="-x :react-native-audio-api:downloadPrebuiltBinaries"
+  fi
+
   echo "▶ Kotlin type check (compileDebugKotlin)..."
-  (cd android && ./gradlew compileDebugKotlin --quiet)
+  (cd android && ./gradlew compileDebugKotlin --quiet $SKIP_AUDIO_DOWNLOAD)
 
   echo "▶ Android lint..."
-  (cd android && ./gradlew :app:lintDebug --quiet)
+  (cd android && ./gradlew :app:lintDebug --quiet $SKIP_AUDIO_DOWNLOAD)
 
   echo "▶ Android tests..."
-  npm run test:android
+  npm run test:android -- $SKIP_AUDIO_DOWNLOAD
 fi
