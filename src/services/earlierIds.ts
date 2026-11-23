@@ -70,7 +70,9 @@ export async function removeMovedItem(key: string, earlierKey: string): Promise<
   await AsyncStorage.removeItem(earlierKey);
 }
 
-const EARLIER_LITERT_PARENT_ID = 'offgrid/litert-recommended';
+export const EARLIER_LITERT_PARENT_ID = 'offgrid/litert-recommended';
+/** The author an earlier version saved for the curated LiteRT models. */
+export const EARLIER_LITERT_AUTHOR = 'offgrid';
 // The id at the start of a JSON string (after its opening quote) or after a colon inside one, and followed
 // by the rest of the id or the end of the string. Text that merely quotes the id (a backslash before the
 // quote, as JSON escapes it) is left alone.
@@ -108,8 +110,8 @@ export function renamingStorage(base: StateStorage = AsyncStorage): StateStorage
 
 // What earlier versions left on the phone that nothing reads any more: Keychain entries of a licence check
 // that no longer exists, and the developer logs of debug builds.
-const LEFTOVER_SERVICES = ['off-grid-pro-license', 'off-grid-device-fingerprint'];
-const LEFTOVER_LOG_FILES = ['offgrid-debug.log', 'offgrid-wire.log'];
+export const EARLIER_LEFTOVER_SERVICES = ['off-grid-pro-license', 'off-grid-device-fingerprint'];
+export const EARLIER_LOG_FILES = ['offgrid-debug.log', 'offgrid-wire.log'];
 const LEFTOVERS_CLEARED_KEY = '@fieldkit/earlier_ids_cleared';
 
 /**
@@ -119,10 +121,10 @@ const LEFTOVERS_CLEARED_KEY = '@fieldkit/earlier_ids_cleared';
 export async function clearEarlierLeftovers(): Promise<void> {
   try {
     if (await AsyncStorage.getItem(LEFTOVERS_CLEARED_KEY)) return;
-    for (const service of LEFTOVER_SERVICES) {
+    for (const service of EARLIER_LEFTOVER_SERVICES) {
       await Keychain.resetGenericPassword({ service });
     }
-    for (const name of LEFTOVER_LOG_FILES) {
+    for (const name of EARLIER_LOG_FILES) {
       const path = `${RNFS.DocumentDirectoryPath}/${name}`;
       if (await RNFS.exists(path)) await RNFS.unlink(path);
     }

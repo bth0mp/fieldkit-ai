@@ -13,7 +13,7 @@ jest.mock('../../../src/utils/logger', () => ({
 }));
 
 import * as Keychain from 'react-native-keychain';
-import { readKeychainEntry } from '../../../src/services/earlierIds';
+import { EARLIER_LITERT_PARENT_ID as OLD, readKeychainEntry, renameEarlierModelIds, renameEarlierModelIdsIn, renamingStorage } from '../../../src/services/earlierIds';
 
 const NEW = 'com.bth0mp.fieldkit.test';
 const EARLIER = 'earlier.test';
@@ -115,29 +115,29 @@ describe('readKeychainEntry', () => {
   });
 });
 
-describe('renameEarlierModelIds', () => {
-  const { renameEarlierModelIds } = require('../../../src/services/earlierIds');
+const NEW_ID = 'fieldkit/litert-recommended';
 
+describe('renameEarlierModelIds', () => {
   it('renames the id in values and in keys of a saved JSON string', () => {
     const raw = JSON.stringify({
       state: {
-        activeModelId: 'offgrid/litert-recommended/gemma.litertlm',
-        settings: { 'offgrid/litert-recommended/gemma.litertlm': { contextLength: 4096 } },
-        list: ['offgrid/litert-recommended', 'org/other'],
+        activeModelId: `${OLD}/gemma.litertlm`,
+        settings: { [`${OLD}/gemma.litertlm`]: { contextLength: 4096 } },
+        list: [OLD, 'org/other'],
       },
     });
     expect(JSON.parse(renameEarlierModelIds(raw))).toEqual({
       state: {
-        activeModelId: 'fieldkit/litert-recommended/gemma.litertlm',
-        settings: { 'fieldkit/litert-recommended/gemma.litertlm': { contextLength: 4096 } },
-        list: ['fieldkit/litert-recommended', 'org/other'],
+        activeModelId: `${NEW_ID}/gemma.litertlm`,
+        settings: { [`${NEW_ID}/gemma.litertlm`]: { contextLength: 4096 } },
+        list: [NEW_ID, 'org/other'],
       },
     });
   });
 
   it('renames an id in the middle of a key', () => {
-    const raw = JSON.stringify({ downloadId: 'queued:offgrid/litert-recommended/gemma.litertlm' });
-    expect(JSON.parse(renameEarlierModelIds(raw))).toEqual({ downloadId: 'queued:fieldkit/litert-recommended/gemma.litertlm' });
+    const raw = JSON.stringify({ downloadId: `queued:${OLD}/gemma.litertlm` });
+    expect(JSON.parse(renameEarlierModelIds(raw))).toEqual({ downloadId: `queued:${NEW_ID}/gemma.litertlm` });
   });
 
   it('returns the same string when there is nothing to do', () => {
@@ -146,32 +146,28 @@ describe('renameEarlierModelIds', () => {
   });
 
   it('leaves the id alone when it is only text inside a message', () => {
-    const raw = JSON.stringify({ text: 'the id was offgrid/litert-recommended/x and "offgrid/litert-recommended/x"' });
+    const raw = JSON.stringify({ text: `the id was ${OLD}/x and "${OLD}/x"` });
     expect(renameEarlierModelIds(raw)).toBe(raw);
   });
 });
 
 describe('renameEarlierModelIdsIn and renamingStorage', () => {
-  const { renameEarlierModelIdsIn, renamingStorage } = require('../../../src/services/earlierIds');
-
   it('renames the id in a native download row and returns a row without it as it came', () => {
-    const row = { downloadId: 'd1', modelId: 'offgrid/litert-recommended', modelKey: 'offgrid/litert-recommended/f.litertlm', fileName: 'f.litertlm' };
-    expect(renameEarlierModelIdsIn(row)).toEqual({
-      downloadId: 'd1', modelId: 'fieldkit/litert-recommended', modelKey: 'fieldkit/litert-recommended/f.litertlm', fileName: 'f.litertlm',
-    });
+    const row = { downloadId: 'd1', modelId: OLD, modelKey: `${OLD}/f.litertlm`, fileName: 'f.litertlm' };
+    expect(renameEarlierModelIdsIn(row)).toEqual({ downloadId: 'd1', modelId: NEW_ID, modelKey: `${NEW_ID}/f.litertlm`, fileName: 'f.litertlm' });
     const other = [{ downloadId: 'd2', modelId: 'org/model' }];
     expect(renameEarlierModelIdsIn(other)).toBe(other);
   });
 
   it('renames what it reads, passes a missing value on, and writes without touching the value', async () => {
-    const stored: Record<string, string> = { a: JSON.stringify({ id: 'offgrid/litert-recommended/f' }) };
+    const stored: Record<string, string> = { a: JSON.stringify({ id: `${OLD}/f` }) };
     const base = {
       getItem: jest.fn(async (name: string) => stored[name] ?? null),
       setItem: jest.fn(async (name: string, value: string) => { stored[name] = value; }),
       removeItem: jest.fn(async (name: string) => { delete stored[name]; }),
     };
     const storage = renamingStorage(base);
-    expect(JSON.parse(await storage.getItem('a'))).toEqual({ id: 'fieldkit/litert-recommended/f' });
+    expect(JSON.parse(await storage.getItem('a') as string)).toEqual({ id: `${NEW_ID}/f` });
     expect(await storage.getItem('missing')).toBeNull();
     await storage.setItem('b', '{"id":"x"}');
     expect(base.setItem).toHaveBeenCalledWith('b', '{"id":"x"}');

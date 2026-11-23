@@ -7,20 +7,20 @@
 import { installNativeBoundary, requireRTL } from '../../harness/nativeBoundary';
 import { setDeviceMemory } from '../../harness/deviceMemory';
 import { installHfApiFake } from '../../harness/hfApiFake';
-import { EARLIER_ACTIVE_DOWNLOADS_KEY } from '../../../src/services/earlierIds';
+import { EARLIER_ACTIVE_DOWNLOADS_KEY, EARLIER_LITERT_AUTHOR, EARLIER_LITERT_PARENT_ID } from '../../../src/services/earlierIds';
 
 jest.mock('@react-navigation/native', () => jest.requireActual('@react-navigation/native'));
 jest.mock('../../../src/hooks/useFocusTrigger', () => ({ useFocusTrigger: () => 0 }));
 
 const TIMEOUT = { timeout: 6000 };
 
-const OLD_ID = 'offgrid/litert-recommended';
+const OLD_ID = EARLIER_LITERT_PARENT_ID;
 const NEW_ID = 'fieldkit/litert-recommended';
 const FILE = 'gemma-4-E2B-it.litertlm';
 const PATH = `/mock/documents/models/${FILE}`;
 
 const savedModel = {
-  id: `${OLD_ID}/${FILE}`, name: 'Gemma 4 E2B', author: 'offgrid', filePath: PATH, fileName: FILE,
+  id: `${OLD_ID}/${FILE}`, name: 'Gemma 4 E2B', author: EARLIER_LITERT_AUTHOR, filePath: PATH, fileName: FILE,
   fileSize: 2588147712, quantization: 'LiteRT', downloadedAt: '2026-11-01T00:00:00.000Z', engine: 'litert',
   liteRTVision: true, liteRTAudio: true, credibility: { source: 'community', isOfficial: false, isVerifiedQuantizer: false },
 };
@@ -114,7 +114,7 @@ describe('LiteRT model downloaded by an earlier version', () => {
     rtl.fireEvent.press(await rtl.waitFor(() => ui.getByText('Gemma 4 LiteRT'), TIMEOUT));
     await rtl.waitFor(() => expect(ui.getByText('Available Files')).toBeTruthy(), TIMEOUT);
     expect(ui.getByText('✓')).toBeTruthy();
-    expect(ui.queryAllByText(/offgrid|fieldkit\/litert/i)).toHaveLength(0);
+    expect(ui.queryAllByText(new RegExp(`${EARLIER_LITERT_AUTHOR}|${NEW_ID}`, 'i'))).toHaveLength(0);
   }, 60000);
 
   it('shows in the Download Manager without the earlier name', async () => {
@@ -130,7 +130,7 @@ describe('LiteRT model downloaded by an earlier version', () => {
     const ui = render(React.createElement(require('@react-navigation/native').NavigationContainer, null, React.createElement(DownloadManagerScreen, {})));
     await waitFor(() => expect(ui.queryAllByText(new RegExp(FILE))).toHaveLength(1));
     expect(ui.queryAllByText('google')).toHaveLength(1);
-    expect(ui.queryAllByText(/offgrid/i)).toHaveLength(0);
+    expect(ui.queryAllByText(new RegExp(EARLIER_LITERT_AUTHOR, 'i'))).toHaveLength(0);
     expect(ui.queryAllByText(/fieldkit/i)).toHaveLength(0);
   });
 

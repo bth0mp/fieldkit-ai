@@ -76,7 +76,7 @@ jest.mock('../src/services', () => ({
 }));
 
 import * as Keychain from 'react-native-keychain';
-import { EARLIER_AUTH_SERVICE } from '../src/services/earlierIds';
+import { EARLIER_AUTH_SERVICE, EARLIER_LEFTOVER_SERVICES, EARLIER_LOG_FILES } from '../src/services/earlierIds';
 
 const AUTH_SERVICE = 'com.bth0mp.fieldkit.auth';
 
@@ -150,8 +150,7 @@ describe('App start', () => {
 
       expect(fetchSpy).not.toHaveBeenCalled();
       const services = (Keychain.getGenericPassword as jest.Mock).mock.calls.map(([options]) => options?.service);
-      expect(services).not.toContain('off-grid-pro-license');
-      expect(services).not.toContain('off-grid-device-fingerprint');
+      for (const leftover of EARLIER_LEFTOVER_SERVICES) expect(services).not.toContain(leftover);
     } finally {
       global.fetch = originalFetch;
     }
@@ -220,8 +219,8 @@ describe('App lock saved by an earlier version', () => {
 });
 
 describe('App start after an update', () => {
-  const LEFTOVER_ENTRIES = ['off-grid-pro-license', 'off-grid-device-fingerprint'];
-  const OLD_LOGS = ['/mock/documents/offgrid-debug.log', '/mock/documents/offgrid-wire.log'];
+  const LEFTOVER_ENTRIES = EARLIER_LEFTOVER_SERVICES;
+  const OLD_LOGS = EARLIER_LOG_FILES.map((name) => `/mock/documents/${name}`);
   const AsyncStorage = require('@react-native-async-storage/async-storage');
   const RNFS = require('react-native-fs');
   const onDisk = new Set<string>();
@@ -268,14 +267,14 @@ describe('App start after an update', () => {
   });
 
   it('tries again at the next launch when the Keychain would not clear an entry', async () => {
-    vault.set('off-grid-pro-license', { username: 'x', password: 'y' });
+    vault.set(LEFTOVER_ENTRIES[0], { username: 'x', password: 'y' });
     (Keychain.resetGenericPassword as jest.Mock).mockRejectedValueOnce(new Error('Keychain is locked'));
 
     await startApp();
     expect(await AsyncStorage.getItem('@fieldkit/earlier_ids_cleared')).toBeNull();
-    expect(vault.has('off-grid-pro-license')).toBe(true);
+    expect(vault.has(LEFTOVER_ENTRIES[0])).toBe(true);
 
     await startApp();
-    await waitFor(() => expect(vault.has('off-grid-pro-license')).toBe(false));
+    await waitFor(() => expect(vault.has(LEFTOVER_ENTRIES[0])).toBe(false));
   });
 });
