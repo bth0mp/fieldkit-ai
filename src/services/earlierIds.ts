@@ -10,6 +10,8 @@ import logger from '../utils/logger';
 
 export const EARLIER_AUTH_SERVICE = 'ai.offgridmobile.auth';
 export const EARLIER_SERVERS_SERVICE = 'ai.offgridmobile.servers';
+export const EARLIER_ACTIVE_DOWNLOADS_KEY = '@offgrid/active_downloads';
+export const EARLIER_QUEUED_DOWNLOADS_KEY = '@offgrid/queued_downloads';
 
 /**
  * Read a Keychain entry by its service. When that has none, take the one an earlier version saved under
@@ -39,6 +41,31 @@ export async function readKeychainEntry(
     logger.warn('[EarlierIds] Moved a Keychain entry but could not clear the earlier one', error);
   }
   return earlier;
+}
+
+/**
+ * Read an AsyncStorage value by its key. When that has none, take the one an earlier version saved under
+ * `earlierKey`: store it under `key` and remove the earlier one. A failed move is not the reader's error;
+ * the value is returned and the move is tried at the next read. When both exist the new one wins.
+ */
+export async function readMovedItem(key: string, earlierKey: string): Promise<string | null> {
+  const current = await AsyncStorage.getItem(key);
+  if (current) return current;
+  const earlier = await AsyncStorage.getItem(earlierKey);
+  if (!earlier) return null;
+  try {
+    await AsyncStorage.setItem(key, earlier);
+    await AsyncStorage.removeItem(earlierKey);
+  } catch (error) {
+    logger.warn('[EarlierIds] Could not move a saved value to its new key; trying again next time', error);
+  }
+  return earlier;
+}
+
+/** Remove a saved value under its key and the one an earlier version used. */
+export async function removeMovedItem(key: string, earlierKey: string): Promise<void> {
+  await AsyncStorage.removeItem(key);
+  await AsyncStorage.removeItem(earlierKey);
 }
 
 // What earlier versions left on the phone that nothing reads any more: Keychain entries of a licence check

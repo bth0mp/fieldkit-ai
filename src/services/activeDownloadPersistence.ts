@@ -18,8 +18,9 @@ import { useDownloadStore } from '../stores/downloadStore';
 import { isActiveStatus, isQueuedStatus, type DownloadEntry } from '../utils/downloadStatus';
 import type { ModelKey } from '../utils/modelKey';
 import logger from '../utils/logger';
+import { EARLIER_ACTIVE_DOWNLOADS_KEY, readMovedItem, removeMovedItem } from './earlierIds';
 
-const ACTIVE_DOWNLOADS_KEY = '@offgrid/active_downloads';
+const ACTIVE_DOWNLOADS_KEY = '@fieldkit/active_downloads';
 
 /** PURE: the in-flight subset worth persisting — active (running/processing) but NOT queued (the
  *  queue owns its own persistence) and not terminal (completed/failed/cancelled). Zero-IO. */
@@ -31,7 +32,7 @@ function serializeActiveDownloads(downloads: Record<ModelKey, DownloadEntry>): D
  *  wedge downloads), logged under [DL-SM] so a lost snapshot is diagnosable. */
 export async function saveActiveDownloads(entries: DownloadEntry[]): Promise<void> {
   try {
-    if (entries.length === 0) await AsyncStorage.removeItem(ACTIVE_DOWNLOADS_KEY);
+    if (entries.length === 0) await removeMovedItem(ACTIVE_DOWNLOADS_KEY, EARLIER_ACTIVE_DOWNLOADS_KEY);
     else await AsyncStorage.setItem(ACTIVE_DOWNLOADS_KEY, JSON.stringify(entries));
   } catch (e) {
     logger.log(`[DL-SM] persist active downloads failed err=${e instanceof Error ? e.message : String(e)}`);
@@ -41,7 +42,7 @@ export async function saveActiveDownloads(entries: DownloadEntry[]): Promise<voi
 /** Thin adapter: read the persisted projection. Returns [] on absence or a corrupt payload. */
 export async function loadActiveDownloads(): Promise<DownloadEntry[]> {
   try {
-    const stored = await AsyncStorage.getItem(ACTIVE_DOWNLOADS_KEY);
+    const stored = await readMovedItem(ACTIVE_DOWNLOADS_KEY, EARLIER_ACTIVE_DOWNLOADS_KEY);
     if (!stored) return [];
     const parsed = JSON.parse(stored);
     return Array.isArray(parsed) ? (parsed as DownloadEntry[]) : [];
