@@ -699,7 +699,7 @@ describe('handleSendFn', () => {
     expect(ensureTextModelForChat).toHaveBeenCalled();
     expect(startGeneration).not.toHaveBeenCalled();
     // The message is remembered, with its chat, so it can be sent there after the user picks a model.
-    expect(setPendingMessage).toHaveBeenCalledWith('tell me a joke', undefined, 'conv-1');
+    expect(setPendingMessage).toHaveBeenCalledWith({ text: 'tell me a joke', attachments: undefined, conversationId: 'conv-1', imageMode: 'auto' });
   });
 
   it('shows alert when no activeModel', async () => {
@@ -832,7 +832,7 @@ describe('dispatchGenerationFn (single routing layer)', () => {
     await dispatchGenerationFn(deps, { text: 'Hi', conversationId: 'conv-1' }, startText);
     expect(startText).not.toHaveBeenCalled();
     expect(mockGenerateImage).not.toHaveBeenCalled();
-    expect(setPendingMessage).toHaveBeenCalledWith('Hi', undefined, 'conv-1');
+    expect(setPendingMessage).toHaveBeenCalledWith({ text: 'Hi', attachments: undefined, conversationId: 'conv-1', imageMode: 'auto' });
   });
 });
 

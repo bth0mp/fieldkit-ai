@@ -17,7 +17,7 @@ import { useGeneratingConversationId } from '../../hooks/useGenerationSession';
 import { Message, MediaAttachment, Project, DownloadedModel, DebugInfo, RemoteModel } from '../../types';
 import { RootStackParamList } from '../../navigation/types';
 import { ensureModelLoadedFn, ensureTextModelForChatFn, initiateModelLoad, useChatImageModelEffects, useChatModelStateSync } from './useChatModelActions';
-import { startGenerationFn, handleSendFn, handleStopFn, handleSelectProjectFn, dispatchGenerationFn } from './useChatGenerationActions';
+import { startGenerationFn, handleSendFn, handleStopFn, handleSelectProjectFn, dispatchGenerationFn, type PendingMessage } from './useChatGenerationActions';
 import { handleRetryMessageFn, handleEditMessageFn, handleDeleteConversationFn, handleGenerateImageFromMsgFn } from './useChatMessageHandlers';
 import { getDisplayMessages } from './types';
 import { saveImageToGallery } from './useSaveImage';
@@ -121,7 +121,7 @@ export const useChatScreen = () => {
   const generatingConversationId = useGeneratingConversationId();
   // Stashed, with the chat it was written in, when a message needs a text model and none was ever chosen; sent
   // once when that chat is focused again with a model in use. A list: a second message must not replace the first.
-  const pendingMessagesRef = useRef<Array<{ text: string; attachments?: MediaAttachment[]; conversationId: string; imageMode?: 'auto' | 'force' | 'disabled' }>>([]);
+  const pendingMessagesRef = useRef<PendingMessage[]>([]);
 
   // The text model is intentionally NOT loaded on chat open. It loads lazily on
   // send, when the generation path recognizes a local text model is needed
@@ -235,7 +235,7 @@ export const useChatScreen = () => {
     setActiveConversation, removeImagesByConversationId, navigation, setShowSettingsPanel,
     ensureModelLoaded: async (onLoadedResume?: () => void) => ensureModelLoadedFn(modelDeps, onLoadedResume),
     ensureTextModelForChat: () => ensureTextModelForChatFn({ openModels, setLoadingModel, setIsModelLoading }),
-    setPendingMessage: (text: string, attachments: MediaAttachment[] | undefined, conversationId: string) => { pendingMessagesRef.current.push({ text, attachments, conversationId }); },
+    setPendingMessage: (message: PendingMessage) => { pendingMessagesRef.current.push(message); },
     createConversation,
     pendingProjectId,
     openModels,

@@ -433,6 +433,23 @@ describe('Choosing a model from a chat (rendered)', () => {
     expect(sent).toEqual(['question one', '[User wanted an image but no image model is loaded] tell me about cats']);
   });
 
+  it('a message sent with images off that waits for a text model is not drawn when one is chosen', async () => {
+    await boot({ models: [FIRST, SECOND], imageModels: [SD_ONE] }, { image: 'sd1' });
+    await newChat();
+    press(await t.rtl.waitFor(() => t.ui.getByTestId('quick-settings-button'), TIMEOUT));
+    press(await t.rtl.waitFor(() => t.ui.getByTestId('quick-image-mode'), TIMEOUT)); // Auto to Force
+    press(t.ui.getByTestId('quick-image-mode')); // Force to Off
+    await t.rtl.waitFor(() => expect(shown('image-mode-force-badge')).toBe(false), TIMEOUT);
+    send('draw a cat');
+    await t.rtl.waitFor(() => expect(shown('your-models-text')).toBe(true), TIMEOUT);
+    t.boundary.llama!.scriptCompletion({ text: 'A text answer.' });
+    press(await byLabel('Use First'));
+    await settle(1500);
+    expect([t.boundary.llama!.calls.completion.length, t.boundary.diffusion.calls.generateImage.length]).toEqual([1, 0]);
+    expect(await byText('A text answer.')).toBeTruthy();
+    expect(t.boundary.diffusion.calls.generateImage).toHaveLength(0);
+  });
+
   it('a half-typed message in a new chat survives Unload then Use', async () => {
     await boot({ models: [FIRST, SECOND] }, { text: 'first' });
     await newChat();

@@ -28,6 +28,9 @@ import { ModelReadyOutcome, ensureReadyOrAlert } from './modelReadiness';
 type SetState<T> = Dispatch<SetStateAction<T>>;
 const FALLBACK_RECENT_MESSAGE_COUNT = 2;
 
+/** A message waiting for a text model, with the chat it was typed in and the image mode it was sent with. */
+export type PendingMessage = { text: string; attachments?: MediaAttachment[]; conversationId: string; imageMode?: 'auto' | 'force' | 'disabled' };
+
 export type GenerationDeps = {
   activeModelId: string | null;
   activeModel: DownloadedModel | null | undefined;
@@ -73,7 +76,7 @@ export type GenerationDeps = {
    *  the Models screen and returns false when no text model was ever chosen. */
   ensureTextModelForChat: () => Promise<boolean>;
   /** Stash a message to replay, in its own chat, after the user picks a text model. */
-  setPendingMessage?: (text: string, attachments: MediaAttachment[] | undefined, conversationId: string) => void;
+  setPendingMessage?: (message: PendingMessage) => void;
   createConversation: (modelId: string, title?: string, projectId?: string) => string;
   pendingProjectId?: string;
   openModels?: (tab: 'text' | 'image') => void;
@@ -576,7 +579,7 @@ async function dispatchTurn(
   // ONE post-decision dispatch seam, shared with resend (image-model guard + text-provision path).
   const result = await dispatchResolvedTurn(deps, kind, {
     text, attachments, conversationId, imageSkipsUserMessage: false,
-    onTextModelUnavailable: () => { deps.setPendingMessage?.(text, attachments, conversationId); },
+    onTextModelUnavailable: () => { deps.setPendingMessage?.({ text, attachments, conversationId, imageMode }); },
   });
   if (result.handled) return;
   deps.addMessage(conversationId, { role: 'user', content: text, attachments });
@@ -652,7 +655,7 @@ async function regenerateTurn(deps: GenerationDeps, call: RegenerateCall): Promi
   const result = await dispatchResolvedTurn(deps, kind, {
     text: userMessage.content, attachments: userMessage.attachments, conversationId: targetConversationId,
     imageSkipsUserMessage: true,
-    onTextModelUnavailable: () => { deps.setPendingMessage?.(userMessage.content, userMessage.attachments, targetConversationId); },
+    onTextModelUnavailable: () => { deps.setPendingMessage?.({ text: userMessage.content, attachments: userMessage.attachments, conversationId: targetConversationId }); },
   });
   if (result.handled) return;
   const messageText = result.messageText;

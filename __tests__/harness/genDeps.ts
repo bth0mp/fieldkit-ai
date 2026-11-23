@@ -71,7 +71,7 @@ export function makeGenDeps(overrides: Record<string, any> = {}): GenDepsResult 
     ensureModelLoaded: async () => ({ ok: true }),
     ensureTextModelForChat: async () => true,
     openModels: (tab: 'text' | 'image') => { captured.opened.push(tab); },
-    setPendingMessage: (text: string, _attachments?: unknown, conversationId?: string) => { captured.pendingMessages.push({ text, conversationId }); },
+    setPendingMessage: ({ text, conversationId }: { text: string; conversationId: string }) => { captured.pendingMessages.push({ text, conversationId }); },
     createConversation: (modelId: string, title?: string, projectId?: string) => chat.createConversation(modelId, title, projectId),
     pendingProjectId: undefined,
     ...overrides,
