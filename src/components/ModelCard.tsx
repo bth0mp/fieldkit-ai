@@ -16,6 +16,7 @@ import {
 } from './ModelCardContent';
 import { QUEUED_ICON } from '../utils/downloadStatusIcon';
 import { formatBytes } from '../utils/formatBytes';
+import { OriginLine } from './OriginLine';
 import type { RunAnswer } from '../services/runAnswer';
 
 interface ModelCardProps {
@@ -53,6 +54,8 @@ interface ModelCardProps {
   incompatibleReason?: string;
   /** Whether the model runs on this phone; replaces the "Too large" badge when given. */
   runAnswer?: RunAnswer;
+  /** `owner/name` of the page a converted model came from; shown as `Original: ...`. */
+  origin?: string;
   testID?: string;
   onPress?: () => void;
   onDownload?: () => void;
@@ -188,6 +191,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({
   isCompatible = true,
   incompatibleReason,
   runAnswer,
+  origin,
   testID,
   onPress,
   onDownload,
@@ -282,6 +286,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({
             runAnswer={runAnswer}
             testID={testID}
           />
+          <OriginLine origin={origin} testID={testID} />
 
           {!compact && model.downloads !== undefined && model.downloads > 0 && (
             <View style={styles.statsRow}>

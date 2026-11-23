@@ -9,6 +9,10 @@ import { IMAGE_DOWNLOAD_STEP_INDEX } from '../../components/onboarding/spotlight
 import { useTheme, useThemedStyles } from '../../theme';
 import { HFImageModel, getVariantLabel } from '../../services/huggingFaceModelBrowser';
 import { imageRunAnswer } from '../../services/runAnswer';
+import { originFor } from '../../features/modelGuide/origins';
+import { IMAGE_NOTES } from '../../features/modelGuide/notes';
+import { useOriginStats } from '../../hooks/useOriginStats';
+import { OfflineNotice } from './OfflineNotice';
 import { ImageModelRecommendation } from '../../types';
 import { useDownloadStore, isActiveStatus, isQueuedStatus, isDownloadingStatus } from '../../stores/downloadStore';
 import { makeImageModelKey } from '../../utils/modelKey';
@@ -76,6 +80,8 @@ export const ImageModelCardItem: React.FC<ImageModelCardProps> = ({
   const isDownloading = !!entry && isDownloadingStatus(entry.status);
   const progressValue = entry?.progress ?? 0;
   const authorLabel = model._coreml ? 'Core ML' : imageBackendLabel(model.backend);
+  const origin = originFor('image', model.name);
+  const stats = useOriginStats(origin ? [origin] : [])[origin ?? ''];
   const variantSuffix = model.variant ? ` \u00B7 ${getVariantLabel(model.variant)}` : '';
   return (
     <View>
@@ -91,7 +97,12 @@ export const ImageModelCardItem: React.FC<ImageModelCardProps> = ({
           name: model.displayName,
           author: authorLabel,
           description: `${formatBytes(model.size)}${variantSuffix}`,
+          downloads: stats?.downloads,
+          likes: stats?.likes,
+          lastModified: stats?.lastModified,
         }}
+        origin={origin}
+        goodFor={IMAGE_NOTES.find(n => n.name === model.name)?.goodFor}
         isDownloading={isDownloading}
         isQueued={isQueued}
         downloadProgress={progressValue}
@@ -313,6 +324,8 @@ export const ImageModelsTab: React.FC<Props> = ({
           </TouchableOpacity>
         </View>
       </View>
+
+      <OfflineNotice />
 
       <ImageModelsScrollContent
         showRecHint={showRecHint}
