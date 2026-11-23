@@ -142,7 +142,8 @@ export const LITERT_NOTES: Record<string, ModelNote> = {
 
 /**
  * Image notes come from the original maker's Hugging Face page (see origins.ts), not from the xororz repos the files
- * are downloaded from. A model is listed only when its original page says what it is for; the others have none.
+ * are downloaded from. A model is listed only when its original page says both what it is for and what it is not for;
+ * the others have none.
  * `sizeBytes` is the smallest zip the app offers for that name.
  * NaiAnimeV2 and QteaMix have no note: their pages say what they are for but not what they are not for.
  */

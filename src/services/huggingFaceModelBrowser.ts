@@ -32,7 +32,7 @@ let cachedModels: HFImageModel[] | null = null;
 let cacheTimestamp = 0;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-function insertSpaces(name: string): string {
+export function insertSpaces(name: string): string {
   // Insert space before uppercase letters that follow lowercase or digits
   // e.g. "AnythingV5" -> "Anything V5", "AbsoluteReality" -> "Absolute Reality"
   return name.replaceAll(/([a-z\d])([A-Z])/g, '$1 $2');

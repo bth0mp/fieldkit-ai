@@ -8,6 +8,9 @@
 import { openModelsFromHome } from '../../harness/modelsApp';
 import { resetDeviceMemory } from '../../harness/deviceMemory';
 import { IMAGE_NOTES, TEXT_NOTES } from '../../../src/features/modelGuide/notes';
+import { smallestFittingTier } from '../../../src/features/modelGuide/guide';
+import { DIRTY_AVAILABILITY_HEADROOM_MB } from '../../../src/services/memoryBudget';
+import { hardwareService } from '../../../src/services/hardware';
 
 jest.mock('@react-navigation/native', () => jest.requireActual('@react-navigation/native'));
 jest.mock('../../../src/hooks/useFocusTrigger', () => ({ useFocusTrigger: () => 0 }));
@@ -39,6 +42,8 @@ async function openGuide(offline: boolean) {
   return opened;
 }
 
+const imageNeed = (sizeBytes: number) => hardwareService.estimateImageModelRam({ size: sizeBytes }) + DIRTY_AVAILABILITY_HEADROOM_MB * 1024 * 1024;
+
 function expectGuideContent({ rtl, ui }: Awaited<ReturnType<typeof openGuide>>) {
   const note = rtl.within(ui.getByTestId(`guide-note-${GEMMA}`));
   expect(ui.getByText('Your phone: 12 GB memory')).toBeTruthy();
@@ -52,8 +57,15 @@ function expectGuideContent({ rtl, ui }: Awaited<ReturnType<typeof openGuide>>) 
   expect(ui.getByText('Tight means the app may stop and offer Load Anyway. A smaller file may help.')).toBeTruthy();
   expect(ui.getByText('These labels are for the default CPU setting. The GPU or NPU setting needs about half as much memory again.')).toBeTruthy();
   for (const image of IMAGE_NOTES) {
-    expect(rtl.within(ui.getByTestId(`guide-note-${image.name}`)).getByText(`Good for: ${image.goodFor}`)).toBeTruthy();
+    const row = rtl.within(ui.getByTestId(`guide-note-${image.name}`));
+    expect(row.getByText(`Good for: ${image.goodFor}`)).toBeTruthy();
+    // Named as the model cards name it, and fitted by the need the card counts (RAM estimate plus the gate's headroom).
+    expect(row.getByText(image.name.replaceAll(/([a-z\d])([A-Z])/g, '$1 $2'))).toBeTruthy();
+    const tier = smallestFittingTier(imageNeed(image.sizeBytes));
+    expect(row.getByText(tier === null ? 'Fits: Too big for phones' : `Fits: ${tier} GB and up`)).toBeTruthy();
   }
+  const dreamShaper = IMAGE_NOTES.find(n => n.name === 'DreamShaperV8')!;
+  expect(smallestFittingTier(dreamShaper.sizeBytes)).not.toBe(smallestFittingTier(imageNeed(dreamShaper.sizeBytes)));
   expect(rtl.within(ui.getByTestId('guide-image-mnn')).getByText('GPU models')).toBeTruthy();
   expect(rtl.within(ui.getByTestId('guide-image-qnn')).getByText('NPU models')).toBeTruthy();
   expect(rtl.within(ui.getByTestId('guide-note-large-v3')).getByText('Large v3 (many languages)')).toBeTruthy();

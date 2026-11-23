@@ -3,6 +3,8 @@ import { WHISPER_MODELS } from '../../services/whisperModels';
 import { CURATED_LITERT_ENTRIES } from '../../services/curatedLiteRTRegistry';
 import { TEXT_MODEL_OVERHEAD_MULTIPLIER } from '../../services/activeModelService/types';
 import { DIRTY_AVAILABILITY_HEADROOM_MB } from '../../services/memoryBudget';
+import { hardwareService } from '../../services/hardware';
+import { insertSpaces } from '../../services/huggingFaceModelBrowser';
 import { smallestFittingTier, textPickFit, textPickFitLine, MEMORY_TIERS, type MemoryTier } from './guide';
 import {
   IMAGE_NOTES, LITERT_NOTES, PHONE_TIERS, TEXT_NOTES, WHISPER_NOTES, type ModelNote,
@@ -65,7 +67,12 @@ export function textEntries(): GuideEntry[] {
 }
 
 export function imageEntries(): GuideEntry[] {
-  return IMAGE_NOTES.map(n => withNote({ id: n.name, name: n.name, fits: fitsFromSize(n.sizeBytes) }, n));
+  // The same need the card uses (the image RAM estimate) plus the headroom the gate keeps free for a dirty model.
+  return IMAGE_NOTES.map(n => withNote({
+    id: n.name,
+    name: insertSpaces(n.name),
+    fits: fitsFromSize(hardwareService.estimateImageModelRam({ size: n.sizeBytes }) + DIRTY_AVAILABILITY_HEADROOM_MB * 1024 * 1024),
+  }, n));
 }
 
 const whisperName = (m: { name: string; lang: string }) => `${m.name} (${m.lang === 'en' ? 'English only' : 'many languages'})`;
