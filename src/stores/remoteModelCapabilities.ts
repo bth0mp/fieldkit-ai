@@ -290,9 +290,8 @@ async function probeLmStudioThinking(
 /**
  * Fetches model capabilities from a llama.cpp server via GET /props.
  *
- * The Off Grid AI Gateway is a llama.cpp server: its /v1/models list carries no
- * capability data, but /props reports the loaded model's real capabilities —
- * authoritative because they come from the actually-loaded projector/template,
+ * A llama.cpp server's /v1/models list carries no capability data, but /props
+ * reports the loaded model's real capabilities — authoritative because they come from the actually-loaded projector/template,
  * not a name guess. A llama.cpp server serves ONE model, so /props maps to it.
  *
  *   modalities:        { vision, video, audio }        → vision / audio input
@@ -393,7 +392,7 @@ function parsePropsCapabilities(data: unknown): RemoteModelInfo | null {
   // Thinking is a CAPABILITY, not the current default. `supports_preserve_reasoning`
   // and `reasoning_format` describe how the server formats reasoning by default —
   // they're false/none for a model that can still think on demand (verified: Qwen3.5
-  // on the Gateway returns reasoning_content when enable_thinking:true is sent, yet
+  // on a llama.cpp server returns reasoning_content when enable_thinking:true is sent, yet
   // reports supports_preserve_reasoning=false). The reliable capability signal is the
   // chat template exposing an `enable_thinking` switch or `<think>` blocks.
   const template = typeof root.chat_template === 'string' ? root.chat_template : '';
@@ -430,9 +429,9 @@ function hasRealData(info: RemoteModelInfo): boolean {
  * data. Works regardless of the port the server runs on.
  *
  * Priority: llama.cpp /props first — it is authoritative (reads the loaded
- * model's real modalities/template, not a name guess), which is why the Off
- * Grid AI Gateway's vision/thinking/tools now resolve correctly instead of
- * false-negativing through name-based detection.
+ * model's real modalities/template, not a name guess), so a llama.cpp server's
+ * vision/thinking/tools resolve correctly instead of false-negativing through
+ * name-based detection.
  */
 // eslint-disable-next-line max-params -- the optional key rides after the three existing arguments
 export async function fetchModelCapabilities(

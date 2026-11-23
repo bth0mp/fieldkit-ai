@@ -1,7 +1,7 @@
 /**
  * DEVICE 2026-07-14 (IMG report) — the Models manager sheet's TEXT row showed a remote model
- * (Qwen3.5-2B on the Off Grid AI Gateway) with NO remote marker: indistinguishable from a local
- * model. SPEC (OGAM user's view): a remote selection carries the cloud marker hugging the right
+ * (Qwen3.5-2B on a remote server) with NO remote marker: indistinguishable from a local
+ * model. SPEC (the user's view): a remote selection carries the cloud marker hugging the right
  * of the model name (matching the chat header's remote indicator), so a remote model is never
  * mistaken for local. A LOCAL/absent selection shows no cloud (falsified both ways).
  *

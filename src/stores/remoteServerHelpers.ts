@@ -23,11 +23,10 @@ import {
 const DISCOVERY_FETCH_TIMEOUT_MS = 5000;
 
 /**
- * The Off Grid AI Desktop gateway tags every /v1/models entry with a modality
- * `kind` (chat | vision | image | speech | transcription). Only chat/vision are
- * text models that belong in the chat model picker — image, speech (TTS) and
- * transcription (STT) models must not be listed as text. Servers that don't send
- * `kind` (Ollama, LM Studio) fall back to the name-based generative filter.
+ * A server may tag every /v1/models entry with a modality `kind` (chat | vision |
+ * image | speech | transcription). Only chat/vision are text models that belong in
+ * the chat model picker — image, speech (TTS) and transcription (STT) models must
+ * not be listed as text. Servers that don't send `kind` (Ollama, LM Studio) fall back to the name-based generative filter.
  */
 function isTextModel(model: { id?: string; name?: string; kind?: unknown }): boolean {
   const kind = typeof model.kind === 'string' ? model.kind : null;
@@ -38,8 +37,8 @@ function isTextModel(model: { id?: string; name?: string; kind?: unknown }): boo
 const MODEL_FILE_EXT = /\.(gguf|bin|safetensors|task|litertlm|pte)$/i;
 
 /**
- * Human-readable label for a remote model. Some gateways report the model id as a
- * full file path (e.g. "/Users/admin/.offgrid/models/Qwen3.5-9B-Q4_K_M.gguf"),
+ * Human-readable label for a remote model. Some servers report the model id as a
+ * full file path (e.g. "/Users/admin/models/Qwen3.5-9B-Q4_K_M.gguf"),
  * which is unreadable in the picker. Show the basename without the extension while
  * keeping the raw id for loading.
  *
@@ -186,9 +185,9 @@ export async function fetchModelsFromServer(server: RemoteServer): Promise<Remot
           name: displayModelName(model.id),
           serverId: server.id,
           capabilities: {
-            // The gateway declares each model's kind authoritatively; trust kind:'vision'
+            // A server that sends `kind` declares each model's kind authoritatively; trust kind:'vision'
             // for vision support. The name/probe-based fallback (modelInfos) can't detect a
-            // gateway vision model whose id doesn't match the name heuristics, which dropped
+            // vision model whose id doesn't match the name heuristics, which dropped
             // the attached image client-side (the model then behaved text-only).
             supportsVision: model.kind === 'vision' || modelInfos[i].supportsVision,
             supportsToolCalling: modelInfos[i].supportsToolCalling ?? detectToolCallingCapability(model.id),

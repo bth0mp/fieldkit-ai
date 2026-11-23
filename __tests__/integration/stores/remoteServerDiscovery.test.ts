@@ -533,10 +533,10 @@ describe('remoteServerDiscovery integration', () => {
   });
 
   // =========================================================================
-  // Off Grid AI Desktop gateway — modality `kind` filtering
+  // A server that tags its models with a modality `kind`
   // =========================================================================
 
-  describe('gateway kind filtering', () => {
+  describe('kind filtering', () => {
     it('keeps only chat/vision models and drops image, speech, and transcription', async () => {
       addServer({ id: 'srv-gw', endpoint: 'http://192.168.1.44:7878' }); // NOSONAR
 

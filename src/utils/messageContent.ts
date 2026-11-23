@@ -133,13 +133,13 @@ const GEMMA4_THINK_CLOSE = new RegExp(GEMMA4_THINK_CLOSE_SRC, 'gi');
 //     3. <|channel|>analysis    Qwen channel format
 //   KWARG switch - a template referencing `enable_thinking` honors the
 //     chat_template_kwargs toggle, so the model reasons on demand even without a
-//     literal <think> in the template (verified: Qwen3.5 on the Gateway).
+//     literal <think> in the template (verified: Qwen3.5 on a llama.cpp server).
 //
 // This does NOT own parseThinkingContent's positional parsing (that stays in
 // ChatMessage/utils.ts and matches the same OUTPUT delimiters to slice content). It
 // IS the single predicate for "does a chat_template indicate reasoning capability",
 // shared by BOTH local model load (llmHelpers.detectThinkingSupport) and remote
-// capability probing (remoteModelCapabilities) so on-device and gateway detection
+// capability probing (remoteModelCapabilities) so on-device and remote-server detection
 // cannot diverge - the OD7 divergence was this list omitting enable_thinking.
 const REASONING_TEMPLATE_MARKERS: RegExp[] = [
   /<think>/i,

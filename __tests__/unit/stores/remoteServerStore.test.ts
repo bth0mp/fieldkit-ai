@@ -607,8 +607,8 @@ describe('remoteServerStore', () => {
         json: async () => ({
           object: 'list',
           data: [
-            { id: 'gemma-4-e4b-it-Q8_0.gguf', kind: 'vision', owned_by: 'offgrid' },
-            { id: 'plain-chat.gguf', kind: 'chat', owned_by: 'offgrid' },
+            { id: 'gemma-4-e4b-it-Q8_0.gguf', kind: 'vision', owned_by: 'local' },
+            { id: 'plain-chat.gguf', kind: 'chat', owned_by: 'local' },
           ],
         }),
       });
