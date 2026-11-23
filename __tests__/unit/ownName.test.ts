@@ -77,6 +77,9 @@ const MATCHING = [
   `${company}.is`,
   `https://${company}.is/page`,
   'api.' + 'key' + 'gen.sh',
+  'key' + 'gen',
+  'the ' + 'key' + 'gen account',
+  'x.' + 'key' + 'gen',
   ['c23ac6be', '7ca9', '4ef2', 'b0a6', '06b751511bc1'].join('-'),
   ['1fa22f37', 'eb8f', '40fb', 'b37e', 'fcf82e342da1'].join('-'),
 ];
@@ -88,7 +91,6 @@ const NOT_MATCHING = [
   'ogre',
   'an air gap',
   'ssh-' + 'key' + 'gen -t ed25519',
-  'key' + 'gen',
 ];
 
 describe('the pattern', () => {
@@ -106,7 +108,7 @@ describe('the pattern', () => {
   describe("in git's extended regex", () => {
     let dir: string;
     const gitLinesMatching = (samples: string[]): number[] => {
-      writeFileSync(join(dir, 'samples.txt'), samples.join('\n') + '\n');
+      writeFileSync(join(dir, 'samples.txt'), `${samples.join('\n')}\n`);
       const out = gitIn(dir, ['grep', '--no-index', '-nIiE', '-e', OLD_NAME, '--', 'samples.txt']);
       return out
         .split('\n')
@@ -135,13 +137,13 @@ describe('the app carries no earlier project name', () => {
   it('no tracked file mentions it', () => {
     // -z ends each path with a NUL byte, so odd file names come out whole.
     const lines = git(['grep', '-znIiE', '-e', OLD_NAME, '--', '.', `:(exclude)${ANY_HITS_FILE}`], [1])
-      .replace(/\0/g, ':')
       .split('\n')
       .filter(Boolean);
-    const allowed = lines.filter(line => ONE_HIT_FILES.some(path => line.startsWith(`${path}:`)));
-    const hits = lines.filter(line => !allowed.includes(line)).map(line => line.slice(0, 160));
+    // The path is the first NUL-separated field; compare it whole, so a file named like an allowed one plus a suffix fails.
+    const pathOf = (line: string) => line.split('\0')[0];
+    const hits = lines.filter(line => !ONE_HIT_FILES.includes(pathOf(line))).map(line => line.slice(0, 160));
     for (const path of ONE_HIT_FILES) {
-      const count = allowed.filter(line => line.startsWith(`${path}:`)).length;
+      const count = lines.filter(line => pathOf(line) === path).length;
       if (count !== 1) hits.push(`${path}: expected exactly 1 hit, found ${count}`);
     }
     expect(hits).toEqual([]);

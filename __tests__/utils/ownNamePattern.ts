@@ -17,8 +17,9 @@ export const OLD_PROJECT_NAME = String.raw`${'off'}${SEP}${'grid'}|\b${'OG'}(${'
 export const OLD_NAME = [
   OLD_PROJECT_NAME,
   String.raw`${'wednes'}${'day'}(${SEP}(${'solu'}${'tions'}|ai\b|\.com)|\.is\b)`,
-  // The licence service: its host and the two account ids below. Plain "ssh-keygen" is ordinary text.
-  String.raw`${'key'}${'gen'}\.sh`,
+  // The licence service: any use of its name except inside the ssh tool's (git's regex has no lookbehind),
+  // and the two account ids below.
+  String.raw`(^|[^-])${'key'}${'gen'}`,
   ['c23ac6be', '7ca9', '4ef2', 'b0a6', '06b751511bc1'].join('-'),
   ['1fa22f37', 'eb8f', '40fb', 'b37e', 'fcf82e342da1'].join('-'),
 ].join('|');
