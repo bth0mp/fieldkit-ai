@@ -25,7 +25,7 @@ tags:
 - runFlow:
     when:
       visible:
-        text: "Welcome to Off Grid"
+        text: "YOURS"
     commands:
       - evalScript: "${console.log('IMG_DOWNLOAD - Skip onboarding')}"
       - tapOn:

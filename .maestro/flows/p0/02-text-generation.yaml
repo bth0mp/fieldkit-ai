@@ -22,7 +22,7 @@ tags:
 - runFlow:
     when:
       visible:
-        text: "Welcome to Off Grid"
+        text: "YOURS"
     commands:
       - tapOn:
           text: "Skip"

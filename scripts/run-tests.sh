@@ -22,19 +22,19 @@ PASSED_TESTS=()
 # ── Resolve APP_ID per platform ──
 resolve_app_id() {
     if [[ "$PLATFORM" == "--ios" ]]; then
-        echo "ai.offgridmobile"
+        echo "com.bth0mp.fieldkit"
         return
     fi
     if [[ "$PLATFORM" == "--android" ]]; then
-        echo "ai.offgridmobile.dev"
+        echo "com.bth0mp.fieldkit.dev"
         return
     fi
 
     # Auto-detect: prefer iOS simulator, fall back to Android emulator
     if xcrun simctl list devices booted 2>/dev/null | grep -q "Booted"; then
-        echo "ai.offgridmobile"
+        echo "com.bth0mp.fieldkit"
     elif adb devices 2>/dev/null | grep -q "device$"; then
-        echo "ai.offgridmobile.dev"
+        echo "com.bth0mp.fieldkit.dev"
     else
         echo "ERROR: No booted simulator or emulator found" >&2
         return 1

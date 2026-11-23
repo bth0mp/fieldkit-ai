@@ -33,7 +33,7 @@ tags:
 - runFlow:
     when:
       visible:
-        text: "Welcome to Off Grid"
+        text: "YOURS"
     commands:
       - evalScript: "${console.log('SETUP - Skip onboarding')}"
       - tapOn:
