@@ -251,6 +251,8 @@ export const ModelsScreen: React.FC = () => {
           setStyleFilter={vm.setStyleFilter}
           sdVersionFilter={vm.sdVersionFilter}
           setSdVersionFilter={vm.setSdVersionFilter}
+          imageSort={vm.imageSort}
+          setImageSort={vm.setImageSort}
           imageFilterExpanded={vm.imageFilterExpanded}
           setImageFilterExpanded={vm.setImageFilterExpanded}
           imageFiltersVisible={vm.imageFiltersVisible}

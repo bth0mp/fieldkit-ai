@@ -16,6 +16,9 @@ import {
   cancelSyntheticImageDownload,
 } from './imageDownloadActions';
 import { resumeImageDownload } from './imageDownloadResume';
+import { useOriginStats } from '../../hooks/useOriginStats';
+import { originFor } from '../../features/modelGuide/origins';
+import { sortImageModels, type ImageSort } from '../../utils/imageModelSort';
 
 export function useImageModels(setAlertState: (s: AlertState) => void) {
   const [availableHFModels, setAvailableHFModels] = useState<HFImageModel[]>([]);
@@ -25,6 +28,7 @@ export function useImageModels(setAlertState: (s: AlertState) => void) {
   const [styleFilter, setStyleFilter] = useState<string>('all');
   const [sdVersionFilter, setSdVersionFilter] = useState<string>('all');
   const [imageFilterExpanded, setImageFilterExpanded] = useState<ImageFilterDimension>(null);
+  const [imageSort, setImageSort] = useState<ImageSort | undefined>(undefined);
   const [imageSearchQuery, setImageSearchQuery] = useState('');
   const [imageFiltersVisible, setImageFiltersVisible] = useState(false);
   const [imageRec, setImageRec] = useState<ImageModelRecommendation | null>(null);
@@ -161,7 +165,7 @@ export function useImageModels(setAlertState: (s: AlertState) => void) {
     return true;
   }, [imageRec]);
 
-  const filteredHFModels = useMemo(() => {
+  const filteredUnsorted = useMemo(() => {
     const query = imageSearchQuery.toLowerCase().trim();
     const filtered = availableHFModels.filter(m => {
       if (showRecommendedOnly && imageRec && !isRecommendedModel(m)) return false;
@@ -175,6 +179,12 @@ export function useImageModels(setAlertState: (s: AlertState) => void) {
     if (!showRecommendedOnly) filtered.sort((a, b) => a.displayName.localeCompare(b.displayName));
     return filtered;
   }, [availableHFModels, backendFilter, styleFilter, sdVersionFilter, downloadedImageModels, imageSearchQuery, imageRec, isRecommendedModel, showRecommendedOnly]);
+
+  const originStats = useOriginStats(filteredUnsorted.flatMap(m => originFor('image', m.name) ?? []));
+  const filteredHFModels = useMemo(
+    () => (imageSort ? sortImageModels(filteredUnsorted, imageSort, originStats) : filteredUnsorted),
+    [filteredUnsorted, imageSort, originStats],
+  );
 
   const hasActiveImageFilters = backendFilter !== 'all' || styleFilter !== 'all' || sdVersionFilter !== 'all';
   const imageRecommendation = imageRec?.bannerText ?? 'Loading recommendation...';
@@ -203,6 +213,7 @@ export function useImageModels(setAlertState: (s: AlertState) => void) {
     backendFilter, setBackendFilter,
     styleFilter, setStyleFilter,
     sdVersionFilter, setSdVersionFilter,
+    imageSort, setImageSort,
     imageFilterExpanded, setImageFilterExpanded,
     imageSearchQuery, setImageSearchQuery,
     imageFiltersVisible, setImageFiltersVisible,

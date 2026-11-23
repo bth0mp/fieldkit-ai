@@ -16,11 +16,14 @@ import { OfflineNotice } from './OfflineNotice';
 import { ImageModelRecommendation } from '../../types';
 import { useDownloadStore, isActiveStatus, isQueuedStatus, isDownloadingStatus } from '../../stores/downloadStore';
 import { makeImageModelKey } from '../../utils/modelKey';
+import type { ImageSort } from '../../utils/imageModelSort';
 import { imageBackendLabel } from '../../utils/imageBackend';
 import { createStyles } from './styles';
 import { ModelsScreenViewModel } from './useModelsScreen';
 import { ImageFilterBar } from './ImageFilterBar';
 import { YourModels } from './YourModels';
+import { SortRow } from './SortRow';
+import { IMAGE_SORT_OPTIONS } from './constants';
 import { BackendFilter, ImageFilterDimension } from './types';
 import { formatBytes, getImageModelCompatibility, hfModelToDescriptor } from './utils';
 
@@ -31,6 +34,7 @@ type Props = Pick<ModelsScreenViewModel,
   | 'backendFilter' | 'setBackendFilter'
   | 'styleFilter' | 'setStyleFilter'
   | 'sdVersionFilter' | 'setSdVersionFilter'
+  | 'imageSort' | 'setImageSort'
   | 'imageFilterExpanded' | 'setImageFilterExpanded'
   | 'imageFiltersVisible' | 'setImageFiltersVisible'
   | 'hasActiveImageFilters'
@@ -136,6 +140,8 @@ interface ScrollContentProps {
   setStyleFilter: (f: string) => void;
   sdVersionFilter: string;
   setSdVersionFilter: (f: string) => void;
+  imageSort: ImageSort | undefined;
+  setImageSort: (s: ImageSort) => void;
   imageFilterExpanded: ImageFilterDimension;
   setImageFilterExpanded: (d: ImageFilterDimension | ((prev: ImageFilterDimension) => ImageFilterDimension)) => void;
   hasActiveImageFilters: boolean;
@@ -158,6 +164,7 @@ const ImageModelsScrollContent: React.FC<ScrollContentProps> = ({
   showRecHint, showRecommendedOnly, setShowRecHint,
   imageRec, ramGB, imageRecommendation,
   imageFiltersVisible, backendFilter, setBackendFilter,
+  imageSort, setImageSort,
   styleFilter, setStyleFilter, sdVersionFilter, setSdVersionFilter,
   imageFilterExpanded, setImageFilterExpanded,
   hasActiveImageFilters, clearImageFilters, setUserChangedBackendFilter,
@@ -226,6 +233,8 @@ const ImageModelsScrollContent: React.FC<ScrollContentProps> = ({
           />
         )}
 
+        <SortRow options={IMAGE_SORT_OPTIONS} selected={imageSort} onSelect={setImageSort} testIDPrefix="image-sort-option" />
+
         {hfModelsLoading && (
           <View style={styles.hfLoadingContainer}>
             <ActivityIndicator size="small" color={colors.primary} />
@@ -278,6 +287,7 @@ export const ImageModelsTab: React.FC<Props> = ({
   backendFilter, setBackendFilter,
   styleFilter, setStyleFilter,
   sdVersionFilter, setSdVersionFilter,
+  imageSort, setImageSort,
   imageFilterExpanded, setImageFilterExpanded,
   imageFiltersVisible, setImageFiltersVisible,
   hasActiveImageFilters,
@@ -337,6 +347,8 @@ export const ImageModelsTab: React.FC<Props> = ({
         imageFiltersVisible={imageFiltersVisible}
         backendFilter={backendFilter}
         setBackendFilter={setBackendFilter}
+        imageSort={imageSort}
+        setImageSort={setImageSort}
         styleFilter={styleFilter}
         setStyleFilter={setStyleFilter}
         sdVersionFilter={sdVersionFilter}

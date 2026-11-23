@@ -288,6 +288,8 @@ export function useModelsScreen() {
     setStyleFilter: image.setStyleFilter,
     sdVersionFilter: image.sdVersionFilter,
     setSdVersionFilter: image.setSdVersionFilter,
+    imageSort: image.imageSort,
+    setImageSort: image.setImageSort,
     imageFilterExpanded: image.imageFilterExpanded,
     setImageFilterExpanded: image.setImageFilterExpanded,
     imageSearchQuery: image.imageSearchQuery,
