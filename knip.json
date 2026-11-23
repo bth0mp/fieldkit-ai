@@ -4,10 +4,6 @@
   "project": ["src/**/*.{ts,tsx}", "!src/**/*.d.ts"],
   "ignoreBinaries": ["swiftlint", "maestro", "xcpretty"],
   "ignoreDependencies": [
-    "@modelcontextprotocol/sdk",
-    "@kesha-antonov/react-native-background-downloader",
-    "react-native-executorch",
-    "react-native-executorch-bare-resource-fetcher",
     "react-compiler-runtime",
     "eslint-plugin-react-compiler",
     "eslint-plugin-react-native",

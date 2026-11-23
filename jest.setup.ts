@@ -246,65 +246,6 @@ jest.mock('@react-native-community/slider', () => {
   return { __esModule: true, default: View };
 });
 
-// react-native-executorch mock
-// A voice carries its own assets (embedding + tagger + lexicon) in addition to
-// the two shared core .pte models — mirror that so completeness checks
-// (_activeVoiceSources) have a realistic full asset set to validate against.
-const mockVoiceConfig = {
-  id: 'mock_voice',
-  voiceSource: 'https://example.test/kokoro/voices/af_heart.bin',
-  extra: {
-    taggerSource: 'https://example.test/kokoro/tagger.pt',
-    lexiconSource: 'https://example.test/kokoro/lexicon.json',
-  },
-};
-jest.mock('react-native-executorch', () => ({
-  // Faithful init leaf for the executorch native runtime (a genuine external native boundary):
-  // initExecutorch registers the resource fetcher so the runtime is ready to load models through
-  // it. With models faked at the fetcher + useTextToSpeech boundary there is nothing further to
-  // emulate in-process, so it is a ready-signal (EngineBridge calls it at module import — without
-  // this the TTS bootstrap throws "initExecutorch is not a function").
-  initExecutorch: () => {},
-  // useTextToSpeech is the executorch boundary the TTS bridge drives. The streaming/playback is
-  // exercised end-to-end by the KokoroTTSBridge suite, which feeds chunks + drives onEnded through
-  // the AudioContext itself; here stream() just resolves (the bridge owns the audio pump).
-  useTextToSpeech: jest.fn(() => ({
-    isReady: true,
-    downloadProgress: 1,
-    error: null,
-    stream: jest.fn(() => Promise.resolve()),
-    streamStop: jest.fn(),
-  })),
-  KOKORO_MEDIUM: {
-    modelName: 'kokoro-medium',
-    durationPredictorSource: 'https://example.test/kokoro/medium/duration_predictor.pte',
-    synthesizerSource: 'https://example.test/kokoro/medium/synthesizer.pte',
-  },
-  KOKORO_VOICE_AF_HEART: mockVoiceConfig,
-  KOKORO_VOICE_AF_RIVER: mockVoiceConfig,
-  KOKORO_VOICE_AF_SARAH: mockVoiceConfig,
-  KOKORO_VOICE_AM_ADAM: mockVoiceConfig,
-  KOKORO_VOICE_AM_MICHAEL: mockVoiceConfig,
-  KOKORO_VOICE_AM_SANTA: mockVoiceConfig,
-  KOKORO_VOICE_BF_EMMA: mockVoiceConfig,
-  KOKORO_VOICE_BM_DANIEL: mockVoiceConfig,
-}));
-
-// react-native-executorch-bare-resource-fetcher mock.
-// Default: nothing on disk. Tests override listDownloadedModels per case.
-jest.mock(
-  'react-native-executorch-bare-resource-fetcher',
-  () => ({
-    BareResourceFetcher: {
-      listDownloadedModels: jest.fn(async () => [] as string[]),
-      listDownloadedFiles: jest.fn(async () => [] as string[]),
-      deleteResources: jest.fn(async () => {}),
-      fetch: jest.fn(async () => {}),
-    },
-  }),
-  { virtual: true },
-);
-
 // react-native-fs mock
 jest.mock('react-native-fs', () => ({
   DocumentDirectoryPath: '/mock/documents',
