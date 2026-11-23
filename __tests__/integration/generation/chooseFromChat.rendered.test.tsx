@@ -422,7 +422,7 @@ describe('Choosing a model from a chat (rendered)', () => {
     press(await byLabel('Unload SD One'));
     await t.rtl.waitFor(() => expect(state().activeImageModelId).toBeNull(), TIMEOUT);
     press(await byText('Text Models'));
-    press(await byLabel('Unload First')); // stops the reply: the queued message is sent now, with nothing in use
+    press(await byLabel('Unload First')); // stops the reply: with nothing in use the queued message stays queued
     await t.rtl.waitFor(() => expect(state().activeModelId).toBeNull(), TIMEOUT);
     await settle(500);
     t.boundary.llama!.scriptCompletion({ text: 'A text answer.' });

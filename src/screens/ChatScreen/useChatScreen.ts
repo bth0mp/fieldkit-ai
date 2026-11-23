@@ -272,7 +272,7 @@ export const useChatScreen = () => {
 
   useEffect(() => {
     // With nothing in use the queue is left alone (see canSend): a fresh send is refused then too, and the messages go
-    // out at the turn end of the next model choice, instead of loading one nobody chose.
+    // out at the turn end of the next text model choice, instead of loading one nobody chose.
     generationService.setQueueProcessor(handleQueuedSend, () => !!genDepsRef.current.hasActiveModel);
     return () => generationService.setQueueProcessor(null);
   }, [handleQueuedSend]);
