@@ -10,7 +10,7 @@
  *
  *   xcrun devicectl device copy from --device <udid> \
  *     --domain-type appDataContainer --domain-identifier <bundleId> \
- *     --source Documents/offgrid-debug.log --destination /tmp/offgrid-debug.log
+ *     --source Documents/fieldkit-debug.log --destination /tmp/fieldkit-debug.log
  *
  * It is entirely behind __DEV__ (wired in App.tsx) — release builds never touch it.
  * Writes are buffered + flushed on an interval so high-frequency logging never
@@ -19,7 +19,7 @@
  */
 import RNFS from 'react-native-fs';
 
-const LOG_PATH = `${RNFS.DocumentDirectoryPath}/offgrid-debug.log`;
+const LOG_PATH = `${RNFS.DocumentDirectoryPath}/fieldkit-debug.log`;
 /** Rotate (keep the tail) once the file exceeds this, so it can't grow forever. */
 const MAX_BYTES = 5 * 1024 * 1024;
 const FLUSH_MS = 800;
@@ -30,7 +30,7 @@ const FLUSH_AT_LINES = 50;
 // native tool-call dumps). It is NEVER rotated or size-capped, so a long
 // multi-model ground-truth run can't drop the earliest captures — the whole point
 // is to miss nothing. Pull it alongside the debug log; delete it manually when done.
-const WIRE_LOG_PATH = `${RNFS.DocumentDirectoryPath}/offgrid-wire.log`;
+const WIRE_LOG_PATH = `${RNFS.DocumentDirectoryPath}/fieldkit-wire.log`;
 const WIRE_CAPTURE = /\[WIRE-|\[LLM-Tools\]|tool call received/;
 let wireBuffer: string[] = [];
 let wireTimer: ReturnType<typeof setTimeout> | null = null;
