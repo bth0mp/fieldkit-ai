@@ -55,13 +55,13 @@ describe('the pattern', () => {
     [`${company}.com`],
     ['key' + 'gen'],
     ['api.' + 'key' + 'gen.sh'],
-    ['c23ac6be', '7ca9', '4ef2', 'b0a6', '06b751511bc1'].join('-'),
-    ['1fa22f37', 'eb8f', '40fb', 'b37e', 'fcf82e342da1'].join('-'),
-  ].map(sample => [sample]))('matches %j', sample => {
+    [['c23ac6be', '7ca9', '4ef2', 'b0a6', '06b751511bc1'].join('-')],
+    [['1fa22f37', 'eb8f', '40fb', 'b37e', 'fcf82e342da1'].join('-')],
+  ])('matches %j', sample => {
     expect(pattern.test(sample)).toBe(true);
   });
 
-  it.each([[company], [`${company} is a weekday`], [`${off}set ${grid}`], ['ogre'], ['an air gap']].map(s => [s]))(
+  it.each([[company], [`${company} is a weekday`], [`${off}set ${grid}`], ['ogre'], ['an air gap']])(
     'does not match %j',
     sample => {
       expect(pattern.test(sample)).toBe(false);
