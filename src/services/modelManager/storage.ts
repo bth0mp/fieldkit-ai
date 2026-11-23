@@ -195,7 +195,7 @@ export async function loadDownloadedModels(modelsDir: string): Promise<Downloade
     // A model an earlier version saved under its old curated id is read under the new one (and with the
     // author the cards show); the next save writes it that way.
     models = (JSON.parse(renameEarlierModelIds(stored)) as any[]).map((saved): DownloadedModel => {
-      const m = saved.id.startsWith(`${LITERT_PARENT_ID}/`) && saved.author !== LITERT_AUTHOR
+      const m = typeof saved?.id === 'string' && saved.id.startsWith(`${LITERT_PARENT_ID}/`) && saved.author !== LITERT_AUTHOR
         ? { ...saved, author: LITERT_AUTHOR, credibility: determineCredibility(LITERT_AUTHOR) }
         : saved;
       if (m.engine === 'litert') {
