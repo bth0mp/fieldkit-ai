@@ -6,16 +6,20 @@
  * relative to the repository root, so a checkout whose own folder carries the old name still passes.
  */
 import { execFileSync } from 'child_process';
+import { mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import { OLD_NAME } from '../utils/ownNamePattern';
 
 /**
  * Files that may carry an old name, with the reason.
  *  - earlierIds.ts: the one place that names the ids older versions saved under, so the data moves over.
- *  - RenamedWorkerFactory.kt: the class name of download jobs queued before the package rename.
- *  - catalog/REJECTED.md: one line that uses the everyday phrase for living away from the mains.
+ *    Any number of hits.
+ *  - RenamedWorkerFactory.kt: the class name of download jobs queued before the package rename. One hit.
+ *  - catalog/REJECTED.md: one line that uses the everyday phrase for living away from the mains. One hit.
  */
-const ALLOWED_FILES = [
-  'src/services/earlierIds.ts',
+const ANY_HITS_FILE = 'src/services/earlierIds.ts';
+const ONE_HIT_FILES = [
   'android/app/src/main/java/com/bth0mp/fieldkit/download/RenamedWorkerFactory.kt',
   'catalog/REJECTED.md',
 ];
@@ -29,10 +33,9 @@ function cleanEnv(): NodeJS.ProcessEnv {
   return env;
 }
 
-function git(args: string[], okCodes: number[] = [0]): string {
-  const root = execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: __dirname, encoding: 'utf8', env: cleanEnv() }).trim();
+function gitIn(cwd: string, args: string[], okCodes: number[] = [1]): string {
   try {
-    return execFileSync('git', args, { cwd: root, encoding: 'utf8', env: cleanEnv(), maxBuffer: 64 * 1024 * 1024 });
+    return execFileSync('git', args, { cwd, encoding: 'utf8', env: cleanEnv(), maxBuffer: 64 * 1024 * 1024 });
   } catch (error) {
     const status = (error as { status?: number }).status;
     // git grep exits 1 when nothing matches.
@@ -41,52 +44,106 @@ function git(args: string[], okCodes: number[] = [0]): string {
   }
 }
 
+function git(args: string[], okCodes: number[] = [0]): string {
+  const root = gitIn(__dirname, ['rev-parse', '--show-toplevel'], []).trim();
+  return gitIn(root, args, okCodes);
+}
+
+const off = 'off';
+const grid = 'grid';
+const company = ['wednes', 'day'].join('');
+const nbsp = String.fromCharCode(0xa0);
+const enDash = String.fromCharCode(0x2013);
+
+const MATCHING = [
+  `${off}${grid}`,
+  `${off} ${grid}`,
+  `${off}-${grid}`,
+  `${off}_${grid}`,
+  `${off}.${grid}`,
+  `${off}\t${grid}`,
+  `${off}  ${grid}`,
+  `${off}${nbsp}${grid}`,
+  `${off}${enDash}${grid}`,
+  `${off}%20${grid}`,
+  `${off}${grid}mobile`,
+  'OG' + 'AM',
+  'OG' + 'ADx',
+  `${company} solutions`,
+  `${company}-solutions`,
+  `${company}${nbsp}solutions`,
+  `${company} ai`,
+  `${company}.com`,
+  `${company}.is`,
+  `https://${company}.is/page`,
+  'api.' + 'key' + 'gen.sh',
+  ['c23ac6be', '7ca9', '4ef2', 'b0a6', '06b751511bc1'].join('-'),
+  ['1fa22f37', 'eb8f', '40fb', 'b37e', 'fcf82e342da1'].join('-'),
+];
+
+const NOT_MATCHING = [
+  company,
+  `${company} is a weekday`,
+  `${off}set ${grid}`,
+  'ogre',
+  'an air gap',
+  'ssh-' + 'key' + 'gen -t ed25519',
+  'key' + 'gen',
+];
+
 describe('the pattern', () => {
   const pattern = new RegExp(OLD_NAME, 'i');
-  const off = 'off';
-  const grid = 'grid';
-  const company = ['wednes', 'day'].join('');
 
-  it.each([
-    [`${off}${grid}`],
-    [`${off} ${grid}`],
-    [`${off}-${grid}`],
-    [`${off}_${grid}`],
-    [`${off}.${grid}`],
-    [`${off}\t${grid}`],
-    [`${off}  ${grid}`],
-    [`${off}${grid}mobile`],
-    ['OG' + 'AM'],
-    ['OG' + 'ADx'],
-    [`${company} solutions`],
-    [`${company}-solutions`],
-    [`${company} ai`],
-    [`${company}.com`],
-    ['key' + 'gen'],
-    ['api.' + 'key' + 'gen.sh'],
-    [['c23ac6be', '7ca9', '4ef2', 'b0a6', '06b751511bc1'].join('-')],
-    [['1fa22f37', 'eb8f', '40fb', 'b37e', 'fcf82e342da1'].join('-')],
-  ])('matches %j', sample => {
+  it.each(MATCHING.map(sample => [sample]))('matches %j', sample => {
     expect(pattern.test(sample)).toBe(true);
   });
 
-  it.each([[company], [`${company} is a weekday`], [`${off}set ${grid}`], ['ogre'], ['an air gap']])(
-    'does not match %j',
-    sample => {
-      expect(pattern.test(sample)).toBe(false);
-    },
-  );
+  it.each(NOT_MATCHING.map(sample => [sample]))('does not match %j', sample => {
+    expect(pattern.test(sample)).toBe(false);
+  });
+
+  // The guard searches with git's extended regex, not JavaScript's, so run the samples through git too.
+  describe("in git's extended regex", () => {
+    let dir: string;
+    const gitLinesMatching = (samples: string[]): number[] => {
+      writeFileSync(join(dir, 'samples.txt'), samples.join('\n') + '\n');
+      const out = gitIn(dir, ['grep', '--no-index', '-nIiE', '-e', OLD_NAME, '--', 'samples.txt']);
+      return out
+        .split('\n')
+        .filter(Boolean)
+        .map(line => Number(line.split(':')[1]));
+    };
+
+    beforeAll(() => {
+      dir = mkdtempSync(join(tmpdir(), 'own-name-'));
+    });
+    afterAll(() => {
+      rmSync(dir, { recursive: true, force: true });
+    });
+
+    it('matches every sample that should match', () => {
+      expect(gitLinesMatching(MATCHING)).toEqual(MATCHING.map((_, i) => i + 1));
+    });
+
+    it('matches none of the others', () => {
+      expect(gitLinesMatching(NOT_MATCHING)).toEqual([]);
+    });
+  });
 });
 
 describe('the app carries no earlier project name', () => {
   it('no tracked file mentions it', () => {
-    const excluded = ALLOWED_FILES.map(path => `:(exclude)${path}`);
     // -z ends each path with a NUL byte, so odd file names come out whole.
-    const hits = git(['grep', '-znIiE', '-e', OLD_NAME, '--', '.', ...excluded], [1])
+    const lines = git(['grep', '-znIiE', '-e', OLD_NAME, '--', '.', `:(exclude)${ANY_HITS_FILE}`], [1])
       .replace(/\0/g, ':')
       .split('\n')
-      .filter(Boolean)
-      .map(line => line.slice(0, 160));
+      .filter(Boolean);
+    const allowed = lines.filter(line => ONE_HIT_FILES.some(path => line.startsWith(`${path}:`)));
+    const hits = lines.filter(line => !allowed.includes(line)).map(line => line.slice(0, 160));
+    for (const path of ONE_HIT_FILES) {
+      const count = allowed.filter(line => line.startsWith(`${path}:`)).length;
+      if (count !== 1) hits.push(`${path}: expected exactly 1 hit, found ${count}`);
+    }
     expect(hits).toEqual([]);
   });
 

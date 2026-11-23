@@ -7,13 +7,18 @@
  * backspace character). The tab is spliced in as a real character because git's extended regex has no `\t`.
  */
 const TAB = '\t';
+// Written as alternatives, not bracket members, so git's regex matches the same bytes in any locale.
+const NBSP = String.fromCharCode(0xa0);
+const EN_DASH = String.fromCharCode(0x2013);
+const SEP = `(%20|[-_ ${TAB}.]|${NBSP}|${EN_DASH})*`;
 
-export const OLD_PROJECT_NAME = String.raw`${'off'}[-_ ${TAB}.]*${'grid'}|\b${'OG'}(${'AM'}|${'AD'})`;
+export const OLD_PROJECT_NAME = String.raw`${'off'}${SEP}${'grid'}|\b${'OG'}(${'AM'}|${'AD'})`;
 
 export const OLD_NAME = [
   OLD_PROJECT_NAME,
-  String.raw`${'wednes'}${'day'}[-_. ${TAB}]*(${'solu'}${'tions'}|ai\b|\.com)`,
-  `${'key'}${'gen'}`,
+  String.raw`${'wednes'}${'day'}(${SEP}(${'solu'}${'tions'}|ai\b|\.com)|\.is\b)`,
+  // The licence service: its host and the two account ids below. Plain "ssh-keygen" is ordinary text.
+  String.raw`${'key'}${'gen'}\.sh`,
   ['c23ac6be', '7ca9', '4ef2', 'b0a6', '06b751511bc1'].join('-'),
   ['1fa22f37', 'eb8f', '40fb', 'b37e', 'fcf82e342da1'].join('-'),
 ].join('|');
