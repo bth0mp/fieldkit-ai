@@ -66,7 +66,6 @@ const RecommendedModelCard: React.FC<RecommendedCardProps> = ({ model, recFile, 
     downloadProgress={progress?.progress}
     downloadBytes={progress?.bytes}
     isCompatible={model.minRam <= totalRamGB && (!model.maxRam || totalRamGB <= model.maxRam)}
-    runAnswer={textRunAnswer(recFile.size)}
     isTrending={isTrending}
     supportsAcceleration={isAccelerableQuant(recFile.quantization)}
     onPress={() => {}}
