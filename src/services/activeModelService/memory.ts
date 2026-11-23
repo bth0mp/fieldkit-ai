@@ -15,7 +15,7 @@ import {
   IMAGE_MODEL_OVERHEAD_MULTIPLIER,
 } from './types';
 import { useAppStore } from '../../stores';
-import { modelMemoryBudgetMB, modelWarningThresholdMB, LoadPolicy } from '../memoryBudget';
+import { modelMemoryBudgetMB, modelWarningThresholdMB, runVerdict, LoadPolicy } from '../memoryBudget';
 
 // ---------------------------------------------------------------------------
 // Budget helpers
@@ -40,13 +40,14 @@ const getMemoryWarningThresholdGB = async (): Promise<number> => {
 // Size estimators
 // ---------------------------------------------------------------------------
 
-function estimateModelMemoryGB(
+export function estimateModelMemoryGB(
   model: DownloadedModel | ONNXImageModel,
   type: ModelType,
 ): number {
   if (type === 'text') {
     const textModel = model as DownloadedModel;
-    const sizeGB = (textModel.fileSize || 0) / (1024 * 1024 * 1024);
+    // The gate counts the vision companion too (hardwareService.getModelTotalSize).
+    const sizeGB = ((textModel.fileSize || 0) + ((textModel as { mmProjFileSize?: number }).mmProjFileSize || 0)) / (1024 * 1024 * 1024);
     // GPU-aware overhead — same single source the residency gate uses, so pre-check and gate agree.
     return sizeGB * textOverheadMultiplier(useAppStore.getState().settings.inferenceBackend);
   }
@@ -138,7 +139,7 @@ export async function checkMemoryForModel(
 ): Promise<MemoryCheckResult> {
   const { modelId, modelType, ids, lists, policy, sessionOverride } = params;
   const memoryBudgetGB = await getMemoryBudgetGB(policy);
-  const warningThresholdGB = await getMemoryWarningThresholdGB();
+  const totalRamMB = (await hardwareService.getDeviceInfo()).totalMemory / (1024 * 1024);
 
   const model =
     modelType === 'text'
@@ -178,13 +179,18 @@ export async function checkMemoryForModel(
   }
   const requiredStr = requiredMemoryGB.toFixed(1);
   const totalStr = totalRequiredMemoryGB.toFixed(1);
-  const budgetStr = memoryBudgetGB.toFixed(1);
 
   let severity: MemoryCheckSeverity;
   let canLoad: boolean;
   let message: string;
 
-  if (totalRequiredMemoryGB > memoryBudgetGB) {
+  // The same verdict the model cards show, so a card never promises what this check then refuses.
+  // Image and LiteRT models are dirty memory to the residency gate, which holds them lower.
+  const dirty = modelType === 'image' || ('engine' in model && model.engine === 'litert');
+  const { verdict, allowGB } = runVerdict(totalRequiredMemoryGB * 1024, totalRamMB, { policy, dirty, realAvailMB: dirty ? hardwareService.getAvailableMemoryGB() * 1024 : undefined });
+  const budgetStr = allowGB.toFixed(1);
+
+  if (verdict === 'wont') {
     severity = 'critical';
     canLoad = false;
     message =
@@ -194,7 +200,7 @@ export async function checkMemoryForModel(
           `Unload the other model first, or choose a smaller model.`
         : `${modelName} requires ~${requiredStr} GB which exceeds your device's ~${budgetStr} GB safe limit. ` +
           `This model is too large for your device. Choose a smaller model.`;
-  } else if (totalRequiredMemoryGB > warningThresholdGB) {
+  } else if (verdict === 'tight') {
     severity = 'warning';
     canLoad = true;
     message =

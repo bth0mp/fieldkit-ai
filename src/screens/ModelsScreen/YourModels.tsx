@@ -11,7 +11,7 @@ import { useActiveTextModel } from '../../hooks/useActiveTextModel';
 import { useModelChoice, ModelTarget } from '../../hooks/useModelChoice';
 import { useModelLoadingState } from '../../hooks/useModelLoadingState';
 import { hardwareService } from '../../services';
-import { fileExceedsBudget } from '../../services/memoryBudget';
+import { textRunAnswer, imageRunAnswer, type RunAnswer } from '../../services/runAnswer';
 import { textOverheadMultiplier } from '../../services/activeModelService/types';
 import { getMmProjFileSize } from '../../utils/modelHelpers';
 import { createStyles } from './styles';
@@ -21,7 +21,6 @@ type Props = { kind: 'text' | 'image'; onChosen: () => void; onError: (message: 
 type RowContent = { inUse: boolean; testID: string; name: string; size: string; quant?: string; isVision?: boolean; ramHint?: string; remote?: boolean };
 
 const BYTES_PER_GB = 1024 * 1024 * 1024;
-const IMAGE_RAM_MULTIPLIER = 1.8;
 
 const EMPTY_TEXT = {
   text: 'No text models yet. Download one below, or add a remote server.',
@@ -34,9 +33,9 @@ function ordered<T extends { downloadedAt?: string }>(models: T[], inUse: (m: T)
   return [...models].sort((a, b) => rank(b) - rank(a) || (b.downloadedAt ?? '').localeCompare(a.downloadedAt ?? ''));
 }
 
-function ramHint(bytes: number, multiplier: number): string {
-  const fits = !fileExceedsBudget(bytes, hardwareService.getTotalMemoryGB());
-  return `~${((bytes * multiplier) / BYTES_PER_GB).toFixed(1)} GB RAM${fits ? '' : ' (may not fit)'}`;
+/** The RAM figure the load check counts; "may not fit" exactly when the model's card says Won't run. */
+function ramHint(ramBytes: number, answer: RunAnswer): string {
+  return `~${(ramBytes / BYTES_PER_GB).toFixed(1)} GB RAM${answer.verdict === 'wont' ? ' (may not fit)' : ''}`;
 }
 
 const samePending = (a: ModelTarget | null, b: ModelTarget) => a !== null && a.kind === b.kind && a.id === b.id
@@ -91,7 +90,7 @@ export const YourModels: React.FC<Props> = ({ kind, onChosen, onError }) => {
         size: hardwareService.formatModelSize(model),
         quant: model.quantization,
         isVision: model.engine === 'llama' && model.isVisionModel,
-        ramHint: ramHint(model.fileSize + getMmProjFileSize(model), textMultiplier),
+        ramHint: ramHint((model.fileSize + getMmProjFileSize(model)) * textMultiplier, textRunAnswer({ size: model.fileSize, mmProjFile: { size: getMmProjFileSize(model) } }, { dirty: model.engine === 'litert' })),
       }));
     }
     for (const server of servers) {
@@ -122,7 +121,7 @@ export const YourModels: React.FC<Props> = ({ kind, onChosen, onError }) => {
         name: model.name,
         size: hardwareService.formatBytes(model.size),
         quant: model.style || 'Image',
-        ramHint: ramHint(model.size, IMAGE_RAM_MULTIPLIER),
+        ramHint: ramHint(hardwareService.estimateImageModelRam(model), imageRunAnswer(model)),
       }));
     }
   }

@@ -144,6 +144,71 @@ export function modelWarningThresholdMB(totalRamMB: number, platform: Plat = Pla
   return Math.min(byFraction, modelMemoryBudgetMB(totalRamMB, platform));
 }
 
+/** Hard floor so a small model can always load, even under memory pressure. */
+export const MIN_BUDGET_MB = 1024;
+/** For DIRTY-memory models (image, LiteRT): keep this much real RAM free for the OS + other apps so a
+ *  dirty load never spills into swap. (Not applied to mmap'd GGUF - their clean weights don't pressure
+ *  this limit.) */
+export const DIRTY_AVAILABILITY_HEADROOM_MB = 1024;
+/** Aggressive-mode dirty headroom - leaner, still non-zero (lenient safeguard). */
+const AGGRESSIVE_DIRTY_HEADROOM_MB = 512;
+
+/**
+ * The residency gate's budget for a DIRTY model (image, LiteRT): the physical cap, but never more
+ * than the real free RAM (`availableMB`, already reclaim-aware) plus what evicting our own models
+ * would free (`residentMB`) minus the OS headroom. Floored so a small model always loads. The ONE
+ * owner of that arithmetic: the residency manager and `dirtyIdleBudgetMB` both call it.
+ */
+export function dirtyBudgetMB(
+  m: { availableMB: number; residentMB: number; totalRamMB: number },
+  opts: { policy?: LoadPolicy; platform?: Plat } = {},
+): number {
+  const { availableMB, residentMB, totalRamMB } = m;
+  const { policy = 'balanced', platform = Platform.OS } = opts;
+  const headroomMB = policy === 'aggressive' ? AGGRESSIVE_DIRTY_HEADROOM_MB : DIRTY_AVAILABILITY_HEADROOM_MB;
+  const physicalCapMB = modelMemoryBudgetMB(totalRamMB, platform, policy);
+  return Math.round(Math.max(MIN_BUDGET_MB, Math.min(physicalCapMB, availableMB + residentMB - headroomMB)));
+}
+
+/**
+ * What the gate allows a dirty model on this phone with nothing else loaded, given the real free RAM
+ * snapshot (`realAvailMB`, as the gate reads it; on Android the gate credits at least the physical
+ * budget). Also capped by the gate's second check: a dirty footprint never passes the BALANCED
+ * physical ceiling, whatever the policy.
+ */
+export function dirtyIdleBudgetMB(
+  totalRamMB: number,
+  opts: { policy?: LoadPolicy; platform?: Plat; realAvailMB?: number } = {},
+): number {
+  const { policy = 'balanced', platform = Platform.OS, realAvailMB = 0 } = opts;
+  const availableMB = effectiveAvailableMB(realAvailMB, totalRamMB, { platform, policy });
+  const ceilingMB = Math.max(MIN_BUDGET_MB, modelMemoryBudgetMB(totalRamMB, platform, 'balanced'));
+  return Math.min(dirtyBudgetMB({ availableMB, residentMB: 0, totalRamMB }, { policy, platform }), Math.round(ceilingMB));
+}
+
+export type RunVerdict = 'runs' | 'tight' | 'wont';
+
+/**
+ * The SINGLE verdict on "does this much model memory run here": the load pre-check and every model
+ * card read it, so a card never promises a model the app then refuses. It mirrors the residency gate:
+ * `wont` past what the gate allows (the budget, floored like the gate does; for a `dirty` model the
+ * lower dirty idle budget), `tight` past the warning threshold, else `runs`. MB in; GB out for the copy.
+ */
+export function runVerdict(
+  requiredMB: number,
+  totalRamMB: number,
+  opts: { policy?: LoadPolicy; platform?: Plat; dirty?: boolean; realAvailMB?: number } = {},
+): { verdict: RunVerdict; needGB: number; allowGB: number } {
+  const { policy = 'balanced', platform = Platform.OS, dirty = false, realAvailMB } = opts;
+  const allowMB = dirty
+    ? dirtyIdleBudgetMB(totalRamMB, { policy, platform, realAvailMB })
+    : Math.round(Math.max(MIN_BUDGET_MB, modelMemoryBudgetMB(totalRamMB, platform, policy)));
+  let verdict: RunVerdict = 'runs';
+  if (requiredMB > allowMB) verdict = 'wont';
+  else if (requiredMB > modelWarningThresholdMB(totalRamMB, platform)) verdict = 'tight';
+  return { verdict, needGB: requiredMB / 1024, allowGB: allowMB / 1024 };
+}
+
 const BYTES_PER_GB = 1024 ** 3;
 
 /**

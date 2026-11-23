@@ -1,4 +1,5 @@
 import { CREDIBILITY_LABELS } from '../../constants';
+import type { ImageSort } from '../../utils/imageModelSort';
 import {
   BackendFilter,
   CredibilityFilter,
@@ -69,6 +70,13 @@ export const SORT_OPTIONS: { key: SortOption; label: string; icon: string }[] = 
   { key: 'likes', label: 'Most liked', icon: 'heart' },
   { key: 'newest', label: 'New releases', icon: 'clock' },
   { key: 'bestfit', label: 'For You', icon: 'smartphone' },
+  { key: 'size', label: 'Size', icon: 'database' },
+];
+
+export const IMAGE_SORT_OPTIONS: { key: ImageSort; label: string; icon: string }[] = [
+  { key: 'popular', label: 'Popular', icon: 'download' },
+  { key: 'liked', label: 'Most liked', icon: 'heart' },
+  { key: 'newest', label: 'Newest', icon: 'clock' },
   { key: 'size', label: 'Size', icon: 'database' },
 ];
 

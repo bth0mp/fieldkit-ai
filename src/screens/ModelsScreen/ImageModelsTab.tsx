@@ -8,14 +8,22 @@ import { consumePendingSpotlight, peekPendingSpotlight } from '../../components/
 import { IMAGE_DOWNLOAD_STEP_INDEX } from '../../components/onboarding/spotlightConfig';
 import { useTheme, useThemedStyles } from '../../theme';
 import { HFImageModel, getVariantLabel } from '../../services/huggingFaceModelBrowser';
+import { imageRunAnswer } from '../../services/runAnswer';
+import { originFor } from '../../features/modelGuide/origins';
+import { IMAGE_NOTES } from '../../features/modelGuide/notes';
+import { useOriginStats } from '../../hooks/useOriginStats';
+import { OfflineNotice } from './OfflineNotice';
 import { ImageModelRecommendation } from '../../types';
 import { useDownloadStore, isActiveStatus, isQueuedStatus, isDownloadingStatus } from '../../stores/downloadStore';
 import { makeImageModelKey } from '../../utils/modelKey';
+import type { ImageSort } from '../../utils/imageModelSort';
 import { imageBackendLabel } from '../../utils/imageBackend';
 import { createStyles } from './styles';
 import { ModelsScreenViewModel } from './useModelsScreen';
 import { ImageFilterBar } from './ImageFilterBar';
 import { YourModels } from './YourModels';
+import { SortRow } from './SortRow';
+import { IMAGE_SORT_OPTIONS } from './constants';
 import { BackendFilter, ImageFilterDimension } from './types';
 import { formatBytes, getImageModelCompatibility, hfModelToDescriptor } from './utils';
 
@@ -26,6 +34,7 @@ type Props = Pick<ModelsScreenViewModel,
   | 'backendFilter' | 'setBackendFilter'
   | 'styleFilter' | 'setStyleFilter'
   | 'sdVersionFilter' | 'setSdVersionFilter'
+  | 'imageSort' | 'setImageSort'
   | 'imageFilterExpanded' | 'setImageFilterExpanded'
   | 'imageFiltersVisible' | 'setImageFiltersVisible'
   | 'hasActiveImageFilters'
@@ -75,6 +84,8 @@ export const ImageModelCardItem: React.FC<ImageModelCardProps> = ({
   const isDownloading = !!entry && isDownloadingStatus(entry.status);
   const progressValue = entry?.progress ?? 0;
   const authorLabel = model._coreml ? 'Core ML' : imageBackendLabel(model.backend);
+  const origin = originFor('image', model.name);
+  const stats = useOriginStats(origin ? [origin] : [])[origin ?? ''];
   const variantSuffix = model.variant ? ` \u00B7 ${getVariantLabel(model.variant)}` : '';
   return (
     <View>
@@ -90,13 +101,19 @@ export const ImageModelCardItem: React.FC<ImageModelCardProps> = ({
           name: model.displayName,
           author: authorLabel,
           description: `${formatBytes(model.size)}${variantSuffix}`,
+          downloads: stats?.downloads,
+          likes: stats?.likes,
+          lastModified: stats?.lastModified,
         }}
+        origin={origin}
+        goodFor={IMAGE_NOTES.find(n => n.name === model.name)?.goodFor}
         isDownloading={isDownloading}
         isQueued={isQueued}
         downloadProgress={progressValue}
         downloadBytes={entry ? { downloaded: Math.round(progressValue * model.size), total: model.size } : undefined}
         isCompatible={isCompatible}
         incompatibleReason={incompatibleReason}
+        runAnswer={imageRunAnswer(model, incompatibleReason)}
         testID={`image-model-card-${index}`}
         onDownload={isActive ? undefined : () => handleDownloadImageModel(hfModelToDescriptor(model))}
         onCancel={isActive ? () => handleCancelImageDownload(model.id) : undefined}
@@ -123,6 +140,8 @@ interface ScrollContentProps {
   setStyleFilter: (f: string) => void;
   sdVersionFilter: string;
   setSdVersionFilter: (f: string) => void;
+  imageSort: ImageSort | undefined;
+  setImageSort: (s: ImageSort) => void;
   imageFilterExpanded: ImageFilterDimension;
   setImageFilterExpanded: (d: ImageFilterDimension | ((prev: ImageFilterDimension) => ImageFilterDimension)) => void;
   hasActiveImageFilters: boolean;
@@ -145,6 +164,7 @@ const ImageModelsScrollContent: React.FC<ScrollContentProps> = ({
   showRecHint, showRecommendedOnly, setShowRecHint,
   imageRec, ramGB, imageRecommendation,
   imageFiltersVisible, backendFilter, setBackendFilter,
+  imageSort, setImageSort,
   styleFilter, setStyleFilter, sdVersionFilter, setSdVersionFilter,
   imageFilterExpanded, setImageFilterExpanded,
   hasActiveImageFilters, clearImageFilters, setUserChangedBackendFilter,
@@ -213,6 +233,8 @@ const ImageModelsScrollContent: React.FC<ScrollContentProps> = ({
           />
         )}
 
+        <SortRow options={IMAGE_SORT_OPTIONS} selected={imageSort} onSelect={setImageSort} testIDPrefix="image-sort-option" />
+
         {hfModelsLoading && (
           <View style={styles.hfLoadingContainer}>
             <ActivityIndicator size="small" color={colors.primary} />
@@ -265,6 +287,7 @@ export const ImageModelsTab: React.FC<Props> = ({
   backendFilter, setBackendFilter,
   styleFilter, setStyleFilter,
   sdVersionFilter, setSdVersionFilter,
+  imageSort, setImageSort,
   imageFilterExpanded, setImageFilterExpanded,
   imageFiltersVisible, setImageFiltersVisible,
   hasActiveImageFilters,
@@ -312,6 +335,8 @@ export const ImageModelsTab: React.FC<Props> = ({
         </View>
       </View>
 
+      <OfflineNotice />
+
       <ImageModelsScrollContent
         showRecHint={showRecHint}
         showRecommendedOnly={showRecommendedOnly}
@@ -322,6 +347,8 @@ export const ImageModelsTab: React.FC<Props> = ({
         imageFiltersVisible={imageFiltersVisible}
         backendFilter={backendFilter}
         setBackendFilter={setBackendFilter}
+        imageSort={imageSort}
+        setImageSort={setImageSort}
         styleFilter={styleFilter}
         setStyleFilter={setStyleFilter}
         sdVersionFilter={sdVersionFilter}

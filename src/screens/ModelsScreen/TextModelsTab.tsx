@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
 import { LIST_CLIPPING_PROPS } from '../../constants/listClipping';
-import { View, Text, FlatList, ScrollView, TextInput, ActivityIndicator, RefreshControl, TouchableOpacity, InteractionManager, Platform } from 'react-native';
+import { View, Text, FlatList, TextInput, ActivityIndicator, RefreshControl, TouchableOpacity, InteractionManager, Platform } from 'react-native';
 import DeviceInfo from 'react-native-device-info';
 import Icon from 'react-native-vector-icons/Feather';
 import { fileExceedsBudget } from '../../services/memoryBudget';
+import { textRunAnswer } from '../../services/runAnswer';
 import { AttachStep, useSpotlightTour } from 'react-native-spotlight-tour';
 import { Card, ModelCard } from '../../components';
 import { AnimatedEntry } from '../../components/AnimatedEntry';
@@ -13,7 +14,7 @@ import { DOWNLOAD_MANAGER_STEP_INDEX } from '../../components/onboarding/spotlig
 import { useTheme, useThemedStyles } from '../../theme';
 import { ModelGuideButton } from './ModelGuideButton';
 import { needsVisionRepair as checkNeedsVisionRepair } from '../../utils/visionRepair';
-import { CREDIBILITY_LABELS, SPACING } from '../../constants';
+import { CREDIBILITY_LABELS } from '../../constants';
 import { ModelInfo, ModelFile, DownloadedModel } from '../../types';
 import { createStyles } from './styles';
 import { ModelsScreenViewModel } from './useModelsScreen';
@@ -23,16 +24,17 @@ import { modelSupportsNpuGpu, isAccelerableQuant } from '../../utils/acceleratio
 import { aggregateActiveDownloads } from '../../utils/downloadAggregate';
 import { TextFiltersSection } from './TextFiltersSection';
 import { YourModels } from './YourModels';
+import { SortRow } from './SortRow';
 import { useActiveTextModel } from '../../hooks/useActiveTextModel';
 import { useModelChoice } from '../../hooks/useModelChoice';
-import { FilterState, SortOption } from './types';
+import { FilterState } from './types';
 import { SORT_OPTIONS, SERVER_SORTS } from './constants';
 import { formatNumber, getTextModelCompatibility } from './utils';
 import { curatedLiteRTDownloadWarning, LITERT_PARENT_ID } from '../../services/curatedLiteRTRegistry';
 import { LITERT_NOTES } from '../../features/modelGuide/notes';
 import { LITERT_FILE_META, LITERT_RECOMMENDED_MODEL, LITERT_PARENT_RECOMMENDED } from './litertRecommended';
 import { modelManager } from '../../services';
-import { useOffline } from '../../services/networkStatus';
+import { OfflineNotice } from './OfflineNotice';
 import { modelDownloadService } from '../../services/modelDownloadService';
 import { uniformDownloadId } from '../../services/modelDownloadService/uniformId';
 
@@ -204,7 +206,7 @@ const ModelDetailView: React.FC<DetailProps> = ({
         downloadProgress={s.progress?.progress}
         downloadBytes={s.progress && !s.hasFailed ? { downloaded: s.progress.bytesDownloaded, total: s.progress.totalBytes } : undefined}
         isRepairingVision={s.repairingVision}
-        isCompatible={!fileExceedsBudget(item.size, ramGB)} testID={`file-card-${index}`}
+        isCompatible={!fileExceedsBudget(item.size, ramGB)} runAnswer={textRunAnswer(item, { dirty: !!liteRTMeta })} testID={`file-card-${index}`}
         isActive={isInUse(s.downloadedModel)}
         onSelect={chooseHandler(s.downloadedModel)}
         selectDisabled={busy.text}
@@ -327,25 +329,6 @@ function applyBackNavigation(setSelectedModel: (m: ModelInfo | null) => void, se
   if (pending !== null) { InteractionManager.runAfterInteractions(() => goTo(pending)); }
 }
 
-interface SortRowProps {
-  filterState: FilterState;
-  setSortOption: (s: SortOption) => void;
-  styles: ReturnType<typeof createStyles>;
-  colors: ReturnType<typeof useTheme>['colors'];
-}
-/** Inside the row's own padding, so the 36 dp chips take a 48 dp touch. */
-const SORT_HIT_SLOP = { top: SPACING.sm, bottom: SPACING.sm };
-const SortRow: React.FC<SortRowProps> = ({ filterState, setSortOption, styles, colors }) => (
-  <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={styles.sortRow} contentContainerStyle={styles.sortRowContent}>
-    {SORT_OPTIONS.map(option => (
-      <TouchableOpacity key={option.key} testID={`sort-option-${option.key}`} hitSlop={SORT_HIT_SLOP} accessibilityLabel={option.label} style={[styles.filterChip, filterState.sort === option.key && styles.filterChipActive]} onPress={() => setSortOption(option.key)} accessibilityRole="button" accessibilityState={{ selected: filterState.sort === option.key }}>
-        <Icon name={option.icon} size={12} color={filterState.sort === option.key ? colors.primary : colors.textSecondary} />
-        <Text style={[styles.filterChipText, filterState.sort === option.key && styles.filterChipTextActive]}>{option.label}</Text>
-      </TouchableOpacity>
-    ))}
-  </ScrollView>
-);
-
 export const TextModelsTab: React.FC<Props> = (props) => {
   const {
     searchQuery, setSearchQuery, isLoading, isRefreshing, hasSearched, searchFailed,
@@ -367,7 +350,6 @@ export const TextModelsTab: React.FC<Props> = (props) => {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { goTo } = useSpotlightTour();
-  const offline = useOffline();
 
   const renderModelItem = ({ item, index }: { item: ModelInfo; index: number }) => (
     <ModelListItem item={item} index={index} focusTrigger={focusTrigger} isDownloaded={downloadedModels.some(m => m.id.startsWith(item.id))} isTrending={trendingAsModelInfo.some(t => t.id === item.id)} onPress={() => handleSelectModel(item)} />
@@ -423,14 +405,9 @@ export const TextModelsTab: React.FC<Props> = (props) => {
         </TouchableOpacity>
       </View>
 
-      {offline && (
-        <View style={styles.offlineNotice}>
-          <Icon name="wifi-off" size={14} color={colors.textMuted} />
-          <Text testID="models-offline-notice" accessibilityLiveRegion="polite" style={styles.offlineNoticeText}>Needs a connection to search, sort or show download numbers.</Text>
-        </View>
-      )}
+      <OfflineNotice />
 
-      <SortRow filterState={filterState} setSortOption={setSortOption} styles={styles} colors={colors} />
+      <SortRow options={SORT_OPTIONS} selected={filterState.sort} onSelect={setSortOption} testIDPrefix="sort-option" />
 
       {textFiltersVisible && (
         <TextFiltersSection

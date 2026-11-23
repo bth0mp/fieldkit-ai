@@ -22,9 +22,13 @@ import { TYPOGRAPHY, SPACING } from '../../constants';
 import { useWhisperStore } from '../../stores';
 import { useSttDownloadState } from '../../hooks/useSttDownloadState';
 import { WHISPER_MODELS } from '../../services';
+import { whisperRunAnswer } from '../../services/runAnswer';
 import { createStyles as createModelsScreenStyles } from './styles';
 import logger from '../../utils/logger';
 import { WHISPER_NOTES } from '../../features/modelGuide/notes';
+import { originFor } from '../../features/modelGuide/origins';
+import { useOriginStats } from '../../hooks/useOriginStats';
+import { OfflineNotice } from './OfflineNotice';
 
 const ENGLISH_MODELS = WHISPER_MODELS.filter(m => m.lang === 'en');
 const MULTI_MODELS = WHISPER_MODELS.filter(m => m.lang === 'multi');
@@ -47,6 +51,8 @@ interface WhisperCardProps {
 const WhisperCard: React.FC<WhisperCardProps> = ({
   model, index, downloadedModelId, presentModelIds, downloading, queued, downloadProgress, onDownload, onSelect, onDelete,
 }) => {
+  const origin = originFor('whisper', model.id);
+  const stats = useOriginStats(origin ? [origin] : [])[origin ?? ''];
   const present = presentModelIds.includes(model.id);
   const active = downloadedModelId === model.id;
   // WHISPER_MODELS sizes are in MB. Surface bytes so the STT card matches the
@@ -58,7 +64,8 @@ const WhisperCard: React.FC<WhisperCardProps> = ({
   return (
     <ModelCard
       compact
-      model={{ id: model.id, name: model.name, author: formatSize(model.size), description: model.description }}
+      model={{ id: model.id, name: model.name, author: formatSize(model.size), description: model.description, downloads: stats?.downloads, likes: stats?.likes, lastModified: stats?.lastModified }}
+      origin={origin}
       isDownloaded={present && !downloading && !queued}
       isActive={active}
       isDownloading={downloading}
@@ -66,6 +73,7 @@ const WhisperCard: React.FC<WhisperCardProps> = ({
       downloadProgress={downloadProgress}
       downloadBytes={downloadBytes}
       goodFor={WHISPER_NOTES[model.id]?.goodFor}
+      runAnswer={whisperRunAnswer(model)}
       testID={`transcription-model-card-${index}`}
       // Present but not active → tap to use; not present → tap to download.
       onPress={downloading ? undefined : (present ? (active ? undefined : () => onSelect(model.id)) : () => onDownload(model.id))}
@@ -154,6 +162,8 @@ export const TranscriptionModelsTab: React.FC = () => {
         <Icon name="shield" size={11} color={colors.trending} />
         <Text style={shared.deviceBannerText}>Transcription runs on your phone, audio is never sent anywhere</Text>
       </View>
+
+      <OfflineNotice />
 
       {whisperError && (
         <TouchableOpacity onPress={clearError}>

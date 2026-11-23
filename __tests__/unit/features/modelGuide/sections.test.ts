@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import { tierRows, textEntries, imageEntries, whisperEntries, liteRtEntries } from '../../../../src/features/modelGuide/sections';
 import { textPickFit, textPickFitLine, MEMORY_TIERS } from '../../../../src/features/modelGuide/guide';
 import { RECOMMENDED_MODELS } from '../../../../src/constants/models';
+import { IMAGE_NOTES } from '../../../../src/features/modelGuide/notes';
 
 const originalOS = Platform.OS;
 // The app ships on Android, whose memory fractions the labels are written for.
@@ -69,8 +70,8 @@ describe('modelGuide sections', () => {
     }
   });
 
-  it('has no image rows while no image model has a note', () => {
-    expect(imageEntries()).toEqual([]);
+  it('has one image row per image note, with its note', () => {
+    expect(imageEntries().map(e => [e.id, e.goodFor])).toEqual(IMAGE_NOTES.map(n => [n.name, n.goodFor]));
   });
 
   it('names the language of each Whisper size and sizes it by file or stated memory', () => {
