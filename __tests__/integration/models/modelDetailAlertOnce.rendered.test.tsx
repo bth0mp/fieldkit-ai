@@ -23,7 +23,6 @@ describe('Model page alerts (rendered)', () => {
         ? [{ id: 'a/Plain-GGUF', tags: ['gguf'], pipeline_tag: 'text-generation', siblings: [{ rfilename: 'Plain-Q4_K_M.gguf' }] }]
         : [])),
     });
-    rtl.fireEvent.press(ui.getByTestId('sort-pill'));
     rtl.fireEvent.press(ui.getByTestId('sort-option-downloads'));
     await rtl.waitFor(() => expect(ui.getByText('Plain-GGUF')).toBeTruthy(), TIMEOUT);
 
