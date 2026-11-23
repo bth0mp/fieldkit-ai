@@ -14,7 +14,7 @@
 
 - No new dependencies.
 - UI uses theme tokens only: `TYPOGRAPHY`, `COLORS` via `useTheme`, `SPACING`. Font weights 400 or lower. Feather icons. No emoji in UI text.
-- No Off Grid or Wednesday names in anything, including comments and commit messages.
+- The app carries no name of the project it started from (CLAUDE.md), in code, comments or commit messages; `__tests__/unit/ownName.test.ts` guards it.
 - Screens and hooks hold no business logic. Pure rules live in services or `src/utils/`; services own fetching and caches.
 - One rendered integration test per task that changes what the user sees: mount the real screen with `openModelsFromHome` (`__tests__/harness/modelsApp.ts`), reach the state through real taps, assert visible text. Fake only at the device boundary (`__tests__/harness/`), never our own modules.
 - Exact copy:
