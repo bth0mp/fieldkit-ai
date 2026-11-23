@@ -102,6 +102,7 @@ jest.mock('../../../src/services/hardware', () => ({
     }),
     formatModelSize: jest.fn(() => '4.00 GB'),
     getTotalMemoryGB: jest.fn(() => 8),
+    getAvailableMemoryGB: jest.fn(() => 4),
     getModelRecommendation: jest.fn(() => ({
       maxParameters: 14,
       recommendedQuantization: 'Q4_K_M',
