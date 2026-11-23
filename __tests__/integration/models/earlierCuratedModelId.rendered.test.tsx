@@ -5,7 +5,6 @@
  * boundary is faked: AsyncStorage (jest.setup's in-memory fake), the file system and the native modules.
  */
 import { installNativeBoundary, requireRTL } from '../../harness/nativeBoundary';
-import { setDeviceMemory } from '../../harness/deviceMemory';
 import { installHfApiFake } from '../../harness/hfApiFake';
 import { EARLIER_ACTIVE_DOWNLOADS_KEY, EARLIER_LITERT_AUTHOR, EARLIER_LITERT_PARENT_ID } from '../../../src/services/earlierIds';
 
@@ -43,7 +42,6 @@ const savedChats = {
 async function seed() {
   const boundary = installNativeBoundary({ download: true, fs: true });
   installHfApiFake();
-  setDeviceMemory({ platform: 'android', totalGB: 12, availGB: 8 });
   const AsyncStorage = require('@react-native-async-storage/async-storage');
   boundary.fs!.seedFile(PATH, savedModel.fileSize);
   await AsyncStorage.setItem('@local_llm/downloaded_models', JSON.stringify([savedModel]));

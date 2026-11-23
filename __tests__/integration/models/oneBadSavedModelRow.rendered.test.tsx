@@ -3,7 +3,6 @@
  * AsyncStorage (jest.setup's in-memory fake), the file system and the native modules.
  */
 import { installNativeBoundary, requireRTL } from '../../harness/nativeBoundary';
-import { setDeviceMemory } from '../../harness/deviceMemory';
 import { installHfApiFake } from '../../harness/hfApiFake';
 
 jest.mock('@react-navigation/native', () => jest.requireActual('@react-navigation/native'));
@@ -27,7 +26,6 @@ describe('a saved model row without an id', () => {
   it('leaves the two good downloaded models counted on Home, and the Models screen opens', async () => {
     const boundary = installNativeBoundary({ download: true, fs: true });
     installHfApiFake();
-    setDeviceMemory({ platform: 'android', totalGB: 12, availGB: 8 });
     const AsyncStorage = require('@react-native-async-storage/async-storage');
     boundary.fs!.seedFile(GOOD_LITERT.filePath, GOOD_LITERT.fileSize);
     boundary.fs!.seedFile(GOOD_LLAMA.filePath, GOOD_LLAMA.fileSize);
