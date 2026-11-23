@@ -19,7 +19,7 @@ const BYTES_PER_MB = 1024 * 1024;
 
 function answerFor(requiredMB: number, dirty = false): RunAnswer {
   const totalRamMB = hardwareService.getTotalMemoryGB() * MB_PER_GB;
-  const { verdict, needGB, allowGB } = runVerdict(requiredMB, totalRamMB, { policy: modelResidencyManager.getLoadPolicy(), dirty });
+  const { verdict, needGB, allowGB } = runVerdict(requiredMB, totalRamMB, { policy: modelResidencyManager.getLoadPolicy(), dirty, realAvailMB: hardwareService.getAvailableMemoryGB() * MB_PER_GB });
   return textFor(verdict, needGB, allowGB);
 }
 

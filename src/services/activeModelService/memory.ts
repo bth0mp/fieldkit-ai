@@ -187,7 +187,7 @@ export async function checkMemoryForModel(
   // The same verdict the model cards show, so a card never promises what this check then refuses.
   // Image and LiteRT models are dirty memory to the residency gate, which holds them lower.
   const dirty = modelType === 'image' || ('engine' in model && model.engine === 'litert');
-  const { verdict, allowGB } = runVerdict(totalRequiredMemoryGB * 1024, totalRamMB, { policy, dirty });
+  const { verdict, allowGB } = runVerdict(totalRequiredMemoryGB * 1024, totalRamMB, { policy, dirty, realAvailMB: dirty ? hardwareService.getAvailableMemoryGB() * 1024 : undefined });
   const budgetStr = allowGB.toFixed(1);
 
   if (verdict === 'wont') {

@@ -171,16 +171,17 @@ export function dirtyBudgetMB(
 }
 
 /**
- * What the gate allows a dirty model on this phone with nothing else loaded (real free RAM is no
- * more than the physical budget, which is all a card can know), also capped by the gate's second
- * check: a dirty footprint never passes the BALANCED physical ceiling, whatever the policy.
+ * What the gate allows a dirty model on this phone with nothing else loaded, given the real free RAM
+ * snapshot (`realAvailMB`, as the gate reads it; on Android the gate credits at least the physical
+ * budget). Also capped by the gate's second check: a dirty footprint never passes the BALANCED
+ * physical ceiling, whatever the policy.
  */
 export function dirtyIdleBudgetMB(
   totalRamMB: number,
-  opts: { policy?: LoadPolicy; platform?: Plat } = {},
+  opts: { policy?: LoadPolicy; platform?: Plat; realAvailMB?: number } = {},
 ): number {
-  const { policy = 'balanced', platform = Platform.OS } = opts;
-  const availableMB = effectiveAvailableMB(0, totalRamMB, { platform, policy });
+  const { policy = 'balanced', platform = Platform.OS, realAvailMB = 0 } = opts;
+  const availableMB = effectiveAvailableMB(realAvailMB, totalRamMB, { platform, policy });
   const ceilingMB = Math.max(MIN_BUDGET_MB, modelMemoryBudgetMB(totalRamMB, platform, 'balanced'));
   return Math.min(dirtyBudgetMB({ availableMB, residentMB: 0, totalRamMB }, { policy, platform }), Math.round(ceilingMB));
 }
@@ -196,11 +197,11 @@ export type RunVerdict = 'runs' | 'tight' | 'wont';
 export function runVerdict(
   requiredMB: number,
   totalRamMB: number,
-  opts: { policy?: LoadPolicy; platform?: Plat; dirty?: boolean } = {},
+  opts: { policy?: LoadPolicy; platform?: Plat; dirty?: boolean; realAvailMB?: number } = {},
 ): { verdict: RunVerdict; needGB: number; allowGB: number } {
-  const { policy = 'balanced', platform = Platform.OS, dirty = false } = opts;
+  const { policy = 'balanced', platform = Platform.OS, dirty = false, realAvailMB } = opts;
   const allowMB = dirty
-    ? dirtyIdleBudgetMB(totalRamMB, { policy, platform })
+    ? dirtyIdleBudgetMB(totalRamMB, { policy, platform, realAvailMB })
     : Math.round(Math.max(MIN_BUDGET_MB, modelMemoryBudgetMB(totalRamMB, platform, policy)));
   let verdict: RunVerdict = 'runs';
   if (requiredMB > allowMB) verdict = 'wont';
