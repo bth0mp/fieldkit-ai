@@ -80,6 +80,8 @@ const MATCHING = [
   'key' + 'gen',
   'the ' + 'key' + 'gen account',
   'x.' + 'key' + 'gen',
+  'api-' + 'key' + 'gen',
+  '-' + 'key' + 'gen',
   ['c23ac6be', '7ca9', '4ef2', 'b0a6', '06b751511bc1'].join('-'),
   ['1fa22f37', 'eb8f', '40fb', 'b37e', 'fcf82e342da1'].join('-'),
 ];
@@ -91,6 +93,7 @@ const NOT_MATCHING = [
   'ogre',
   'an air gap',
   'ssh-' + 'key' + 'gen -t ed25519',
+  'run ssh-' + 'key' + 'gen',
 ];
 
 describe('the pattern', () => {
