@@ -22,6 +22,7 @@ import { TYPOGRAPHY, SPACING } from '../../constants';
 import { useWhisperStore } from '../../stores';
 import { useSttDownloadState } from '../../hooks/useSttDownloadState';
 import { WHISPER_MODELS } from '../../services';
+import { whisperRunAnswer } from '../../services/runAnswer';
 import { createStyles as createModelsScreenStyles } from './styles';
 import logger from '../../utils/logger';
 import { WHISPER_NOTES } from '../../features/modelGuide/notes';
@@ -66,6 +67,7 @@ const WhisperCard: React.FC<WhisperCardProps> = ({
       downloadProgress={downloadProgress}
       downloadBytes={downloadBytes}
       goodFor={WHISPER_NOTES[model.id]?.goodFor}
+      runAnswer={whisperRunAnswer(model)}
       testID={`transcription-model-card-${index}`}
       // Present but not active → tap to use; not present → tap to download.
       onPress={downloading ? undefined : (present ? (active ? undefined : () => onSelect(model.id)) : () => onDownload(model.id))}

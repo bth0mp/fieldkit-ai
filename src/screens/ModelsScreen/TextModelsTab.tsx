@@ -4,6 +4,7 @@ import { View, Text, FlatList, ScrollView, TextInput, ActivityIndicator, Refresh
 import DeviceInfo from 'react-native-device-info';
 import Icon from 'react-native-vector-icons/Feather';
 import { fileExceedsBudget } from '../../services/memoryBudget';
+import { textRunAnswer } from '../../services/runAnswer';
 import { AttachStep, useSpotlightTour } from 'react-native-spotlight-tour';
 import { Card, ModelCard } from '../../components';
 import { AnimatedEntry } from '../../components/AnimatedEntry';
@@ -204,7 +205,7 @@ const ModelDetailView: React.FC<DetailProps> = ({
         downloadProgress={s.progress?.progress}
         downloadBytes={s.progress && !s.hasFailed ? { downloaded: s.progress.bytesDownloaded, total: s.progress.totalBytes } : undefined}
         isRepairingVision={s.repairingVision}
-        isCompatible={!fileExceedsBudget(item.size, ramGB)} testID={`file-card-${index}`}
+        isCompatible={!fileExceedsBudget(item.size, ramGB)} runAnswer={textRunAnswer(item.size)} testID={`file-card-${index}`}
         isActive={isInUse(s.downloadedModel)}
         onSelect={chooseHandler(s.downloadedModel)}
         selectDisabled={busy.text}

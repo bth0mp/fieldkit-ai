@@ -8,6 +8,7 @@ import { consumePendingSpotlight, peekPendingSpotlight } from '../../components/
 import { IMAGE_DOWNLOAD_STEP_INDEX } from '../../components/onboarding/spotlightConfig';
 import { useTheme, useThemedStyles } from '../../theme';
 import { HFImageModel, getVariantLabel } from '../../services/huggingFaceModelBrowser';
+import { imageRunAnswer } from '../../services/runAnswer';
 import { ImageModelRecommendation } from '../../types';
 import { useDownloadStore, isActiveStatus, isQueuedStatus, isDownloadingStatus } from '../../stores/downloadStore';
 import { makeImageModelKey } from '../../utils/modelKey';
@@ -97,6 +98,7 @@ export const ImageModelCardItem: React.FC<ImageModelCardProps> = ({
         downloadBytes={entry ? { downloaded: Math.round(progressValue * model.size), total: model.size } : undefined}
         isCompatible={isCompatible}
         incompatibleReason={incompatibleReason}
+        runAnswer={imageRunAnswer(model, incompatibleReason)}
         testID={`image-model-card-${index}`}
         onDownload={isActive ? undefined : () => handleDownloadImageModel(hfModelToDescriptor(model))}
         onCancel={isActive ? () => handleCancelImageDownload(model.id) : undefined}

@@ -4,7 +4,7 @@
  *
  *   /api/models?...      -> setList(fn) answer (default [])
  *   /api/models/{id}     -> setDetails(map) answer, 404 for unknown ids
- *   /tree/main           -> []
+ *   /api/models/<repo>/tree/main -> setTree(repo, entries) answer, [] for other repos
  *   anything else        -> rejects with TypeError('Network request failed')
  *
  * After setOffline(true) every request rejects with TypeError('Network request failed'), as with no connection.
@@ -18,6 +18,7 @@ export interface HfApiFake {
   requests(): URL[];
   setList(fn: (url: URL) => ListAnswer): void;
   setDetails(d: Record<string, Row>): void;
+  setTree(repo: string, entries: Row[]): void;
   setOffline(offline: boolean): void;
   hold(): { count(): number; release(i: number, answer?: ListAnswer): void };
 }
@@ -29,6 +30,7 @@ export function installHfApiFake(): HfApiFake {
   const seen: URL[] = [];
   let listFn: (url: URL) => ListAnswer = (_url: URL) => [];
   let details: Record<string, Row> = {};
+  const trees: Record<string, Row[]> = {};
   let offline = false;
   let held: Array<{ resolve: (answer?: ListAnswer) => void }> | null = null;
   const answer = (a: ListAnswer): Response => {
@@ -41,7 +43,8 @@ export function installHfApiFake(): HfApiFake {
     seen.push(url);
     if (offline) throw new TypeError('Network request failed');
     const path = url.pathname;
-    if (path.endsWith('/tree/main')) return json([]);
+    const tree = /^\/api\/models\/(.+)\/tree\/main$/.exec(path);
+    if (tree) return json(trees[decodeURIComponent(tree[1])] ?? []);
     if (path === '/api/models') {
       const natural = listFn(url);
       if (!held) return answer(natural);
@@ -66,6 +69,7 @@ export function installHfApiFake(): HfApiFake {
     requests: () => seen,
     setList: fn => { listFn = fn; },
     setDetails: d => { details = d; },
+    setTree: (repo, entries) => { trees[repo] = entries; },
     setOffline: next => { offline = next; },
     hold: () => {
       held = [];

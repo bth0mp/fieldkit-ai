@@ -40,7 +40,7 @@ const getMemoryWarningThresholdGB = async (): Promise<number> => {
 // Size estimators
 // ---------------------------------------------------------------------------
 
-function estimateModelMemoryGB(
+export function estimateModelMemoryGB(
   model: DownloadedModel | ONNXImageModel,
   type: ModelType,
 ): number {

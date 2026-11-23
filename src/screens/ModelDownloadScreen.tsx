@@ -35,6 +35,7 @@ import {
   CuratedLiteRTEntry,
 } from '../services/curatedLiteRTRegistry';
 import { makeModelKey } from '../utils/modelKey';
+import { textRunAnswer } from '../services/runAnswer';
 import logger from '../utils/logger';
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'ModelDownload'> };
@@ -65,6 +66,7 @@ const RecommendedModelCard: React.FC<RecommendedCardProps> = ({ model, recFile, 
     downloadProgress={progress?.progress}
     downloadBytes={progress?.bytes}
     isCompatible={model.minRam <= totalRamGB && (!model.maxRam || totalRamGB <= model.maxRam)}
+    runAnswer={textRunAnswer(recFile.size)}
     isTrending={isTrending}
     supportsAcceleration={isAccelerableQuant(recFile.quantization)}
     onPress={() => {}}
@@ -106,6 +108,7 @@ const LiteRTModelCard: React.FC<LiteRTCardProps> = ({ file, index, curatedEntry,
     // curatedLiteRTDownloadWarning), never a re-inlined budget calc. A card disabled here would make
     // its warning branch unreachable (button disabled), which was the #510 defect.
     isCompatible={!fileExceedsBudget(file.size, totalRamGB) || curatedLiteRTDownloadWarning(file.name, file.size, totalRamGB) !== null}
+    runAnswer={textRunAnswer(file.size)}
     recommended={{ pillLabel: 'Recommended' }}
     supportsAcceleration
     onPress={() => {}}

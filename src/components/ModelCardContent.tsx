@@ -9,6 +9,8 @@ import { huggingFaceService } from '../services/huggingface';
 import { ModelCredibility } from '../types';
 import { triggerHaptic } from '../utils/haptics';
 import { formatUpdatedAgo } from '../features/modelGuide/guide';
+import type { RunAnswer } from '../services/runAnswer';
+import { RunAnswerLine } from './RunAnswerLine';
 
 interface CredibilityInfo {
   color: string;
@@ -322,6 +324,9 @@ interface ModelInfoBadgesProps {
   isRepairingVision?: boolean;
   isCompatible: boolean;
   incompatibleReason: string | undefined;
+  /** When given, replaces the "Too large" badge with the run answer line. */
+  runAnswer?: RunAnswer;
+  testID?: string;
 }
 
 export const ModelInfoBadges: React.FC<ModelInfoBadgesProps> = ({
@@ -334,66 +339,67 @@ export const ModelInfoBadges: React.FC<ModelInfoBadgesProps> = ({
   isRepairingVision = false,
   isCompatible,
   incompatibleReason,
+  runAnswer,
+  testID,
 }) => {
   const styles = useThemedStyles(createStyles);
 
   return (
-    <View style={styles.infoRow}>
-      {fileSize > 0 && (
-        <View style={styles.infoBadge}>
-          <Text style={styles.infoText}>{huggingFaceService.formatFileSize(fileSize)}</Text>
-        </View>
-      )}
-      {sizeRange && (
-        <View style={[styles.infoBadge, styles.sizeBadge]}>
-          <Text style={styles.infoText}>
-            {sizeRange.min === sizeRange.max
-              ? huggingFaceService.formatFileSize(sizeRange.min)
-              : `${huggingFaceService.formatFileSize(sizeRange.min)} - ${huggingFaceService.formatFileSize(sizeRange.max)}`}
-          </Text>
-        </View>
-      )}
-      {sizeRange && (
-        <View style={styles.infoBadge}>
-          <Text style={styles.infoText}>
-            {sizeRange.count} {sizeRange.count === 1 ? 'file' : 'files'}
-          </Text>
-        </View>
-      )}
-      {/* Label chip renders for any non-empty quantization string — llama quants
-          (Q4_K_M etc.) get the green "recommended" highlight via quantInfo, and
-          non-table values (e.g. "LiteRT" for the curated LiteRT entries) still
-          render as a plain label instead of disappearing. */}
-      {!!quantization && (
-        <View style={[styles.infoBadge, quantInfo?.recommended && styles.recommendedBadge]}>
-          <Text style={[styles.infoText, quantInfo?.recommended && styles.recommendedText]}>
-            {quantization}
-          </Text>
-        </View>
-      )}
-      {/* Quality chip stays gated on quantInfo so we don't render a phantom
-          second chip for non-llama quant strings. */}
-      {quantInfo && (
-        <View style={styles.infoBadge}>
-          <Text style={styles.infoText}>{quantInfo.quality}</Text>
-        </View>
-      )}
-      {isVisionModel && !needsRepair && (
-        <View style={styles.visionBadge}>
-          <Text style={styles.visionText}>Vision</Text>
-        </View>
-      )}
-      {isVisionModel && needsRepair && (
-        <View style={styles.warningBadge}>
-          <Text style={styles.warningText}>{isRepairingVision ? 'Repairing...' : 'Needs repair'}</Text>
-        </View>
-      )}
-      {!isCompatible && (
-        <View style={styles.warningBadge}>
-          <Text style={styles.warningText}>{incompatibleReason ?? 'Too large'}</Text>
-        </View>
-      )}
-    </View>
+    <>
+      <View style={styles.infoRow}>
+        {fileSize > 0 && (
+          <View style={styles.infoBadge}>
+            <Text style={styles.infoText}>{huggingFaceService.formatFileSize(fileSize)}</Text>
+          </View>
+        )}
+        {sizeRange && (
+          <View style={[styles.infoBadge, styles.sizeBadge]}>
+            <Text style={styles.infoText}>
+              {sizeRange.min === sizeRange.max
+                ? huggingFaceService.formatFileSize(sizeRange.min)
+                : `${huggingFaceService.formatFileSize(sizeRange.min)} - ${huggingFaceService.formatFileSize(sizeRange.max)}`}
+            </Text>
+          </View>
+        )}
+        {sizeRange && (
+          <View style={styles.infoBadge}>
+            <Text style={styles.infoText}>
+              {sizeRange.count} {sizeRange.count === 1 ? 'file' : 'files'}
+            </Text>
+          </View>
+        )}
+        {/* Any non-empty quantization renders as a label; llama quants get the green highlight via quantInfo. */}
+        {!!quantization && (
+          <View style={[styles.infoBadge, quantInfo?.recommended && styles.recommendedBadge]}>
+            <Text style={[styles.infoText, quantInfo?.recommended && styles.recommendedText]}>
+              {quantization}
+            </Text>
+          </View>
+        )}
+        {/* The quality chip needs quantInfo, so non-llama quant strings get no phantom chip. */}
+        {quantInfo && (
+          <View style={styles.infoBadge}>
+            <Text style={styles.infoText}>{quantInfo.quality}</Text>
+          </View>
+        )}
+        {isVisionModel && !needsRepair && (
+          <View style={styles.visionBadge}>
+            <Text style={styles.visionText}>Vision</Text>
+          </View>
+        )}
+        {isVisionModel && needsRepair && (
+          <View style={styles.warningBadge}>
+            <Text style={styles.warningText}>{isRepairingVision ? 'Repairing...' : 'Needs repair'}</Text>
+          </View>
+        )}
+        {!isCompatible && !runAnswer && (
+          <View style={styles.warningBadge}>
+            <Text style={styles.warningText}>{incompatibleReason ?? 'Too large'}</Text>
+          </View>
+        )}
+      </View>
+      {runAnswer && <RunAnswerLine runAnswer={runAnswer} testID={testID} />}
+    </>
   );
 };
 

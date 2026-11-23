@@ -105,11 +105,12 @@ describe('Use on file, image and transcription cards (rendered)', () => {
     await t.rtl.waitFor(() => expect(disabled()).toBe(false), TIMEOUT);
   });
 
-  it('Image tab: downloaded image models with Use, quant style or "Image", x1.8 RAM hint; the one in use has Unload', async () => {
+  it('Image tab: downloaded image models with Use, quant style or "Image", the RAM hint the load check counts; the one in use has Unload', async () => {
     await boot({ imageModels: [SD_ONE, SD_TWO] }, { image: 'sd1' });
     await openImageTab();
     const section = t.rtl.within(t.ui.getByTestId('your-models-image'));
-    expect(section.getByText('~1.8 GB RAM')).toBeTruthy(); // 1 GB model
+    const ram = require('../../../src/services/hardware').hardwareService.estimateImageModelRam({ size: SD_ONE.size }) / GB;
+    expect(section.getByText(`~${ram.toFixed(1)} GB RAM`)).toBeTruthy(); // 1 GB model
     expect(section.getByText('Image')).toBeTruthy(); // no style
     expect(section.getByText('anime')).toBeTruthy();
     expect(t.ui.getByLabelText('Unload SD One')).toBeTruthy();
