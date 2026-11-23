@@ -545,17 +545,6 @@
 
     <issue
         id="UseKtx"
-        message="Use the KTX extension function `SharedPreferences.edit` instead?"
-        errorLine1="        sharedPrefs.edit()"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/bth0mp/fieldkit/download/DownloadCompleteBroadcastReceiver.kt"
-            line="37"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
         message="Use the KTX extension function `String.toUri` instead?"
         errorLine1="                data = Uri.parse(&quot;package:${reactApplicationContext.packageName}&quot;)"
         errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
@@ -629,17 +618,6 @@
             file="src/main/java/com/bth0mp/fieldkit/localdream/LocalDreamModule.kt"
             line="865"
             column="30"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `SharedPreferences.edit` instead?"
-        errorLine1="        prefs(context).edit().putString(DOWNLOADS_KEY, downloads.toString()).apply()"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/bth0mp/fieldkit/download/WorkerDownloadStore.kt"
-            line="30"
-            column="9"/>
     </issue>
 
 </issues>

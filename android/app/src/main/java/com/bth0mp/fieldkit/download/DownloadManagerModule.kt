@@ -508,8 +508,6 @@ class DownloadManagerModule(reactContext: ReactApplicationContext) :
 
     companion object {
         const val NAME = "DownloadManagerModule"
-        const val PREFS_NAME = "OffgridWorkerDownloads"
-        const val DOWNLOADS_KEY = "downloads"
 
         /**
          * The directory new downloads land in. Blocking disk IO: call it off the main thread.
