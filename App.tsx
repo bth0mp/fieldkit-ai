@@ -23,6 +23,7 @@ import { moveOffFieldGuidesProject } from './src/features/library/moveFieldGuide
 import { hydrateDownloadStore } from './src/services/downloadHydration';
 import { initActiveDownloadPersistence } from './src/services/activeDownloadPersistence';
 import { restoreQueuedDownloads } from './src/services/restoreQueuedDownloads';
+import { clearEarlierLeftovers } from './src/services/earlierIds';
 import { startLoadPolicySync } from './src/services/loadPolicySync';
 import { registerCoreDownloadProviders } from './src/services/modelDownloadService/registerProviders';
 import { useDownloadListeners } from './src/hooks/useDownloads';
@@ -263,6 +264,10 @@ function App() {
 
       // Show the UI immediately
       setIsInitializing(false);
+
+      // What earlier versions left behind (a removed licence check's Keychain entries, old developer logs).
+      // Best effort and once; it never delays the UI.
+      clearEarlierLeftovers().catch(() => {});
 
       // Index the field guides shipped in the APK into their category projects, off the boot path, after an
       // older install's Field guides project has been split into those projects. Only the first launch (or one

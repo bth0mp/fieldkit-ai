@@ -4,6 +4,8 @@
  * when that is empty, under the earlier one, then moved.
  */
 import * as Keychain from 'react-native-keychain';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import RNFS from 'react-native-fs';
 import logger from '../utils/logger';
 
 export const EARLIER_AUTH_SERVICE = 'ai.offgridmobile.auth';
@@ -37,4 +39,30 @@ export async function readKeychainEntry(
     logger.warn('[EarlierIds] Moved a Keychain entry but could not clear the earlier one', error);
   }
   return earlier;
+}
+
+// What earlier versions left on the phone that nothing reads any more: Keychain entries of a licence check
+// that no longer exists, and the developer logs of debug builds.
+const LEFTOVER_SERVICES = ['off-grid-pro-license', 'off-grid-device-fingerprint'];
+const LEFTOVER_LOG_FILES = ['offgrid-debug.log', 'offgrid-wire.log'];
+const LEFTOVERS_CLEARED_KEY = '@fieldkit/earlier_ids_cleared';
+
+/**
+ * Clear those leftovers, once. Best effort and off the boot path: a step that fails is logged and the
+ * whole thing is tried again at the next launch, because the flag is set only when every step worked.
+ */
+export async function clearEarlierLeftovers(): Promise<void> {
+  try {
+    if (await AsyncStorage.getItem(LEFTOVERS_CLEARED_KEY)) return;
+    for (const service of LEFTOVER_SERVICES) {
+      await Keychain.resetGenericPassword({ service });
+    }
+    for (const name of LEFTOVER_LOG_FILES) {
+      const path = `${RNFS.DocumentDirectoryPath}/${name}`;
+      if (await RNFS.exists(path)) await RNFS.unlink(path);
+    }
+    await AsyncStorage.setItem(LEFTOVERS_CLEARED_KEY, '1');
+  } catch (error) {
+    logger.warn('[EarlierIds] Could not clear what an earlier version left; trying again next launch', error);
+  }
 }

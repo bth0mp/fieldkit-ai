@@ -218,3 +218,64 @@ describe('App lock saved by an earlier version', () => {
     expect(await authService.hasPassphrase()).toBe(false);
   });
 });
+
+describe('App start after an update', () => {
+  const LEFTOVER_ENTRIES = ['off-grid-pro-license', 'off-grid-device-fingerprint'];
+  const OLD_LOGS = ['/mock/documents/offgrid-debug.log', '/mock/documents/offgrid-wire.log'];
+  const AsyncStorage = require('@react-native-async-storage/async-storage');
+  const RNFS = require('react-native-fs');
+  const onDisk = new Set<string>();
+
+  const startApp = async () => {
+    const App = require('../App').default;
+    const { ragService } = require('../src/services');
+    (ragService.ensureReady as jest.Mock).mockClear();
+    const view = render(<App />);
+    await waitFor(() => expect(ragService.ensureReady).toHaveBeenCalled());
+    await ReactTestRenderer.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    view.unmount();
+  };
+
+  beforeEach(async () => {
+    useVault();
+    onDisk.clear();
+    (RNFS.exists as jest.Mock).mockImplementation(async (path: string) => onDisk.has(path));
+    (RNFS.unlink as jest.Mock).mockClear().mockImplementation(async (path: string) => { onDisk.delete(path); });
+    await AsyncStorage.removeItem('@fieldkit/earlier_ids_cleared');
+    const { useAuthStore } = require('../src/stores/authStore');
+    useAuthStore.setState({ isEnabled: false, isLocked: false, failedAttempts: 0, lockoutUntil: null });
+  });
+
+  afterEach(() => {
+    (RNFS.exists as jest.Mock).mockImplementation(() => Promise.resolve(false));
+  });
+
+  it('clears the entries and logs an earlier version left, once', async () => {
+    for (const service of LEFTOVER_ENTRIES) vault.set(service, { username: 'x', password: 'y' });
+    for (const path of OLD_LOGS) onDisk.add(path);
+
+    await startApp();
+    await waitFor(() => expect(LEFTOVER_ENTRIES.some((service) => vault.has(service))).toBe(false));
+    await waitFor(() => expect(OLD_LOGS.some((path) => onDisk.has(path))).toBe(false));
+    await waitFor(async () => expect(await AsyncStorage.getItem('@fieldkit/earlier_ids_cleared')).toBeTruthy());
+
+    // Once: a later launch does not look again.
+    for (const service of LEFTOVER_ENTRIES) vault.set(service, { username: 'x', password: 'y' });
+    await startApp();
+    expect(LEFTOVER_ENTRIES.every((service) => vault.has(service))).toBe(true);
+  });
+
+  it('tries again at the next launch when the Keychain would not clear an entry', async () => {
+    vault.set('off-grid-pro-license', { username: 'x', password: 'y' });
+    (Keychain.resetGenericPassword as jest.Mock).mockRejectedValueOnce(new Error('Keychain is locked'));
+
+    await startApp();
+    expect(await AsyncStorage.getItem('@fieldkit/earlier_ids_cleared')).toBeNull();
+    expect(vault.has('off-grid-pro-license')).toBe(true);
+
+    await startApp();
+    await waitFor(() => expect(vault.has('off-grid-pro-license')).toBe(false));
+  });
+});
