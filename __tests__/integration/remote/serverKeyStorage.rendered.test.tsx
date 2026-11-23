@@ -49,15 +49,17 @@ jest.mock('@react-navigation/native', () => ({
 
 import { RemoteServersScreen } from '../../../src/screens/RemoteServersScreen';
 import { useRemoteServerStore } from '../../../src/stores';
+import { EARLIER_SERVERS_SERVICE } from '../../../src/services/earlierIds';
 
 jest.setTimeout(30000);
 
-const SERVICE = 'ai.offgridmobile.servers';
+const SERVICE = 'com.bth0mp.fieldkit.servers';
 const ENDPOINT = 'http://192.168.1.50:11434';
 const keychain = () => require('react-native-keychain') as {
   __vault: Map<string, string>; __hold: { get: Promise<void> | null }; __fail: { set: boolean; get: boolean; reset: boolean };
 };
 const vaultKey = (id: string) => keychain().__vault.get(`${SERVICE}.${id}`);
+const earlierKey = (id: string) => keychain().__vault.get(`${EARLIER_SERVERS_SERVICE}.${id}`);
 
 const record = (id: string, extra: object = {}) => ({
   id, name: `Server ${id}`, endpoint: ENDPOINT, providerType: 'openai-compatible', createdAt: '2026-01-01T00:00:00.000Z',
@@ -328,5 +330,47 @@ describe('server keys live only in the Keychain', () => {
     await act(async () => { fireEvent.press(ui.getByText('Update Server')); });
 
     await waitFor(() => expect(vaultKey('a')).toBe('sk-new'));
+  });
+
+  describe('a key an earlier version saved under its own Keychain service', () => {
+    beforeEach(() => {
+      keychain().__vault.set(`${EARLIER_SERVERS_SERVICE}.a`, 'sk-old');
+      useRemoteServerStore.setState({ servers: [record('a')] as never });
+    });
+
+    it('shows the saved key in the server form and moves it to the new service', async () => {
+      const ui = render(<RemoteServersScreen />);
+      fireEvent.press(ui.getByText('Edit'));
+
+      await waitFor(() => expect(ui.getByDisplayValue('sk-old')).toBeTruthy());
+      expect(vaultKey('a')).toBe('sk-old');
+      expect(earlierKey('a')).toBeUndefined();
+    });
+
+    it('is sent with the requests to the server', async () => {
+      render(<RemoteServersScreen />);
+      await waitFor(() => expect(useRemoteServerStore.getState().serverHealth.a?.isHealthy).toBe(true));
+
+      const sent = calls.filter(c => c.url.startsWith(ENDPOINT));
+      expect(sent.length).toBeGreaterThan(0);
+      expect(sent.filter(c => c.authorization !== 'Bearer sk-old')).toEqual([]);
+      expect(vaultKey('a')).toBe('sk-old');
+      expect(earlierKey('a')).toBeUndefined();
+    });
+
+    it('clearing the key removes it from both services', async () => {
+      keychain().__vault.set(`${SERVICE}.a`, 'sk-old');
+      const ui = render(<RemoteServersScreen />);
+
+      fireEvent.press(ui.getByText('Edit'));
+      const key = await waitFor(() => ui.getByDisplayValue('sk-old'));
+      fireEvent.changeText(key, '');
+      fireEvent.press(ui.getByText('Test Connection'));
+      await waitFor(() => expect(ui.queryByText(/Connected \(/)).not.toBeNull());
+      await act(async () => { fireEvent.press(ui.getByText('Update Server')); });
+
+      await waitFor(() => expect(vaultKey('a')).toBeUndefined());
+      expect(earlierKey('a')).toBeUndefined();
+    });
   });
 });

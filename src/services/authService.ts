@@ -1,7 +1,8 @@
 import * as Keychain from 'react-native-keychain';
 import logger from '../utils/logger';
+import { EARLIER_AUTH_SERVICE, readKeychainEntry } from './earlierIds';
 
-const SERVICE_NAME = 'ai.offgridmobile.auth';
+const SERVICE_NAME = 'com.bth0mp.fieldkit.auth';
 const PASSPHRASE_KEY = 'passphrase_hash';
 
 class AuthService {
@@ -36,11 +37,17 @@ class AuthService {
         service: SERVICE_NAME,
         accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED,
       });
-      return true;
     } catch (error) {
       logger.error('Failed to set passphrase:', error);
       return false;
     }
+    // The new entry wins on read, so an earlier one that cannot be cleared now does no harm.
+    try {
+      await Keychain.resetGenericPassword({ service: EARLIER_AUTH_SERVICE });
+    } catch (error) {
+      logger.warn('Could not clear the earlier passphrase entry:', error);
+    }
+    return true;
   }
 
   /**
@@ -50,7 +57,7 @@ class AuthService {
   async verifyPassphrase(passphrase: string): Promise<boolean> {
     let credentials: Awaited<ReturnType<typeof Keychain.getGenericPassword>>;
     try {
-      credentials = await Keychain.getGenericPassword({ service: SERVICE_NAME });
+      credentials = await readKeychainEntry(SERVICE_NAME, EARLIER_AUTH_SERVICE, Keychain.ACCESSIBLE.WHEN_UNLOCKED);
     } catch (error) {
       logger.error('Failed to verify passphrase:', error);
       throw new PassphraseCheckUnavailable();
@@ -63,9 +70,7 @@ class AuthService {
 
   async hasPassphrase(): Promise<boolean> {
     try {
-      const credentials = await Keychain.getGenericPassword({
-        service: SERVICE_NAME,
-      });
+      const credentials = await readKeychainEntry(SERVICE_NAME, EARLIER_AUTH_SERVICE, Keychain.ACCESSIBLE.WHEN_UNLOCKED);
       return credentials !== false;
     } catch (error) {
       logger.error('Failed to check passphrase:', error);
@@ -73,16 +78,18 @@ class AuthService {
     }
   }
 
+  /** Clears the entry under both services, so a removed lock cannot come back from the earlier one. */
   async removePassphrase(): Promise<boolean> {
-    try {
-      await Keychain.resetGenericPassword({
-        service: SERVICE_NAME,
-      });
-      return true;
-    } catch (error) {
-      logger.error('Failed to remove passphrase:', error);
-      return false;
+    let removed = true;
+    for (const service of [SERVICE_NAME, EARLIER_AUTH_SERVICE]) {
+      try {
+        await Keychain.resetGenericPassword({ service });
+      } catch (error) {
+        logger.error('Failed to remove passphrase:', error);
+        removed = false;
+      }
     }
+    return removed;
   }
 
   async changePassphrase(oldPassphrase: string, newPassphrase: string): Promise<boolean> {

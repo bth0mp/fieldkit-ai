@@ -8,8 +8,13 @@ import { useRemoteServerStore, setRemoteServerKeyReader } from '../stores/remote
 import { createOpenAIProvider, OpenAICompatibleProvider } from './providers/openAICompatibleProvider';
 import { providerRegistry } from './providers/registry';
 import logger from '../utils/logger';
+import { EARLIER_SERVERS_SERVICE, readKeychainEntry } from './earlierIds';
 
-const KEYCHAIN_SERVICE = 'ai.offgridmobile.servers';
+const KEYCHAIN_SERVICE = 'com.bth0mp.fieldkit.servers';
+const serviceOf = (serverId: string) => `${KEYCHAIN_SERVICE}.${serverId}`;
+const earlierServiceOf = (serverId: string) => `${EARLIER_SERVERS_SERVICE}.${serverId}`;
+const readKey = (serverId: string) =>
+  readKeychainEntry(serviceOf(serverId), earlierServiceOf(serverId), Keychain.ACCESSIBLE.WHEN_UNLOCKED);
 
 // ---------------------------------------------------------------------------
 // Keychain helpers
@@ -21,10 +26,16 @@ export async function storeApiKeyImpl(serverId: string, apiKey: string): Promise
       `server_${serverId}`,
       apiKey,
       {
-        service: `${KEYCHAIN_SERVICE}.${serverId}`,
+        service: serviceOf(serverId),
         accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED,
       }
     );
+    // The new entry wins on read, so an earlier one that cannot be cleared now does no harm.
+    try {
+      await Keychain.resetGenericPassword({ service: earlierServiceOf(serverId) });
+    } catch (error) {
+      logger.warn('[RemoteServerManager] Could not clear the earlier API key entry:', error);
+    }
     logger.log('[RemoteServerManager] API key stored for server:', serverId);
   } catch (error) {
     logger.error('[RemoteServerManager] Failed to store API key:', error);
@@ -34,9 +45,7 @@ export async function storeApiKeyImpl(serverId: string, apiKey: string): Promise
 
 export async function getApiKeyImpl(serverId: string): Promise<string | null> {
   try {
-    const credentials = await Keychain.getGenericPassword({
-      service: `${KEYCHAIN_SERVICE}.${serverId}`,
-    });
+    const credentials = await readKey(serverId);
     return credentials ? credentials.password : null;
   } catch (error) {
     logger.error('[RemoteServerManager] Failed to get API key:', error);
@@ -46,7 +55,7 @@ export async function getApiKeyImpl(serverId: string): Promise<string | null> {
 
 /** Like getApiKeyImpl, but a failing Keychain throws instead of reading as "no key". */
 async function readApiKeyStrict(serverId: string): Promise<string | null> {
-  const credentials = await Keychain.getGenericPassword({ service: `${KEYCHAIN_SERVICE}.${serverId}` });
+  const credentials = await readKey(serverId);
   return credentials ? credentials.password : null;
 }
 
@@ -85,13 +94,19 @@ export async function moveStoredKeysToKeychainImpl(): Promise<void> {
 
 /** Remove a server's key from the Keychain. A Keychain that refuses throws: the key is still there. */
 export async function removeApiKeyImpl(serverId: string): Promise<void> {
-  try {
-    await Keychain.resetGenericPassword({ service: `${KEYCHAIN_SERVICE}.${serverId}` });
-    logger.log('[RemoteServerManager] API key removed for server:', serverId);
-  } catch (error) {
-    logger.error('[RemoteServerManager] Failed to remove API key:', error);
-    throw error;
+  let failure: unknown;
+  for (const service of [serviceOf(serverId), earlierServiceOf(serverId)]) {
+    try {
+      await Keychain.resetGenericPassword({ service });
+    } catch (error) {
+      failure ??= error;
+    }
   }
+  if (failure) {
+    logger.error('[RemoteServerManager] Failed to remove API key:', failure);
+    throw failure;
+  }
+  logger.log('[RemoteServerManager] API key removed for server:', serverId);
 }
 
 // ---------------------------------------------------------------------------

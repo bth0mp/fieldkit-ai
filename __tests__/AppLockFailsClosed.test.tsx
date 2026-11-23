@@ -12,6 +12,12 @@ jest.mock('../src/screens', () => ({
   LockScreen: jest.requireActual('../src/screens/LockScreen').LockScreen,
 }));
 jest.mock('../src/hooks/useAppState', () => ({ useAppState: jest.fn() }));
+jest.mock('react-native-keychain', () => ({
+  setGenericPassword: jest.fn(),
+  getGenericPassword: jest.fn(),
+  resetGenericPassword: jest.fn(),
+  ACCESSIBLE: { WHEN_UNLOCKED: 'AccessibleWhenUnlocked' },
+}));
 jest.mock('../src/utils/logger', () => ({
   __esModule: true,
   default: { log: jest.fn(), warn: jest.fn(), error: jest.fn() },
@@ -70,6 +76,34 @@ jest.mock('../src/services', () => ({
 }));
 
 import * as Keychain from 'react-native-keychain';
+import { EARLIER_AUTH_SERVICE } from '../src/services/earlierIds';
+
+const AUTH_SERVICE = 'com.bth0mp.fieldkit.auth';
+
+// The Keychain of a phone: entries by service. Only this device boundary is faked.
+const vault = new Map<string, { username: string; password: string }>();
+function useVault(): void {
+  vault.clear();
+  (Keychain.getGenericPassword as jest.Mock).mockReset().mockImplementation(async ({ service }: { service: string }) => {
+    const entry = vault.get(service);
+    return entry ? { ...entry, service } : false;
+  });
+  (Keychain.setGenericPassword as jest.Mock).mockReset().mockImplementation(
+    async (username: string, password: string, { service }: { service: string }) => {
+      vault.set(service, { username, password });
+      return true;
+    },
+  );
+  (Keychain.resetGenericPassword as jest.Mock).mockReset().mockImplementation(async ({ service }: { service: string }) => vault.delete(service));
+}
+
+/** The lock as an earlier version saved it: a passphrase under the earlier Keychain service. */
+async function saveEarlierPassphrase(passphrase: string): Promise<void> {
+  const { authService } = require('../src/services/authService');
+  await authService.setPassphrase(passphrase);
+  vault.set(EARLIER_AUTH_SERVICE, vault.get(AUTH_SERVICE)!);
+  vault.delete(AUTH_SERVICE);
+}
 
 describe('App with an unreadable Keychain', () => {
   it('stays on the lock screen and no passphrase unlocks it', async () => {
@@ -121,5 +155,66 @@ describe('App start', () => {
     } finally {
       global.fetch = originalFetch;
     }
+  });
+});
+
+describe('App lock saved by an earlier version', () => {
+  beforeEach(() => {
+    useVault();
+  });
+
+  it('starts locked, opens with the right passphrase and keeps it under the new service', async () => {
+    await saveEarlierPassphrase('open-sesame');
+    const { useAuthStore } = require('../src/stores/authStore');
+    useAuthStore.setState({ isEnabled: true, isLocked: true, failedAttempts: 0, lockoutUntil: null });
+    const App = require('../App').default;
+
+    const view = render(<App />);
+    await waitFor(() => expect(view.getByPlaceholderText('Enter passphrase')).toBeTruthy());
+
+    fireEvent.changeText(view.getByPlaceholderText('Enter passphrase'), 'not-it');
+    await ReactTestRenderer.act(async () => {
+      fireEvent.press(view.getByText('Unlock'));
+    });
+    await waitFor(() => expect(useAuthStore.getState().failedAttempts).toBe(1));
+    expect(useAuthStore.getState().isLocked).toBe(true);
+
+    fireEvent.changeText(view.getByPlaceholderText('Enter passphrase'), 'open-sesame');
+    await ReactTestRenderer.act(async () => {
+      fireEvent.press(view.getByText('Unlock'));
+    });
+    await waitFor(() => expect(useAuthStore.getState().isLocked).toBe(false));
+    expect(vault.has(AUTH_SERVICE)).toBe(true);
+    expect(vault.has(EARLIER_AUTH_SERVICE)).toBe(false);
+  });
+
+  it('turning the lock off clears both services, and the next start is not locked', async () => {
+    const { authService } = require('../src/services/authService');
+    const { useAuthStore } = require('../src/stores/authStore');
+    vault.set(AUTH_SERVICE, { username: 'passphrase_hash', password: 'new-hash' });
+    vault.set(EARLIER_AUTH_SERVICE, { username: 'passphrase_hash', password: 'stale-hash' });
+    useAuthStore.setState({ isEnabled: true, isLocked: false });
+
+    const { SecuritySettingsScreen } = require('../src/screens/SecuritySettingsScreen');
+    const settings = render(<SecuritySettingsScreen />);
+    fireEvent(settings.getAllByRole('switch')[0], 'valueChange', false);
+    await ReactTestRenderer.act(async () => {
+      fireEvent.press(settings.getByText('Disable'));
+    });
+    await waitFor(() => expect(useAuthStore.getState().isEnabled).toBe(false));
+    expect(vault.size).toBe(0);
+    settings.unmount();
+
+    useAuthStore.setState({ isLocked: true });
+    const App = require('../App').default;
+    const { ragService } = require('../src/services');
+    (ragService.ensureReady as jest.Mock).mockClear();
+    const view = render(<App />);
+    await waitFor(() => expect(ragService.ensureReady).toHaveBeenCalled());
+    await ReactTestRenderer.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(view.queryByPlaceholderText('Enter passphrase')).toBeNull();
+    expect(await authService.hasPassphrase()).toBe(false);
   });
 });
