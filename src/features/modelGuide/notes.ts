@@ -141,11 +141,33 @@ export const LITERT_NOTES: Record<string, ModelNote> = {
 };
 
 /**
- * The xororz/sd-mnn repo has no model card, and the Hugging Face pages found for these checkpoints are re-uploads
- * that do not describe the file the app downloads. No image model has an honest "Good for" line, so none is listed.
- * The shape is kept so a model can be added once a page supports it.
+ * Image notes come from the original maker's Hugging Face page (see origins.ts), not from the xororz repos the files
+ * are downloaded from. A model is listed only when its original page says what it is for; the others have none.
+ * `sizeBytes` is the smallest zip the app offers for that name.
  */
-export const IMAGE_NOTES: ImageModelNote[] = [];
+export const IMAGE_NOTES: ImageModelNote[] = [
+  {
+    name: 'DreamShaperV8',
+    goodFor: 'Photorealistic and anime-style pictures from one model',
+    notFor: 'Matching a model built for only photos or only anime',
+    source: `${HF}Lykon/dreamshaper-8`,
+    sizeBytes: 1032290626,
+  },
+  {
+    name: 'NaiAnimeV2',
+    goodFor: 'Anime-style pictures',
+    notFor: 'Other styles; it was made for anime',
+    source: `${HF}NovelAI/nai-anime-v2`,
+    sizeBytes: 989892898,
+  },
+  {
+    name: 'QteaMix',
+    goodFor: 'Chibi (cute, small-bodied) character pictures',
+    notFor: 'Other art styles; it is a chibi blend',
+    source: `${HF}chenxluo/QteaMix`,
+    sizeBytes: 995347176,
+  },
+];
 
 export const IMAGE_BACKEND_NOTES: { mnn: string; qnn: string } = {
   mnn: 'Works on any phone. It does not need a Snapdragon NPU.',

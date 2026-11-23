@@ -7,7 +7,7 @@
  */
 import { openModelsFromHome } from '../../harness/modelsApp';
 import { resetDeviceMemory } from '../../harness/deviceMemory';
-import { TEXT_NOTES } from '../../../src/features/modelGuide/notes';
+import { IMAGE_NOTES, TEXT_NOTES } from '../../../src/features/modelGuide/notes';
 
 jest.mock('@react-navigation/native', () => jest.requireActual('@react-navigation/native'));
 jest.mock('../../../src/hooks/useFocusTrigger', () => ({ useFocusTrigger: () => 0 }));
@@ -51,6 +51,9 @@ function expectGuideContent({ rtl, ui }: Awaited<ReturnType<typeof openGuide>>) 
   expect(note.getByText('Fits: 16 GB and up; tight on 8 and 12 GB')).toBeTruthy();
   expect(ui.getByText('Tight means the app may stop and offer Load Anyway. A smaller file may help.')).toBeTruthy();
   expect(ui.getByText('These labels are for the default CPU setting. The GPU or NPU setting needs about half as much memory again.')).toBeTruthy();
+  for (const image of IMAGE_NOTES) {
+    expect(rtl.within(ui.getByTestId(`guide-note-${image.name}`)).getByText(`Good for: ${image.goodFor}`)).toBeTruthy();
+  }
   expect(rtl.within(ui.getByTestId('guide-image-mnn')).getByText('GPU models')).toBeTruthy();
   expect(rtl.within(ui.getByTestId('guide-image-qnn')).getByText('NPU models')).toBeTruthy();
   expect(rtl.within(ui.getByTestId('guide-note-large-v3')).getByText('Large v3 (many languages)')).toBeTruthy();
