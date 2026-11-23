@@ -115,4 +115,23 @@ describe('Run answer on model cards (rendered)', () => {
     expect(runVerdict(hardware.estimateImageModelRam({ size: bigSize }) / (1024 * 1024), hardware.getTotalMemoryGB() * 1024, { platform: 'android', dirty: true }).verdict).toBe('wont');
     expect(ui.getByText(`~${gb1(hardware.estimateImageModelRam({ size: bigSize }) / GB)} GB RAM (may not fit)`)).toBeTruthy();
   });
+
+  it('Text: a LiteRT file card in the Gemma 4 LiteRT detail shows the dirty answer the gate applies', async () => {
+    const { rtl, ui } = await openModelsFromHome({ totalGB: TOTAL_GB });
+    rtl.fireEvent.press(await rtl.waitFor(() => ui.getByText('Gemma 4 LiteRT'), { timeout: 6000 }));
+    const card = await rtl.waitFor(() => rtl.within(ui.getByTestId('file-card-0')), TIMEOUT);
+    const { runVerdict, hardware } = owners();
+    const { textOverheadMultiplier } = require('../../../src/services/activeModelService/types');
+    const { CURATED_LITERT_ENTRIES } = require('../../../src/services/curatedLiteRTRegistry');
+    const multiplier = textOverheadMultiplier(stores().useAppStore.getState().settings.inferenceBackend);
+    const first = CURATED_LITERT_ENTRIES[0];
+    const policy = require('../../../src/services/modelResidency').modelResidencyManager.getLoadPolicy();
+    const r = runVerdict((first.sizeBytes / (1024 * 1024)) * multiplier, hardware.getTotalMemoryGB() * 1024, {
+      platform: 'android', policy, dirty: true, realAvailMB: hardware.getAvailableMemoryGB() * 1024,
+    });
+    const text = r.verdict === 'runs' ? 'Runs on this phone'
+      : r.verdict === 'tight' ? `Tight on this phone: needs about ${gb1(r.needGB)} GB of ${gb1(r.allowGB)} GB`
+        : `Won't run: needs about ${gb1(r.needGB)} GB, this phone allows ${gb1(r.allowGB)} GB`;
+    expect(card.getByText(text)).toBeTruthy();
+  });
 });
