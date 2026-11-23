@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Bring the Off Grid bug fixes Fieldkit still lacks, and the one v0.0.125 speed-up that applies, into Fieldkit.
+**Goal:** Bring the upstream bug fixes Fieldkit still lacks, and the one v0.0.125 speed-up that applies, into Fieldkit.
 
 **Architecture:** Hand-port the final upstream behaviour file by file from the public MIT repo, each with a test. Three lanes in separate worktrees own disjoint files: A (`upstream-fixes`: saved state, server keys, lock screen), B (`upstream-fixes-b`: engine, remote, search, images, tabs), C (`upstream-fixes-c`: Android downloads, voice, model files, lists, chat scroll). Lanes B and C are cherry-picked onto A at the end.
 
@@ -12,11 +12,11 @@
 
 ## Global Constraints
 
-- Upstream source is local: `git show <hash>` for a commit, `git show refs/upstream-tags/v0.0.125:<path>` for the final file. Never fetch, never open the network, never use files under `pro/`, and never port a line that imports `@offgrid/*` or `../shared`.
+- Upstream source is local: `git show <hash>` for a commit, `git show refs/upstream-tags/v0.0.125:<path>` for the final file. Never fetch, never open the network, never use files under `pro/`, and never port a line that imports an upstream workspace alias or `../shared`.
 - Prefer the final v0.0.125 behaviour over the single commit. Do not port unrelated upstream changes that sit in the same file (analytics, sync, Pro, gateway, video, redesign).
-- Each commit body names its source: `Ported from off-grid-ai/OGAM <hash> (MIT).` Last line of every commit message: `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+- Each commit body names its source: `Ported from upstream <hash> (MIT).` Last line of every commit message: `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - No new dependencies. No change to `package.json` or `package-lock.json`.
-- Nothing the user sees may name Off Grid or Wednesday. No emoji in UI text. Theme tokens only. Font weights at or below 400. Feather icons.
+- Nothing the user sees may name upstream or its company. No emoji in UI text. Theme tokens only. Font weights at or below 400. Feather icons.
 - Files stay at or under 500 lines and functions under 350 (ESLint). `src/services/llm.ts` is at 500 now: move code out, do not squash lines.
 - Do not edit a file that `feat/model-marketplace` edits unless the task names it: run `git diff --name-only origin/main feat/model-marketplace` to see the list. Never edit another lane's files.
 - TDD: write the test, see it fail for the stated reason, then fix. A rendered test under `__tests__/integration/` mounts the real screen and fakes only the device boundary (`__tests__/harness/`). A unit test is enough where the plan says unit.
@@ -169,7 +169,7 @@
 
 ### Task 10: Android downloads and LiteRT fallback (Kotlin)
 
-**Files:** Modify `android/app/src/main/java/ai/offgridmobile/download/WorkerDownload.kt`, `DownloadUiState.kt`, `DownloadManagerModule.kt` (same folder), `android/app/src/main/java/ai/offgridmobile/litert/LiteRTModule.kt`. Test: `android/app/src/test/java/ai/offgridmobile/download/DownloadReasonTest.kt`, `DownloadManagerModuleTest.kt`, `android/app/src/test/java/ai/offgridmobile/litert/LiteRTBackendFallbackTest.kt`.
+**Files:** Modify `android/app/src/main/java/com/bth0mp/fieldkit/download/WorkerDownload.kt`, `DownloadUiState.kt`, `DownloadManagerModule.kt` (same folder), `android/app/src/main/java/com/bth0mp/fieldkit/litert/LiteRTModule.kt`. Test: `android/app/src/test/java/com/bth0mp/fieldkit/download/DownloadReasonTest.kt`, `DownloadManagerModuleTest.kt`, `android/app/src/test/java/com/bth0mp/fieldkit/litert/LiteRTBackendFallbackTest.kt`.
 
 **Decisions:** three commits. (1) 433285033, 1c0ba2ae9, 5ac53787c, 9b45bab31: a cut transfer resumes in place, at most 20 cuts in one run, then WorkManager's bounded retry; a full disk while writing is `disk_full`; a resume that gets 200 instead of 206 restarts the file from zero; Cancel still deletes the partial file and is never retried; checksum and size checks still run on the finished file. (2) 122a35ae9: no file access on the main dispatcher in start and move. (3) c6052f5c0: one GPU attempt, then CPU.
 

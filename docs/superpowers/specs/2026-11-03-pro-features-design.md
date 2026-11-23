@@ -4,7 +4,7 @@ Date: 2026-11-03. Status: draft for owner approval.
 
 ## Intent
 
-Off Grid AI sells a Pro tier (voice, personas, actions on email/calendar/MCP). Fieldkit AI
+The app this one started from sells a Pro tier (voice, personas, actions on email/calendar/MCP). Fieldkit AI
 is the owner's free, non-commercial, MIT fork of the open core. The owner wants the same
 kind of capabilities in Fieldkit, built "our own way", for free, and "as legal as possible".
 
@@ -31,7 +31,7 @@ say plainly and visibly when the user chooses to break it (for example a LAN MCP
 
 - Accounts, cloud services, payments, license keys or feature gating. Every feature is
   free and on by default where it is safe.
-- Off Grid's other Pro ideas (cross-device sync, ambient/proactive "skills").
+- The other Pro ideas of that app (cross-device sync, ambient/proactive "skills").
 - iOS builds. Fieldkit ships Android only, but native modules keep the cross-platform
   contract (see Constraints).
 - A new code review or refactor of existing features; this design only adds features.
@@ -41,7 +41,7 @@ say plainly and visibly when the user chooses to break it (for example a LAN MCP
 - Any data leaving the device without a visible, explicit user action. This includes
   network TTS voices, which Google and Samsung engines can use silently.
 - Any GPL, AGPL or LGPL component at runtime, including espeak-ng and anything that links it.
-- Copying, porting or paraphrasing code, text or assets from Off Grid's proprietary Pro
+- Copying, porting or paraphrasing code, text or assets from that app's proprietary Pro
   module, its store apps, or the core-repo history where Pro code briefly lived
   (commit 609ddd5ad and its successors). The MIT core design docs at tag v0.0.103
   (`docs/TTS_ENGINE_INTERFACE.md`, `docs/PERSONAS_IMPLEMENTATION_PLAN.md`) may be read to
@@ -50,8 +50,8 @@ say plainly and visibly when the user chooses to break it (for example a LAN MCP
 
 ## Constraints (verified in the code, 2026-11-03)
 
-**Registration.** `loadProFeatures` only activates `@offgrid/pro`, which resolves to a null
-stub, and it is behind Off Grid's license check, so anything routed through it never turns
+**Registration.** `loadProFeatures` only activates a Pro package, which resolves to a null
+stub, and it is behind a license check, so anything routed through it never turns
 on. Fieldkit features register from their own module, `src/features/index.ts`, through
 `activateFieldkitFeatures()`. It is called once, synchronously, from `App.tsx` before
 `setIsInitializing(false)`. It must not await native work and must be wrapped in try/catch:

@@ -1,10 +1,10 @@
-# Upstream fixes (Off Grid v0.0.104 to v0.0.125): design
+# Upstream fixes (v0.0.104 to v0.0.125): design
 
 Date: 2026-11-22. Status: approved by the owner ("Do all of them", 2026-11-22).
 
 ## Intent
 
-The owner asked whether Off Grid v0.0.125 can go into Fieldkit. Little of that release can,
+The owner asked whether upstream v0.0.125 can go into Fieldkit. Little of that release can,
 but releases since Fieldkit's base (v0.0.103) fixed bugs Fieldkit still has. The worst can
 erase every saved chat. Bring those fixes over, plus the one speed-up in v0.0.125 that
 applies, without changing how Fieldkit looks or what it offers.
@@ -21,7 +21,7 @@ applies, without changing how Fieldkit looks or what it offers.
 
 ## Non-goals
 
-- Anything from Off Grid's Pro, Boost, Video Studio, Sync or analytics code.
+- Anything from upstream's Pro, Boost, Video Studio, Sync or analytics code.
 - A newer `llama.rn`, Reanimated, executorch or whisper.rn. No new dependencies at all.
 - Upstream's animated background, redesign, or "Ask the app" guide. "Ask Fieldkit" gets its
   own design.
@@ -33,11 +33,11 @@ applies, without changing how Fieldkit looks or what it offers.
 
 - Losing or resetting anything the owner already saved: chats, projects, settings, servers,
   models. Every storage change reads the old format.
-- Copying from the private `shared` packages, the `pro` submodule, OGAD (AGPL) or the store apps.
+- Copying from the private `shared` packages, the `pro` submodule, its AGPL desktop app or the store apps.
 
 ## Constraints
 
-- Upstream code is taken only from the public MIT repo, from files with no `@offgrid/*`,
+- Upstream code is taken only from the public MIT repo, from files with no upstream workspace alias,
   `../shared` or `pro/` import. Each commit names the upstream commit it came from.
 - `feat/model-marketplace` is being edited in another session. This branch must merge with it
   without conflicts (checked with `git merge-tree`); a fix that would conflict waits.

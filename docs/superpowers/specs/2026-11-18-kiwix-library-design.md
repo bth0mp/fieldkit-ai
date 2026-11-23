@@ -53,7 +53,7 @@ goes away; its guides move into the topic projects.
 - Loading a whole `.zim` file into memory. Files are several GB; reads are by byte range.
 - Losing a taught guide during the move out of the Field guides project, or re-embedding guides that are already
   embedded (that takes minutes per guide on the phone).
-- A Kiwix logo, or Off Grid or Wednesday names, in the UI.
+- A Kiwix logo, or names from the app this one started from, in the UI.
 
 ## Constraints found in the code
 
