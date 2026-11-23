@@ -12,6 +12,7 @@ import React from 'react';
 import { Linking } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { BRAND } from '../../../src/config/branding';
+import { OLD_PROJECT_NAME } from '../../utils/ownNamePattern';
 
 // Navigation is globally mocked in jest.setup.ts
 
@@ -176,7 +177,7 @@ describe('SettingsScreen', () => {
 
   it('shows no upstream community links', () => {
     const { queryByText, queryByTestId } = render(<SettingsScreen />);
-    expect(queryByText(/Stay in the loop|@alichherawalla|Slack/)).toBeNull();
+    expect(queryByText(new RegExp(`Stay in the loop|@alichherawalla|Slack|${OLD_PROJECT_NAME}`, 'i'))).toBeNull();
     expect(queryByTestId('follow-on-x')).toBeNull();
   });
 

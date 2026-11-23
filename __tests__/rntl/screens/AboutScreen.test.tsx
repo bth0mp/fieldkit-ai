@@ -24,6 +24,7 @@ jest.mock('../../../src/components/AnimatedListItem', () => ({
 }));
 jest.mock('../../../package.json', () => ({ version: '1.0.0' }), { virtual: true });
 
+import { OLD_PROJECT_NAME } from '../../utils/ownNamePattern';
 import { AboutScreen } from '../../../src/screens/AboutScreen';
 import { OpenSourceLicensesScreen } from '../../../src/screens/OpenSourceLicensesScreen';
 
@@ -33,7 +34,7 @@ describe('AboutScreen', () => {
   it('shows the app name and no upstream branding', () => {
     const { getByText, queryByText } = render(<AboutScreen />);
     expect(getByText(BRAND.name)).toBeTruthy();
-    expect(queryByText(/Slack|@alichherawalla/)).toBeNull();
+    expect(queryByText(new RegExp(`${OLD_PROJECT_NAME}|Wednesday|Slack|@alichherawalla`, 'i'))).toBeNull();
   });
 
   it('opens this app\'s own repository from Source Code', () => {
