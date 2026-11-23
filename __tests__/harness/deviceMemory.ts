@@ -9,12 +9,20 @@
  *
  * NOT a mock of the thing under test: the stub never decides `fits`; it only reports RAM.
  */
-import { Platform } from 'react-native';
-import { hardwareService } from '../../src/services/hardware';
-import { modelResidencyManager } from '../../src/services/modelResidency';
 import type { LoadPolicy } from '../../src/services/memoryBudget';
 
-const originalOS = Platform.OS;
+/**
+ * The app's modules are required when used, never imported: installNativeBoundary() calls jest.resetModules(), and
+ * a static import would keep the instances from before the reset, which the booted app no longer uses.
+ */
+const rn = () => require('react-native');
+const app = () => ({
+  Platform: rn().Platform,
+  hardwareService: require('../../src/services/hardware').hardwareService,
+  modelResidencyManager: require('../../src/services/modelResidency').modelResidencyManager,
+});
+
+const originalOS = rn().Platform.OS;
 
 export interface DeviceMemory {
   platform: 'ios' | 'android';
@@ -26,6 +34,7 @@ export interface DeviceMemory {
 
 /** Seed the device's RAM + platform + policy and reset the REAL residency manager to empty. */
 export function setDeviceMemory(d: DeviceMemory): void {
+  const { Platform, hardwareService, modelResidencyManager } = app();
   Object.defineProperty(Platform, 'OS', { value: d.platform, configurable: true });
   jest.spyOn(hardwareService, 'getTotalMemoryGB').mockReturnValue(d.totalGB);
   jest.spyOn(hardwareService, 'getAvailableMemoryGB').mockReturnValue(d.availGB);
@@ -37,6 +46,7 @@ export function setDeviceMemory(d: DeviceMemory): void {
 
 /** Restore Platform.OS + spies after a test. */
 export function resetDeviceMemory(): void {
+  const { Platform, modelResidencyManager } = app();
   Object.defineProperty(Platform, 'OS', { value: originalOS, configurable: true });
   jest.restoreAllMocks();
   modelResidencyManager._reset();
@@ -48,7 +58,7 @@ export function makeResident(
   spec: { key: string; type: any; modelId?: string; sizeMB: number; dirtyMemory?: boolean; canEvict?: () => boolean },
 ): jest.Mock {
   const unload = jest.fn().mockResolvedValue(undefined);
-  modelResidencyManager.register(spec, unload, 1);
+  app().modelResidencyManager.register(spec, unload, 1);
   return unload;
 }
 
