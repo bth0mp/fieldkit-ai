@@ -81,5 +81,20 @@
           android:name="androidx.work.impl.foreground.SystemForegroundService"
           android:foregroundServiceType="dataSync"
           tools:node="merge" />
+
+      <!-- WorkManager starts on demand from MainApplication.workManagerConfiguration (it carries the
+           factory that runs downloads queued under the old class name). The default initializer would
+           start it first with the default configuration. -->
+      <provider
+          android:name="androidx.startup.InitializationProvider"
+          android:authorities="${applicationId}.androidx-startup"
+          android:exported="false"
+          tools:node="merge">
+          <meta-data
+              android:name="androidx.work.WorkManagerInitializer"
+              android:value="androidx.startup"
+              tools:node="remove" />
+      </provider>
+
     </application>
 </manifest>
