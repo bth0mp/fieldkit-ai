@@ -49,7 +49,7 @@ if [ -n "$PUSHED_JS" ]; then
   npx tsc --noEmit
 
   echo "▶ JS/TS tests (related to changed files)..."
-  echo "$PUSHED_JS" | tr '\n' '\0' | xargs -0 npx jest --findRelatedTests --passWithNoTests
+  echo "$PUSHED_JS" | tr '\n' '\0' | xargs -0 jest --findRelatedTests --passWithNoTests
 
   echo "▶ Architecture gate (dependency-cruiser)..."
   npm run depcruise
