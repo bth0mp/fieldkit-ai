@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Platform } from 'react-native';
 import { createHydrationGatedStorage } from '../utils/hydrationGatedStorage';
+import { renamingStorage } from '../services/earlierIds';
 import { DeviceInfo, DownloadedModel, ModelRecommendation, ONNXImageModel, ImageGenerationMode, AutoDetectMethod, CacheType, InferenceBackend, INFERENCE_BACKENDS, LiteRTBackend, GeneratedImage } from '../types';
 
 function isUnknownLike(value: string): boolean {
@@ -296,7 +297,8 @@ const persistedAppState = (state: AppState) => ({
 });
 
 type PersistedAppState = ReturnType<typeof persistedAppState>;
-const appStorage = createHydrationGatedStorage<PersistedAppState>();
+// The selected model and per-model settings may carry the id an earlier version gave the curated LiteRT model.
+const appStorage = createHydrationGatedStorage<PersistedAppState>(renamingStorage());
 
 export const useAppStore = create<AppState>()(
   persist(

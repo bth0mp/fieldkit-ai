@@ -10,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { modelManager } from '../../../src/services/modelManager';
 import { backgroundDownloadService } from '../../../src/services/backgroundDownloadService';
 import { huggingFaceService } from '../../../src/services/huggingface';
+import { LITERT_PARENT_ID } from '../../../src/services/curatedLiteRTRegistry';
 import { buildDownloadedModel } from '../../../src/services/modelManager/storage';
 import { createModelFile, createModelFileWithMmProj } from '../../utils/factories';
 
@@ -615,14 +616,14 @@ describe('ModelManager', () => {
       mockedBackgroundDownloadService.startDownload.mockResolvedValue({
         downloadId: 99,
         fileName: 'gemma-4-E2B-it.litertlm',
-        modelId: 'offgrid/litert-recommended',
+        modelId: LITERT_PARENT_ID,
         status: 'pending',
         bytesDownloaded: 0,
         totalBytes: curated.size,
         startedAt: Date.now(),
       } as any);
 
-      await modelManager.downloadModelBackground('offgrid/litert-recommended', curated);
+      await modelManager.downloadModelBackground(LITERT_PARENT_ID, curated);
 
       expect(mockedBackgroundDownloadService.startDownload).toHaveBeenCalledWith(
         expect.objectContaining({ url: customUrl }),

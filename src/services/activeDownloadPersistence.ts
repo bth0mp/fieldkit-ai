@@ -18,7 +18,7 @@ import { useDownloadStore } from '../stores/downloadStore';
 import { isActiveStatus, isQueuedStatus, type DownloadEntry } from '../utils/downloadStatus';
 import type { ModelKey } from '../utils/modelKey';
 import logger from '../utils/logger';
-import { EARLIER_ACTIVE_DOWNLOADS_KEY, readMovedItem, removeMovedItem } from './earlierIds';
+import { EARLIER_ACTIVE_DOWNLOADS_KEY, readMovedItem, removeMovedItem, renameEarlierModelIds } from './earlierIds';
 
 const ACTIVE_DOWNLOADS_KEY = '@fieldkit/active_downloads';
 
@@ -44,7 +44,7 @@ export async function loadActiveDownloads(): Promise<DownloadEntry[]> {
   try {
     const stored = await readMovedItem(ACTIVE_DOWNLOADS_KEY, EARLIER_ACTIVE_DOWNLOADS_KEY);
     if (!stored) return [];
-    const parsed = JSON.parse(stored);
+    const parsed = JSON.parse(renameEarlierModelIds(stored));
     return Array.isArray(parsed) ? (parsed as DownloadEntry[]) : [];
   } catch (e) {
     logger.log(`[DL-SM] load active downloads failed err=${e instanceof Error ? e.message : String(e)}`);

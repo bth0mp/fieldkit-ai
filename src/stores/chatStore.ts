@@ -7,6 +7,7 @@ import { generateId } from '../utils/generateId';
 import { callHook, HOOKS } from '../bootstrap/hookRegistry';
 import { createHydrationGatedStorage } from '../utils/hydrationGatedStorage';
 import { createChunkedStorage, readOversizedRow } from '../utils/chunkedStorage';
+import { renamingStorage } from '../services/earlierIds';
 
 function nextUpdatedAt(previousUpdatedAt?: string): string {
   const now = Date.now();
@@ -109,7 +110,7 @@ type PersistedChatState = Pick<ChatState, 'conversations' | 'activeConversationI
 // be read, the chunked layer keeps it readable on Android, and an unchanged list is not written again
 // (a streamed reply changes other fields of the store at token rate).
 const chatStorage = createHydrationGatedStorage<PersistedChatState>(
-  createChunkedStorage(undefined, readOversizedRow),
+  renamingStorage(createChunkedStorage(undefined, readOversizedRow)),
   (previous, next) =>
     previous.conversations === next.conversations &&
     previous.activeConversationId === next.activeConversationId,

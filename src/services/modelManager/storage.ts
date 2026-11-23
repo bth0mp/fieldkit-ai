@@ -2,7 +2,8 @@ import RNFS from 'react-native-fs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DownloadedModel, LlamaDownloadedModel, LiteRTDownloadedModel, ModelFile, ModelCredibility, ONNXImageModel } from '../../types';
 import { LMSTUDIO_AUTHORS, OFFICIAL_MODEL_AUTHORS, VERIFIED_QUANTIZERS } from '../../constants';
-import { getCuratedLiteRTEntry } from '../curatedLiteRTRegistry';
+import { getCuratedLiteRTEntry, authorOfModelId, LITERT_PARENT_ID, LITERT_AUTHOR } from '../curatedLiteRTRegistry';
+import { renameEarlierModelIds } from '../earlierIds';
 import logger from '../../utils/logger';
 
 const MODELS_STORAGE_KEY = '@local_llm/downloaded_models';
@@ -191,7 +192,12 @@ export async function loadDownloadedModels(modelsDir: string): Promise<Downloade
     // already-downloaded curated models whose row was written before liteRTVision
     // was being set correctly. Locally-imported .litertlm files aren't in the
     // registry and keep whatever flag they were saved with.
-    models = (JSON.parse(stored) as any[]).map((m): DownloadedModel => {
+    // A model an earlier version saved under its old curated id is read under the new one (and with the
+    // author the cards show); the next save writes it that way.
+    models = (JSON.parse(renameEarlierModelIds(stored)) as any[]).map((saved): DownloadedModel => {
+      const m = saved.id.startsWith(`${LITERT_PARENT_ID}/`) && saved.author !== LITERT_AUTHOR
+        ? { ...saved, author: LITERT_AUTHOR, credibility: determineCredibility(LITERT_AUTHOR) }
+        : saved;
       if (m.engine === 'litert') {
         const curated = getCuratedLiteRTEntry(m.fileName);
         const liteRTVision = curated?.liteRTVision ?? m.liteRTVision ?? false;
@@ -306,7 +312,7 @@ export interface BuildModelOpts {
 export async function buildDownloadedModel(opts: BuildModelOpts): Promise<DownloadedModel> {
   const { modelId, file, resolvedLocalPath, mmProjPath, expectedMmProjFileName } = opts;
   const stat = await RNFS.stat(resolvedLocalPath);
-  const author = modelId.split('/')[0] || 'Unknown';
+  const author = authorOfModelId(modelId) || 'Unknown';
   const isLiteRT = file.name.toLowerCase().endsWith('.litertlm');
   const mmProjFile = file.mmProjFile;
   let mmProjFileSize = mmProjPath ? mmProjFile?.size : undefined;

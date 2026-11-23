@@ -8,6 +8,7 @@ import {
 } from './types';
 import logger from '../../utils/logger';
 import { mmProjLocalName } from './download';
+import { authorOfModelId } from '../curatedLiteRTRegistry';
 import { isMmProjFileName } from '../downloadHydration';
 
 export interface RestoreDownloadsOpts {
@@ -136,7 +137,7 @@ function buildMetadataFromActiveDownload(download: RestorableDownloadInfo, model
     modelId: download.modelId,
     fileName: download.fileName,
     quantization: download.quantization || 'Unknown',
-    author: download.modelId.split('/')[0] || 'Unknown',
+    author: authorOfModelId(download.modelId) || 'Unknown',
     totalBytes: combinedTotal,
     mainFileSize,
     mmProjFileName: derivedMmProjFileName,

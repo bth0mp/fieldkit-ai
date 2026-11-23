@@ -17,6 +17,7 @@ import { parseEntryMetadata, retryImageDownload } from './retryHandlers';
 import { modelDownloadService } from '../../services/modelDownloadService';
 import { uniformDownloadId } from '../../services/modelDownloadService/uniformId';
 import { imageBackendLabel } from '../../utils/imageBackend';
+import { authorOfModelId } from '../../services/curatedLiteRTRegistry';
 import { setImageDownloadOps } from '../../services/modelDownloadService/providers/imageProvider';
 import { useEffect } from 'react';
 
@@ -66,7 +67,7 @@ function getActiveItemAuthor(
   metadata: Record<string, any> | null,
 ): string {
   if (isImage) return getImageAuthor(metadata?.imageModelBackend);
-  return entry.modelId.split('/')[0] ?? 'Unknown';
+  return authorOfModelId(entry.modelId) || 'Unknown';
 }
 
 function getActiveItemQuantization(

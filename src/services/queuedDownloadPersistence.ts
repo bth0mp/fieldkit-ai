@@ -14,7 +14,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { DownloadParams } from './backgroundDownloadTypes';
 import logger from '../utils/logger';
-import { EARLIER_QUEUED_DOWNLOADS_KEY, readMovedItem, removeMovedItem } from './earlierIds';
+import { EARLIER_QUEUED_DOWNLOADS_KEY, readMovedItem, removeMovedItem, renameEarlierModelIds } from './earlierIds';
 
 const QUEUED_DOWNLOADS_KEY = '@fieldkit/queued_downloads';
 
@@ -51,7 +51,7 @@ export async function loadQueuedDownloads(): Promise<QueuedParams[]> {
   try {
     const stored = await readMovedItem(QUEUED_DOWNLOADS_KEY, EARLIER_QUEUED_DOWNLOADS_KEY);
     if (!stored) return [];
-    const parsed = JSON.parse(stored);
+    const parsed = JSON.parse(renameEarlierModelIds(stored));
     return Array.isArray(parsed) ? (parsed as QueuedParams[]) : [];
   } catch (e) {
     logger.log(`[DL-SM] load queued downloads failed err=${e instanceof Error ? e.message : String(e)}`);

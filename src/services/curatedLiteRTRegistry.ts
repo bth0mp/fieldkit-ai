@@ -4,7 +4,16 @@ import { fileExceedsBudget } from './memoryBudget';
 // Synthetic parent id for the curated LiteRT models. Used both as the model id
 // in the ModelsScreen browser and as the download id in onboarding so a model
 // downloaded in either place resolves to the same `${LITERT_PARENT_ID}/${file}`.
-export const LITERT_PARENT_ID = 'offgrid/litert-recommended';
+export const LITERT_PARENT_ID = 'fieldkit/litert-recommended';
+
+/** The author shown for the curated LiteRT models, which are Google's. */
+export const LITERT_AUTHOR = 'google';
+
+/** The author of a model: the repository owner in its id, and Google for the curated LiteRT models. */
+export function authorOfModelId(modelId: string): string {
+  if (modelId === LITERT_PARENT_ID || modelId.startsWith(`${LITERT_PARENT_ID}/`)) return LITERT_AUTHOR;
+  return modelId.split('/')[0];
+}
 
 export interface CuratedLiteRTEntry {
   fileName: string;

@@ -11,6 +11,7 @@ import {
   BackgroundDownloadContext,
 } from './types';
 import { buildDownloadedModel, persistDownloadedModel } from './storage';
+import { authorOfModelId, LITERT_PARENT_ID } from '../curatedLiteRTRegistry';
 import logger from '../../utils/logger';
 import { useDownloadStore } from '../../stores/downloadStore';
 import { makeModelKey } from '../../utils/modelKey';
@@ -267,11 +268,11 @@ async function startBgDownload(opts: StartBgDownloadOpts): Promise<BackgroundDow
   const mmProjSize = file.mmProjFile?.size || 0;
   const combinedTotalBytes = file.size + mmProjSize;
   const downloadUrl = file.downloadUrl || huggingFaceService.getDownloadUrl(modelId, file.name);
-  const author = modelId.split('/')[0] || 'Unknown';
+  const author = authorOfModelId(modelId) || 'Unknown';
   const modelKey = makeModelKey(modelId, file.name);
 
   const needsMmProj = !!(file.mmProjFile && mmProjLocalPath && !mmProjExists);
-  const skipSizeValidation = modelId.startsWith('offgrid/');
+  const skipSizeValidation = modelId === LITERT_PARENT_ID;
   const metadataObj: Record<string, unknown> = {};
   if (needsMmProj) {
     metadataObj.mmProjFileName = mmProjLocalName(file.name, file.mmProjFile?.name);

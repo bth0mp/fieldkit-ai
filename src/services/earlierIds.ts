@@ -6,7 +6,9 @@
 import * as Keychain from 'react-native-keychain';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RNFS from 'react-native-fs';
+import type { StateStorage } from 'zustand/middleware';
 import logger from '../utils/logger';
+import { LITERT_PARENT_ID } from './curatedLiteRTRegistry';
 
 export const EARLIER_AUTH_SERVICE = 'ai.offgridmobile.auth';
 export const EARLIER_SERVERS_SERVICE = 'ai.offgridmobile.servers';
@@ -66,6 +68,42 @@ export async function readMovedItem(key: string, earlierKey: string): Promise<st
 export async function removeMovedItem(key: string, earlierKey: string): Promise<void> {
   await AsyncStorage.removeItem(key);
   await AsyncStorage.removeItem(earlierKey);
+}
+
+const EARLIER_LITERT_PARENT_ID = 'offgrid/litert-recommended';
+// The id at the start of a JSON string (after its opening quote) or after a colon inside one, and followed
+// by the rest of the id or the end of the string. Text that merely quotes the id (a backslash before the
+// quote, as JSON escapes it) is left alone.
+const EARLIER_LITERT_ID_IN_JSON = /(^|[^\\])(["':])offgrid\/litert-recommended(?=["/])/g;
+
+/**
+ * Rename the curated LiteRT model id inside a saved JSON string (values, keys, ids joined by a colon).
+ * Saved data is read through this, so it need not be rewritten: the next normal save writes the new id.
+ * A multi-megabyte chat string is searched with `includes` first and is returned as it came when the
+ * id is not in it.
+ */
+export function renameEarlierModelIds(raw: string): string {
+  if (!raw.includes(EARLIER_LITERT_PARENT_ID)) return raw;
+  return raw.replace(EARLIER_LITERT_ID_IN_JSON, (_match, before: string, mark: string) => `${before}${mark}${LITERT_PARENT_ID}`);
+}
+
+/** The same for a value that is not a string yet (a row from the native download database). */
+export function renameEarlierModelIdsIn<T>(value: T): T {
+  const raw = JSON.stringify(value);
+  const renamed = raw === undefined ? raw : renameEarlierModelIds(raw);
+  return renamed === raw ? value : (JSON.parse(renamed) as T);
+}
+
+/** A saved-state storage that renames the earlier model id in what it reads. Writes go straight through. */
+export function renamingStorage(base: StateStorage = AsyncStorage): StateStorage {
+  return {
+    getItem: async name => {
+      const value = await base.getItem(name);
+      return typeof value === 'string' ? renameEarlierModelIds(value) : value;
+    },
+    setItem: (name, value) => base.setItem(name, value),
+    removeItem: name => base.removeItem(name),
+  };
 }
 
 // What earlier versions left on the phone that nothing reads any more: Keychain entries of a licence check
