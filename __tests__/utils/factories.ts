@@ -1,7 +1,7 @@
 /**
  * Test Data Factories
  *
- * Creates test data for Off Grid entities.
+ * Creates test data for app entities.
  * Use these factories to create consistent test data across all test files.
  */
 

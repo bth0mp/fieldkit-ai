@@ -29,7 +29,7 @@ module.exports = {
   coverageReporters: ['text', 'text-summary', 'lcov', 'json-summary'],
   coverageThreshold: {
     // `global` gates src/ at 80. A glob key REMOVES matching files from `global` and gates
-    // them separately — so the pro group below carves pro out of the src gate.
+    // them separately — so the per-file entries below carve those files out of the src gate.
     global: {
       statements: 80,
       branches: 80,

@@ -284,9 +284,8 @@ export const useChatStore = create<ChatState>()(
           isStreaming: true,
           isThinking: false,
         }));
-        // Feed only the ANSWER to pro audio for real-time sentence-by-sentence
-        // TTS (never the reasoning) — no-op unless voice mode + engine ready;
-        // free builds register nothing.
+        // Feed only the ANSWER to the voice feature for real-time sentence-by-sentence
+        // TTS (never the reasoning) — no-op unless voice mode + engine ready.
         callHook(HOOKS.audioOnStreamingToken, speakableStreamingAnswer(get().streamingMessage, get().streamingReasoningContent));
       },
 

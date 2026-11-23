@@ -88,7 +88,7 @@ describe('SettingsScreen', () => {
   it('shows no Pro upsell banner or PRO card', () => {
     const { queryByText } = render(<SettingsScreen />);
     expect(queryByText(/democratized/i)).toBeNull();
-    expect(queryByText(/Off Grid AI PRO/)).toBeNull();
+    expect(queryByText(/PRO/)).toBeNull();
   });
 
   it('renders "Settings" title', () => {
@@ -176,7 +176,7 @@ describe('SettingsScreen', () => {
 
   it('shows no upstream community links', () => {
     const { queryByText, queryByTestId } = render(<SettingsScreen />);
-    expect(queryByText(/Stay in the loop|@alichherawalla|Slack|Off Grid/)).toBeNull();
+    expect(queryByText(/Stay in the loop|@alichherawalla|Slack/)).toBeNull();
     expect(queryByTestId('follow-on-x')).toBeNull();
   });
 

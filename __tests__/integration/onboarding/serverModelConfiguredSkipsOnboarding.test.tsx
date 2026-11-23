@@ -6,7 +6,7 @@
  * model are already configured ('hit continue, it skipped onboarding — good UX')." This locks that happy
  * path as a regression guard.
  *
- * Product-correct outcome (OGAM user's view): while on the ModelDownload onboarding step (the "remaining
+ * Product-correct outcome (the user's view): while on the ModelDownload onboarding step (the "remaining
  * onboarding"), if the user connects to a network server that has a model, tapping "Continue" on the
  * "Connected!" sheet drops them into the main app (the tab bar / Home) and does NOT leave them on — or
  * bounce them back to — the ModelDownload onboarding step.

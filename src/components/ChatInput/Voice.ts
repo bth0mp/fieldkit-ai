@@ -83,7 +83,7 @@ export function useVoiceInput({ conversationId, onTranscript, onAudioAttachment,
     recordingConversationIdRef.current = conversationId || null;
     setDirectError(null);
     // Stop any TTS playback before recording — mic and speaker shouldn't overlap.
-    // No-op without the pro audio feature.
+    // No-op until the voice feature registers the hook.
     callHook(HOOKS.audioStop);
 
     if (supportsDirectAudio()) {

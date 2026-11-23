@@ -1,7 +1,7 @@
 /**
  * RED-FLOW (UI integration, HEAVY entry point) — when the user selects a GPU backend and the GPU init
- * fails, the CPU fallback must be VISIBLE in the chat, not silent. Device ground truth (offgrid-debug.log
- * 2026-07-13 18:57, gemma-4-E2B on Adreno 735): user set Backend=GPU + reloaded → "OpenCL backend —
+ * fails, the CPU fallback must be VISIBLE in the chat, not silent. Device ground truth (gemma-4-E2B on
+ * Adreno 735): user set Backend=GPU + reloaded → "OpenCL backend —
  * offloading 24 layers to GPU" → "Attempt 1/3 failed (GPU): GPU context init timed out after 8000ms" →
  * CPU init succeeded → the turn ran at 3.4 tok/s on CPU. The ONLY tell was the meta line, which is gated
  * behind Show Generation Details (off by default) — the user reported it as "GPU selected but CPU".

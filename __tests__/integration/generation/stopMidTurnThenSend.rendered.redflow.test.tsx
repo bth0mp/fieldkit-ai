@@ -1,5 +1,5 @@
 /**
- * DEVICE 2026-07-13 (offgrid-debug.log 18:12–18:16 + IMG_0144/45/48) — stopping a response and then
+ * DEVICE — stopping a response and then
  * sending again must WORK. On device it wedged the whole chat:
  *
  *   user stops a tool-turn mid-completion → llama can only honor the stop once prefill finishes →

@@ -56,7 +56,7 @@ const IMAGE_MODE_CYCLE: ImageModeState[] = ['auto', 'force', 'disabled'];
 
 /**
  * Expanded width of the collapsing pill-icons row. '+' and the settings gear
- * are always present; the thinking toggle and the pro mode-toggle are
+ * are always present; the thinking toggle is
  * conditional. Sizing to the real count prevents the rightmost icons from
  * being clipped by the row's `overflow: hidden`.
  */

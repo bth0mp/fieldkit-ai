@@ -5,7 +5,7 @@
  * TTS state now comes from the SAME ModelDownloadService projection the Voice panel
  * reads (ttsProvider) — not a parallel `downloads.listVoiceModels` hook — so the two
  * surfaces can't disagree (the "Kokoro shows downloaded while still downloading" bug).
- * Delete still routes through the pro delete hook.
+ * Delete still routes through the downloads.deleteVoiceModel hook.
  */
 import { renderHook, waitFor, act } from '@testing-library/react-native';
 import type { ModelDownload } from '../../../../src/services/modelDownloadService/types';
@@ -177,7 +177,7 @@ describe('useVoiceDownloadItems', () => {
     await waitFor(() => expect(mockDeleteModel).toHaveBeenCalledWith('base.en'));
   });
 
-  it('builds a delete alert that calls the pro delete hook for voice models', async () => {
+  it('builds a delete alert that calls the delete hook for voice models', async () => {
     const { result } = renderHook(() => useVoiceDownloadItems(jest.fn()));
     await waitFor(() => expect(result.current.voiceItems).toHaveLength(2));
 

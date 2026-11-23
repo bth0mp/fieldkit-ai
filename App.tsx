@@ -1,5 +1,5 @@
 /**
- * Off Grid - On-Device AI Chat Application
+ * On-device AI chat application
  * Private AI assistant that runs entirely on your device
  */
 

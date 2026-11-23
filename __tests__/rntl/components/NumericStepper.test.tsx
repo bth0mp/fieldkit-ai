@@ -92,7 +92,7 @@ describe('NumericStepper', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it('rounds an off-grid value to the nearest step on increment', () => {
+  it('rounds a value between steps to the nearest step on increment', () => {
     const onChange = jest.fn();
     const { getByTestId } = render(
       <NumericStepper testID="t" value={0.72} min={0} max={2} step={0.1} decimals={2} onChange={onChange} />,

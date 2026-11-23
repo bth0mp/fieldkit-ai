@@ -6,7 +6,7 @@ Date: 2026-11-17. Branch: `feat/field-guides` (continues the bundled field guide
 
 Fieldkit AI ships six public-domain field guides inside the APK. The owner wants friends to be able to get many
 more: a list of hundreds of free, copyright-free guides, sorted by category, that anyone can download inside the
-app while they have internet and use later without it. The app is for off-grid use, so everything downloaded
+app while they have internet and use later without it. The app is for use without a connection, so everything downloaded
 must work offline afterwards.
 
 The promise to users is "free and copyright free". A guide with a wrong or unproven licence is a failure even if

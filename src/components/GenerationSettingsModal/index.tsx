@@ -61,8 +61,8 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
   const [imageSettingsOpen, setImageSettingsOpen] = useState(false);
   const [textSettingsOpen, setTextSettingsOpen] = useState(false);
   const [ttsSettingsOpen, setTtsSettingsOpen] = useState(false);
-  // TTS settings come from the pro audio feature via a slot. Free builds have
-  // no TTS section.
+  // TTS settings come from the voice feature via a slot; there is no TTS
+  // section until it is registered.
   const TtsSection = getSlot(SLOTS.generationSettingsTts);
 
   useEffect(() => {
@@ -161,7 +161,7 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
           </>
         )}
 
-        {/* TTS SETTINGS (pro audio feature) */}
+        {/* TTS SETTINGS (voice feature) */}
         {TtsSection && (
           <>
             <TouchableOpacity

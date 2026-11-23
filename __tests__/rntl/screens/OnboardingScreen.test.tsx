@@ -70,7 +70,7 @@ jest.mock('../../../src/constants', () => ({
     {
       id: 'slide1',
       keyword: 'Welcome',
-      title: 'Off Grid',
+      title: 'Fieldkit',
       description: 'Your AI companion',
       accentColor: '#0066FF',
     },
@@ -127,7 +127,7 @@ describe('OnboardingScreen', () => {
   it('renders first slide content', () => {
     const { getByText } = render(<OnboardingScreen navigation={navigation} />);
     expect(getByText('Welcome')).toBeTruthy();
-    expect(getByText('Off Grid')).toBeTruthy();
+    expect(getByText('Fieldkit')).toBeTruthy();
     expect(getByText('Your AI companion')).toBeTruthy();
   });
 

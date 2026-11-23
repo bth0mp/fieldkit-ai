@@ -259,7 +259,7 @@ function resetDb() {
 
 const PROJECT = 'proj-kb-1';
 // Longer than DEFAULT_MIN_CHUNK_LENGTH (20) so it survives chunking; contains "solar".
-const SOLAR_DOC = 'A detailed guide to solar panel installation and roof mounting for off-grid homes.';
+const SOLAR_DOC = 'A detailed guide to solar panel installation and roof mounting for remote cabins.';
 const BATTERY_DOC = 'Battery storage sizing and charge controller wiring for a home energy system setup.';
 
 describe('BATCH 9 — KB add → indexed → searchable round-trip (real sqlite semantics)', () => {

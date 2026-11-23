@@ -143,7 +143,7 @@ describe('RemoteServersScreen', () => {
 
     it('offers no desktop app link from the empty state', () => {
       const { queryByText } = render(<RemoteServersScreen />);
-      expect(queryByText(/Off Grid/)).toBeNull();
+      expect(queryByText(/desktop app|download.*desktop/i)).toBeNull();
     });
 
     it('shows "Add Server" button in empty state', () => {

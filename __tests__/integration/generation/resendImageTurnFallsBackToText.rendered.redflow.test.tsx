@@ -5,7 +5,7 @@
  * image model is loaded, while resend fired the image pipeline UNCONDITIONALLY. So the SAME prompt behaves
  * differently on resend vs send once the image model is gone.
  *
- * SPEC (the OGAM user's view): a turn that produced an image, resent AFTER the image model is unloaded,
+ * SPEC (the user's view): a turn that produced an image, resent AFTER the image model is unloaded,
  * must behave like SENDING that prompt with no image model — a graceful TEXT reply, NOT an "Error: No image
  * model loaded." dead-end. Send already does this (dispatchGenerationFn prepends a note and runs text);
  * resend must converge on the SAME shared dispatch.

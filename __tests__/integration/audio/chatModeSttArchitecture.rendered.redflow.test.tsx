@@ -5,7 +5,7 @@
  * when the user spoke — while voice-mode's FILE pipeline (transcribeFile) works (T079). Root (B28): three
  * divergent STT mechanisms; chat-mode is on the broken realtime one.
  *
- * OGAM GROUND TRUTH: voice input is ALWAYS transcribed to TEXT (never raw audio). The user speaking
+ * GROUND TRUTH: voice input is ALWAYS transcribed to TEXT (never raw audio). The user speaking
  * "hello world" MUST put "hello world" in the input. Here the recording captured it (file-transcribe returns
  * "hello world"), but the realtime stream emits device-faithful NO-DATA (B26). HEAD: chat-mode's realtime-only
  * path ignores the recording, gets no data → input stays EMPTY → RED. Fix (unify chat-mode onto the
@@ -42,7 +42,7 @@ describe('T080/T075 (rendered) — chat-mode STT must transcribe the recording t
     h.boundary.whisper!.emitRealtime({ isCapturing: false, noData: true, recordingTime: 900 });
     await h.settle(300);
 
-    // SPEC (OGAM ground truth): the spoken words are transcribed to TEXT in the input.
+    // SPEC (ground truth): the spoken words are transcribed to TEXT in the input.
     // HEAD: realtime-only path got no data, never transcribes the recording → input EMPTY → RED.
     const input = await h.rtl.waitFor(() => h.view!.getByTestId('chat-input'));
     expect(input.props.value).toContain('hello world');

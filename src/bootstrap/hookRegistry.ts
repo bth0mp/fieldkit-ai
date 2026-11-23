@@ -31,12 +31,12 @@ export const HOOKS = {
   audioSpeak: 'audio.speak',
   /** () => void — stop any in-progress speech. */
   audioStop: 'audio.stop',
-  /** (content: string) => void — fired as the assistant message streams; pro
-   *  uses it to synthesize/play speech sentence-by-sentence while generation is
-   *  still in progress (no-op unless voice mode + engine ready). */
+  /** (content: string) => void — fired as the assistant message streams; the
+   *  voice feature uses it to synthesize/play speech sentence-by-sentence while
+   *  generation is still in progress (no-op unless voice mode + engine ready). */
   audioOnStreamingToken: 'audio.onStreamingToken',
   /** (conversationId: string) => void — when streaming ends, speak the final
-   *  assistant message if voice mode is active (pro checks mode/readiness). */
+   *  assistant message if voice mode is active (the voice feature checks mode/readiness). */
   audioOnStreamingEnd: 'audio.onStreamingEnd',
   /** () => void — app went to background: pause speech if playing. */
   audioOnAppBackground: 'audio.onAppBackground',

@@ -1,7 +1,7 @@
 /**
  * Jest Setup File
  *
- * Configures global mocks and test utilities for the Off Grid test suite.
+ * Configures global mocks and test utilities for the app's test suite.
  * This file runs after the test framework is installed in the environment.
  */
 
@@ -263,7 +263,7 @@ jest.mock('react-native-executorch', () => ({
   // initExecutorch registers the resource fetcher so the runtime is ready to load models through
   // it. With models faked at the fetcher + useTextToSpeech boundary there is nothing further to
   // emulate in-process, so it is a ready-signal (EngineBridge calls it at module import — without
-  // this the pro TTS bootstrap throws "initExecutorch is not a function").
+  // this the TTS bootstrap throws "initExecutorch is not a function").
   initExecutorch: () => {},
   // useTextToSpeech is the executorch boundary the TTS bridge drives. The streaming/playback is
   // exercised end-to-end by the KokoroTTSBridge suite, which feeds chunks + drives onEnded through

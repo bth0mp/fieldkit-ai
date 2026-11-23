@@ -1,13 +1,12 @@
 /**
- * HAPPY-PATH (UI, BEHAVIORAL) — speak an assistant reply aloud. OGAM spec: with TTS enabled, opening a reply's
+ * HAPPY-PATH (UI, BEHAVIORAL) — speak an assistant reply aloud. Spec: with TTS enabled, opening a reply's
  * action menu and tapping "Speak" sends THAT message's text to the audio engine; and you can never "speak"
  * your own (user) message. Tested through BOTH menu-open paths (long-press AND 3-dots).
  *
  * Real ChatScreen + real ChatMessage/ActionMenuSheet + real handleSpeak wiring (buildMessageData →
- * callHook('audio.speak', displayContent, id)). The Pro TTS engine plugs into core through the audio.* hook
+ * callHook('audio.speak', displayContent, id)). The TTS engine plugs into core through the audio.* hook
  * seam — faked AT that seam (a capturing handler). This guards core's contract: the Speak gesture dispatches the right message's content, and the
- * affordance obeys the canSpeak gate. (The engine's synthesis/playback itself is covered by the pro/audio
- * suites.)
+ * affordance obeys the canSpeak gate. (The engine's synthesis/playback itself is covered by the speech suites.)
  */
 import { setupChatScreen } from '../../harness/chatHarness';
 
@@ -18,7 +17,7 @@ jest.mock('@react-navigation/native', () => ({
   useIsFocused: () => true,
 }));
 
-// Register the audio.* hook seam the way the Pro audio module does — AFTER the harness's resetModules, so the
+// Register the audio.* hook seam the way the voice feature does — AFTER the harness's resetModules, so the
 // app and the test share the same hook registry instance. canSpeak=true enables the affordance; speak captures.
 function installTtsSeam(): { spoken: Array<{ text: string; id: string }> } {
   const spoken: Array<{ text: string; id: string }> = [];

@@ -105,7 +105,7 @@ class WhisperService {
         // within 0.1%, and since whisper.cpp ships no SHA to verify against, a
         // fully-downloaded file was deleted as FILE_CORRUPTED. The URL is pinned
         // to ggerganov/whisper.cpp; integrity is covered by HTTPS + the host
-        // allowlist (matches how curated offgrid/* models opt out).
+        // allowlist (matches how curated fieldkit/* models opt out).
         metadataJson: JSON.stringify({ skipSizeValidation: true }),
       },
       destPath,

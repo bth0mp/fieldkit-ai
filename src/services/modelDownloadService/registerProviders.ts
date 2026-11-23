@@ -1,7 +1,7 @@
 /**
  * Register the core download providers (text / image / stt) with the single
- * ModelDownloadService. Called once at app boot. The tts provider lives in pro and
- * registers itself via pro activation (it owns the executorch fetcher).
+ * ModelDownloadService. Called once at app boot. The tts provider is registered separately
+ * (it owns the executorch fetcher).
  */
 import { modelDownloadService } from './index';
 import { textProvider } from './providers/textProvider';

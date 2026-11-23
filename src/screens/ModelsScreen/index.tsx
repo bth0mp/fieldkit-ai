@@ -20,9 +20,8 @@ export const ModelsScreen: React.FC = () => {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const vm = useModelsScreen();
-  // Pro fills this slot with the real voice-models panel (engine + downloads).
-  // The Voice tab always renders; when the slot is empty (free / non-pro) we
-  // show an upsell so users can see what Pro adds.
+  // The voice feature fills this slot with the real voice-models panel (engine + downloads).
+  // The Voice tab always renders; when the slot is empty it shows nothing.
   const VoiceModelsPanel = useSlot(SLOTS.modelsScreenVoiceTab);
   const route = useRoute<RouteProp<RootStackParamList, 'Models'>>();
 
@@ -256,7 +255,7 @@ export const ModelsScreen: React.FC = () => {
         />
       )}
 
-      {/* Voice Models Tab: pro panel when registered, otherwise nothing. */}
+      {/* Voice Models Tab: voice panel when registered, otherwise nothing. */}
       {vm.activeTab === 'voice' && (VoiceModelsPanel ? <VoiceModelsPanel /> : null)}
 
       {/* Transcription Models Tab (speech-to-text, core). */}

@@ -1,7 +1,7 @@
 /**
  * Detail "Available Files" device-fit hint — the single owned budget (memoryBudget.fileExceedsBudget).
  *
- * SPEC (the OGAM user's view): in a model's detail view, the "Available Files" list offers exactly the
+ * SPEC (the user's view): in a model's detail view, the "Available Files" list offers exactly the
  * quant files that FIT this device's RAM budget and hides the ones that don't — and that fit decision is
  * the ONE owned primitive `fileExceedsBudget` (device-tier fraction of TOTAL RAM), never a hand-rolled
  * copy of the budget arithmetic that could drift from the download-warning / picker / browse-list copies.
