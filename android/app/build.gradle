@@ -85,8 +85,8 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Fieldkit releases: versionCode = major * 10000 + minor * 100 + patch; it must grow every release.
-        versionCode 500
-        versionName "0.5.0"
+        versionCode 501
+        versionName "0.5.1"
     }
     signingConfigs {
         debug {
