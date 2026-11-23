@@ -79,7 +79,7 @@ describe('cancelling a download of a vision model', () => {
     expect(await exists(boundary, `/docs/models/${q4}`)).toBe(true);
   }, 30000);
 
-  it('still removes the projector this download fetched itself', async () => {
+  it('keeps a projector this download fetched itself, which is whole and reusable', async () => {
     const boundary = install();
 
     // Its own projector finishes downloading while the Q6 file is still coming.
@@ -95,6 +95,6 @@ describe('cancelling a download of a vision model', () => {
       });
     });
 
-    expect(await exists(boundary, projectorOnPhone)).toBe(false);
+    expect(await exists(boundary, projectorOnPhone)).toBe(true);
   }, 30000);
 });

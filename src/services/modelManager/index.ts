@@ -236,17 +236,10 @@ class ModelManager {
     }
   }
 
-  /**
-   * The files a cancelled text download leaves behind. The projector counts only when this download
-   * fetched it (it has a projector download id): one that was already on the phone belongs to the
-   * model it was downloaded for, and another quantization of that model may be using it.
-   */
-  private cancelledTextArtifacts(ctx: Extract<BackgroundDownloadContext, { file: ModelFile }>): string[] {
-    const projector = ctx.mmProjDownloadId ? ctx.mmProjLocalPath : null;
-    return [ctx.localPath, projector].filter((path): path is string => !!path);
-  }
-
-  private async cleanupCancelledTextArtifacts(cleanupTargets: string[]): Promise<void> {
+  // A cancel removes the model file only. A projector that finished is whole, other quantizations of the model
+  // may use it, and the next download of the model reuses it; an unused one shows under Orphaned Files.
+  private async cleanupCancelledTextArtifacts(ctx: Extract<BackgroundDownloadContext, { file: ModelFile }>): Promise<void> {
+    const cleanupTargets = [ctx.localPath];
 
     await Promise.all(cleanupTargets.map(async targetPath => {
       try {
@@ -265,15 +258,13 @@ class ModelManager {
       throw new Error('Background downloads not supported on this platform');
     }
     const ctx = this.backgroundDownloadContext.get(downloadId);
-    // Taken before the cancels: cancelling the projector download makes the watcher forget the path.
-    const leftovers = ctx && 'file' in ctx ? this.cancelledTextArtifacts(ctx) : null;
     if (ctx && 'file' in ctx && ctx.mmProjDownloadId) {
       await backgroundDownloadService.cancelDownload(ctx.mmProjDownloadId).catch(() => {});
     }
 
     await backgroundDownloadService.cancelDownload(downloadId);
-    if (leftovers) {
-      await this.cleanupCancelledTextArtifacts(leftovers);
+    if (ctx && 'file' in ctx) {
+      await this.cleanupCancelledTextArtifacts(ctx);
     }
     this.backgroundDownloadMetadataCallback?.(downloadId, null);
   }
