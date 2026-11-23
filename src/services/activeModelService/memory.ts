@@ -15,7 +15,7 @@ import {
   IMAGE_MODEL_OVERHEAD_MULTIPLIER,
 } from './types';
 import { useAppStore } from '../../stores';
-import { modelMemoryBudgetMB, modelWarningThresholdMB, LoadPolicy } from '../memoryBudget';
+import { modelMemoryBudgetMB, modelWarningThresholdMB, runVerdict, LoadPolicy } from '../memoryBudget';
 
 // ---------------------------------------------------------------------------
 // Budget helpers
@@ -138,7 +138,7 @@ export async function checkMemoryForModel(
 ): Promise<MemoryCheckResult> {
   const { modelId, modelType, ids, lists, policy, sessionOverride } = params;
   const memoryBudgetGB = await getMemoryBudgetGB(policy);
-  const warningThresholdGB = await getMemoryWarningThresholdGB();
+  const totalRamMB = (await hardwareService.getDeviceInfo()).totalMemory / (1024 * 1024);
 
   const model =
     modelType === 'text'
@@ -184,7 +184,10 @@ export async function checkMemoryForModel(
   let canLoad: boolean;
   let message: string;
 
-  if (totalRequiredMemoryGB > memoryBudgetGB) {
+  // The same verdict the model cards show, so a card never promises what this check then refuses.
+  const { verdict } = runVerdict(totalRequiredMemoryGB * 1024, totalRamMB, { policy });
+
+  if (verdict === 'wont') {
     severity = 'critical';
     canLoad = false;
     message =
@@ -194,7 +197,7 @@ export async function checkMemoryForModel(
           `Unload the other model first, or choose a smaller model.`
         : `${modelName} requires ~${requiredStr} GB which exceeds your device's ~${budgetStr} GB safe limit. ` +
           `This model is too large for your device. Choose a smaller model.`;
-  } else if (totalRequiredMemoryGB > warningThresholdGB) {
+  } else if (verdict === 'tight') {
     severity = 'warning';
     canLoad = true;
     message =

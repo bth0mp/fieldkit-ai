@@ -144,6 +144,26 @@ export function modelWarningThresholdMB(totalRamMB: number, platform: Plat = Pla
   return Math.min(byFraction, modelMemoryBudgetMB(totalRamMB, platform));
 }
 
+export type RunVerdict = 'runs' | 'tight' | 'wont';
+
+/**
+ * The SINGLE verdict on "does this much model memory run here": the load pre-check and every model
+ * card read it, so a card never promises a model the app then refuses. `wont` past the budget,
+ * `tight` past the warning threshold, else `runs`. Sizes in MB in; GB out for the copy.
+ */
+export function runVerdict(
+  requiredMB: number,
+  totalRamMB: number,
+  opts: { policy?: LoadPolicy; platform?: Plat } = {},
+): { verdict: RunVerdict; needGB: number; allowGB: number } {
+  const { policy = 'balanced', platform = Platform.OS } = opts;
+  const budgetMB = modelMemoryBudgetMB(totalRamMB, platform, policy);
+  let verdict: RunVerdict = 'runs';
+  if (requiredMB > budgetMB) verdict = 'wont';
+  else if (requiredMB > modelWarningThresholdMB(totalRamMB, platform)) verdict = 'tight';
+  return { verdict, needGB: requiredMB / 1024, allowGB: budgetMB / 1024 };
+}
+
 const BYTES_PER_GB = 1024 ** 3;
 
 /**
