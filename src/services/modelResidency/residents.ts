@@ -10,14 +10,6 @@ import { Resident, ResidentType } from './policy';
 
 export type UnloadFn = () => Promise<void>;
 
-/** Hard floor so a small model can always load, even under memory pressure. */
-export const MIN_BUDGET_MB = 1024;
-/** For DIRTY-memory models (CoreML/ONNX image): keep this much real RAM free for the
- *  OS + other apps so a dirty load never spills into swap. (Not applied to mmap'd
- *  GGUF - their clean weights don't pressure this limit.) */
-export const DIRTY_AVAILABILITY_HEADROOM_MB = 1024;
-/** Aggressive-mode dirty headroom - leaner, still non-zero (lenient safeguard). */
-export const AGGRESSIVE_DIRTY_HEADROOM_MB = 512;
 /** Small, cheaply-reloadable models reclaimed first under memory pressure. */
 export const SIDECAR_TYPES = new Set<ResidentType>(['whisper', 'tts', 'embedding']);
 

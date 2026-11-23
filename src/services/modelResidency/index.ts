@@ -17,7 +17,7 @@ import {
   computeBudgetMB,
   Resident,
 } from './policy';
-import { LoadPolicy, effectiveAvailableMB } from '../memoryBudget';
+import { LoadPolicy, effectiveAvailableMB, dirtyBudgetMB, MIN_BUDGET_MB } from '../memoryBudget';
 import {
   formatMakeRoomForLine,
   formatOverrideForcingLine,
@@ -25,9 +25,6 @@ import {
 } from './logging';
 import {
   UnloadFn,
-  MIN_BUDGET_MB,
-  DIRTY_AVAILABILITY_HEADROOM_MB,
-  AGGRESSIVE_DIRTY_HEADROOM_MB,
   SIDECAR_TYPES,
   RegisteredResident,
   ResidentSpec,
@@ -223,16 +220,11 @@ class ModelResidencyManager {
       (sum, r) => sum + r.sizeMB,
       0,
     );
-    // Aggressive mode holds a smaller real-free-RAM headroom for dirty loads (the
-    // lenient safeguard) so e.g. a 3GB LiteRT model the balanced guard rejects on a
-    // 12GB phone is allowed through. Still non-zero - never a guaranteed jetsam.
-    const dirtyHeadroomMB =
-      this.loadPolicy === 'aggressive'
-        ? AGGRESSIVE_DIRTY_HEADROOM_MB
-        : DIRTY_AVAILABILITY_HEADROOM_MB;
-    const dynamicMB = availableMB + residentMB - dirtyHeadroomMB;
-    return Math.round(
-      Math.max(MIN_BUDGET_MB, Math.min(physicalCapMB, dynamicMB)),
+    // The dirty-budget arithmetic (headroom by policy, floor, physical cap) lives in memoryBudget's
+    // dirtyBudgetMB, so the model cards' "runs on this phone" answer reads the very same rule.
+    return dirtyBudgetMB(
+      { availableMB, residentMB, totalRamMB: hardwareService.getTotalMemoryGB() * 1024 },
+      { policy: this.loadPolicy },
     );
   }
 

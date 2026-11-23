@@ -46,7 +46,8 @@ export function estimateModelMemoryGB(
 ): number {
   if (type === 'text') {
     const textModel = model as DownloadedModel;
-    const sizeGB = (textModel.fileSize || 0) / (1024 * 1024 * 1024);
+    // The gate counts the vision companion too (hardwareService.getModelTotalSize).
+    const sizeGB = ((textModel.fileSize || 0) + ((textModel as { mmProjFileSize?: number }).mmProjFileSize || 0)) / (1024 * 1024 * 1024);
     // GPU-aware overhead — same single source the residency gate uses, so pre-check and gate agree.
     return sizeGB * textOverheadMultiplier(useAppStore.getState().settings.inferenceBackend);
   }
@@ -178,14 +179,16 @@ export async function checkMemoryForModel(
   }
   const requiredStr = requiredMemoryGB.toFixed(1);
   const totalStr = totalRequiredMemoryGB.toFixed(1);
-  const budgetStr = memoryBudgetGB.toFixed(1);
 
   let severity: MemoryCheckSeverity;
   let canLoad: boolean;
   let message: string;
 
   // The same verdict the model cards show, so a card never promises what this check then refuses.
-  const { verdict } = runVerdict(totalRequiredMemoryGB * 1024, totalRamMB, { policy });
+  // Image and LiteRT models are dirty memory to the residency gate, which holds them lower.
+  const dirty = modelType === 'image' || ('engine' in model && model.engine === 'litert');
+  const { verdict, allowGB } = runVerdict(totalRequiredMemoryGB * 1024, totalRamMB, { policy, dirty });
+  const budgetStr = allowGB.toFixed(1);
 
   if (verdict === 'wont') {
     severity = 'critical';

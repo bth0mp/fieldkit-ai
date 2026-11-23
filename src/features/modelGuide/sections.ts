@@ -2,7 +2,7 @@ import { RECOMMENDED_MODELS } from '../../constants/models';
 import { WHISPER_MODELS } from '../../services/whisperModels';
 import { CURATED_LITERT_ENTRIES } from '../../services/curatedLiteRTRegistry';
 import { TEXT_MODEL_OVERHEAD_MULTIPLIER } from '../../services/activeModelService/types';
-import { DIRTY_AVAILABILITY_HEADROOM_MB } from '../../services/modelResidency/residents';
+import { DIRTY_AVAILABILITY_HEADROOM_MB } from '../../services/memoryBudget';
 import { smallestFittingTier, textPickFit, textPickFitLine, MEMORY_TIERS, type MemoryTier } from './guide';
 import {
   IMAGE_NOTES, LITERT_NOTES, PHONE_TIERS, TEXT_NOTES, WHISPER_NOTES, type ModelNote,

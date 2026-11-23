@@ -38,6 +38,7 @@ describe('Run answer on model cards (rendered)', () => {
   it('Image: small GPU zip runs, a zip over the budget will not, an NPU zip says why the chip cannot, even when too large', async () => {
     const small = 0.5 * GB;
     const big = 3.5 * GB;
+    const tight = 2.9 * GB; // over the warning threshold, under what the gate allows a dirty model at 12 GB
     const { rtl, ui } = await openModelsFromHome({
       totalGB: TOTAL_GB,
       hf: hf => {
@@ -45,17 +46,18 @@ describe('Run answer on model cards (rendered)', () => {
         const deviceInfo = require('react-native-device-info');
         (deviceInfo.default ?? deviceInfo).getHardware.mockResolvedValue('qcom');
         require('react-native').NativeModules.LocalDreamModule.getSoCModel = jest.fn(async () => 'SM8450');
-        hf.setTree('xororz/sd-mnn', [entry('AbsoluteReality.zip', small), entry('BigModel.zip', big)]);
+        hf.setTree('xororz/sd-mnn', [entry('AbsoluteReality.zip', small), entry('BigModel.zip', big), entry('TightModel.zip', tight)]);
         hf.setTree('xororz/sd-qnn', [entry('HugeNpu_qnn2.28_8gen2.zip', 4 * GB)]);
       },
     });
-    const { runVerdict, modelMemoryBudgetMB, hardware } = owners();
+    const { runVerdict, dirtyIdleBudgetMB, hardware } = owners();
     const policy = require('../../../src/services/modelResidency').modelResidencyManager.getLoadPolicy();
     const totalMB = hardware.getTotalMemoryGB() * 1024;
-    const allow = gb1(modelMemoryBudgetMB(totalMB, 'android', policy) / 1024);
-    const need = (bytes: number) => runVerdict(hardware.estimateImageModelRam({ size: bytes }) / (1024 * 1024), totalMB, { policy, platform: 'android' });
+    const allow = gb1(dirtyIdleBudgetMB(totalMB, { platform: 'android', policy }) / 1024);
+    const need = (bytes: number) => runVerdict(hardware.estimateImageModelRam({ size: bytes }) / (1024 * 1024), totalMB, { policy, platform: 'android', dirty: true });
     expect(need(small).verdict).toBe('runs');
     expect(need(big).verdict).toBe('wont');
+    expect(need(tight).verdict).toBe('tight');
 
     rtl.fireEvent.press(ui.getByText('Image Models'));
     // Show every model: the screen starts on the recommended ones only.
@@ -71,6 +73,7 @@ describe('Run answer on model cards (rendered)', () => {
     };
     await rtl.waitFor(() => expect(cardOf('Absolute Reality (GPU)').getByText('Runs on this phone')).toBeTruthy(), TIMEOUT);
     expect(cardOf('Big Model (GPU)').getByText(`Won't run: needs about ${gb1(need(big).needGB)} GB, this phone allows ${allow} GB`)).toBeTruthy();
+    expect(cardOf('Tight Model (GPU)').getByText(`Tight on this phone: needs about ${gb1(need(tight).needGB)} GB of ${allow} GB`)).toBeTruthy();
     const npu = cardOf('Huge Npu (NPU 8gen2)');
     expect(npu.getByText(/^Won't run: requires Snapdragon /)).toBeTruthy();
     expect(npu.queryByText(/needs about/)).toBeNull();

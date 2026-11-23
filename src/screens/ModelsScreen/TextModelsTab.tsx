@@ -206,7 +206,7 @@ const ModelDetailView: React.FC<DetailProps> = ({
         downloadProgress={s.progress?.progress}
         downloadBytes={s.progress && !s.hasFailed ? { downloaded: s.progress.bytesDownloaded, total: s.progress.totalBytes } : undefined}
         isRepairingVision={s.repairingVision}
-        isCompatible={!fileExceedsBudget(item.size, ramGB)} runAnswer={textRunAnswer(item.size)} testID={`file-card-${index}`}
+        isCompatible={!fileExceedsBudget(item.size, ramGB)} runAnswer={textRunAnswer(item)} testID={`file-card-${index}`}
         isActive={isInUse(s.downloadedModel)}
         onSelect={chooseHandler(s.downloadedModel)}
         selectDisabled={busy.text}
