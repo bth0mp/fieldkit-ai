@@ -99,16 +99,20 @@ describe('Run answer on model cards (rendered)', () => {
     expect(card.getByText('Runs on this phone')).toBeTruthy();
   });
 
-  it('Your models: a downloaded image model shows the RAM the load check counts', async () => {
+  it('Your models: a downloaded image model shows the RAM the load check counts, and may-not-fit where its card says it will not run', async () => {
     const size = 1 * GB;
+    const bigSize = 3.1 * GB; // the file is well under the budget, its estimate is not
     const { ui, rtl } = await openModelsFromHome({
       totalGB: TOTAL_GB,
-      imageModels: [{ id: 'sd', name: 'SD Model', size }],
+      imageModels: [{ id: 'sd', name: 'SD Model', size }, { id: 'big', name: 'Big SD', size: bigSize }],
     });
     rtl.fireEvent.press(ui.getByText('Image Models'));
     const { hardware } = owners();
     const expected = `~${gb1(hardware.estimateImageModelRam({ size }) / GB)} GB RAM`;
     expect(expected).toBe('~2.5 GB RAM');
     await rtl.waitFor(() => expect(ui.getByText(expected)).toBeTruthy(), TIMEOUT);
+    const { runVerdict } = owners();
+    expect(runVerdict(hardware.estimateImageModelRam({ size: bigSize }) / (1024 * 1024), hardware.getTotalMemoryGB() * 1024, { platform: 'android', dirty: true }).verdict).toBe('wont');
+    expect(ui.getByText(`~${gb1(hardware.estimateImageModelRam({ size: bigSize }) / GB)} GB RAM (may not fit)`)).toBeTruthy();
   });
 });
