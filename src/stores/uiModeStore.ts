@@ -2,11 +2,9 @@ import { create } from 'zustand';
 
 /**
  * Public, reactive UI-mode flag. The chat surface (input row, message list,
- * scroll behaviour) renders differently in voice/audio mode vs text mode. Core
- * components subscribe here instead of importing the voice feature, which mirrors
- * its interface mode into this tiny store.
- *
- * Until the voice feature sets it, it stays at the default 'chat'.
+ * scroll behaviour) renders differently in voice/audio mode vs text mode, and
+ * subscribes here. Only setInterfaceMode changes it and nothing in src calls it
+ * yet, so it stays at the default 'chat'. The same holds for voiceSummary.
  */
 type InterfaceMode = 'chat' | 'audio';
 

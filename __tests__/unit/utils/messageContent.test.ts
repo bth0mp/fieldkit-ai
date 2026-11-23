@@ -31,7 +31,7 @@ describe('templateEmitsReasoning', () => {
     // The reliable reasoning-capability signal remoteModelCapabilities keys on: a
     // template that exposes the enable_thinking switch supports reasoning on demand
     // even if it does not embed a literal <think>. Local detection MUST agree with
-    // remote, or a model reads reasoning-capable on the gateway but not on-device (OD7 §C).
+    // remote, or a model reads reasoning-capable on a remote server but not on-device (OD7 §C).
     expect(templateEmitsReasoning('{%- if enable_thinking %}...{%- endif %}')).toBe(true);
   });
 

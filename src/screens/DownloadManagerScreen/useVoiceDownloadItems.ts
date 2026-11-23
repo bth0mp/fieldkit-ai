@@ -2,7 +2,7 @@
  * Voice (TTS) + transcription (STT/Whisper) completed-download items for the
  * Download Manager. These models don't live in the model stores, so we read
  * them from disk: STT/Whisper comes from the whisper store; TTS comes from the
- * ModelDownloadService projection (ttsProvider).
+ * ModelDownloadService list (entries of type tts, none unless a tts provider is registered).
  */
 import { useState, useEffect, useCallback } from 'react';
 import { AlertState, showAlert } from '../../components/CustomAlert';

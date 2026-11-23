@@ -55,8 +55,8 @@ export const SLOTS = {
   quickSettingsAudioRow: 'quickSettings.audioRow',
   /** The "Text to Speech" body in the Chat Settings modal (TTS section). */
   generationSettingsTts: 'generationSettings.tts',
-  /** Body of the "Voice" tab on the Models screen (TTS engine model
-   *  download/management). The tab itself only appears when this is
-   *  registered, so free builds show just Text/Image. */
+  /** Body of the "Voice Models" tab on the Models screen (TTS engine model
+   *  download/management). The tab always shows; its body is empty until
+   *  this is registered. */
   modelsScreenVoiceTab: 'modelsScreen.voiceTab',
 } as const;

@@ -1,5 +1,5 @@
 /**
- * displayModelName — the picker label for a remote model. Some gateways report
+ * displayModelName — the picker label for a remote model. Some servers report
  * the model id as a full file path; the picker must show a clean basename without
  * the extension, while the raw id is still used for loading.
  */

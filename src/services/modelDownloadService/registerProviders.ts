@@ -1,7 +1,7 @@
 /**
  * Register the core download providers (text / image / stt) with the single
- * ModelDownloadService. Called once at app boot. The tts provider is registered separately
- * (it owns the executorch fetcher).
+ * ModelDownloadService. Called once at app boot. No tts provider is registered in this
+ * repo, so the service lists no tts downloads.
  */
 import { modelDownloadService } from './index';
 import { textProvider } from './providers/textProvider';
