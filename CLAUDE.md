@@ -6,8 +6,8 @@ S24 Ultra (arm64-v8a).
 
 ## Licensing rules (read before adding code or dependencies)
 
-- Never copy, decompile or port code, text or assets from Off Grid AI's proprietary Pro
-  module or its store apps. Pro-style features are written from scratch.
+- Never copy, decompile or port code, text or assets from anyone else's proprietary apps
+  or paid modules. Paid-style features are written from scratch.
 - Keep the MIT notice in `LICENSE` and in the Open-source licenses screen.
 - No GPL, AGPL or LGPL dependencies (for example espeak-ng). Prefer MIT, BSD or Apache-2.0.
 - Image generation ships local-dream's `libstable_diffusion_core.so` under CC BY-NC 4.0,
@@ -15,17 +15,17 @@ S24 Ultra (arm64-v8a).
 - After adding or upgrading a dependency, run `node scripts/gen-notices.js` and commit
   the regenerated `src/generated/thirdPartyNotices.json`. Add native or bundled
   components (`.so`, models) to the `NATIVE` list in that script by hand.
-- No Off Grid or Wednesday names, logos or links in anything the user sees. App name
-  comes from `BRAND` in `src/config/branding.ts` (set by `scripts/rebrand.sh`).
-  Internal ids (`ai.offgridmobile` Kotlin namespace, keychain services, `@offgrid/`
-  storage keys) stay as they are so saved data and upstream cherry-picks keep working.
+- App name comes from `BRAND` in `src/config/branding.ts` (set by `scripts/rebrand.sh`).
+  The app's ids are `com.bth0mp.fieldkit` and `@fieldkit/`. The ids older versions saved
+  under live only in `src/services/earlierIds.ts`, which moves old data over. No other
+  file may name them (a test checks).
 
 ## Layout
 
 - `src/` is the app. Optional extra features plug in through `src/bootstrap/slotRegistry.ts`
   and `src/navigation/screenRegistry.ts`; there is no `pro/` folder in this repo.
-- `upstream` remote = off-grid-ai/OGAM (MIT), base tag `v0.0.103`. Cherry-pick fixes from
-  it; never push its `v*` tags (they trigger the release workflow).
+- No other repository is pulled from. Push only our own `v*` tags (they trigger the
+  release workflow).
 - Do not upgrade `llama.rn` without re-testing Gemma 4 and Qwen3.5 GGUFs.
 
 ## Windows setup
@@ -33,7 +33,7 @@ S24 Ultra (arm64-v8a).
 - `core.autocrlf` must be `false` in this repo; CRLF breaks the bash scripts.
 - Run `npm ci` from PowerShell, not Git Bash: llama.rn's postinstall needs Windows `tar`.
 - Release APKs build in GitHub Actions (`.github/workflows/android.yml`). Debug APKs build
-  locally: `subst F: "D:\Claude Code\Off Grid AI"`, then from Git Bash
+  locally: `subst F: "<repo folder>"`, then from Git Bash
   `cd /f/android && ./gradlew assembleDebug -PreactNativeArchitectures=arm64-v8a`.
 - Windows can reserve a port range that covers 8081 (`netsh interface ipv4 show
   excludedportrange protocol=tcp`), and then Metro fails with `EACCES`. Start it on a free
