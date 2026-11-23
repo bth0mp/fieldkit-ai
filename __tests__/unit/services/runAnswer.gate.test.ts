@@ -104,4 +104,15 @@ describe('run answer follows the residency gate', () => {
     expect(result.canLoad).toBe(false);
     expect(result.severity).toBe('critical');
   });
+
+  it('Tight reads "of" when the need is within the allowance and "this phone allows" when it is above', () => {
+    phone(4);
+    const allow = (modelMemoryBudgetMB(4 * 1024, 'android') / 1024).toFixed(1);
+    const above = whisperRunAnswer({ size: 1550, ramGB: 3 });
+    expect(above.text).toBe(`Tight on this phone: needs about 3.0 GB, this phone allows ${allow} GB`);
+    const warn = modelWarningThresholdMB(4 * 1024, 'android');
+    const within = whisperRunAnswer({ size: 100, ramGB: (warn + 50) / 1024 });
+    expect(within.verdict).toBe('tight');
+    expect(within.text).toBe(`Tight on this phone: needs about ${((warn + 50) / 1024).toFixed(1)} GB of ${allow} GB`);
+  });
 });

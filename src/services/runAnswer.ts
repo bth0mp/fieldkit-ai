@@ -27,7 +27,13 @@ function textFor(verdict: RunVerdict, needGB: number, allowGB: number): RunAnswe
   const need = needGB.toFixed(1);
   const allow = allowGB.toFixed(1);
   if (verdict === 'wont') return { verdict, text: `Won't run: needs about ${need} GB, this phone allows ${allow} GB` };
-  if (verdict === 'tight') return { verdict, text: `Tight on this phone: needs about ${need} GB of ${allow} GB` };
+  if (verdict === 'tight') {
+    // A stated need above the allowance (Whisper's description) reads like the Won't run line, not "3.0 of 2.0".
+    const text = needGB > allowGB
+      ? `Tight on this phone: needs about ${need} GB, this phone allows ${allow} GB`
+      : `Tight on this phone: needs about ${need} GB of ${allow} GB`;
+    return { verdict, text };
+  }
   return { verdict, text: 'Runs on this phone' };
 }
 
