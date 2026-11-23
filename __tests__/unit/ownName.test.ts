@@ -32,6 +32,43 @@ function git(args: string[], okCodes: number[] = [0]): string {
   }
 }
 
+describe('the pattern', () => {
+  const pattern = new RegExp(OLD_NAME, 'i');
+  const off = 'off';
+  const grid = 'grid';
+  const company = ['wednes', 'day'].join('');
+
+  it.each([
+    [`${off}${grid}`],
+    [`${off} ${grid}`],
+    [`${off}-${grid}`],
+    [`${off}_${grid}`],
+    [`${off}.${grid}`],
+    [`${off}\t${grid}`],
+    [`${off}  ${grid}`],
+    [`${off}${grid}mobile`],
+    ['OG' + 'AM'],
+    ['OG' + 'ADx'],
+    [`${company} solutions`],
+    [`${company}-solutions`],
+    [`${company} ai`],
+    [`${company}.com`],
+    ['key' + 'gen'],
+    ['api.' + 'key' + 'gen.sh'],
+    ['c23ac6be', '7ca9', '4ef2', 'b0a6', '06b751511bc1'].join('-'),
+    ['1fa22f37', 'eb8f', '40fb', 'b37e', 'fcf82e342da1'].join('-'),
+  ].map(sample => [sample]))('matches %j', sample => {
+    expect(pattern.test(sample)).toBe(true);
+  });
+
+  it.each([[company], [`${company} is a weekday`], [`${off}set ${grid}`], ['ogre'], ['an air gap']].map(s => [s]))(
+    'does not match %j',
+    sample => {
+      expect(pattern.test(sample)).toBe(false);
+    },
+  );
+});
+
 describe('the app carries no earlier project name', () => {
   it('no tracked file mentions it', () => {
     const excluded = ALLOWED_FILES.map(path => `:(exclude)${path}`);
