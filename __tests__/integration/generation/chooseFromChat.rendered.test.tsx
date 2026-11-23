@@ -462,12 +462,51 @@ describe('Choosing a model from a chat (rendered)', () => {
     await settle(500);
     expect(t.boundary.llama!.calls.completion).toHaveLength(1);
     expect([llmService.isModelLoaded(), state().activeModelId]).toEqual([false, null]);
+    press(t.ui.getByTestId('models-back')); // back in the chat: the message is still queued, with its chip
+    await t.rtl.waitFor(() => expect(shown('queue-indicator')).toBe(true), TIMEOUT);
+    await openFromHeader();
     t.boundary.llama!.scriptCompletion({ text: 'Answer two.' });
     press(await byLabel('Use Second'));
     expect(await byText('Answer two.')).toBeTruthy();
     await settle(300);
     expect(t.boundary.llama!.calls.completion).toHaveLength(2);
     expect(llmService.getLoadedModelPath()).toBe(pathOf('second.gguf'));
+  });
+
+  it('a message queued in another chat survives Unload and leaving the chat, and goes once, to its own chat, at the next turn end in an open chat', async () => {
+    await boot({ models: [FIRST, SECOND] });
+    t.boundary.llama!.scriptCompletion({ text: 'one two three', pauseAfter: 'one' });
+    press(t.ui.getByTestId('new-chat-button'));
+    press(await byLabel('Use First'));
+    await t.rtl.waitFor(() => expect(shown('chat-input')).toBe(true), TIMEOUT);
+    send('question one');
+    await t.rtl.waitFor(() => expect(stores().useChatStore.getState().streamingMessage).toContain('one'), TIMEOUT);
+    const own = stores().useChatStore.getState().activeConversationId;
+    send('question two');
+    await t.rtl.waitFor(() => expect(t.ui.queryByText('question two') !== null).toBe(true), TIMEOUT);
+    await openFromHeader();
+    press(await byLabel('Unload First'));
+    await t.rtl.waitFor(() => expect(state().activeModelId).toBeNull(), TIMEOUT);
+    press(t.ui.getByTestId('models-back'));
+    await t.rtl.waitFor(() => expect(shown('models-screen')).toBe(false), TIMEOUT);
+    press(t.rtl.within(t.ui.getByTestId('chat-screen')).UNSAFE_getAllByProps({ name: 'arrow-left' })[0]);
+    await t.rtl.waitFor(() => expect(shown('chat-screen')).toBe(false), TIMEOUT);
+    press(t.ui.getByTestId('models-summary'));
+    press(await byText('Text Models'));
+    press(await byLabel('Use Second'));
+    await t.rtl.waitFor(() => expect(t.ui.getByTestId('model-chip-label')).toHaveTextContent('Second'), TIMEOUT);
+    await settle(500);
+    expect(t.boundary.llama!.calls.completion).toHaveLength(1); // nobody is there to send it yet
+    // Another chat opens and has a turn: that turn's end sends it, to its own chat.
+    const other = await chatWithHistory('second');
+    t.boundary.llama!.scriptCompletion({ text: 'Answer.' });
+    send('in the other chat');
+    await t.rtl.waitFor(() => expect(t.boundary.llama!.calls.completion).toHaveLength(3), TIMEOUT);
+    await settle(500);
+    const users = (id: string) => stores().useChatStore.getState().getConversationMessages(id).filter((m: any) => m.role === 'user').map((m: any) => m.content);
+    expect(users(own)).toEqual(['question one', 'question two']);
+    expect(users(other)).toEqual(['earlier question', 'in the other chat']);
+    expect(t.boundary.llama!.calls.completion).toHaveLength(3);
   });
 
   it('a chosen remote model answers while a local model is loaded for another job (the image classifier)', async () => {

@@ -64,6 +64,7 @@ class GenerationService {
   wasAborted(): boolean { return this.abortRequested; }
   private pendingStop: Promise<void> | null = null;
   private queueProcessor: QueueProcessor | null = null;
+  private canSend: () => boolean = () => true;
   private currentRemoteAbortController: AbortController | null = null;
   private remoteTimeToFirstToken: number | undefined;
 
@@ -348,7 +349,11 @@ class GenerationService {
 
   clearQueue(): void { this.state = { ...this.state, queuedMessages: [] }; this.notifyListeners(); }
 
-  setQueueProcessor(processor: QueueProcessor | null): void { this.queueProcessor = processor; }
+  /** `canSend` says whether the processor can send now (a model is in use); when it cannot, the queue is left alone. */
+  setQueueProcessor(processor: QueueProcessor | null, canSend: () => boolean = () => true): void {
+    this.queueProcessor = processor;
+    this.canSend = processor ? canSend : () => true;
+  }
 
   /**
    * Process queued messages now. Text generation drains its own queue on
@@ -369,7 +374,7 @@ class GenerationService {
    * next turn end. A message whose chat was deleted is dropped here, so it can never be sent.
    */
   private processNextInQueue(): void {
-    if (this.state.queuedMessages.length === 0 || !this.queueProcessor) return;
+    if (this.state.queuedMessages.length === 0 || !this.queueProcessor || !this.canSend()) return;
     const { conversations } = useChatStore.getState();
     const live = this.state.queuedMessages.filter(m => conversations.some(c => c.id === m.conversationId));
     const all = live.filter(m => m.conversationId === live[0]?.conversationId);

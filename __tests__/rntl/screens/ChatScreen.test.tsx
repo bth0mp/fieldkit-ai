@@ -1940,7 +1940,7 @@ describe('ChatScreen', () => {
     it('registers queue processor on mount', () => {
       setupFullChat();
       renderChatScreen();
-      expect(generationService.setQueueProcessor).toHaveBeenCalledWith(expect.any(Function));
+      expect(generationService.setQueueProcessor).toHaveBeenCalledWith(expect.any(Function), expect.any(Function));
     });
 
     it('clears queue processor on unmount', () => {

@@ -264,12 +264,6 @@ export const useChatScreen = () => {
 
   // Drain queued messages through the same routing layer as a fresh send.
   const handleQueuedSend = useCallback(async (item: QueuedMessage) => {
-    // Nothing in use (Unload or Disconnect while it waited): a fresh send is refused, so this waits too, and goes out
-    // once a model is chosen, instead of loading one nobody chose.
-    if (!genDepsRef.current.hasActiveModel) {
-      pendingMessagesRef.current.push({ text: item.text, attachments: item.attachments, conversationId: item.conversationId, imageMode: item.imageMode });
-      return;
-    }
     // Pass the queued send's forced modality (imageMode) so a message the user forced to image mode
     // is dispatched as image, not re-decided at 'auto' by resolveTurnKind (#510).
     await dispatchGenerationFn(genDepsRef.current,
@@ -277,7 +271,9 @@ export const useChatScreen = () => {
   }, []);
 
   useEffect(() => {
-    generationService.setQueueProcessor(handleQueuedSend);
+    // With nothing in use the queue is left alone (see canSend): a fresh send is refused then too, and the messages go
+    // out at the turn end of the next model choice, instead of loading one nobody chose.
+    generationService.setQueueProcessor(handleQueuedSend, () => !!genDepsRef.current.hasActiveModel);
     return () => generationService.setQueueProcessor(null);
   }, [handleQueuedSend]);
 
