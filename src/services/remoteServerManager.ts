@@ -129,7 +129,7 @@ class RemoteServerManager {
   async getServerWithApiKey(id: string): Promise<(RemoteServer & { apiKey?: string }) | null> {
     const server = this.getServer(id);
     if (!server) return null;
-    const apiKey = await this.getApiKey(id);
+    const apiKey = await resolveApiKeyImpl(id);
     return { ...server, apiKey: apiKey || undefined };
   }
 

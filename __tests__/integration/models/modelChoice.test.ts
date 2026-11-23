@@ -197,6 +197,19 @@ describe('modelChoice', () => {
     expect(headers.every(h => h.Authorization === 'Bearer keychain-key')).toBe(true);
   });
 
+  it('the check sends the key an older version left in the server record when the keychain has none', async () => {
+    await bootDefault();
+    require('react-native-keychain').getGenericPassword.mockResolvedValue(false);
+    useRemoteServerStore.setState(prev => ({
+      servers: prev.servers.map(s => (s.id === 's1' ? { ...s, apiKey: 'record-key' } : s)),
+    }));
+    serverFetch.mockClear();
+    await chooseRemoteTextModel('s1', 'x');
+    const headers = serverFetch.mock.calls.map(([, init]) => (init?.headers ?? {}) as Record<string, string>);
+    expect(headers.length).toBeGreaterThan(0);
+    expect(headers.every(h => h.Authorization === 'Bearer record-key')).toBe(true);
+  });
+
   it('a server that refuses leaves its row in Your models, and Use works once it answers', async () => {
     await bootDefault();
     serversUp = false;
