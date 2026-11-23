@@ -126,6 +126,7 @@ export async function testEndpoint(
   apiKey?: string,
 ): Promise<{ success: boolean; error?: string; latency?: number }> {
   const startTime = Date.now();
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
   try {
     // Normalize endpoint (remove trailing slashes)
@@ -137,7 +138,7 @@ export async function testEndpoint(
 
     // Try to reach the base URL first
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    timeoutId = setTimeout(() => controller.abort(), timeout);
 
     const response = await fetch(`${url}/v1/models`, {
       method: 'GET',
@@ -145,7 +146,6 @@ export async function testEndpoint(
       headers: authHeaders,
     });
 
-    clearTimeout(timeoutId);
     const latency = Date.now() - startTime;
 
     // A refused key is the answer. A health page that answers 200 must not hide it.
@@ -186,6 +186,8 @@ export async function testEndpoint(
       error: error instanceof Error ? error.message : 'Unknown error',
       latency,
     };
+  } finally {
+    clearTimeout(timeoutId); // one timeout covers the fallback requests too
   }
 }
 

@@ -68,7 +68,7 @@ export function useHomeScreenSpotlight({ navigation, closeSheet, activeImageMode
     }
   }, [closeSheet, navigation, goTo, activeImageModelId, downloadedImageModelsCount, markSpotlightShown]);
 
-  // Reactive: image model downloaded but not loaded → spotlight ImageModelCard (step 13)
+  // Reactive: image model downloaded but not in use → spotlight the Assistant card's model chip (step 13)
   useEffect(() => {
     if (
       downloadedImageModelsCount > 0 &&

@@ -4,16 +4,18 @@
  * offered, what is refused) can never disagree.
  */
 import { liteRTService } from './litert';
-import { getActiveEngineService, isRemoteTextModelActive } from './engines';
+import { getActiveEngineService, isRemoteTextModelActive, remoteTextModelChosen } from './engines';
 
 export type ServingEngine = 'litert' | 'remote' | 'llama';
 
 /**
- * An active LiteRT model serves a turn that has a conversation (its native session is keyed on it), even
- * while a remote server is selected. Otherwise a remote provider serves when the caller forces it or one is
- * active, and the local llama model serves the rest.
+ * A chosen remote model (the one the screen names) serves every turn, whatever local model is loaded for another
+ * job. Otherwise an active LiteRT model serves a turn that has a conversation (its native session is keyed on it),
+ * even while a remote server is selected; a remote provider serves when the caller forces it or one is active, and
+ * the local llama model serves the rest.
  */
 export function servingEngine({ forceRemote, conversationId }: { forceRemote?: boolean; conversationId?: string | null }): ServingEngine {
+  if (remoteTextModelChosen()) return 'remote';
   if (getActiveEngineService() === liteRTService && conversationId) return 'litert';
   if (forceRemote || isRemoteTextModelActive()) return 'remote';
   return 'llama';

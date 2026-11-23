@@ -4,7 +4,7 @@
  * (text/image). modelResidencyManager registers a real AppState('memoryWarning') listener → handleMemoryWarning.
  *
  * Boundary: the OS memory-warning event (fired via the capturing AppState in the native boundary — the exact
- * event the app's real listener handles). Validated through the model selector's real "In Memory" section:
+ * event the app's real listener handles). Validated through the real In memory sheet:
  * after the warning, the whisper sidecar row is gone while the text model row stays.
  *
  * Falsify: don't fire the warning → whisper stays listed → red (proves the reclaim is driven by the event,

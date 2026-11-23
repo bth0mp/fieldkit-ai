@@ -69,6 +69,7 @@ const WhisperCard: React.FC<WhisperCardProps> = ({
       testID={`transcription-model-card-${index}`}
       // Present but not active → tap to use; not present → tap to download.
       onPress={downloading ? undefined : (present ? (active ? undefined : () => onSelect(model.id)) : () => onDownload(model.id))}
+      onSelect={present && !active && !downloading && !queued ? () => onSelect(model.id) : undefined}
       onDownload={!present && !downloading ? () => onDownload(model.id) : undefined}
       onDelete={present ? () => onDelete(model.id) : undefined}
     />
@@ -88,7 +89,7 @@ export const TranscriptionModelsTab: React.FC = () => {
   } = useWhisperStore();
 
   // In-flight STT state from the SINGLE owner (canonical download tracker + whisper-store
-  // fallback), shared with the Home "Speech" picker so the two surfaces can never disagree.
+  // fallback), shared with WhisperPickerSheet (opened from Model settings) so the two surfaces can never disagree.
   // A failed entry reports active=false, so a stuck "downloading" bar can't linger while the
   // Download Manager shows "failed" — the model just becomes downloadable again. Disk probes
   // are deferred until nothing is downloading so an in-flight file isn't mistaken for absent.

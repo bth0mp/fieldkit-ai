@@ -120,8 +120,8 @@ export const ModelSettingsScreen: React.FC = () => {
         </TouchableOpacity>
         {textOpen && <TextGenerationSection />}
 
-        {/* Transcription (STT/whisper) — core. Reuses the same picker sheet Home/Chat open, and the same
-            whisper store as its single source, so the active model shown here is always consistent. */}
+        {/* Transcription (STT/whisper) — core. Opens WhisperPickerSheet, which reads the same
+            whisper store as the Models screen's Transcription tab, so the active model shown here is always consistent. */}
         <TouchableOpacity
           style={styles.accordionHeader}
           onPress={() => setSttOpen(!sttOpen)}

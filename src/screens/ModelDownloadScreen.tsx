@@ -309,7 +309,7 @@ export const ModelDownloadScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleLiteRTDownload = (file: ModelFile) => {
     const proceed = () => handleDownload(LITERT_PARENT_ID, file);
-    // Same DEVICE-AWARE decision the Models tab uses (curatedLiteRTDownloadWarning):
+    // Same DEVICE-AWARE decision the Models screen uses (curatedLiteRTDownloadWarning):
     // warn only when the file genuinely exceeds this device's RAM budget, never a
     // device-blind static flag. On a device where the model fits, no warning.
     const warning = curatedLiteRTDownloadWarning(file.name, file.size, totalRamGB);

@@ -40,7 +40,7 @@ jest.mock('../../../src/services/activeModelService', () => ({
     unloadTextModel: jest.fn(() => Promise.resolve()),
     unloadImageModel: jest.fn(() => Promise.resolve()),
     unloadAllModels: jest.fn(() => Promise.resolve({ textUnloaded: true, imageUnloaded: true })),
-    getActiveModels: jest.fn(() => ({ text: null, image: null })),
+    getActiveModels: jest.fn(() => ({ text: { isLoading: false }, image: { isLoading: false } })),
     checkMemoryForModel: jest.fn(() => Promise.resolve({ canLoad: true, severity: 'safe', message: '' })),
     subscribe: jest.fn(() => jest.fn()),
     getResourceUsage: jest.fn(() => Promise.resolve({
@@ -150,10 +150,6 @@ jest.mock('../../../src/components/onboarding/useOnboardingSheet', () => ({
 // Mock the HomeScreen sub-components
 jest.mock('../../../src/screens/HomeScreen/components/RecentConversations', () => ({
   RecentConversations: () => null,
-}));
-
-jest.mock('../../../src/screens/HomeScreen/components/ModelPickerSheet', () => ({
-  ModelPickerSheet: () => null,
 }));
 
 import { HomeScreen } from '../../../src/screens/HomeScreen';

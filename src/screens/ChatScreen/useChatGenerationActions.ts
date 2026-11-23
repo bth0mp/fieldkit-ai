@@ -14,6 +14,7 @@ import { invalidateActiveConversation, activeLocalTextCapabilities, wantsLeading
 import { needsVisionRepair } from '../../utils/visionRepair';
 import { ensureDefaultClassifier } from '../../services/classifierProvisioning';
 import { abortPreload } from '../../services/modelPreloader';
+import { stopReply } from '../../services/stopReply';
 import { modelResidencyManager } from '../../services/modelResidency';
 import { reportModelFailure } from '../../services/modelFailureHandler';
 import { embeddingService } from '../../services/rag/embedding';
@@ -25,6 +26,9 @@ import logger from '../../utils/logger';
 import { ModelReadyOutcome, ensureReadyOrAlert } from './modelReadiness';
 type SetState<T> = Dispatch<SetStateAction<T>>;
 const FALLBACK_RECENT_MESSAGE_COUNT = 2;
+
+/** A message waiting for a text model, with the chat it was typed in and the image mode it was sent with. */
+export type PendingMessage = { text: string; attachments?: MediaAttachment[]; conversationId: string; imageMode?: 'auto' | 'force' | 'disabled' };
 
 export type GenerationDeps = {
   activeModelId: string | null;
@@ -68,14 +72,13 @@ export type GenerationDeps = {
   setShowSettingsPanel?: SetState<boolean>;
   ensureModelLoaded: () => Promise<ModelReadyOutcome>;
   /** Loads the last-selected text model for a chat request that has none; opens
-   *  the model selector and returns false when no text model was ever chosen. */
+   *  the Models screen and returns false when no text model was ever chosen. */
   ensureTextModelForChat: () => Promise<boolean>;
-  /** Stash a message to replay after the user picks a text model. */
-  setPendingMessage?: (text: string, attachments?: MediaAttachment[]) => void;
+  /** Stash a message to replay, in its own chat, after the user picks a text model. */
+  setPendingMessage?: (message: PendingMessage) => void;
   createConversation: (modelId: string, title?: string, projectId?: string) => string;
   pendingProjectId?: string;
-  setShowModelSelector?: (v: boolean) => void;
-  setModelSelectorTab?: (tab: 'text' | 'image') => void;
+  openModels?: (tab: 'text' | 'image') => void;
 };
 /** A chat with calendar data was about to go to a remote model: say why it stopped, and offer the two ways on.
  *  The alert closes itself after a button's onPress. */
@@ -94,7 +97,7 @@ function showPrivateDataNotice(deps: GenerationDeps, conversation: Conversation 
       },
       {
         text: 'Use the on-device model',
-        onPress: () => { deps.setModelSelectorTab?.('text'); deps.setShowModelSelector?.(true); },
+        onPress: () => deps.openModels?.('text'),
       },
     ],
   ));
@@ -523,7 +526,7 @@ async function dispatchResolvedTurn(
     return { handled: true };
   }
   logger.log(`[ROUTE-SM] dispatch → TEXT generation (shouldGenerateImage=${shouldGenerateImage})`);
-  // Text route, no text model selected (image-only device): load one / open selector.
+  // Text route, no text model selected (image-only device): load the remembered one, else the Models screen opens.
   if (!shouldGenerateImage && deps.hasTextModel === false && !deps.activeModelInfo?.isRemote) {
     const ready = await deps.ensureTextModelForChat();
     if (!ready) {
@@ -567,7 +570,7 @@ async function dispatchTurn(
   // ONE post-decision dispatch seam, shared with resend (image-model guard + text-provision path).
   const result = await dispatchResolvedTurn(deps, kind, {
     text, attachments, conversationId, imageSkipsUserMessage: false,
-    onTextModelUnavailable: () => { deps.setPendingMessage?.(text, attachments); },
+    onTextModelUnavailable: () => { deps.setPendingMessage?.({ text, attachments, conversationId, imageMode }); },
   });
   if (result.handled) return;
   deps.addMessage(conversationId, { role: 'user', content: text, attachments });
@@ -605,10 +608,7 @@ export async function handleSendFn(deps: GenerationDeps, call: SendCall): Promis
   await dispatchGenerationFn(deps, { text, attachments, conversationId: targetConversationId, imageMode }, startGeneration);
 }
 export async function handleStopFn(deps: Pick<GenerationDeps, 'isGeneratingImage'>): Promise<void> {
-  generationSession.end('stopped');
-  callHook(HOOKS.audioStop); // abort must silence TTS too — buffered-ahead sentences keep playing otherwise
-  try { await generationService.stopGeneration().catch(() => { }); }
-  catch (e) { logger.error('Error stopping generation:', e); }
+  await stopReply();
   if (deps.isGeneratingImage) imageGenerationService.cancelGeneration().catch(() => { });
 }
 export async function executeDeleteConversationFn(
@@ -646,7 +646,7 @@ async function regenerateTurn(deps: GenerationDeps, call: RegenerateCall): Promi
   const result = await dispatchResolvedTurn(deps, kind, {
     text: userMessage.content, attachments: userMessage.attachments, conversationId: targetConversationId,
     imageSkipsUserMessage: true,
-    onTextModelUnavailable: () => { deps.setPendingMessage?.(userMessage.content, userMessage.attachments); },
+    onTextModelUnavailable: () => { deps.setPendingMessage?.({ text: userMessage.content, attachments: userMessage.attachments, conversationId: targetConversationId }); },
   });
   if (result.handled) return;
   const messageText = result.messageText;

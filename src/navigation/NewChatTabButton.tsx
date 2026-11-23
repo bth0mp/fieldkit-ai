@@ -21,8 +21,8 @@ const SIZE = 56;
 
 /**
  * The raised round New chat button in the middle of the tab bar. With a text or image model active it opens a
- * new chat; otherwise it goes to Home, where the setup card offers a model. It replaces the tab's own button, so
- * the tab itself is never focused.
+ * new chat; otherwise it opens the Models screen, where Use opens the new chat. It replaces the tab's own button,
+ * so the tab itself is never focused.
  */
 export const NewChatTabButton: React.FC<BottomTabBarButtonProps> = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -31,10 +31,12 @@ export const NewChatTabButton: React.FC<BottomTabBarButtonProps> = () => {
   const { modelId } = useActiveTextModel();
   const activeImageModelId = useAppStore((s) => s.activeImageModelId);
 
+  const hasModel = !!modelId || !!activeImageModelId;
+
   const onPress = () => {
     triggerHaptic('selection');
-    if (modelId || activeImageModelId) navigation.navigate('Chat', {});
-    else navigation.navigate('HomeTab');
+    if (hasModel) navigation.navigate('Chat', {});
+    else navigation.navigate('Models', { initialTab: 'text', afterUse: 'newChat' });
   };
 
   return (
@@ -45,6 +47,7 @@ export const NewChatTabButton: React.FC<BottomTabBarButtonProps> = () => {
         onPress={onPress}
         accessibilityRole="button"
         accessibilityLabel="New chat"
+        accessibilityHint={hasModel ? undefined : 'Opens Models to choose a model first'}
       >
         <Icon name="plus" size={26} color={colors.background} />
       </TouchableOpacity>

@@ -157,7 +157,7 @@ describe('Onboarding Flows', () => {
       // handleStepPress('loadedModel') queues step 11
       setPendingSpotlight(MODEL_PICKER_STEP_INDEX);
 
-      // ModelPickerSheet opens, consumes step 11
+      // The Models screen's first row in Your models consumes step 11
       const pending = consumePendingSpotlight();
       expect(pending).toBe(11);
     });

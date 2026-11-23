@@ -55,6 +55,8 @@ interface ModelCardProps {
   onDownload?: () => void;
   onDelete?: () => void;
   onSelect?: () => void;
+  /** Use is shown but cannot be pressed (a model is loading). */
+  selectDisabled?: boolean;
   onRepairVision?: () => void;
   isRepairingVision?: boolean;
   onCancel?: () => void;
@@ -71,6 +73,9 @@ interface ModelCardProps {
     onRemove: () => void;
   };
 }
+
+/** With a Use button inside, a grouped card would hide it from a screen reader. */
+const exposeChildren = (onSelect?: () => void) => (onSelect ? { accessible: false } : {});
 
 function resolveQuantInfo(file?: ModelFile, downloadedModel?: DownloadedModel) {
   const quant = file?.quantization ?? downloadedModel?.quantization;
@@ -184,6 +189,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({
   onDownload,
   onDelete,
   onSelect,
+  selectDisabled,
   onRepairVision,
   isRepairingVision,
   onCancel,
@@ -229,6 +235,7 @@ export const ModelCard: React.FC<ModelCardProps> = ({
       onPress={onPress}
       activeOpacity={0.7}
       disabled={!onPress}
+      {...exposeChildren(onSelect)}
       testID={testID}
     >
 <View style={styles.cardRow}>
@@ -305,6 +312,8 @@ export const ModelCard: React.FC<ModelCardProps> = ({
             testID={testID}
             onDownload={onDownload}
             onSelect={onSelect}
+            selectDisabled={selectDisabled}
+            modelName={model.name}
             onDelete={onDelete}
             onRepairVision={onRepairVision}
             isRepairingVision={isRepairingVision}

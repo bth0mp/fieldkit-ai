@@ -50,7 +50,7 @@ export const DOWNLOAD_FILE_STEP_INDEX = 9;
 // Download Manager icon spotlight (continuation of downloadedModel flow)
 export const DOWNLOAD_MANAGER_STEP_INDEX = 10;
 
-// Model picker first item spotlight (continuation of loadedModel flow)
+// First "Your models" row spotlight (continuation of loadedModel flow)
 export const MODEL_PICKER_STEP_INDEX = 11;
 
 // Voice record button spotlight (continuation of sentMessage flow)
@@ -95,12 +95,12 @@ export function createSpotlightSteps(): TourStep[] {
       onBackdropPress: 'stop',
       shape: { type: 'rectangle', padding: 8 },
     },
-    // 1: TextModelCard on HomeScreen — loadedModel
+    // 1: model chip on Home — loadedModel
     {
       render: ({ stop }) => (
         <Tooltip
           title="Load a model"
-          description="Tap here to select and load a text model for chatting."
+          description="Tap here to open the Models screen and choose a text model."
           stop={stop}
         />
       ),
@@ -215,12 +215,12 @@ export function createSpotlightSteps(): TourStep[] {
       onBackdropPress: 'stop',
       shape: { type: 'rectangle', padding: 8 },
     },
-    // 11: First model in ModelPickerSheet — loadedModel (part 2)
+    // 11: First model in Your models on the Models screen — loadedModel (part 2)
     {
       render: ({ stop }) => (
         <Tooltip
           title="Select a model"
-          description="Tap this model to load it for chatting"
+          description="Tap Use to choose this model for chatting"
           stop={stop}
         />
       ),
@@ -239,12 +239,12 @@ export function createSpotlightSteps(): TourStep[] {
       onBackdropPress: 'stop',
       shape: { type: 'rectangle', padding: 8 },
     },
-    // 13: ImageModelCard on HomeScreen — triedImageGen (part 2, reactive)
+    // 13: model chip on Home — triedImageGen (part 2, reactive)
     {
       render: ({ stop }) => (
         <Tooltip
           title="Load your image model"
-          description="Tap here to load the image model you downloaded"
+          description="Tap here, then open Image Models and tap Use."
           stop={stop}
         />
       ),

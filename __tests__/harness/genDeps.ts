@@ -11,7 +11,9 @@
 export interface Captured {
   alerts: Array<{ title?: string; message?: string; buttons?: Array<{ text?: string; onPress?: () => void }> }>;
   statuses: Array<string | null>;
-  pendingMessages: Array<{ text: string }>;
+  pendingMessages: Array<{ text: string; conversationId?: string }>;
+  /** Tabs of the Models screen the flow opened. */
+  opened: Array<'text' | 'image'>;
 }
 
 export interface GenDepsResult {
@@ -27,7 +29,7 @@ export function makeGenDeps(overrides: Record<string, any> = {}): GenDepsResult 
   const { useProjectStore } = require('../../src/stores/projectStore');
   /* eslint-enable @typescript-eslint/no-var-requires */
 
-  const captured: Captured = { alerts: [], statuses: [], pendingMessages: [] };
+  const captured: Captured = { alerts: [], statuses: [], pendingMessages: [], opened: [] };
   const chat = useChatStore.getState();
 
   const settings = {
@@ -68,7 +70,8 @@ export function makeGenDeps(overrides: Record<string, any> = {}): GenDepsResult 
     setShowSettingsPanel: () => {},
     ensureModelLoaded: async () => ({ ok: true }),
     ensureTextModelForChat: async () => true,
-    setPendingMessage: (text: string) => { captured.pendingMessages.push({ text }); },
+    openModels: (tab: 'text' | 'image') => { captured.opened.push(tab); },
+    setPendingMessage: ({ text, conversationId }: { text: string; conversationId: string }) => { captured.pendingMessages.push({ text, conversationId }); },
     createConversation: (modelId: string, title?: string, projectId?: string) => chat.createConversation(modelId, title, projectId),
     pendingProjectId: undefined,
     ...overrides,

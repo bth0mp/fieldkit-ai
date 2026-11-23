@@ -509,6 +509,24 @@ describe('ChatInput', () => {
       expect(getByText('No Image Model')).toBeTruthy();
     });
 
+    it('the no image model alert offers Open Models, which opens the Image tab, and Cancel, which does not', () => {
+      const onOpenModels = jest.fn();
+      const { getByTestId, getByText, queryByText } = render(
+        <ChatInput {...defaultProps} imageModelLoaded={false} onOpenModels={onOpenModels} />
+      );
+
+      openQuickSettings({ getByTestId });
+      fireEvent.press(getByTestId('quick-image-mode'));
+      fireEvent.press(getByText('Cancel'));
+      expect(onOpenModels).not.toHaveBeenCalled();
+      expect(queryByText('No Image Model')).toBeNull();
+
+      openQuickSettings({ getByTestId });
+      fireEvent.press(getByTestId('quick-image-mode'));
+      fireEvent.press(getByText('Open Models'));
+      expect(onOpenModels).toHaveBeenCalledWith('image');
+    });
+
     it('cycles through auto -> force -> disabled -> auto', () => {
       const onImageModeChange = jest.fn();
       const { getByTestId } = render(

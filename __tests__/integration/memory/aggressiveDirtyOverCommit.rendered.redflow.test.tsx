@@ -12,7 +12,7 @@
  * overrideFloor.redflow M6 (service level). This test proves the SAME bug at the UI altitude the checklist
  * asks for: the whole real stack — the real ModelLoadingModeSelector gesture → real loadPolicySync → real
  * activeModelService/imageGenerationService → real modelResidencyManager — over the RAM-sensor + native
- * leaves only, validated on the model selector's "In Memory" section (a sanctioned residency UI surface).
+ * leaves only, validated on the In memory sheet (a sanctioned residency UI surface).
  *
  * PLATFORM: this reproduces on ANDROID (where the over-commit is live). On iOS the same 9GB dirty load is
  * already REFUSED by the survival floor (iOS does not credit the physical budget to dirty pages — no swap),

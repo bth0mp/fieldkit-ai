@@ -2,7 +2,7 @@
  * Canonical byte formatter — the SINGLE source of truth for "X MB / Y GB" strings.
  *
  * Three near-identical copies had drifted (GB at 2 vs 1 decimals, MB at 1 vs 0),
- * so the same download rendered differently across the Models tab, the model cards,
+ * so the same download rendered differently across the Models screen, the model cards,
  * and the Download Manager. Defined once here; every surface imports this so a
  * download's size reads the same everywhere.
  */

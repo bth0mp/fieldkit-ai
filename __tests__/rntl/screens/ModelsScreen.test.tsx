@@ -100,6 +100,7 @@ jest.mock('../../../src/services/hardware', () => ({
       if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
       return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
     }),
+    formatModelSize: jest.fn(() => '4.00 GB'),
     getTotalMemoryGB: jest.fn(() => 8),
     getModelRecommendation: jest.fn(() => ({
       maxParameters: 14,
@@ -135,6 +136,9 @@ jest.mock('../../../src/utils/coreMLModelUtils', () => ({
 jest.mock('../../../src/services/activeModelService', () => ({
   activeModelService: {
     unloadImageModel: jest.fn(() => Promise.resolve()),
+    // "Your models" at the top of the Text tab reads whether a model is loading.
+    getActiveModels: jest.fn(() => ({ text: { isLoading: false }, image: { isLoading: false } })),
+    subscribe: jest.fn(() => jest.fn()),
   },
 }));
 
@@ -170,6 +174,7 @@ jest.mock('../../../src/components', () => {
         )}
       </TouchableOpacity>
     ),
+    ModelRow: ({ name, testID }: any) => <Text testID={testID}>{name}</Text>,
     Button: ({ title, onPress, testID }: any) => (
       <TouchableOpacity testID={testID} onPress={onPress}>
         <Text>{title}</Text>
@@ -200,6 +205,7 @@ jest.mock('react-native-safe-area-context', () => ({
     const { View } = require('react-native');
     return <View {...props}>{children}</View>;
   },
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 
 jest.mock('@react-native-documents/picker', () => ({
@@ -646,7 +652,7 @@ describe('ModelsScreen', () => {
         expect(getByText(/Org/)).toBeTruthy();
         expect(getByText(/Type/)).toBeTruthy();
         expect(getByText(/Source/)).toBeTruthy();
-        expect(getByText(/Size/)).toBeTruthy();
+        expect(getByText(/^Size [▴▾]/)).toBeTruthy();
         expect(getByText(/Quant/)).toBeTruthy();
       });
     });
@@ -755,7 +761,7 @@ describe('ModelsScreen', () => {
       });
 
       await act(async () => {
-        fireEvent.press(getByText(/Size/));
+        fireEvent.press(getByText(/^Size [▴▾]/));
       });
 
       await waitFor(() => {
@@ -1463,7 +1469,7 @@ describe('ModelsScreen', () => {
       });
 
       await act(async () => {
-        fireEvent.press(getByText(/Size/));
+        fireEvent.press(getByText(/^Size [▴▾]/));
       });
 
       await waitFor(() => {
@@ -1662,7 +1668,7 @@ describe('ModelsScreen', () => {
         fireEvent.press(getByTestId('text-filter-toggle'));
       });
       await act(async () => {
-        fireEvent.press(getByText(/Size/));
+        fireEvent.press(getByText(/^Size [▴▾]/));
       });
       await waitFor(() => expect(getByText('1-3B')).toBeTruthy());
       await act(async () => {

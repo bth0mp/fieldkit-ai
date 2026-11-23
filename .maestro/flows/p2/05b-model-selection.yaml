@@ -77,29 +77,36 @@ tags:
       - evalScript: "${console.log('SELECTION - Check models')}"
       - tapOn:
           id: "models-summary"
-      - tapOn:
-          id: "models-row-text"
       - extendedWaitUntil:
           visible:
-            text: "Text Models"
-          timeout: 5000
+            id: "your-models-text"
+          timeout: 10000
 
       # If no models exist, download one via setup
       - runFlow:
           when:
             visible:
-              text: "No text models downloaded"
+              id: "your-models-empty"
           commands:
             - evalScript: "${console.log('SELECTION - Need to download model')}"
             - tapOn:
-                point: "50%,10%"
-            # Run setup to get a model
+                id: "models-back"
+            - extendedWaitUntil:
+                visible:
+                  id: "home-screen"
+                timeout: 10000
+            # Run setup to get a model (it ends on Home with that model in use)
             - runFlow: 00-setup-model.yaml
 
-      # Close picker
+      # Leave the Models screen if the models were already there (setup leaves it on its own)
       - evalScript: "${console.log('SELECTION - Close picker')}"
-      - tapOn:
-          point: "50%,10%"
+      - runFlow:
+          when:
+            visible:
+              id: "models-screen"
+          commands:
+            - tapOn:
+                id: "models-back"
 
 # ==============================
 # Unload any currently loaded model
@@ -112,23 +119,24 @@ tags:
       id: "home-screen"
     timeout: 10000
 
+# The New chat button is always in the tab bar, so a model in use shows as no setup card
 - runFlow:
     when:
-      visible:
-        id: "new-chat-button"
+      notVisible:
+        id: "setup-card"
     commands:
       # Model is loaded, unload it
       - evalScript: "${console.log('SELECTION - Unload current model')}"
       - tapOn:
           id: "models-summary"
-      - tapOn:
-          id: "models-row-text"
       - extendedWaitUntil:
           visible:
-            text: "Text Models"
-          timeout: 5000
+            id: "models-screen"
+          timeout: 10000
       - tapOn:
-          text: "Unload current model"
+          text: "Unload"
+      - tapOn:
+          id: "models-back"
       - extendedWaitUntil:
           visible:
             id: "setup-card"
@@ -142,42 +150,37 @@ tags:
 - evalScript: "${console.log('SELECTION - Open picker')}"
 - tapOn:
     id: "models-summary"
-- tapOn:
-    id: "models-row-text"
 
 - extendedWaitUntil:
     visible:
-      text: "Text Models"
-    timeout: 5000
+      id: "your-models-text"
+    timeout: 10000
 - takeScreenshot: 03-picker
 
-# Select first model in list
+# Select first model in list (Use leaves the Models screen for Home)
 - evalScript: "${console.log('SELECTION - Select model')}"
 - tapOn:
     index: 0
     id: "model-item"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 30000
 - takeScreenshot: 04-selected
-
-# Handle low memory warning
-- runFlow:
-    when:
-      visible:
-        text: "Load Anyway"
-    commands:
-      - evalScript: "${console.log('SELECTION - Load anyway')}"
-      - tapOn:
-          text: "Load Anyway"
 
 # ==============================
 # Verify model loaded
 # ==============================
 - evalScript: "${console.log('SELECTION - Waiting for load')}"
 - extendedWaitUntil:
-    visible:
-      id: "new-chat-button"
+    notVisible:
+      id: "setup-card"
     timeout: 120000
 
 - assertVisible:
-    id: "new-chat-button"
+    id: "model-chip-label"
+    text: "(?!No model$).+"
+- assertNotVisible:
+    id: "setup-card"
 - evalScript: "${console.log('SELECTION - PASSED')}"
 - takeScreenshot: 99-complete

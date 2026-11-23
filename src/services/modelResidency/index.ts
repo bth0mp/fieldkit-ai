@@ -418,7 +418,7 @@ class ModelResidencyManager {
   }
 
   /** Eject a single resident and ACTUALLY unload it from RAM (unlike release(), which only forgets the
-   *  accounting). Used by the model selector's per-model Eject. Runs under the FIFO lock like every other
+   *  accounting). Used by the In memory sheet's per-model Eject. Runs under the FIFO lock like every other
    *  load/unload. Returns true if a resident was found and ejected. */
   async evictByKey(key: string): Promise<boolean> {
     return this.runExclusive(`evict:${key}`, async () => {

@@ -10,7 +10,6 @@ import {
 import Icon from 'react-native-vector-icons/Feather';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AttachStep } from 'react-native-spotlight-tour';
-import { ModelSelectorModal } from '../../components';
 import { AnimatedEntry } from '../../components/AnimatedEntry';
 import { createStyles } from './styles';
 import { useTheme } from '../../theme';
@@ -23,12 +22,9 @@ export const NoModelScreen: React.FC<{
   colors: ColorsType;
   navigation: any;
   hasAvailableModels: boolean;
-  showModelSelector: boolean;
-  setShowModelSelector: (v: boolean) => void;
-  onSelectModel: (model: any) => void;
-  onUnloadModel: () => void;
+  onOpenModels: (tab: 'text' | 'image') => void;
   isModelLoading: boolean;
-}> = ({ styles, colors, navigation, hasAvailableModels, showModelSelector, setShowModelSelector, onSelectModel, onUnloadModel, isModelLoading }) => (
+}> = ({ styles, colors, navigation, hasAvailableModels, onOpenModels, isModelLoading }) => (
   <SafeAreaView style={styles.container} edges={['top']}>
     <View style={styles.header}>
       <View style={styles.headerRow}>
@@ -61,23 +57,14 @@ export const NoModelScreen: React.FC<{
           <Text style={styles.noModelText}>
             {hasAvailableModels
               ? 'Select a text or image model to get started.'
-              : 'Download a text or image model from the Models tab to get started.'}
+              : 'Download a text or image model from the Models screen to get started.'}
           </Text>
-          {hasAvailableModels && (
-            <TouchableOpacity style={styles.selectModelButton} onPress={() => setShowModelSelector(true)}>
-              <Text style={styles.selectModelButtonText}>Select Model</Text>
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity style={styles.selectModelButton} onPress={() => onOpenModels('text')}>
+            <Text style={styles.selectModelButtonText}>{hasAvailableModels ? 'Select Model' : 'Open Models'}</Text>
+          </TouchableOpacity>
         </>
       )}
     </View>
-    <ModelSelectorModal
-      visible={showModelSelector}
-      onClose={() => setShowModelSelector(false)}
-      onSelectModel={onSelectModel}
-      onUnloadModel={onUnloadModel}
-      isLoading={isModelLoading}
-    />
   </SafeAreaView>
 );
 
@@ -87,11 +74,12 @@ export const ChatHeader: React.FC<{
   activeConversation: any;
   activeProject: any;
   navigation: any;
+  modelLabel: string;
   onOpenModels: () => void;
   setShowSettingsPanel: (v: boolean) => void;
   setShowProjectSelector: (v: boolean) => void;
   isRemote?: boolean;
-}> = ({ styles, colors, activeConversation, activeProject, navigation, onOpenModels, setShowSettingsPanel, setShowProjectSelector, isRemote }) => (
+}> = ({ styles, colors, activeConversation, activeProject, navigation, modelLabel, onOpenModels, setShowSettingsPanel, setShowProjectSelector, isRemote }) => (
   <View style={styles.header}>
     <View style={styles.headerRow}>
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -102,15 +90,17 @@ export const ChatHeader: React.FC<{
           {activeConversation?.title || 'New Chat'}
         </Text>
         <View style={styles.headerSubtitleRow}>
-          <TouchableOpacity style={styles.modelSelector} onPress={onOpenModels} testID="model-selector">
+          <TouchableOpacity
+            style={styles.modelSelector} onPress={onOpenModels} testID="model-selector"
+            accessibilityRole="button" accessibilityLabel={`${modelLabel}. Opens Models`}
+          >
             {isRemote && (
-              <Icon name="cloud" size={12} color={colors.primary} style={styles.remoteIcon} />
+              <Icon name="cloud" size={12} color={colors.primary} style={styles.remoteIcon} testID="model-remote-mark" />
             )}
-            <Icon name="layers" size={12} color={colors.textSecondary} style={styles.remoteIcon} />
             <Text style={styles.headerSubtitle} numberOfLines={1} testID="model-loaded-indicator">
-              Models
+              {modelLabel}
             </Text>
-            <Text style={styles.modelSelectorArrow}>▼</Text>
+            <Icon name="chevron-right" size={12} color={colors.textMuted} style={styles.modelSelectorArrow} />
           </TouchableOpacity>
           <Text style={styles.headerSubtitleDivider}>·</Text>
           <TouchableOpacity style={styles.headerProjectRow} onPress={() => setShowProjectSelector(true)}>

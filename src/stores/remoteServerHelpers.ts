@@ -25,7 +25,7 @@ const DISCOVERY_FETCH_TIMEOUT_MS = 5000;
 /**
  * A server may tag every /v1/models entry with a modality `kind` (chat | vision |
  * image | speech | transcription). Only chat/vision are text models that belong in
- * the chat model picker — image, speech (TTS) and transcription (STT) models must
+ * the text model lists — image, speech (TTS) and transcription (STT) models must
  * not be listed as text. Servers that don't send `kind` (Ollama, LM Studio) fall back to the name-based generative filter.
  */
 function isTextModel(model: { id?: string; name?: string; kind?: unknown }): boolean {
@@ -39,7 +39,7 @@ const MODEL_FILE_EXT = /\.(gguf|bin|safetensors|task|litertlm|pte)$/i;
 /**
  * Human-readable label for a remote model. Some servers report the model id as a
  * full file path (e.g. "/Users/admin/models/Qwen3.5-9B-Q4_K_M.gguf"),
- * which is unreadable in the picker. Show the basename without the extension while
+ * which is unreadable in the Models list. Show the basename without the extension while
  * keeping the raw id for loading.
  *
  * Only basename-strip when the id actually LOOKS like a filesystem path — an

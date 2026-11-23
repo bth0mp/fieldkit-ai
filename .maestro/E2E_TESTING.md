@@ -103,14 +103,19 @@ Required test IDs:
 - `thinking-indicator`
 - `streaming-message`
 - `assistant-message`
-- `model-selector`
-- `model-loaded-indicator`
+- `model-selector` (the model name in the header; opens the Models screen)
+- `model-loaded-indicator` (the text in the header: the model's name, "Image model" or "No model")
 
 ### Model Management
-- `model-list`
-- `model-item-{index}`
+- `models-summary` (the model chip on Home's Assistant card; opens the Models screen)
+- `models-list`
+- `your-models-text`, `your-models-image` (the "Your models" list at the top of each tab)
+- `your-models-empty` (the message shown when that list has no models)
+- `model-item` (a row, tap to use it; `remote-model-item` for a remote server's model)
+- `model-item-action` (the row's Use, Unload or Disconnect button)
+- `in-memory-button` (opens the sheet of models in memory)
+- `sort-option-*` (the sort buttons on the Text Models tab)
 - `model-loading-indicator`
-- `unload-model-button`
 - `download-button`
 - `download-progress`
 - `download-complete`
@@ -224,8 +229,8 @@ The following testIDs need to be added to screen components for E2E tests to wor
 **ChatScreen.tsx**
 ```tsx
 <View testID="chat-screen">
-<TouchableOpacity testID="model-selector">
-<View testID="model-loaded-indicator">  // When model is loaded
+<TouchableOpacity testID="model-selector">  // Opens the Models screen
+<Text testID="model-loaded-indicator">  // The model's name, "Image model" or "No model"
 <View testID="model-loading-indicator">  // During model load
 <TouchableOpacity testID="conversation-list-button">
 <View testID="assistant-message">  // On assistant message bubbles

@@ -17,8 +17,9 @@
  *      exactly as T046). testConnection populates the REAL useRemoteServerStore.discoveredModels.
  *   2. Tap the modal's "Add Server" to persist the connected server.
  *   3. Mount the REAL HomeScreen (shares the same real store). Its setup card now offers "Select Model"
- *      (remoteTextModels > 0). Tap it → the real ModelPickerSheet renders the discovered "remote-model-item".
- *   4. Tap the remote model → the real handleSelectRemoteTextModel → remoteServerManager.setActiveRemoteTextModel
+ *      (remoteTextModels > 0). It opens the Models screen; its real "Your models" list renders the discovered
+ *      "remote-model-item".
+ *   4. Tap the remote model → the real chooseRemoteTextModel → remoteServerManager.setActiveRemoteTextModel
  *      sets activeServerId + activeRemoteTextModelId in the real store. NO store.setState of the tested state.
  *
  * Boundary faked: ONLY global.fetch (the network/LAN transport) + the native leaves via installNativeBoundary.
@@ -29,6 +30,13 @@
  * server icon → the pinned assertions fail.
  */
 import { installNativeBoundary, requireRTL } from '../../harness/nativeBoundary';
+
+jest.mock('@react-navigation/native', () => ({
+  useNavigation: () => ({ navigate: () => {}, goBack: () => {}, setOptions: () => {}, addListener: () => () => {} }),
+  useRoute: () => ({ params: {} }),
+  useFocusEffect: () => {},
+  useIsFocused: () => true,
+}));
 
 describe('T097 (rendered) — Home with a remote model active names it on the model chip', () => {
   const setup = (opts: { selectRemoteModel: boolean }) => {
@@ -80,11 +88,14 @@ describe('T097 (rendered) — Home with a remote model active names it on the mo
     // Mount the REAL Home screen (shares the real remote store — the connected server's models are discovered).
     const home = rtl.render(React.createElement(HomeScreen, { navigation: nav }));
 
-    // The setup card offers "Select Model" once remoteTextModels > 0 — tap it to open the real picker.
-    rtl.fireEvent.press(await rtl.waitFor(() => home.getByTestId('browse-models-button'), { timeout: 4000 }));
+    // The setup card offers "Select Model" once remoteTextModels > 0; it opens the Models screen, whose "Your models"
+    // list is mounted here beside Home (the navigation stub goes nowhere).
+    await rtl.waitFor(() => { expect(home.getByText('Select Model')).toBeTruthy(); }, { timeout: 4000 });
+    const { YourModels } = require('../../../src/screens/ModelsScreen/YourModels');
+    const list = rtl.render(React.createElement(YourModels, { kind: 'text', onChosen: () => {}, onError: () => {} }));
 
-    // Tap the discovered remote model → real handleSelectRemoteTextModel → setActiveRemoteTextModel.
-    rtl.fireEvent.press(await rtl.waitFor(() => home.getByTestId('remote-model-item'), { timeout: 4000 }));
+    // Tap the discovered remote model → real chooseRemoteTextModel → setActiveRemoteTextModel.
+    rtl.fireEvent.press(await rtl.waitFor(() => list.getByTestId('remote-model-item'), { timeout: 4000 }));
 
     // The real store now reports a remote model active (EMERGENT from the gesture, not setState).
     await rtl.waitFor(() => { expect(useRemoteServerStore.getState().activeRemoteTextModelId).toBe('llama-3-8b'); }, { timeout: 4000 });
@@ -93,6 +104,7 @@ describe('T097 (rendered) — Home with a remote model active names it on the mo
     await rtl.waitFor(() => { expect(home.getByTestId('model-chip-label')).toHaveTextContent('llama-3-8b'); }, { timeout: 4000 });
     expect(home.getByTestId('model-chip-remote')).toBeTruthy();
 
+    list.unmount();
     home.unmount();
   });
 });

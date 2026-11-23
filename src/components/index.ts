@@ -6,7 +6,6 @@ export { ModelRow } from './ModelRow';
 export { ChatMessage } from './ChatMessage';
 export { ChatInput } from './ChatInput';
 ;
-export { ModelSelectorModal } from './ModelSelectorModal';
 export { GenerationSettingsModal } from './GenerationSettingsModal';
 export { CustomAlert, showAlert, hideAlert, initialAlertState } from './CustomAlert';
 export type { AlertState } from './CustomAlert';

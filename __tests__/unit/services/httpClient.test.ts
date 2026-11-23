@@ -458,6 +458,20 @@ describe('httpClient', () => {
       expect(result.success).toBe(true);
     });
 
+    it('ends at the timeout with a failure when a fallback request never answers', async () => {
+      const hangs = (_url: string, init?: RequestInit) => new Promise<never>((_resolve, reject) => {
+        if (init?.signal?.aborted) reject(new Error('aborted')); // as a real fetch does
+        init?.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+      });
+      (global.fetch as jest.Mock)
+        .mockResolvedValueOnce({ ok: false, status: 404 })
+        .mockImplementation(hangs);
+
+      const result = await testEndpoint('http://192.168.1.50:11434', 50);
+
+      expect(result.success).toBe(false);
+    });
+
     it('should strip trailing slashes from endpoint', async () => {
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,

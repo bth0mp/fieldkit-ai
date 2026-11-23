@@ -1,5 +1,5 @@
 import type { ThemeColors, ThemeShadows } from '../theme';
-import { TYPOGRAPHY } from '../constants';
+import { TYPOGRAPHY, SPACING } from '../constants';
 
 export const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
   card: {
@@ -279,6 +279,19 @@ export const createStyles = (colors: ThemeColors, shadows: ThemeShadows) => ({
     padding: 4,
     flexShrink: 0,
   },
+  useButton: {
+    minHeight: 32,
+    justifyContent: 'center' as const,
+    paddingHorizontal: SPACING.md,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    flexShrink: 0,
+  },
+  useButtonDisabled: {
+    opacity: 0.5,
+  },
+  useButtonText: { ...TYPOGRAPHY.bodySmall, color: colors.text },
   failedSection: {
     marginTop: 8,
     paddingTop: 10,

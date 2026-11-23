@@ -5,7 +5,7 @@ import { useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/types';
 import Icon from 'react-native-vector-icons/Feather';
 import { AttachStep } from 'react-native-spotlight-tour';
-import { CustomAlert, hideAlert } from '../../components/CustomAlert';
+import { CustomAlert, hideAlert, showAlert } from '../../components/CustomAlert';
 import { RECOMMENDED_MODELS } from '../../constants';
 import { useTheme, useThemedStyles } from '../../theme';
 import { useModelsScreen } from './useModelsScreen';
@@ -14,6 +14,7 @@ import { initialFilterState } from './constants';
 import { TextModelsTab } from './TextModelsTab';
 import { ImageModelsTab } from './ImageModelsTab';
 import { TranscriptionModelsTab } from './TranscriptionModelsTab';
+import { InMemory } from './InMemory';
 import { useSlot, SLOTS } from '../../bootstrap/slotRegistry';
 
 export const ModelsScreen: React.FC = () => {
@@ -30,16 +31,22 @@ export const ModelsScreen: React.FC = () => {
   // Do NOT use [vm] as dependency — vm is a new object every render, which would
   // cause the cleanup to fire on every re-render and immediately undo model selection.
   const didAutoSelect = useRef(false);
+  // A tab or search named on the way in is applied once per navigation: coming back from another screen leaves
+  // the user's own tab alone. Each navigate call gives the route a new params object, so that is what is compared.
+  const appliedParams = useRef<typeof route.params>(undefined);
   useFocusEffect(
     useCallback(() => {
       const { initialTab, repairModelId, initialSearchQuery } = route.params ?? {};
-      if (initialTab) vm.setActiveTab(initialTab);
-      // Deep-link from the chat "get an accelerated model" banner: land on the Text
-      // tab with the HF search prefilled (the debounced search in useTextModels fires
-      // on the query change). Guarded so it seeds once per navigation.
-      if (initialSearchQuery && !didAutoSelect.current) {
-        vm.setActiveTab('text');
-        vm.setSearchQuery(initialSearchQuery);
+      if (appliedParams.current !== route.params) {
+        appliedParams.current = route.params;
+        if (initialTab) vm.setActiveTab(initialTab);
+        // Deep-link from the chat "get an accelerated model" banner: land on the Text
+        // tab with the HF search prefilled (the debounced search in useTextModels fires
+        // on the query change).
+        if (initialSearchQuery) {
+          vm.setActiveTab('text');
+          vm.setSearchQuery(initialSearchQuery);
+        }
       }
       if (repairModelId && !didAutoSelect.current) {
         didAutoSelect.current = true;
@@ -52,10 +59,18 @@ export const ModelsScreen: React.FC = () => {
         vm.setModelFiles([]);
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [route.params?.initialTab, route.params?.repairModelId]),
+    }, [route.params]),
   );
 
   const isShowingDetail = vm.activeTab === 'text' && vm.selectedModel !== null;
+
+  const onChosen = () => {
+    // The owner may have left, or opened another screen, while the switch ran.
+    if (!vm.navigation.isFocused()) return;
+    if (route.params?.afterUse === 'newChat') vm.navigation.replace('Chat', {});
+    else vm.navigation.goBack();
+  };
+  const onError = (message: string) => vm.setAlertState(showAlert('Error', message));
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']} testID="models-screen">
@@ -86,8 +101,8 @@ export const ModelsScreen: React.FC = () => {
           </AttachStep>
         </View>
 
-        {/* Import Local File */}
-        <View>
+        {/* Import Local File, and what is in memory */}
+        <View style={styles.importRow}>
           {vm.isImporting && vm.importProgress ? (
             <View style={styles.importProgressCard}>
               <View style={styles.importProgressHeader}>
@@ -109,6 +124,7 @@ export const ModelsScreen: React.FC = () => {
               <Text style={styles.importButtonText}>Import Local File</Text>
             </TouchableOpacity>
           )}
+          <InMemory onOpenTab={vm.setActiveTab} setAlertState={vm.setAlertState} />
         </View>
 
         {/* Tab Bar (horizontally scrollable — four tabs don't fit on a phone) */}
@@ -216,6 +232,8 @@ export const ModelsScreen: React.FC = () => {
           isModelDownloaded={vm.isModelDownloaded}
           getDownloadedModel={vm.getDownloadedModel}
           isRepairingVisionModel={vm.isRepairingVisionModel}
+          onChosen={onChosen}
+          onError={onError}
         />
       )}
 
@@ -252,6 +270,8 @@ export const ModelsScreen: React.FC = () => {
           clearImageFilters={vm.clearImageFilters}
           setUserChangedBackendFilter={vm.setUserChangedBackendFilter}
           isRecommendedModel={vm.isRecommendedModel}
+          onChosen={onChosen}
+          onError={onError}
         />
       )}
 

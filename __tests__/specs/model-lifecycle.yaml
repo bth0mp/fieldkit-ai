@@ -215,8 +215,8 @@ test_cases:
     - id: e2e-model-002
       name: Load and chat with model
       steps:
-        - Select downloaded model
-        - Wait for model to load
+        - Open the Models screen and tap Use on a downloaded model
         - Navigate to Chat
         - Send a message
+        - Wait for model to load
         - Verify response generated

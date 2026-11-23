@@ -1,6 +1,6 @@
 /** GenerationService - Handles LLM generation independently of UI lifecycle */
 import { llmService } from './llm';
-import { getActiveEngineService, stopAllTextEngines } from './engines';
+import { getActiveEngineService, isRemoteTextModelActive, stopAllTextEngines } from './engines';
 import { useAppStore, useChatStore, useRemoteServerStore } from '../stores';
 import { Message, GenerationMeta, MediaAttachment } from '../types';
 import { runToolLoop, type ToolLoopOutcome } from './generationToolLoop';
@@ -63,6 +63,7 @@ class GenerationService {
   wasAborted(): boolean { return this.abortRequested; }
   private pendingStop: Promise<void> | null = null;
   private queueProcessor: QueueProcessor | null = null;
+  private canSend: () => boolean = () => true;
   private currentRemoteAbortController: AbortController | null = null;
   private remoteTimeToFirstToken: number | undefined;
 
@@ -83,20 +84,9 @@ class GenerationService {
 
   /** Check if using a remote provider */
   private isUsingRemoteProvider(): boolean {
-    const { activeServerId } = useRemoteServerStore.getState();
-    const hasProvider = activeServerId ? providerRegistry.hasProvider(activeServerId) : false;
-    const localLoaded = llmService.isModelLoaded();
-    logger.log(`[REMOTE-SM] isUsingRemoteProvider? activeServerId=${activeServerId ?? 'none'} hasProvider=${hasProvider} localLoaded=${localLoaded}`);
-    if (!activeServerId) return false;
-    // Provider must be registered (not just persisted from a previous session)
-    if (!hasProvider) return false;
-    // If a local model is loaded, prefer it over the remote server.
-    // Log a warning so this is diagnosable if a user selects remote but gets local responses.
-    if (localLoaded) {
-      logger.warn('[GenerationService] Local model is loaded — preferring local over active remote server:', activeServerId);
-      return false;
-    }
-    return true;
+    const remote = isRemoteTextModelActive();
+    logger.log(`[REMOTE-SM] isUsingRemoteProvider? activeServerId=${useRemoteServerStore.getState().activeServerId ?? 'none'} remote=${remote} localLoaded=${llmService.isModelLoaded()}`);
+    return remote;
   }
 
   private flushTokenBuffer(): void {
@@ -152,6 +142,9 @@ class GenerationService {
 
   /** Whether a turn started with runTurn is still running, its model possibly still loading. */
   isTurnInFlight(): boolean { return this.turnsInFlight.size > 0; }
+
+  /** How many turns started with runTurn are still running. */
+  turnsRunning(): number { return this.turnsInFlight.size; }
 
   subscribe(listener: GenerationListener): () => void {
     this.listeners.add(listener); listener(this.getState()); return () => this.listeners.delete(listener);
@@ -354,7 +347,11 @@ class GenerationService {
 
   clearQueue(): void { this.state = { ...this.state, queuedMessages: [] }; this.notifyListeners(); }
 
-  setQueueProcessor(processor: QueueProcessor | null): void { this.queueProcessor = processor; }
+  /** `canSend` says whether the processor can send now (a model is in use); when it cannot, the queue is left alone. */
+  setQueueProcessor(processor: QueueProcessor | null, canSend: () => boolean = () => true): void {
+    this.queueProcessor = processor;
+    this.canSend = processor ? canSend : () => true;
+  }
 
   /**
    * Process queued messages now. Text generation drains its own queue on
@@ -375,7 +372,7 @@ class GenerationService {
    * next turn end. A message whose chat was deleted is dropped here, so it can never be sent.
    */
   private processNextInQueue(): void {
-    if (this.state.queuedMessages.length === 0 || !this.queueProcessor) return;
+    if (this.state.queuedMessages.length === 0 || !this.queueProcessor || !this.canSend()) return;
     const { conversations } = useChatStore.getState();
     const live = this.state.queuedMessages.filter(m => conversations.some(c => c.id === m.conversationId));
     const all = live.filter(m => m.conversationId === live[0]?.conversationId);

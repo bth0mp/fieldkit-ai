@@ -3,12 +3,12 @@
  *
  * Exercises the REAL seam a user drives when a big model is memory-blocked:
  *
- *   loadModelWithOverride  (the UI-intent helper every screen calls)
+ *   initiateModelLoad     (the chat's load-on-send, which offers Load Anyway)
  *      → activeModelService.loadTextModel(..., { override })  (the single load gateway)
  *         → modelResidencyManager.makeRoomFor({ override })    (the memory gate + eviction)
  *
  * Only the two things we physically cannot run in-process are mocked — the `llm`
- * native module and the `hardware` RAM sensor. `loadModelWithOverride`,
+ * native module and the `hardware` RAM sensor. `initiateModelLoad`,
  * `activeModelService`, `modelResidencyManager`, the residency policy, the store,
  * and the real `CustomAlert` state helpers all run for real. We assert the OUTCOME
  * the user feels (model loaded / refused, which dialog they see), never
@@ -36,7 +36,7 @@ import { activeModelService } from '../../../src/services/activeModelService';
 import { modelResidencyManager } from '../../../src/services/modelResidency';
 import { llmService } from '../../../src/services/llm';
 import { hardwareService } from '../../../src/services/hardware';
-import { loadModelWithOverride } from '../../../src/services/loadModelWithOverride';
+import { initiateModelLoad } from '../../../src/screens/ChatScreen/useChatModelActions';
 import type { AlertState } from '../../../src/components/CustomAlert';
 import {
   resetStores,
@@ -57,20 +57,23 @@ const mockHardwareService = hardwareService as jest.Mocked<
 >;
 
 /**
- * Drives the exact override chain a screen runs: hand loadModelWithOverride a thunk
- * that loads through the real activeModelService, capture every alert the helper
- * raises, and expose a `tapLoadAnyway()` that presses the real "Load Anyway" button
- * (and awaits the fire-and-forget retry the helper kicks off).
+ * Drives the exact override chain the chat runs when a message needs the model: start the chat's load
+ * (initiateModelLoad) over the real activeModelService, capture every alert it raises, and expose a
+ * `tapLoadAnyway()` that presses the real "Load Anyway" button and waits for the retry it kicks off
+ * (the chat resumes the waiting message when the retry ends, which is what is awaited).
  */
 function driveLoad(modelId: string) {
   const alerts: AlertState[] = [];
-  let lastLoad: Promise<void> | undefined;
-  const load = (opts?: { override?: boolean }) => {
-    lastLoad = activeModelService.loadTextModel(modelId, undefined, opts);
-    return lastLoad;
-  };
-  const start = () =>
-    loadModelWithOverride(load, { setAlertState: a => alerts.push(a) });
+  let resumed: () => void = () => {};
+  const retryDone = new Promise<void>(resolve => { resumed = resolve; });
+  const model = useAppStore.getState().downloadedModels.find(m => m.id === modelId);
+  const deps = {
+    activeModel: model, activeModelId: modelId, activeConversationId: null, isStreaming: false,
+    settings: { showGenerationDetails: false }, clearStreamingMessage: () => {}, createConversation: () => 'c',
+    addMessage: () => {}, setIsModelLoading: () => {}, setLoadingModel: () => {}, setSupportsVision: () => {},
+    setAlertState: (a: AlertState) => { alerts.push(a); }, modelLoadStartTimeRef: { current: null },
+  } as unknown as Parameters<typeof initiateModelLoad>[0];
+  const start = () => initiateModelLoad(deps, false, resumed);
 
   const lastVisible = () => [...alerts].reverse().find(a => a.visible);
 
@@ -82,9 +85,8 @@ function driveLoad(modelId: string) {
         `No "Load Anyway" button on the last alert (title=${prompt?.title})`,
       );
     }
-    btn.onPress(); // fires `void attempt(true)` — lastLoad is reassigned synchronously
-    await flushPromises();
-    await lastLoad?.catch(() => {});
+    btn.onPress(); // fires the retry: a render frame, then the forced load
+    await retryDone;
     await flushPromises();
   };
 

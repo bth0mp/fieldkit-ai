@@ -66,108 +66,93 @@ tags:
 # ==============================
 # Ensure image model is active
 # ==============================
-# First check: Is image model already loaded on home screen?
+# The Home chip opens the Models screen; the Image Models tab lists the downloaded image models
 - evalScript: "${console.log('IMAGE_GEN - Check image model status')}"
+- tapOn:
+    id: "models-summary"
 
-# Check if we need to select/download a model ("Tap to select" or "No models" visible)
+- extendedWaitUntil:
+    visible:
+      id: "models-screen"
+    timeout: 10000
+- evalScript: "${console.log('IMAGE_GEN - Image Models tab')}"
+- tapOn:
+    text: "Image Models"
+- extendedWaitUntil:
+    visible:
+      id: "your-models-image"
+    timeout: 10000
+
+# If no image models yet, download one
 - runFlow:
     when:
       visible:
-        text: "Tap to select"
+        id: "your-models-empty"
     commands:
-      - evalScript: "${console.log('IMAGE_GEN - Model downloaded but not active, selecting...')}"
-      - tapOn:
-          id: "image-model-card"
+      - evalScript: "${console.log('IMAGE_GEN - No models downloaded, need to download')}"
+      - takeScreenshot: 01-image-models-tab
 
-      # Wait for picker to appear
+      # Wait for models to load (no NPU filter, use CPU)
       - extendedWaitUntil:
           visible:
-            text: "Image Models"
+            text: "Absolute Reality (CPU)"
           timeout: 5000
 
-      # Select first model
+      # Tap download icon on 1st image model card
+      - evalScript: "${console.log('IMAGE_GEN - Downloading CPU model')}"
       - tapOn:
-          id: "model-item"
-          index: 0
+          id: "image-model-card-0-download"
 
-      # Wait for model to load
+      # Wait for download to complete
+      - evalScript: "${console.log('IMAGE_GEN - Waiting for download...')}"
       - extendedWaitUntil:
-          notVisible:
-            text: "Tap to select"
-          timeout: 30000
+          visible:
+            text: "Success"
+          timeout: 180000
 
-# If "No models" shown, need to download
+      - evalScript: "${console.log('IMAGE_GEN - Download complete, auto-activated!')}"
+      - takeScreenshot: 02-download-complete
+      - tapOn:
+          text: "OK"
+
+      # Go back to home (model is auto-activated after download)
+      - evalScript: "${console.log('IMAGE_GEN - Back to home')}"
+      - tapOn:
+          id: "models-back"
+
+      - extendedWaitUntil:
+          visible:
+            id: "home-screen"
+          timeout: 10000
+
+# Models downloaded but none in use: Use the first one (it leaves the Models screen for Home)
 - runFlow:
     when:
       visible:
-        text: "No models"
+        id: "your-models-image"
     commands:
-      - evalScript: "${console.log('IMAGE_GEN - No models, need to download')}"
-      - tapOn:
-          id: "image-model-card"
-
-      # Wait for picker to appear
-      - extendedWaitUntil:
-          visible:
-            text: "Image Models"
-          timeout: 5000
-
-      # If no models downloaded, go to Models screen
       - runFlow:
           when:
-            visible:
-              text: "No image models downloaded"
+            notVisible:
+              text: "In use"
           commands:
-            - evalScript: "${console.log('IMAGE_GEN - No models downloaded, need to download')}"
-
-            # Close picker
+            - evalScript: "${console.log('IMAGE_GEN - Model downloaded but not active, selecting...')}"
             - tapOn:
-                text: "Browse Models"
-
-            # Wait for Models screen
-            - extendedWaitUntil:
-                visible:
-                  id: "models-screen"
-                timeout: 10000
-
-            # Switch to Image Models tab
-            - evalScript: "${console.log('IMAGE_GEN - Image Models tab')}"
-            - tapOn:
-                text: "Image Models"
-            - takeScreenshot: 01-image-models-tab
-
-            # Wait for models to load (no NPU filter, use CPU)
-            - extendedWaitUntil:
-                visible:
-                  text: "Absolute Reality (CPU)"
-                timeout: 5000
-
-            # Tap download icon on 1st image model card
-            - evalScript: "${console.log('IMAGE_GEN - Downloading CPU model')}"
-            - tapOn:
-                id: "image-model-card-0-download"
-
-            # Wait for download to complete
-            - evalScript: "${console.log('IMAGE_GEN - Waiting for download...')}"
-            - extendedWaitUntil:
-                visible:
-                  text: "Success"
-                timeout: 180000
-
-            - evalScript: "${console.log('IMAGE_GEN - Download complete, auto-activated!')}"
-            - takeScreenshot: 02-download-complete
-            - tapOn:
-                text: "OK"
-
-            # Go back to home (model is auto-activated after download)
-            - evalScript: "${console.log('IMAGE_GEN - Back to home')}"
-            - tapOn:
-                text: "Home"
-
+                id: "model-item"
+                index: 0
             - extendedWaitUntil:
                 visible:
                   id: "home-screen"
-                timeout: 10000
+                timeout: 30000
+
+# A model already in use leaves us on the Models screen: go back to Home
+- runFlow:
+    when:
+      visible:
+        id: "models-screen"
+    commands:
+      - tapOn:
+          id: "models-back"
 
 # Ensure we're on home screen before continuing
 - extendedWaitUntil:

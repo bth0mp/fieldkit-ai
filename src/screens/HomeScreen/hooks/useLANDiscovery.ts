@@ -53,7 +53,7 @@ export function useLANDiscovery({ navigation, setAlertState }: LANDiscoveryParam
       : `${newServersToAdd.length} LLM Servers Found`;
     setAlertState(showAlert(
       title,
-      `Discovered on your network: ${names}. You can select a model from the model picker.`,
+      `Discovered on your network: ${names}. You can choose one of its models on the Models screen.`,
       [
         { text: 'Dismiss', style: 'cancel' },
         {

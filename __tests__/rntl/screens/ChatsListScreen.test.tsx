@@ -103,31 +103,6 @@ jest.mock('../../../src/services', () => ({
   onnxImageGeneratorService: {
     deleteGeneratedImage: jest.fn(() => Promise.resolve()),
   },
-  activeModelService: {
-    loadTextModel: jest.fn(() => Promise.resolve()),
-    loadImageModel: jest.fn(() => Promise.resolve()),
-    unloadTextModel: jest.fn(() => Promise.resolve()),
-    unloadImageModel: jest.fn(() => Promise.resolve()),
-  },
-  llmService: {
-    getLoadedModelPath: jest.fn(() => null),
-    isModelLoaded: jest.fn(() => false),
-  },
-  remoteServerManager: {
-    clearActiveRemoteModel: jest.fn(),
-  },
-}));
-
-jest.mock('../../../src/components', () => ({
-  ModelSelectorModal: ({ visible }: any) => {
-    if (!visible) return null;
-    const { View, Text } = require('react-native');
-    return (
-      <View testID="model-selector-modal">
-        <Text>Select Model</Text>
-      </View>
-    );
-  },
 }));
 
 // Override global Swipeable mock to render rightActions for testing
@@ -165,7 +140,7 @@ describe('ChatsListScreen', () => {
       expect(getByText('New')).toBeTruthy();
     });
 
-    it('enables New when downloadable models exist but none are loaded', () => {
+    it('New opens the Models screen, and Use there opens the chat, when models are downloaded but none is in use', () => {
       useAppStore.setState({
         downloadedModels: [createDownloadedModel()],
         activeModelId: null,
@@ -175,7 +150,7 @@ describe('ChatsListScreen', () => {
 
       const { getByText } = render(<ChatsListScreen />);
       fireEvent.press(getByText('New'));
-      expect(getByText('Select Model')).toBeTruthy();
+      expect(mockNavigate).toHaveBeenCalledWith('Models', { initialTab: 'text', afterUse: 'newChat' });
     });
   });
 
@@ -191,7 +166,7 @@ describe('ChatsListScreen', () => {
     it('shows download prompt when no models are downloaded', () => {
       const { getByText } = render(<ChatsListScreen />);
       expect(
-        getByText('Download a model from the Models tab to start chatting.'),
+        getByText('Choose or download a model on the Models screen to start chatting.'),
       ).toBeTruthy();
     });
 
@@ -209,7 +184,7 @@ describe('ChatsListScreen', () => {
       ).toBeTruthy();
     });
 
-    it('shows New button flow when only image models are available', () => {
+    it('New opens the Models screen when only image models are downloaded and none is in use', () => {
       useAppStore.setState({
         downloadedModels: [],
         activeModelId: null,
@@ -219,7 +194,7 @@ describe('ChatsListScreen', () => {
 
       const { getByText } = render(<ChatsListScreen />);
       fireEvent.press(getByText('New'));
-      expect(getByText('Select Model')).toBeTruthy();
+      expect(mockNavigate).toHaveBeenCalledWith('Models', { initialTab: 'text', afterUse: 'newChat' });
     });
 
     it('shows "New Chat" button in empty state when models are downloaded', () => {
@@ -232,9 +207,11 @@ describe('ChatsListScreen', () => {
       expect(getByText('New Chat')).toBeTruthy();
     });
 
-    it('does not show "New Chat" empty-state button when no models', () => {
-      const { queryByText } = render(<ChatsListScreen />);
+    it('shows "Open Models" instead of "New Chat" in the empty state when no model is in use, and it opens Models', () => {
+      const { queryByText, getByTestId } = render(<ChatsListScreen />);
       expect(queryByText('New Chat')).toBeNull();
+      fireEvent.press(getByTestId('chats-open-models'));
+      expect(mockNavigate).toHaveBeenCalledWith('Models', { initialTab: 'text', afterUse: 'newChat' });
     });
   });
 
@@ -358,11 +335,12 @@ describe('ChatsListScreen', () => {
       expect(mockNavigate).toHaveBeenCalledWith('Chat', {});
     });
 
-    it('does not navigate when New is pressed and no models downloaded', () => {
+    it('opens no chat when New is pressed and no models downloaded: it opens Models', () => {
       const { getByText } = render(<ChatsListScreen />);
       fireEvent.press(getByText('New'));
 
-      expect(mockNavigate).not.toHaveBeenCalled();
+      expect(mockNavigate).toHaveBeenCalledTimes(1);
+      expect(mockNavigate).toHaveBeenCalledWith('Models', { initialTab: 'text', afterUse: 'newChat' });
     });
   });
 

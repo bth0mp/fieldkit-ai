@@ -10,7 +10,12 @@ import { ImageQualityBasicSliders, ImageQualityAdvancedSliders } from './ImageQu
 
 // ─── Image Model Picker ───────────────────────────────────────────────────────
 
-const ImageModelPicker: React.FC = () => {
+interface ImageSectionProps {
+  onClose: () => void;
+  onOpenImageModels?: () => void;
+}
+
+const ImageModelPicker: React.FC<ImageSectionProps> = ({ onClose, onOpenImageModels }) => {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { downloadedImageModels, activeImageModelId, setActiveImageModelId } = useAppStore();
@@ -44,9 +49,20 @@ const ImageModelPicker: React.FC = () => {
       {showPicker && (
         <View style={styles.modelPickerList}>
           {downloadedImageModels.length === 0 ? (
-            <Text style={styles.noModelsText}>
-              No image models downloaded. Go to Models tab to download one.
-            </Text>
+            <TouchableOpacity
+              testID="open-image-models"
+              accessibilityRole="button"
+              disabled={!onOpenImageModels}
+              onPress={() => {
+                onClose();
+                // The settings sheet has to be gone before the Models screen opens over it.
+                setTimeout(onOpenImageModels!, 200);
+              }}
+            >
+              <Text style={styles.noModelsText}>
+                No image models downloaded. Open Models to download one.
+              </Text>
+            </TouchableOpacity>
           ) : (
             <>
               <TouchableOpacity
@@ -281,7 +297,7 @@ const ImageAdvancedSection: React.FC = () => {
 
 // ─── Main Section ─────────────────────────────────────────────────────────────
 
-export const ImageGenerationSection: React.FC = () => {
+export const ImageGenerationSection: React.FC<ImageSectionProps> = ({ onClose, onOpenImageModels }) => {
   const styles = useThemedStyles(createStyles);
   const { settings, updateSettings } = useAppStore();
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -289,7 +305,7 @@ export const ImageGenerationSection: React.FC = () => {
 
   return (
     <View style={styles.sectionCard}>
-      <ImageModelPicker />
+      <ImageModelPicker onClose={onClose} onOpenImageModels={onOpenImageModels} />
 
       {/* Image Generation Mode Toggle */}
       <View style={styles.modeToggleContainer}>

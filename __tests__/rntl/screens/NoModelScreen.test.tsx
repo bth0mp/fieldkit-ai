@@ -9,9 +9,6 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 
-jest.mock('../../../src/components', () => ({
-  ModelSelectorModal: () => null,
-}));
 jest.mock('../../../src/services', () => ({
   llmService: { getLoadedModelPath: () => null },
 }));
@@ -31,10 +28,7 @@ function renderScreen(overrides: Partial<React.ComponentProps<typeof NoModelScre
       colors={colors}
       navigation={{ goBack: jest.fn() }}
       hasAvailableModels
-      showModelSelector={false}
-      setShowModelSelector={jest.fn()}
-      onSelectModel={jest.fn()}
-      onUnloadModel={jest.fn()}
+      onOpenModels={jest.fn()}
       isModelLoading={false}
       {...overrides}
     />,

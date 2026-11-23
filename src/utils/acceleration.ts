@@ -164,7 +164,7 @@ export function acceleratedBackendFor(
 }
 
 /**
- * The HuggingFace search term to prefill on the Models tab so the user can grab an
+ * The HuggingFace search term to prefill on the Models screen so the user can grab an
  * accelerable (Q4_0) build of the model they're on. Strips a trailing quant suffix
  * (…-Q4_K_M) from the model id and its author prefix, then appends the target quant.
  */

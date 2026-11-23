@@ -12,7 +12,6 @@ export { whisperService, WHISPER_MODELS } from './whisperService';
 ;
 export { backgroundDownloadService } from './backgroundDownloadService';
 export { activeModelService } from './activeModelService';
-export type { ResourceUsage } from './activeModelService/types';
 export { generationService } from './generationService';
 export type { QueuedMessage } from './generationService';
 export { imageGenerationService } from './imageGenerationService';

@@ -24,6 +24,7 @@ import { llmService } from '../../../src/services/llm';
 import { getActiveEngineService, isRemoteTextModelActive } from '../../../src/services/engines';
 import { useAppStore } from '../../../src/stores/appStore';
 import { useRemoteServerStore } from '../../../src/stores/remoteServerStore';
+import { useChatStore } from '../../../src/stores/chatStore';
 import { providerRegistry } from '../../../src/services/providers';
 import { resetStores, setupWithConversation } from '../../utils/testHelpers';
 import { createDownloadedModel, createMessage } from '../../utils/factories';
@@ -157,5 +158,60 @@ describe('generationToolLoop routes to the engine the engines.ts owner names', (
 
     expect(engineOwnerNames()).toBe('remote');
     expect(engineTheLoopUsed()).toBe(engineOwnerNames());
+  });
+
+  it('a remote model is chosen (the server lists it) while llama is loaded for another job: the loop routes remote', async () => {
+    mockLlm.isModelLoaded.mockReturnValue(true);
+    mockLiteRT.isModelLoaded.mockReturnValue(false);
+    const serverId = 'srv-1';
+    registerRemoteProvider(serverId);
+    useRemoteServerStore.setState({
+      activeServerId: serverId,
+      activeRemoteTextModelId: 'remote-model',
+      discoveredModels: { [serverId]: [{ id: 'remote-model', name: 'remote-model', serverId, capabilities: {} }] },
+    } as never);
+    useAppStore.setState({ downloadedModels: [createDownloadedModel({ id: 'gg', engine: 'llama' })], activeModelId: 'gg' });
+    const conversationId = setupWithConversation({ messages: [] });
+
+    await runToolLoop(makeCtx(conversationId));
+
+    expect(engineOwnerNames()).toBe('remote');
+    expect(engineTheLoopUsed()).toBe('remote');
+  });
+
+  /** A LiteRT model (an image classifier) is loaded for another job, with a conversation, while a remote model is chosen. */
+  function chooseRemoteWithLiteRTLoaded(): string {
+    mockLlm.isModelLoaded.mockReturnValue(false);
+    mockLiteRT.isModelLoaded.mockReturnValue(true);
+    const serverId = 'srv-1';
+    registerRemoteProvider(serverId);
+    useRemoteServerStore.setState({
+      activeServerId: serverId,
+      activeRemoteTextModelId: 'remote-model',
+      discoveredModels: { [serverId]: [{ id: 'remote-model', name: 'remote-model', serverId, capabilities: {} }] },
+    } as never);
+    useAppStore.setState({ downloadedModels: [createDownloadedModel({ id: 'lrt', engine: 'litert' })], activeModelId: 'lrt' });
+    return setupWithConversation({ messages: [] });
+  }
+
+  it('a remote model is chosen while a LiteRT model is loaded for another job: the remote answers and LiteRT is not asked', async () => {
+    const conversationId = chooseRemoteWithLiteRTLoaded();
+
+    await runToolLoop(makeCtx(conversationId));
+
+    expect(engineTheLoopUsed()).toBe('remote');
+    expect(mockLiteRT.generateRaw).not.toHaveBeenCalled();
+  });
+
+  it('the same in a private chat: refused, and neither the remote model nor LiteRT is asked', async () => {
+    const conversationId = chooseRemoteWithLiteRTLoaded();
+    useChatStore.setState(prev => ({
+      conversations: prev.conversations.map(c => (c.id === conversationId ? { ...c, containsPrivateData: true } : c)),
+    }));
+
+    await expect(runToolLoop(makeCtx(conversationId))).rejects.toThrow(/never sent to a remote model/);
+
+    expect(remoteProviderGenerate).not.toHaveBeenCalled();
+    expect(mockLiteRT.generateRaw).not.toHaveBeenCalled();
   });
 });

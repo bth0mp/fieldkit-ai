@@ -4,7 +4,8 @@ import Icon from 'react-native-vector-icons/Feather';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
 import { AttachStep, useSpotlightTour } from 'react-native-spotlight-tour';
 import { ModelCard } from '../../components';
-import { consumePendingSpotlight } from '../../components/onboarding/spotlightState';
+import { consumePendingSpotlight, peekPendingSpotlight } from '../../components/onboarding/spotlightState';
+import { IMAGE_DOWNLOAD_STEP_INDEX } from '../../components/onboarding/spotlightConfig';
 import { useTheme, useThemedStyles } from '../../theme';
 import { HFImageModel, getVariantLabel } from '../../services/huggingFaceModelBrowser';
 import { ImageModelRecommendation } from '../../types';
@@ -14,6 +15,7 @@ import { imageBackendLabel } from '../../utils/imageBackend';
 import { createStyles } from './styles';
 import { ModelsScreenViewModel } from './useModelsScreen';
 import { ImageFilterBar } from './ImageFilterBar';
+import { YourModels } from './YourModels';
 import { BackendFilter, ImageFilterDimension } from './types';
 import { formatBytes, getImageModelCompatibility, hfModelToDescriptor } from './utils';
 
@@ -33,7 +35,11 @@ type Props = Pick<ModelsScreenViewModel,
   | 'handleDownloadImageModel' | 'handleCancelImageDownload' | 'loadHFModels'
   | 'clearImageFilters' | 'setUserChangedBackendFilter'
   | 'isRecommendedModel'
->;
+> & {
+  /** Called after "Your models" marks a model in use; the screen decides where to go. */
+  onChosen: () => void;
+  onError: (message: string) => void;
+};
 
 interface ImageModelCardProps {
   model: HFImageModel & { _coreml?: boolean; _coremlFiles?: any[] };
@@ -131,6 +137,8 @@ interface ScrollContentProps {
   handleDownloadImageModel: Props['handleDownloadImageModel'];
   handleCancelImageDownload: Props['handleCancelImageDownload'];
   imageSearchQuery: string;
+  onChosen: () => void;
+  onError: (message: string) => void;
 }
 
 const ImageModelsScrollContent: React.FC<ScrollContentProps> = ({
@@ -143,7 +151,7 @@ const ImageModelsScrollContent: React.FC<ScrollContentProps> = ({
   hfModelsLoading, hfModelsError, loadHFModels,
   filteredHFModels, availableHFModels,
   isRecommendedModel, handleDownloadImageModel, handleCancelImageDownload,
-  imageSearchQuery,
+  imageSearchQuery, onChosen, onError,
 }) => {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -152,7 +160,8 @@ const ImageModelsScrollContent: React.FC<ScrollContentProps> = ({
   // Consume pending spotlight from the onboarding flow (queued when user taps "Try image generation")
   useEffect(() => {
     if (!hfModelsLoading && filteredHFModels.length > 0) {
-      const pending = consumePendingSpotlight();
+      // Only its own step: another one (Load a model, 11) stays pending for the tab that owns it.
+      const pending = peekPendingSpotlight() === IMAGE_DOWNLOAD_STEP_INDEX ? consumePendingSpotlight() : null;
       if (pending !== null) {
         const task = InteractionManager.runAfterInteractions(() => goTo(pending));
         return () => task.cancel();
@@ -171,6 +180,7 @@ const ImageModelsScrollContent: React.FC<ScrollContentProps> = ({
   return (
     <ScrollView keyboardShouldPersistTaps="handled">
       <View style={styles.imageModelsList}>
+        {!imageSearchQuery.trim() && <YourModels kind="image" onChosen={onChosen} onError={onError} />}
         {showRecHint && showRecommendedOnly && (
           <TouchableOpacity style={styles.recHint} onPress={() => setShowRecHint(false)} activeOpacity={0.7}>
             <Icon name="info" size={11} color={colors.primary} />
@@ -263,7 +273,7 @@ export const ImageModelsTab: React.FC<Props> = ({
   imageRec, ramGB, imageRecommendation,
   handleDownloadImageModel, handleCancelImageDownload, loadHFModels,
   clearImageFilters, setUserChangedBackendFilter,
-  isRecommendedModel,
+  isRecommendedModel, onChosen, onError,
 }) => {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -330,6 +340,8 @@ export const ImageModelsTab: React.FC<Props> = ({
         handleDownloadImageModel={handleDownloadImageModel}
         handleCancelImageDownload={handleCancelImageDownload}
         imageSearchQuery={imageSearchQuery}
+        onChosen={onChosen}
+        onError={onError}
       />
     </View>
   );

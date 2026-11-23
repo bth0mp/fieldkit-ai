@@ -29,15 +29,6 @@ export interface ActiveModelInfo {
   };
 }
 
-export interface ResourceUsage {
-  memoryUsed: number;
-  memoryTotal: number;
-  memoryAvailable: number;
-  memoryUsagePercent: number;
-  /** Estimated memory used by loaded models (from file sizes) */
-  estimatedModelMemory: number;
-}
-
 export type ModelChangeListener = (info: ActiveModelInfo) => void;
 
 // The safe RAM fraction per device tier now lives in the single memory-budget

@@ -13,7 +13,7 @@ import { TYPOGRAPHY, SPACING } from '../../../constants';
 type Props = {
   /** The loaded model's name, whether it runs on a remote server, and whether a model is loading. */
   chip: { label: string; remote: boolean; loading: boolean };
-  /** Opens the models manager sheet. */
+  /** Opens the Models screen. */
   onOpenModels: () => void;
   /** A text or image model is active, so a question can be asked. */
   canChat: boolean;
@@ -84,7 +84,7 @@ const AskBox: React.FC<{ onAsk: (text: string) => void }> = ({ onAsk }) => {
 };
 
 /**
- * Home's Assistant card: a chip naming the loaded model (it opens the models manager), the ask box (or the
+ * Home's Assistant card: a chip naming the loaded model (it opens the Models screen), the ask box (or the
  * setup card while no model is active) and the last chats.
  */
 export const AssistantCard: React.FC<Props> = ({ chip, onOpenModels, canChat, setup, onAsk, recent }) => {
@@ -96,16 +96,21 @@ export const AssistantCard: React.FC<Props> = ({ chip, onOpenModels, canChat, se
       <View style={styles.header}>
         <Text style={styles.title}>Assistant</Text>
         {/* Both the text (1) and image (13) tour steps anchor on the model chip. */}
-        <AttachStep index={1} style={styles.chipAnchor}>
-          <AttachStep index={13} style={styles.chipAnchor}>
-            <AnimatedPressable testID="models-summary" style={styles.chip} hapticType="selection" onPress={onOpenModels}>
-              {chip.remote && <Icon testID="model-chip-remote" name="server" size={12} color={colors.textMuted} />}
-              <Text testID="model-chip-label" style={styles.chipLabel} numberOfLines={1}>{chip.label}</Text>
-              {chip.loading
-                ? <ActivityIndicator size="small" color={colors.primary} />
-                : <Icon name="chevron-down" size={14} color={colors.textMuted} />}
-            </AnimatedPressable>
-          </AttachStep>
+        <AttachStep index={[1, 13]} style={styles.chipAnchor}>
+          <AnimatedPressable
+            testID="models-summary"
+            style={styles.chip}
+            hapticType="selection"
+            onPress={onOpenModels}
+            accessibilityRole="button"
+            accessibilityLabel={`${chip.label}${chip.loading ? ', loading' : ''}. Opens Models`}
+          >
+            {chip.remote && <Icon testID="model-chip-remote" name="server" size={12} color={colors.textMuted} />}
+            <Text testID="model-chip-label" style={styles.chipLabel} numberOfLines={1}>{chip.label}</Text>
+            {chip.loading
+              ? <ActivityIndicator size="small" color={colors.primary} />
+              : <Icon name="chevron-right" size={14} color={colors.textMuted} />}
+          </AnimatedPressable>
         </AttachStep>
       </View>
       {canChat ? <AskBox onAsk={onAsk} /> : setup}

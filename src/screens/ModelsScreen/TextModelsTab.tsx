@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, FlatList, TextInput, ActivityIndicator, RefreshControl, TouchableOpacity, InteractionManager, Platform } from 'react-native';
+import { View, Text, FlatList, ScrollView, TextInput, ActivityIndicator, RefreshControl, TouchableOpacity, InteractionManager, Platform } from 'react-native';
 import DeviceInfo from 'react-native-device-info';
 import Icon from 'react-native-vector-icons/Feather';
 import { fileExceedsBudget } from '../../services/memoryBudget';
@@ -12,8 +12,8 @@ import { DOWNLOAD_MANAGER_STEP_INDEX } from '../../components/onboarding/spotlig
 import { useTheme, useThemedStyles } from '../../theme';
 import { ModelGuideButton } from './ModelGuideButton';
 import { needsVisionRepair as checkNeedsVisionRepair } from '../../utils/visionRepair';
-import { CREDIBILITY_LABELS } from '../../constants';
-import { ModelInfo, ModelFile } from '../../types';
+import { CREDIBILITY_LABELS, SPACING } from '../../constants';
+import { ModelInfo, ModelFile, DownloadedModel } from '../../types';
 import { createStyles } from './styles';
 import { ModelsScreenViewModel } from './useModelsScreen';
 import { useDownloadStore, isActiveStatus, isQueuedStatus } from '../../stores/downloadStore';
@@ -21,6 +21,9 @@ import { makeModelKey } from '../../utils/modelKey';
 import { modelSupportsNpuGpu, isAccelerableQuant } from '../../utils/acceleration';
 import { aggregateActiveDownloads } from '../../utils/downloadAggregate';
 import { TextFiltersSection } from './TextFiltersSection';
+import { YourModels } from './YourModels';
+import { useActiveTextModel } from '../../hooks/useActiveTextModel';
+import { useModelChoice } from '../../hooks/useModelChoice';
 import { FilterState, SortOption } from './types';
 import { SORT_OPTIONS, SERVER_SORTS } from './constants';
 import { formatNumber, getTextModelCompatibility } from './utils';
@@ -62,14 +65,18 @@ type Props = Pick<ModelsScreenViewModel,
   | 'toggleFilterDimension' | 'toggleOrg'
   | 'setTypeFilter' | 'setSourceFilter' | 'setSizeFilter' | 'setQuantFilter' | 'setSortOption'
   | 'isModelDownloaded' | 'getDownloadedModel' | 'isRepairingVisionModel'
->;
+> & {
+  /** Called after "Your models" marks a model in use; the screen decides where to go. */
+  onChosen: () => void;
+  onError: (message: string) => void;
+};
 
 type DetailProps = Pick<Props,
   | 'modelFiles' | 'isLoadingFiles' | 'filterState' | 'ramGB'
   | 'alertState' | 'setAlertState'
   | 'getDownloadedModel' | 'isModelDownloaded' | 'isRepairingVisionModel'
   | 'handleDownload' | 'handleRepairMmProj' | 'handleCancelDownload' | 'handleDeleteModel'
-> & { selectedModel: ModelInfo; onBack: () => void; };
+> & { selectedModel: ModelInfo; onBack: () => void; onChosen: () => void; onError: (message: string) => void };
 
 // Build the file card's onDownload handler. Whether to show the curated confirm-download
 // warning is the registry's single DEVICE-AWARE decision (curatedLiteRTDownloadWarning),
@@ -97,13 +104,17 @@ function buildFileDownloadHandler({ s, fileName, sizeBytes, ramGB, proceedDownlo
 
 const ModelDetailView: React.FC<DetailProps> = ({
   selectedModel, modelFiles, isLoadingFiles, filterState, ramGB,
-  alertState, setAlertState, onBack,
+  alertState, setAlertState, onBack, onChosen, onError,
   getDownloadedModel, isModelDownloaded, isRepairingVisionModel,
   handleDownload, handleRepairMmProj, handleCancelDownload, handleDeleteModel,
 }) => {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { goTo } = useSpotlightTour();
+  const { busy, choose } = useModelChoice({ onChosen, onError });
+  const active = useActiveTextModel();
+  const isInUse = (record?: DownloadedModel) => !!record && !active.isRemote && active.modelId === record.id;
+  const chooseHandler = (record?: DownloadedModel) => (record && !isInUse(record) ? () => choose({ kind: 'text', id: record.id }) : undefined);
 
   // If user arrived here via onboarding spotlight flow, show file card spotlight
   // Pre-set the next pending (Download Manager icon) so it fires regardless of
@@ -193,6 +204,9 @@ const ModelDetailView: React.FC<DetailProps> = ({
         downloadBytes={s.progress && !s.hasFailed ? { downloaded: s.progress.bytesDownloaded, total: s.progress.totalBytes } : undefined}
         isRepairingVision={s.repairingVision}
         isCompatible={!fileExceedsBudget(item.size, ramGB)} testID={`file-card-${index}`}
+        isActive={isInUse(s.downloadedModel)}
+        onSelect={chooseHandler(s.downloadedModel)}
+        selectDisabled={busy.text}
         onDownload={onDownload}
         onDelete={s.downloaded ? () => handleDeleteModel(`${selectedModel.id}/${item.name}`) : undefined}
         onRepairVision={s.needsVisionRepair && !s.progress && !s.repairingVision ? () => handleRepairMmProj(selectedModel, item) : undefined}
@@ -311,23 +325,23 @@ function applyBackNavigation(setSelectedModel: (m: ModelInfo | null) => void, se
   if (pending !== null) { InteractionManager.runAfterInteractions(() => goTo(pending)); }
 }
 
-interface SortPanelProps {
+interface SortRowProps {
   filterState: FilterState;
   setSortOption: (s: SortOption) => void;
   styles: ReturnType<typeof createStyles>;
   colors: ReturnType<typeof useTheme>['colors'];
 }
-const SortPanel: React.FC<SortPanelProps> = ({ filterState, setSortOption, styles, colors }) => (
-  <View style={styles.filterExpandedContent}>
-    <View style={styles.filterChipWrap}>
-      {SORT_OPTIONS.map(option => (
-        <TouchableOpacity key={option.key} testID={`sort-option-${option.key}`} style={[styles.filterChip, filterState.sort === option.key && styles.filterChipActive]} onPress={() => setSortOption(option.key)} accessibilityRole="button" accessibilityState={{ selected: filterState.sort === option.key }}>
-          <Icon name={option.icon} size={12} color={filterState.sort === option.key ? colors.primary : colors.textSecondary} />
-          <Text style={[styles.filterChipText, filterState.sort === option.key && styles.filterChipTextActive]}>{option.label}</Text>
-        </TouchableOpacity>
-      ))}
-    </View>
-  </View>
+/** Inside the row's own padding, so the 36 dp chips take a 48 dp touch. */
+const SORT_HIT_SLOP = { top: SPACING.sm, bottom: SPACING.sm };
+const SortRow: React.FC<SortRowProps> = ({ filterState, setSortOption, styles, colors }) => (
+  <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={styles.sortRow} contentContainerStyle={styles.sortRowContent}>
+    {SORT_OPTIONS.map(option => (
+      <TouchableOpacity key={option.key} testID={`sort-option-${option.key}`} hitSlop={SORT_HIT_SLOP} accessibilityLabel={option.label} style={[styles.filterChip, filterState.sort === option.key && styles.filterChipActive]} onPress={() => setSortOption(option.key)} accessibilityRole="button" accessibilityState={{ selected: filterState.sort === option.key }}>
+        <Icon name={option.icon} size={12} color={filterState.sort === option.key ? colors.primary : colors.textSecondary} />
+        <Text style={[styles.filterChipText, filterState.sort === option.key && styles.filterChipTextActive]}>{option.label}</Text>
+      </TouchableOpacity>
+    ))}
+  </ScrollView>
 );
 
 export const TextModelsTab: React.FC<Props> = (props) => {
@@ -342,11 +356,10 @@ export const TextModelsTab: React.FC<Props> = (props) => {
     clearFilters, toggleFilterDimension, toggleOrg,
     setTypeFilter, setSourceFilter, setSizeFilter, setQuantFilter, setSortOption,
     isModelDownloaded, getDownloadedModel, isRepairingVisionModel,
+    onChosen, onError,
   } = props;
   const hasNonSortActiveFilters = hasNonSortFilters(filterState);
   const currentSort = SORT_OPTIONS.find(o => o.key === filterState.sort) ?? SORT_OPTIONS[0];
-  const isSortActive = filterState.sort !== 'recommended';
-  const sortToggleActive = isSortActive || filterState.expandedDimension === 'sort';
   const filterToggleActive = textFiltersVisible || hasNonSortActiveFilters;
 
   const { colors } = useTheme();
@@ -371,6 +384,8 @@ export const TextModelsTab: React.FC<Props> = (props) => {
         alertState={alertState}
         setAlertState={setAlertState}
         onBack={onBack}
+        onChosen={onChosen}
+        onError={onError}
         getDownloadedModel={getDownloadedModel}
         isModelDownloaded={isModelDownloaded}
         isRepairingVisionModel={isRepairingVisionModel}
@@ -397,17 +412,6 @@ export const TextModelsTab: React.FC<Props> = (props) => {
           testID="search-input"
         />
         <TouchableOpacity
-          style={[styles.filterToggle, sortToggleActive && styles.filterToggleActive]}
-          onPress={() => toggleFilterDimension('sort')}
-          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-          testID="sort-pill"
-          accessibilityRole="button"
-          accessibilityLabel={`Sort: ${currentSort.label}`}
-        >
-          <Icon name={currentSort.icon} size={14} color={sortToggleActive ? colors.primary : colors.textMuted} />
-          {isSortActive && <View style={styles.filterDot} />}
-        </TouchableOpacity>
-        <TouchableOpacity
           style={[styles.filterToggle, filterToggleActive && styles.filterToggleActive]}
           onPress={() => setTextFiltersVisible(v => !v)}
           hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
@@ -425,7 +429,7 @@ export const TextModelsTab: React.FC<Props> = (props) => {
         </View>
       )}
 
-      {filterState.expandedDimension === 'sort' && <SortPanel filterState={filterState} setSortOption={setSortOption} styles={styles} colors={colors} />}
+      <SortRow filterState={filterState} setSortOption={setSortOption} styles={styles} colors={colors} />
 
       {textFiltersVisible && (
         <TextFiltersSection
@@ -453,13 +457,17 @@ export const TextModelsTab: React.FC<Props> = (props) => {
           keyExtractor={item => item.id}
           contentContainerStyle={styles.listContent}
           testID="models-list"
+          keyboardShouldPersistTaps="handled"
           refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} />}
           ListHeaderComponent={hasSearched ? (
             SERVER_SORTS.includes(filterState.sort) ? (
               <Text testID="results-heading" accessibilityRole="header" style={styles.resultsHeading}>{currentSort.label}</Text>
             ) : null
           ) : (
-            <DeviceBanner ramGB={ramGB} rec={deviceRecommendation} showTitle={recommendedAsModelInfo.length > 0} styles={styles} />
+            <>
+              <YourModels kind="text" onChosen={onChosen} onError={onError} />
+              <DeviceBanner ramGB={ramGB} rec={deviceRecommendation} showTitle={recommendedAsModelInfo.length > 0} styles={styles} />
+            </>
           )}
           ListEmptyComponent={
             <Card style={styles.emptyCard}>

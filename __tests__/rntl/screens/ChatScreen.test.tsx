@@ -309,30 +309,6 @@ jest.mock('../../../src/components', () => ({
   ThinkingIndicator: () => null,
   ModelFailureCard: () => null,
   ImageGenAdviceCard: () => null,
-  ModelSelectorModal: ({ visible, onClose, onSelectModel, onUnloadModel }: any) => {
-    const { View, Text, TouchableOpacity } = require('react-native');
-    if (!visible) return null;
-    const { useAppStore: useAppStoreMock } = require('../../../src/stores/appStore');
-    const models = useAppStoreMock.getState().downloadedModels;
-    return (
-      <View testID="model-selector-modal">
-        <Text>Select Model</Text>
-        {models.map((m: any) => (
-          <TouchableOpacity key={m.id} testID={`select-model-${m.id}`} onPress={() => onSelectModel(m)}>
-            <Text>{m.name}</Text>
-          </TouchableOpacity>
-        ))}
-        {onUnloadModel && (
-          <TouchableOpacity testID="unload-model-btn" onPress={onUnloadModel}>
-            <Text>Unload</Text>
-          </TouchableOpacity>
-        )}
-        <TouchableOpacity testID="close-model-selector" onPress={onClose}>
-          <Text>Close</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  },
   GenerationSettingsModal: ({ visible, onClose, onDeleteConversation, onOpenProject, onOpenGallery, conversationImageCount, activeProjectName }: any) => {
     const { View, Text, TouchableOpacity } = require('react-native');
     if (!visible) return null;
@@ -440,50 +416,6 @@ jest.mock('../../../src/components/AnimatedPressable', () => ({
   },
 }));
 
-// Mock the shared models manager sheet. The header "Models" selector opens this
-// sheet (one row per model type); tapping the Text/Image row opens the model
-// picker (ModelSelectorModal). The real sheet renders through AppSheet's Modal +
-// entry animation, which doesn't flush synchronously in tests, so we render a
-// lightweight stand-in that exposes the same `models-row-*` testIDs and callback.
-jest.mock('../../../src/components/models/ModelsManagerSheet', () => ({
-  ModelsManagerSheet: ({ visible, onOpenRow, onClosed }: any) => {
-    const { View, Text, TouchableOpacity } = require('react-native');
-    if (!visible) return null;
-    const rows = ['text', 'image', 'voice', 'speech'];
-    // The real sheet defers opening the target sheet to AppSheet's onClosed (which
-    // fires after the close animation) — presenting while dismissing drops the
-    // present on iOS. Simulate that here: a row tap closes the manager (onOpenRow)
-    // then fires onClosed so the deferred open runs.
-    return (
-      <View testID="models-manager-sheet">
-        {rows.map((type) => (
-          <TouchableOpacity
-            key={type}
-            testID={`models-row-${type}`}
-            onPress={() => { onOpenRow(type); onClosed?.(); }}
-          >
-            <Text>{type}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    );
-  },
-}));
-
-jest.mock('../../../src/components/models/WhisperPickerSheet', () => ({
-  WhisperPickerSheet: ({ visible }: any) => {
-    const { View } = require('react-native');
-    return visible ? <View testID="whisper-picker-sheet" /> : null;
-  },
-}));
-
-jest.mock('../../../src/components/models/VoiceModelsSheet', () => ({
-  VoiceModelsSheet: ({ visible }: any) => {
-    const { View } = require('react-native');
-    return visible ? <View testID="voice-models-sheet" /> : null;
-  },
-}));
-
 // Mock requestAnimationFrame to execute callbacks via setTimeout(0)
 // This is needed because ChatScreen uses requestAnimationFrame in model loading flows
 (globalThis as any).requestAnimationFrame = (cb: () => void) => {
@@ -505,6 +437,14 @@ const renderChatScreen = () => {
     </NavigationContainer>
   );
 };
+
+// Use on the Models screen only marks the model in use; it loads with the next message.
+async function useThenSend(getByTestId: (id: string) => any, modelId: string) {
+  await act(async () => { useAppStore.setState({ activeModelId: modelId }); });
+  await act(async () => { fireEvent.changeText(getByTestId('chat-text-input'), 'Next message'); });
+  await act(async () => { fireEvent.press(getByTestId('send-button')); });
+  await act(async () => { await new Promise<void>(r => setTimeout(() => r(), 500)); });
+}
 
 describe('ChatScreen', () => {
   afterEach(() => {
@@ -614,7 +554,7 @@ describe('ChatScreen', () => {
 
     it('shows "Download a model" text when no models downloaded', () => {
       const { getByText } = renderChatScreen();
-      expect(getByText('Download a text or image model from the Models tab to get started.')).toBeTruthy();
+      expect(getByText('Download a text or image model from the Models screen to get started.')).toBeTruthy();
     });
 
     it('shows "Select Model" button when models exist but none active', () => {
@@ -645,25 +585,20 @@ describe('ChatScreen', () => {
       expect(getByText('Select Model')).toBeTruthy();
     });
 
-    it('does not show "Select Model" button when no models downloaded', () => {
+    it('shows an "Open Models" button, not "Select Model", when no models are downloaded', () => {
       const { queryByText } = renderChatScreen();
       expect(queryByText('Select Model')).toBeNull();
+      expect(queryByText('Open Models')).toBeTruthy();
     });
 
-    it('opens model selector when "Select Model" is pressed', () => {
+    it('opens the Models screen on Text when "Select Model" is pressed', () => {
       const model = createDownloadedModel();
       useAppStore.setState({ downloadedModels: [model] });
 
-      const { getByText, queryByTestId } = renderChatScreen();
-
-      // Initially no modal
-      expect(queryByTestId('model-selector-modal')).toBeNull();
-
-      // Press Select Model
+      const { getByText } = renderChatScreen();
       fireEvent.press(getByText('Select Model'));
 
-      // Modal should open
-      expect(queryByTestId('model-selector-modal')).toBeTruthy();
+      expect(mockNavigate).toHaveBeenCalledWith('Models', { initialTab: 'text' });
     });
 
     it('shows existing chat messages when no model is active (read-only mode)', () => {
@@ -737,7 +672,7 @@ describe('ChatScreen', () => {
       expect(getByText('My Test Chat')).toBeTruthy();
     });
 
-    it('shows the "Models" selector in the header', () => {
+    it('names the model in use in the header', () => {
       const model = createDownloadedModel({ name: 'Llama-3.2-3B' });
       useAppStore.setState({
         downloadedModels: [model],
@@ -752,9 +687,7 @@ describe('ChatScreen', () => {
       mockRoute.params = { conversationId: conv.id };
 
       const { getByTestId } = renderChatScreen();
-      // The header no longer embeds the model name — it shows a generic "Models"
-      // selector that opens the shared models manager sheet.
-      expect(getByTestId('model-loaded-indicator').props.children).toBe('Models');
+      expect(getByTestId('model-loaded-indicator').props.children).toBe('Llama-3.2-3B');
     });
 
     it('navigates back when back button is pressed', () => {
@@ -765,27 +698,6 @@ describe('ChatScreen', () => {
       // First touchable in the header is the back button
       fireEvent.press(touchables[0]);
       expect(mockGoBack).toHaveBeenCalled();
-    });
-
-    it('opens the models manager sheet when the Models selector is tapped', () => {
-      setupFullChat();
-      const { getByTestId, queryByTestId } = renderChatScreen();
-
-      // Tapping the header selector now opens the shared models manager sheet
-      // (rows per model type), not the old model-selector modal directly.
-      expect(queryByTestId('models-row-text')).toBeNull();
-      fireEvent.press(getByTestId('model-selector'));
-      expect(queryByTestId('models-row-text')).toBeTruthy();
-    });
-
-    it('opens the model picker from the Text row of the manager sheet', () => {
-      setupFullChat();
-      const { getByTestId, queryByTestId } = renderChatScreen();
-
-      expect(queryByTestId('model-selector-modal')).toBeNull();
-      fireEvent.press(getByTestId('model-selector'));
-      fireEvent.press(getByTestId('models-row-text'));
-      expect(queryByTestId('model-selector-modal')).toBeTruthy();
     });
 
     it('opens settings modal when settings icon is pressed', () => {
@@ -1498,28 +1410,15 @@ describe('ChatScreen', () => {
   // ============================================================================
   // Model Selector Modal
   // ============================================================================
-  describe('model selector modal', () => {
-    it('opens model selector from header via the manager sheet', () => {
+  describe('the model in use loads with the next message', () => {
+    it('opens the Models screen from the header', () => {
       setupFullChat();
-      const { getByTestId, queryByTestId } = renderChatScreen();
-
-      expect(queryByTestId('model-selector-modal')).toBeNull();
-      fireEvent.press(getByTestId('model-selector'));
-      fireEvent.press(getByTestId('models-row-text'));
-      expect(queryByTestId('model-selector-modal')).toBeTruthy();
-    });
-
-    it('closes model selector when close is pressed', () => {
-      setupFullChat();
-      const { getByTestId, queryByTestId } = renderChatScreen();
+      const { getByTestId } = renderChatScreen();
 
       fireEvent.press(getByTestId('model-selector'));
-      fireEvent.press(getByTestId('models-row-text'));
-      expect(queryByTestId('model-selector-modal')).toBeTruthy();
-
-      fireEvent.press(getByTestId('close-model-selector'));
-      expect(queryByTestId('model-selector-modal')).toBeNull();
+      expect(mockNavigate).toHaveBeenCalledWith('Models', { initialTab: 'text' });
     });
+
 
     // Shared setup: two models in store, first one active, for model-switching tests
     function setupTwoModelChat() {
@@ -1540,18 +1439,13 @@ describe('ChatScreen', () => {
       setupTwoModelChat();
 
       const { getByTestId } = renderChatScreen();
-      fireEvent.press(getByTestId('model-selector'));
-      fireEvent.press(getByTestId('models-row-text'));
-
-      await act(async () => {
-        fireEvent.press(getByTestId('select-model-model-2'));
-      });
+      await useThenSend(getByTestId, 'model-2');
 
       // OD3: chat selection loads straight through the MEASURED residency loader
       // (loadTextModel → makeRoomFor), the same path Home uses — NOT the old
       // predictive checkMemoryForModel pre-check, which is no longer consulted here.
       await waitFor(() => {
-        expect(mockLoadModel).toHaveBeenCalledWith('model-2', undefined, undefined);
+        expect(mockLoadModel).toHaveBeenCalledWith('model-2');
       });
       expect(activeModelService.checkMemoryForModel).not.toHaveBeenCalled();
     });
@@ -1569,12 +1463,7 @@ describe('ChatScreen', () => {
           : Promise.resolve());
 
       const { getByTestId, queryByTestId } = renderChatScreen();
-      fireEvent.press(getByTestId('model-selector'));
-      fireEvent.press(getByTestId('models-row-text'));
-
-      await act(async () => {
-        fireEvent.press(getByTestId('select-model-model-2'));
-      });
+      await useThenSend(getByTestId, 'model-2');
 
       await waitFor(() => {
         expect(queryByTestId('custom-alert')).toBeTruthy();
@@ -1593,35 +1482,11 @@ describe('ChatScreen', () => {
           : Promise.resolve());
 
       const { getByTestId, queryByTestId } = renderChatScreen();
-      fireEvent.press(getByTestId('model-selector'));
-      fireEvent.press(getByTestId('models-row-text'));
-
-      await act(async () => {
-        fireEvent.press(getByTestId('select-model-model-2'));
-      });
+      await useThenSend(getByTestId, 'model-2');
 
       await waitFor(() => {
         expect(queryByTestId('alert-button-Load Anyway')).toBeTruthy();
       });
-    });
-
-    it('handles unload model from selector without crash', async () => {
-      setupFullChat();
-      mockRoute.params = { conversationId: useChatStore.getState().activeConversationId };
-
-      const { getByTestId } = renderChatScreen();
-      fireEvent.press(getByTestId('model-selector'));
-      fireEvent.press(getByTestId('models-row-text'));
-
-      // Just verify unload button renders and can be pressed without error
-      const unloadBtn = getByTestId('unload-model-btn');
-      expect(unloadBtn).toBeTruthy();
-
-      await act(async () => {
-        fireEvent.press(unloadBtn);
-        await new Promise<void>(r => setTimeout(() => r(), 10));
-      });
-      // The async unload flow involves requestAnimationFrame which may not fully resolve
     });
   });
 
@@ -2074,7 +1939,7 @@ describe('ChatScreen', () => {
     it('registers queue processor on mount', () => {
       setupFullChat();
       renderChatScreen();
-      expect(generationService.setQueueProcessor).toHaveBeenCalledWith(expect.any(Function));
+      expect(generationService.setQueueProcessor).toHaveBeenCalledWith(expect.any(Function), expect.any(Function));
     });
 
     it('clears queue processor on unmount', () => {
@@ -2407,45 +2272,11 @@ describe('ChatScreen', () => {
     });
   });
 
-  // ============================================================================
-  // handleModelSelect — already-loaded model early return (lines 424-426)
-  // ============================================================================
-  describe('handleModelSelect early return', () => {
-    it('closes selector when selecting already-loaded model', async () => {
-      const model = createDownloadedModel();
-      const model2 = createDownloadedModel({ id: 'model-2', name: 'Model 2' });
-      useAppStore.setState({
-        activeModelId: model.id,
-        downloadedModels: [model, model2],
-      });
-      const conversationId = 'conv-1';
-      const conv = createConversation({ modelId: model.id });
-      useChatStore.setState({
-        conversations: [{ ...conv, id: conversationId }],
-        activeConversationId: conversationId,
-      });
-      (llmService.isModelLoaded as jest.Mock).mockReturnValue(true);
-      (llmService.getLoadedModelPath as jest.Mock).mockReturnValue(model.filePath);
-
-      const { getByTestId } = renderChatScreen();
-      await act(async () => {});
-
-      // Open model selector
-      await act(async () => { fireEvent.press(getByTestId('model-selector')); });
-      await act(async () => { fireEvent.press(getByTestId('models-row-text')); });
-
-      // Select the already-loaded model
-      await act(async () => { fireEvent.press(getByTestId(`select-model-${model.id}`)); });
-
-      // Should close without loading
-      expect(mockLoadModel).not.toHaveBeenCalled();
-    });
-  });
 
   // ============================================================================
   // handleModelSelect memory check — canLoad false (lines 432-435)
   // ============================================================================
-  describe('handleModelSelect memory check', () => {
+  describe('a model in use too big for memory, on the next send', () => {
     it('shows insufficient memory alert when canLoad is false', async () => {
       const model = createDownloadedModel();
       const model2 = createDownloadedModel({ id: 'model-2', name: 'Model 2', filePath: '/other.gguf' });
@@ -2473,13 +2304,8 @@ describe('ChatScreen', () => {
       const { getByTestId } = renderChatScreen();
       await act(async () => {});
 
-      // Open model selector
-      await act(async () => { fireEvent.press(getByTestId('model-selector')); });
-      await act(async () => { fireEvent.press(getByTestId('models-row-text')); });
-
-      // Select model2 — the loader refuses (overridable)
-      await act(async () => { fireEvent.press(getByTestId('select-model-model-2')); });
-      await act(async () => {});
+      // Use model2, then send — the loader refuses (overridable)
+      await useThenSend(getByTestId, 'model-2');
 
       // Should show the shared Insufficient Memory alert
       expect(getByTestId('custom-alert')).toBeTruthy();
@@ -2509,10 +2335,8 @@ describe('ChatScreen', () => {
       const { getByTestId } = renderChatScreen();
       await act(async () => {});
 
-      // Open model selector and select model2
-      await act(async () => { fireEvent.press(getByTestId('model-selector')); });
-      await act(async () => { fireEvent.press(getByTestId('models-row-text')); });
-      await act(async () => { fireEvent.press(getByTestId('select-model-model-2')); });
+      // Use model2, then send
+      await useThenSend(getByTestId, 'model-2');
       await act(async () => {});
 
       // Insufficient Memory alert with a Load Anyway button (the shared override affordance)
@@ -2524,8 +2348,8 @@ describe('ChatScreen', () => {
   // ============================================================================
   // proceedWithModelLoad — lines 478-495
   // ============================================================================
-  describe('proceedWithModelLoad', () => {
-    it('loads model and creates conversation when none exists', async () => {
+  describe('the model in use loads on the next send', () => {
+    it('loads the model in use through the measured loader', async () => {
       const model = createDownloadedModel();
       const model2 = createDownloadedModel({ id: 'model-2', name: 'Model 2', filePath: '/other.gguf' });
       useAppStore.setState({
@@ -2545,43 +2369,16 @@ describe('ChatScreen', () => {
       const { getByTestId } = renderChatScreen();
       await act(async () => {});
 
-      // Open model selector and select model2
-      await act(async () => { fireEvent.press(getByTestId('model-selector')); });
-      await act(async () => { fireEvent.press(getByTestId('models-row-text')); });
-      await act(async () => { fireEvent.press(getByTestId('select-model-model-2')); });
+      // Use model2, then send
+      await useThenSend(getByTestId, 'model-2');
       await act(async () => { await new Promise<void>(r => setTimeout(() => r(), 500)); });
 
       // OD3: the measured loader (loadTextModel) is invoked for the new model — the
       // authoritative gate, no predictive pre-check.
-      expect(mockLoadModel).toHaveBeenCalledWith('model-2', undefined, undefined);
+      expect(mockLoadModel).toHaveBeenCalledWith('model-2');
     });
   });
 
-  // ============================================================================
-  // handleUnloadModel during streaming — lines 510-511
-  // ============================================================================
-  describe('handleUnloadModel during streaming', () => {
-    it('unloads model via selector', async () => {
-      const { conversationId } = setupFullChat();
-      mockRoute.params = { conversationId };
-      (llmService.isModelLoaded as jest.Mock).mockReturnValue(true);
-      (llmService.getLoadedModelPath as jest.Mock).mockReturnValue('/mock/models/test-model.gguf');
-
-      const { getByTestId } = renderChatScreen();
-      await act(async () => {});
-
-      // Open model selector
-      await act(async () => { fireEvent.press(getByTestId('model-selector')); });
-      await act(async () => { fireEvent.press(getByTestId('models-row-text')); });
-
-      // Press unload
-      await act(async () => { fireEvent.press(getByTestId('unload-model-btn')); });
-      await act(async () => {});
-
-      // The handleUnloadModel flow is triggered — exercises lines 507-531
-      await act(async () => { await new Promise<void>(r => setTimeout(() => r(), 500)); });
-    });
-  });
 
   // ============================================================================
   // shouldRouteToImageGeneration — manual mode (line 543)
@@ -3439,9 +3236,7 @@ describe('ChatScreen', () => {
       await act(async () => {});
 
       // Open selector and pick model2
-      await act(async () => { fireEvent.press(getByTestId('model-selector')); });
-      await act(async () => { fireEvent.press(getByTestId('models-row-text')); });
-      await act(async () => { fireEvent.press(getByTestId('select-model-warn-model-2')); });
+      await useThenSend(getByTestId, 'warn-model-2');
       await act(async () => {});
 
       // The shared Insufficient Memory alert should appear
@@ -3461,8 +3256,8 @@ describe('ChatScreen', () => {
   // ============================================================================
   // proceedWithModelLoad with showGenerationDetails and no activeConversationId — lines 485-495
   // ============================================================================
-  describe('proceedWithModelLoad with no active conversation', () => {
-    it('does not create a conversation when model loads and no conversation exists', async () => {
+  describe('choosing a model with no active conversation', () => {
+    it('does not create a conversation when a model is chosen and no conversation exists', async () => {
       const model1 = createDownloadedModel({ id: 'proc-model-1', name: 'Current' });
       const model2 = createDownloadedModel({ id: 'proc-model-2', name: 'New Model', filePath: '/proc2.gguf' });
       useAppStore.setState({
@@ -3482,13 +3277,11 @@ describe('ChatScreen', () => {
       });
       mockLoadModel.mockResolvedValue(undefined);
 
-      const { getByTestId } = renderChatScreen();
+      renderChatScreen();
       await act(async () => {});
 
-      // Open model selector and select model2 — no active conversation
-      await act(async () => { fireEvent.press(getByTestId('model-selector')); });
-      await act(async () => { fireEvent.press(getByTestId('models-row-text')); });
-      await act(async () => { fireEvent.press(getByTestId('select-model-proc-model-2')); });
+      // Use model2 on the Models screen — no active conversation
+      await act(async () => { useAppStore.setState({ activeModelId: 'proc-model-2' }); });
       await act(async () => { await new Promise<void>(r => setTimeout(() => r(), 500)); });
 
       // Conversation creation is deferred until user sends a message
@@ -3497,70 +3290,6 @@ describe('ChatScreen', () => {
     });
   });
 
-  // ============================================================================
-  // handleUnloadModel while streaming — lines 510-511
-  // ============================================================================
-  describe('handleUnloadModel while streaming', () => {
-    it('stops generation before unloading when streaming is active', async () => {
-      const { conversationId } = setupFullChat();
-      mockRoute.params = { conversationId };
-
-      // Set streaming state
-      useChatStore.setState({
-        isStreaming: true,
-        streamingForConversationId: conversationId,
-      });
-      (llmService.isModelLoaded as jest.Mock).mockReturnValue(true);
-      (llmService.getLoadedModelPath as jest.Mock).mockReturnValue('/mock/models/test-model.gguf');
-      (llmService.stopGeneration as jest.Mock).mockResolvedValue(undefined);
-
-      const { getByTestId } = renderChatScreen();
-      await act(async () => {});
-
-      // Open model selector and press unload
-      await act(async () => { fireEvent.press(getByTestId('model-selector')); });
-      await act(async () => { fireEvent.press(getByTestId('models-row-text')); });
-      await act(async () => { fireEvent.press(getByTestId('unload-model-btn')); });
-      await act(async () => { await new Promise<void>(r => setTimeout(() => r(), 200)); });
-
-      // llmService.stopGeneration should have been called (streaming was active)
-      expect(llmService.stopGeneration).toHaveBeenCalled();
-    });
-
-    it('exercises showGenerationDetails branch when unloading model', async () => {
-      const { modelId, conversationId } = setupFullChat();
-      mockRoute.params = { conversationId };
-      useAppStore.setState({
-        ...useAppStore.getState(),
-        settings: { ...useAppStore.getState().settings, showGenerationDetails: true },
-      });
-      useChatStore.setState({
-        conversations: [createConversation({ id: conversationId, modelId })],
-        activeConversationId: conversationId,
-        isStreaming: false,
-      });
-      (llmService.isModelLoaded as jest.Mock).mockReturnValue(true);
-      (llmService.getLoadedModelPath as jest.Mock).mockReturnValue('/mock/models/test-model.gguf');
-      // Ensure unloadModel is explicitly reset to a resolving promise
-      mockUnloadModel.mockResolvedValue(undefined);
-
-      const { getByTestId } = renderChatScreen();
-      await act(async () => { await new Promise<void>(r => setTimeout(() => r(), 50)); });
-
-      // Open model selector (via the manager sheet's Text row)
-      fireEvent.press(getByTestId('model-selector'));
-      fireEvent.press(getByTestId('models-row-text'));
-      await act(async () => {});
-
-      // Press unload — exercises handleUnloadModel lines 507-531
-      fireEvent.press(getByTestId('unload-model-btn'));
-      await act(async () => { await new Promise<void>(r => setTimeout(() => r(), 500)); });
-
-      // The unload path was exercised - verify the model selector closed (normal post-unload state)
-      // and no crashes occurred
-      expect(getByTestId('chat-screen')).toBeTruthy();
-    });
-  });
 
   // ============================================================================
   // shouldRouteToImageGeneration — LLM path with text result (lines 576-582)
@@ -4076,8 +3805,8 @@ describe('ChatScreen', () => {
   // ============================================================================
   // proceedWithModelLoad error path — line 498
   // ============================================================================
-  describe('proceedWithModelLoad error handling', () => {
-    it('shows error alert when proceedWithModelLoad fails', async () => {
+  describe('the model in use fails to load on the next send', () => {
+    it('shows an error alert when the load fails', async () => {
       const model1 = createDownloadedModel({ id: 'err-model-1', name: 'Current' });
       const model2 = createDownloadedModel({ id: 'err-model-2', name: 'Error Model', filePath: '/err2.gguf' });
       useAppStore.setState({
@@ -4100,9 +3829,7 @@ describe('ChatScreen', () => {
       await act(async () => {});
 
       // Open selector and select model2
-      await act(async () => { fireEvent.press(getByTestId('model-selector')); });
-      await act(async () => { fireEvent.press(getByTestId('models-row-text')); });
-      await act(async () => { fireEvent.press(getByTestId('select-model-err-model-2')); });
+      await useThenSend(getByTestId, 'err-model-2');
       await act(async () => { await new Promise<void>(r => setTimeout(() => r(), 500)); });
 
       await waitFor(() => {
@@ -4112,33 +3839,6 @@ describe('ChatScreen', () => {
     });
   });
 
-  // ============================================================================
-  // handleUnloadModel error path — line 526
-  // ============================================================================
-  describe('handleUnloadModel error handling', () => {
-    it('shows error alert when unload fails', async () => {
-      const { conversationId } = setupFullChat();
-      mockRoute.params = { conversationId };
-      (llmService.isModelLoaded as jest.Mock).mockReturnValue(true);
-      (llmService.getLoadedModelPath as jest.Mock).mockReturnValue('/mock/models/test-model.gguf');
-      // unloadTextModel is aliased to mockUnloadModel in the mock
-      mockUnloadModel.mockRejectedValue(new Error('Unload failed'));
-
-      const { getByTestId, queryByTestId } = renderChatScreen();
-      await act(async () => {});
-
-      // Open model selector and press unload
-      await act(async () => { fireEvent.press(getByTestId('model-selector')); });
-      await act(async () => { fireEvent.press(getByTestId('models-row-text')); });
-      await act(async () => { fireEvent.press(getByTestId('unload-model-btn')); });
-      await act(async () => { await new Promise<void>(r => setTimeout(() => r(), 300)); });
-
-      await waitFor(() => {
-        expect(queryByTestId('custom-alert')).toBeTruthy();
-      });
-      expect(getByTestId('alert-title').props.children).toBe('Error');
-    });
-  });
 
   // ============================================================================
   // Vision support useEffect — when mmProjPath exists and model loaded (line 247)
@@ -4167,35 +3867,12 @@ describe('ChatScreen', () => {
     });
   });
 
-  // ============================================================================
-  // No model in "no model" state - model selector modal (line 1101)
-  // ============================================================================
-  describe('model selector in no-model state', () => {
-    it('shows model selector modal from no-model screen', async () => {
-      const model = createDownloadedModel({ id: 'nomodel-sel', name: 'Test Model' });
-      useAppStore.setState({
-        downloadedModels: [model],
-        activeModelId: null as any,
-        hasCompletedOnboarding: true,
-      });
-
-      const { getByText, queryByTestId, getByTestId } = renderChatScreen();
-
-      // Press Select Model button in no-model state
-      fireEvent.press(getByText('Select Model'));
-      expect(queryByTestId('model-selector-modal')).toBeTruthy();
-
-      // Close the modal
-      fireEvent.press(getByTestId('close-model-selector'));
-      expect(queryByTestId('model-selector-modal')).toBeNull();
-    });
-  });
 
   // ============================================================================
   // proceedWithModelLoad with showGenerationDetails and existing conversation
   // lines 482-490
   // ============================================================================
-  describe('proceedWithModelLoad with showGenerationDetails and existing conversation', () => {
+  describe('the model in use loads with showGenerationDetails on', () => {
     it('adds system message after model load when showGenerationDetails is enabled', async () => {
       const model1 = createDownloadedModel({ id: 'sysgen-1', name: 'Old Model' });
       const model2 = createDownloadedModel({ id: 'sysgen-2', name: 'New Model', filePath: '/sysgen2.gguf' });
@@ -4214,13 +3891,11 @@ describe('ChatScreen', () => {
       const { getByTestId } = renderChatScreen();
       await act(async () => {});
 
-      await act(async () => { fireEvent.press(getByTestId('model-selector')); });
-      await act(async () => { fireEvent.press(getByTestId('models-row-text')); });
-      await act(async () => { fireEvent.press(getByTestId('select-model-sysgen-2')); });
+      await useThenSend(getByTestId, 'sysgen-2');
       await act(async () => { await new Promise<void>(r => setTimeout(() => r(), 600)); });
 
       // The proceedWithModelLoad flow is triggered: the measured loader loads model2.
-      expect(mockLoadModel).toHaveBeenCalledWith('sysgen-2', undefined, undefined);
+      expect(mockLoadModel).toHaveBeenCalledWith('sysgen-2');
     });
   });
 

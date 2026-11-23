@@ -73,9 +73,9 @@ tags:
       - evalScript: "${console.log('UNLOAD - Load model first')}"
       - runFlow: 00-setup-model.yaml
 
-# Verify model is loaded
-- assertVisible:
-    id: "new-chat-button"
+# Verify model is loaded (no setup card; the New chat button is always in the tab bar)
+- assertNotVisible:
+    id: "setup-card"
 - takeScreenshot: 02-model-loaded
 
 # ==============================
@@ -84,20 +84,22 @@ tags:
 - evalScript: "${console.log('UNLOAD - Open picker')}"
 - tapOn:
     id: "models-summary"
-- tapOn:
-    id: "models-row-text"
 
 - extendedWaitUntil:
     visible:
-      text: "Text Models"
-    timeout: 5000
+      id: "models-screen"
+    timeout: 10000
 - takeScreenshot: 03-picker
 
-# Tap unload button
+# Tap unload button (the row in use; Unload keeps the Models screen open)
 - evalScript: "${console.log('UNLOAD - Tap unload')}"
 - tapOn:
-    text: "Unload current model"
+    text: "Unload"
 - takeScreenshot: 04-unloading
+
+# Back to Home
+- tapOn:
+    id: "models-back"
 
 # ==============================
 # Verify model unloaded
@@ -110,8 +112,9 @@ tags:
 
 - assertVisible:
     id: "setup-card"
-- assertNotVisible:
-    id: "new-chat-button"
+- assertVisible:
+    id: "model-chip-label"
+    text: "No model"
 
 - evalScript: "${console.log('UNLOAD - PASSED')}"
 - takeScreenshot: 99-complete

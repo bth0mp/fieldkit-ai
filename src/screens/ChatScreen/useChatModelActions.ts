@@ -11,7 +11,6 @@ import { DownloadedModel, RemoteModel, ONNXImageModel, isLiteRTModel } from '../
 import logger from '../../utils/logger';
 import { ModelReadyOutcome, reasonFromLoadError } from './modelReadiness';
 import { isOverridableMemoryError } from '../../services/modelLoadErrors';
-import { loadModelWithOverride } from '../../services/loadModelWithOverride';
 
 type SetState<T> = Dispatch<SetStateAction<T>>;
 
@@ -42,7 +41,6 @@ type ModelActionDeps = {
   setIsModelLoading: SetState<boolean>;
   setLoadingModel: SetState<DownloadedModel | null>;
   setSupportsVision: SetState<boolean>;
-  setShowModelSelector: SetState<boolean>;
   setAlertState: SetState<AlertState>;
   modelLoadStartTimeRef: React.MutableRefObject<number | null>;
 };
@@ -185,17 +183,17 @@ export async function initiateModelLoad(
 
 /**
  * For a chat request with no text model loaded: load the last-selected text
- * model (residency manager fits it into memory), or open the model selector
+ * model (residency manager fits it into memory), or open the Models screen
  * if the user never chose one. Returns true when a model is loading/loaded.
  */
 export async function ensureTextModelForChatFn(deps: {
-  setShowModelSelector: (v: boolean) => void;
+  openModels: (tab: 'text' | 'image') => void;
   setLoadingModel: (m: DownloadedModel | null) => void;
   setIsModelLoading: (v: boolean) => void;
 }): Promise<boolean> {
   const { lastTextModelId, downloadedModels } = useAppStore.getState();
   if (!lastTextModelId) {
-    deps.setShowModelSelector(true);
+    deps.openModels('text');
     return false;
   }
   deps.setLoadingModel(downloadedModels.find(m => m.id === lastTextModelId) ?? null);
@@ -204,6 +202,8 @@ export async function ensureTextModelForChatFn(deps: {
     await activeModelService.loadTextModel(lastTextModelId);
     return true;
   } catch {
+    // Gone or too big to load: the message waits, and the Models screen is where to choose another.
+    deps.openModels('text');
     return false;
   } finally {
     deps.setIsModelLoading(false);
@@ -234,88 +234,6 @@ export async function ensureModelLoadedFn(
   return isModelReady(activeModel)
     ? { ok: true }
     : { ok: false, reason: 'load-threw', detail: 'the model is not resident after load' };
-}
-
-export async function proceedWithModelLoadFn(
-  deps: ModelActionDeps,
-  model: DownloadedModel,
-): Promise<void> {
-  // Close the picker FIRST so the load runs behind the dismissed sheet and the
-  // minimal in-chat loading card shows — not a load running with the sheet still open.
-  deps.setShowModelSelector(false);
-  // Route through the SINGLE shared override helper: the MEASURED residency loader
-  // is the authoritative gate, and its OverridableMemoryError drives the identical
-  // "Load Anyway" affordance every other surface (Home/ChatsList/ModelSelector) uses.
-  await loadModelWithOverride(
-    (opts) => activeModelService.loadTextModel(model.id, undefined, opts),
-    {
-      setAlertState: deps.setAlertState,
-      onAttemptStart: () => {
-        deps.setIsModelLoading(true);
-        deps.setLoadingModel(model);
-        deps.modelLoadStartTimeRef.current = Date.now();
-      },
-      onAttemptEnd: () => {
-        deps.setIsModelLoading(false);
-        deps.setLoadingModel(null);
-        deps.modelLoadStartTimeRef.current = null;
-      },
-      onSuccess: () => {
-        deps.setSupportsVision(loadedModelVision(model));
-        if (deps.modelLoadStartTimeRef.current && deps.settings.showGenerationDetails && deps.activeConversationId) {
-          const loadTime = ((Date.now() - deps.modelLoadStartTimeRef.current) / 1000).toFixed(1);
-          deps.addMessage(deps.activeConversationId, {
-            role: 'assistant',
-            content: `_Model loaded: ${model.name} (${loadTime}s)_`,
-            isSystemInfo: true,
-          });
-        }
-      },
-    },
-  );
-}
-
-/**
- * Selecting a text model in chat is the SAME decision Home/ChatsList/ModelSelector
- * make: load it through the MEASURED residency loader, offering the shared
- * "Load Anyway" override if that loader refuses. There is NO separate predictive
- * pre-check gate here — the residency loader (makeRoomFor, evict-then-measure) is
- * authoritative, so a model the old fileSize×1.5 estimate would have blocked in
- * chat now loads exactly as it does from Home (bug OD3).
- */
-export async function handleModelSelectFn(
-  deps: ModelActionDeps,
-  model: DownloadedModel,
-): Promise<void> {
-  if (llmService.getLoadedModelPath() === model.filePath) {
-    deps.setShowModelSelector(false);
-    return;
-  }
-  await proceedWithModelLoadFn(deps, model);
-}
-
-export async function handleUnloadModelFn(deps: ModelActionDeps): Promise<void> {
-  const { activeModel, isStreaming, clearStreamingMessage } = deps;
-  if (isStreaming) {
-    await llmService.stopGeneration();
-    clearStreamingMessage();
-  }
-  const modelName = activeModel?.name;
-  deps.setIsModelLoading(true);
-  deps.setLoadingModel(activeModel ?? null);
-  try {
-    await activeModelService.unloadTextModel();
-    deps.setSupportsVision(false);
-    if (deps.settings.showGenerationDetails && modelName) {
-      addSystemMsg(deps, `Model unloaded: ${modelName}`);
-    }
-  } catch (error) {
-    deps.setAlertState(showAlert('Error', `Failed to unload model: ${(error as Error).message}`));
-  } finally {
-    deps.setIsModelLoading(false);
-    deps.setLoadingModel(null);
-    deps.setShowModelSelector(false);
-  }
 }
 
 type ImageModelEffectsDeps = {
@@ -395,7 +313,7 @@ export function useChatModelStateSync(deps: ModelStateSyncDeps): void {
       remoteCaps: activeRemoteModel?.capabilities,
       model: activeModel,
     }).vision);
-  }, [activeModelInfo.isRemote, activeRemoteModel?.capabilities?.supportsVision, activeModelMmProjPath, isModelLoading]);
+  }, [activeModelInfo.isRemote, activeModelId, activeRemoteModel?.capabilities?.supportsVision, activeModelMmProjPath, isModelLoading]);
   useEffect(() => {
     // Same rule; tools/thinking key on activeRemoteTextModelId (preserved from the prior branch).
     const caps = activeTextCapabilities({

@@ -85,6 +85,11 @@ export function deriveEngineCapabilities(i: CapabilityInputs): EngineCapabilitie
   };
 }
 
+/** The text engines that have a model loaded right now, whatever the store says is active. */
+export function loadedTextEngines(): typeof TEXT_ENGINES {
+  return TEXT_ENGINES.filter(engine => engine.isModelLoaded());
+}
+
 /**
  * Unload every text engine (an idle engine is a safe no-op). Used on a model switch so a
  * cross-engine swap (LiteRT <-> llama) can't leave the previous model resident, without the
@@ -241,17 +246,28 @@ export function getActiveEngineService(): typeof llmService | typeof liteRTServi
 }
 
 /**
+ * Has the user chosen a REMOTE text model that can answer? A server is active, its provider is REGISTERED (not just
+ * persisted from a prior session), and its chosen model is one the server lists. The same rule as `useActiveTextModel`
+ * (remote before local), so what the screen names is what answers, whatever local model is loaded for another job
+ * (the image classifier, an enhancement).
+ */
+export function remoteTextModelChosen(): boolean {
+  const { activeServerId, activeRemoteTextModelId, discoveredModels } = useRemoteServerStore.getState();
+  if (!activeServerId || !activeRemoteTextModelId) return false;
+  if (!providerRegistry.hasProvider(activeServerId)) return false;
+  return (discoveredModels[activeServerId] ?? []).some(m => m.id === activeRemoteTextModelId);
+}
+
+/**
  * Is a REMOTE (OpenAI-compatible server) text model the ACTIVE text engine right now?
  *
- * THE single source of truth for "route text to a remote provider" — the exact rule
- * generationService.isUsingRemoteProvider re-derived and generateStandalone used to inline.
- * A remote model is active iff: a server is selected, its provider is actually REGISTERED (not
- * just persisted from a prior session), and NO local model is loaded (a loaded local model always
- * wins). Callers depend on this predicate instead of re-checking the store + registry + llmService
- * themselves, so "is remote active" lives in ONE place (DIP/DRY). Adding a backend never touches a
- * caller's readiness check.
+ * THE single source of truth for "route text to a remote provider" — generationService.isUsingRemoteProvider and
+ * generateStandalone call it. A chosen remote model (remoteTextModelChosen) always answers. Otherwise, with only a
+ * server selected: its provider is REGISTERED and NO local model is loaded (a loaded local model wins). Callers
+ * depend on this predicate instead of re-checking the store + registry + llmService themselves (DIP/DRY).
  */
 export function isRemoteTextModelActive(): boolean {
+  if (remoteTextModelChosen()) return true;
   const { activeServerId } = useRemoteServerStore.getState();
   if (!activeServerId) return false;
   if (!providerRegistry.hasProvider(activeServerId)) return false;
@@ -259,10 +275,10 @@ export function isRemoteTextModelActive(): boolean {
   return true;
 }
 
-/** Does a one-shot standalone completion go to the remote model? A loaded LiteRT model still wins over a
- *  selected remote server (isRemoteTextModelActive only rules out a loaded llama model). */
+/** Does a one-shot standalone completion go to the remote model? A chosen remote model wins; otherwise a loaded
+ *  LiteRT model still wins over a selected remote server (isRemoteTextModelActive only rules out a loaded llama one). */
 function standaloneUsesRemote(): boolean {
-  return isRemoteTextModelActive() && getActiveEngineService() !== liteRTService;
+  return remoteTextModelChosen() || (isRemoteTextModelActive() && getActiveEngineService() !== liteRTService);
 }
 
 /**

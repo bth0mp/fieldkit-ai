@@ -11,7 +11,6 @@ import { AttachStep, useSpotlightTour } from 'react-native-spotlight-tour';
 import { IMAGE_NEW_CHAT_STEP_INDEX, IMAGE_DRAW_STEP_INDEX } from '../components/onboarding/spotlightConfig';
 import { setPendingSpotlight } from '../components/onboarding/spotlightState';
 import { Button } from '../components/Button';
-import { ModelSelectorModal } from '../components';
 import { CustomAlert, showAlert, hideAlert, AlertState, initialAlertState } from '../components/CustomAlert';
 import { AnimatedEntry } from '../components/AnimatedEntry';
 import { AnimatedListItem } from '../components/AnimatedListItem';
@@ -22,8 +21,7 @@ import type { ThemeColors, ThemeShadows } from '../theme';
 import { TYPOGRAPHY, SPACING } from '../constants';
 import { useChatStore, useProjectStore, useAppStore } from '../stores';
 import { useActiveTextModel } from '../hooks/useActiveTextModel';
-import { onnxImageGeneratorService, activeModelService, llmService, remoteServerManager } from '../services';
-import { loadModelWithOverride } from '../services/loadModelWithOverride';
+import { onnxImageGeneratorService } from '../services';
 import { Conversation } from '../types';
 import { RootStackParamList, MainTabParamList } from '../navigation/types';
 type NavigationProp = CompositeNavigationProp<
@@ -45,8 +43,6 @@ export const ChatsListScreen: React.FC = () => {
   const { removeImagesByConversationId, markSpotlightShown } = useAppStore.getState();
   const { modelId: activeTextModelId } = useActiveTextModel();
   const [alertState, setAlertState] = useState<AlertState>(initialAlertState);
-  const [showModelSelector, setShowModelSelector] = useState(false);
-  const [isModelLoading, setIsModelLoading] = useState(false);
   const { goTo } = useSpotlightTour();
 
   // Reactive: image model loaded → spotlight "New Chat" button (step 14)
@@ -70,59 +66,10 @@ export const ChatsListScreen: React.FC = () => {
     navigation.navigate('Chat', { conversationId: conversation.id });
   };
 
+  // With no model in use the Models screen comes first; Use there opens the new chat in its place.
   const handleNewChat = () => {
-    if (hasModels) {
-      navigation.navigate('Chat', {});
-      return;
-    }
-    setShowModelSelector(true);
-  };
-
-  const handleSelectTextModel = async (model: any) => {
-    // Shared inline Load-Anyway flow: a memory-blocked load offers "Load Anyway"
-    // here just like the chat screen (was a dead-end "Failed to load model").
-    await loadModelWithOverride(
-      (opts) => activeModelService.loadTextModel(model.id, undefined, opts),
-      {
-        setAlertState,
-        onAttemptStart: () => setIsModelLoading(true),
-        onAttemptEnd: () => setIsModelLoading(false),
-        onSuccess: () => { setShowModelSelector(false); navigation.navigate('Chat', {}); },
-      },
-    );
-  };
-
-  const handleSelectImageModel = async (model: any) => {
-    await loadModelWithOverride(
-      (opts) => activeModelService.loadImageModel(model.id, undefined, opts),
-      {
-        setAlertState,
-        onAttemptStart: () => setIsModelLoading(true),
-        onAttemptEnd: () => setIsModelLoading(false),
-        onSuccess: () => { setShowModelSelector(false); navigation.navigate('Chat', {}); },
-      },
-    );
-  };
-
-  const handleUnloadTextModel = async () => {
-    setIsModelLoading(true);
-    try {
-      remoteServerManager.clearActiveRemoteModel();
-      if (llmService.isModelLoaded()) {
-        await activeModelService.unloadTextModel();
-      }
-    } finally {
-      setIsModelLoading(false);
-    }
-  };
-
-  const handleUnloadImageModel = async () => {
-    setIsModelLoading(true);
-    try {
-      await activeModelService.unloadImageModel();
-    } finally {
-      setIsModelLoading(false);
-    }
+    if (hasModels) navigation.navigate('Chat', {});
+    else navigation.navigate('Models', { initialTab: 'text', afterUse: 'newChat' });
   };
 
   const handleDeleteChat = (conversation: Conversation) => {
@@ -228,6 +175,7 @@ export const ChatsListScreen: React.FC = () => {
             variant="primary"
             size="small"
             onPress={handleNewChat}
+            accessibilityLabel={hasModels ? undefined : 'New chat. Opens Models'}
             icon={<Icon name="plus" size={16} color={colors.primary} />}
           />
         </AttachStep>
@@ -249,15 +197,22 @@ export const ChatsListScreen: React.FC = () => {
             <Text style={styles.emptyText}>
               {hasModels
                 ? 'Start a new conversation to begin chatting with your local AI.'
-                : 'Download a model from the Models tab to start chatting.'}
+                : 'Choose or download a model on the Models screen to start chatting.'}
             </Text>
           </AnimatedEntry>
-          {hasModels && (
-            <AnimatedListItem index={3} staggerMs={60} trigger={focusTrigger} hapticType="impactLight" style={styles.emptyButton} onPress={handleNewChat}>
-              <Icon name="plus" size={18} color={colors.primary} />
-              <Text style={styles.emptyButtonText}>New Chat</Text>
-            </AnimatedListItem>
-          )}
+          <AnimatedListItem
+            index={3}
+            staggerMs={60}
+            trigger={focusTrigger}
+            hapticType="impactLight"
+            style={styles.emptyButton}
+            onPress={handleNewChat}
+            testID={hasModels ? undefined : 'chats-open-models'}
+            accessibilityRole="button"
+          >
+            <Icon name={hasModels ? 'plus' : 'layers'} size={18} color={colors.primary} />
+            <Text style={styles.emptyButtonText}>{hasModels ? 'New Chat' : 'Open Models'}</Text>
+          </AnimatedListItem>
         </View>
       ) : (
         <FlatList
@@ -276,27 +231,6 @@ export const ChatsListScreen: React.FC = () => {
         message={alertState.message}
         buttons={alertState.buttons}
         onClose={() => setAlertState(hideAlert())}
-      />
-      <ModelSelectorModal
-        visible={showModelSelector}
-        onClose={() => setShowModelSelector(false)}
-        onSelectModel={handleSelectTextModel}
-        onSelectImageModel={handleSelectImageModel}
-        onUnloadModel={handleUnloadTextModel}
-        onUnloadImageModel={handleUnloadImageModel}
-        isLoading={isModelLoading}
-        onAddServer={() => {
-          setShowModelSelector(false);
-          navigation.navigate('RemoteServers');
-        }}
-        onBrowseModels={(tab) => {
-          setShowModelSelector(false);
-          navigation.navigate('Models', { initialTab: tab });
-        }}
-        onSelectionComplete={() => {
-          setShowModelSelector(false);
-          navigation.navigate('Chat', {});
-        }}
       />
     </SafeAreaView>
   );

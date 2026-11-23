@@ -331,6 +331,8 @@ export const useAppStore = create<AppState>()(
         set((state) => ({
           downloadedModels: state.downloadedModels.filter((m) => m.id !== modelId),
           activeModelId: state.activeModelId === modelId ? null : state.activeModelId,
+          // A deleted model is not the one to come back to: a send would try to load it and fail.
+          lastTextModelId: state.lastTextModelId === modelId ? null : state.lastTextModelId,
         })),
       activeModelId: null,
       setActiveModelId: (modelId) => set({ activeModelId: modelId }),
