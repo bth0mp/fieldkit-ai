@@ -144,6 +144,7 @@ export const LITERT_NOTES: Record<string, ModelNote> = {
  * Image notes come from the original maker's Hugging Face page (see origins.ts), not from the xororz repos the files
  * are downloaded from. A model is listed only when its original page says what it is for; the others have none.
  * `sizeBytes` is the smallest zip the app offers for that name.
+ * NaiAnimeV2 and QteaMix have no note: their pages say what they are for but not what they are not for.
  */
 export const IMAGE_NOTES: ImageModelNote[] = [
   {
@@ -152,20 +153,6 @@ export const IMAGE_NOTES: ImageModelNote[] = [
     notFor: 'Matching a model built for only photos or only anime',
     source: `${HF}Lykon/dreamshaper-8`,
     sizeBytes: 1032290626,
-  },
-  {
-    name: 'NaiAnimeV2',
-    goodFor: 'Anime-style pictures',
-    notFor: 'Other styles; it was made for anime',
-    source: `${HF}NovelAI/nai-anime-v2`,
-    sizeBytes: 989892898,
-  },
-  {
-    name: 'QteaMix',
-    goodFor: 'Chibi (cute, small-bodied) character pictures',
-    notFor: 'Other art styles; it is a chibi blend',
-    source: `${HF}chenxluo/QteaMix`,
-    sizeBytes: 995347176,
   },
 ];
 
