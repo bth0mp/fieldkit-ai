@@ -211,7 +211,6 @@ export const ModelsScreen: React.FC = () => {
           ramGB={vm.ramGB}
           deviceRecommendation={vm.deviceRecommendation}
           downloadedModels={vm.downloadedModels}
-          alertState={vm.alertState}
           setAlertState={vm.setAlertState}
           focusTrigger={vm.focusTrigger}
           handleSearch={vm.handleSearch}

@@ -85,13 +85,6 @@ module.exports = {
   },
   overrides: [
     {
-      // TextModelsTab.tsx is also edited on feat/model-marketplace; spreading LIST_CLIPPING_PROPS
-      // there conflicts on merge. Remove this exemption and add the spread after that branch lands.
-      // It also leaves ModelDetailView's now-unused alertState prop (removing it conflicts too).
-      files: ['src/screens/ModelsScreen/TextModelsTab.tsx'],
-      rules: { 'no-restricted-syntax': 'off', '@typescript-eslint/no-unused-vars': 'off' },
-    },
-    {
       // Relax structural rules in test files — large test suites and helpers are acceptable
       files: ['__tests__/**/*', '*.test.ts', '*.test.tsx', 'jest.setup.ts'],
       rules: {
