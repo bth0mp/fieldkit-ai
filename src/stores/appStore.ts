@@ -159,29 +159,6 @@ interface AppState {
   incrementImageGenerationCount: () => number;
   hasEngagedSharePrompt: boolean;
   setHasEngagedSharePrompt: (v: boolean) => void;
-  // PRO pre-order state
-  hasRegisteredPro: boolean;
-  setHasRegisteredPro: (v: boolean) => void;
-  /**
-   * Authoritative "Pro is unlocked right now" — the same signal loadProFeatures uses
-   * to activate paid features (keychain entitlement OR a __DEV__ unlock), set at boot.
-   * This is the ONE flag every upsell gate must read: hasRegisteredPro alone misses a
-   * keychain/dev-unlocked Pro user, so the upsell wrongly fired for them. Not persisted
-   * — recomputed authoritatively each launch.
-   */
-  isProActive: boolean;
-  setProActive: (v: boolean) => void;
-  /** DEV-only: when true, suppresses the __DEV__ Pro auto-unlock so the
-   *  free → Pro activation flow can be exercised in a debug build. No effect in
-   *  release (__DEV__ is false there). */
-  devProDisabled: boolean;
-  setDevProDisabled: (v: boolean) => void;
-  proBannerDismissed: boolean;
-  setProBannerDismissed: (v: boolean) => void;
-  desktopPromoDismissed: boolean;
-  setDesktopPromoDismissed: (v: boolean) => void;
-  proAhaTriggeredBy: 'image' | 'text' | null;
-  setProAhaTriggeredBy: (by: 'image' | 'text' | null) => void;
   toolCountHintDismissed: boolean;
   setToolCountHintDismissed: () => void;
   loadedSettings: Partial<AppSettings> | null;
@@ -271,6 +248,12 @@ function migratePersistedState(persistedState: any, currentState: AppState): App
   delete merged.imageModelDownloading;
   delete merged.imageModelDownloadIds;
   delete merged.imageModelDownloadId;
+  // Paid-licence and promo flags saved by older versions.
+  delete merged.hasRegisteredPro;
+  delete merged.devProDisabled;
+  delete merged.proBannerDismissed;
+  delete merged.desktopPromoDismissed;
+  delete merged.proAhaTriggeredBy;
   // modelLoadingStrategy was removed (the residency manager owns swapping now).
   if (merged.settings?.modelLoadingStrategy !== undefined) {
     delete merged.settings.modelLoadingStrategy;
@@ -309,11 +292,6 @@ const persistedAppState = (state: AppState) => ({
   warmedImageModels: state.warmedImageModels,
   textGenerationCount: state.textGenerationCount, imageGenerationCount: state.imageGenerationCount,
   hasEngagedSharePrompt: state.hasEngagedSharePrompt,
-  hasRegisteredPro: state.hasRegisteredPro,
-  devProDisabled: state.devProDisabled,
-  proBannerDismissed: state.proBannerDismissed,
-  desktopPromoDismissed: state.desktopPromoDismissed,
-  proAhaTriggeredBy: state.proAhaTriggeredBy,
   loadedSettings: state.loadedSettings,
 });
 
@@ -437,18 +415,6 @@ export const useAppStore = create<AppState>()(
       incrementImageGenerationCount: () => { const c = get().imageGenerationCount + 1; set({ imageGenerationCount: c }); return c; },
       hasEngagedSharePrompt: false,
       setHasEngagedSharePrompt: (v) => set({ hasEngagedSharePrompt: v }),
-      hasRegisteredPro: false,
-      setHasRegisteredPro: (v) => set({ hasRegisteredPro: v }),
-      isProActive: false,
-      setProActive: (v) => set({ isProActive: v }),
-      devProDisabled: false,
-      setDevProDisabled: (v) => set({ devProDisabled: v }),
-      proBannerDismissed: false,
-      setProBannerDismissed: (v) => set({ proBannerDismissed: v }),
-      desktopPromoDismissed: false,
-      setDesktopPromoDismissed: (v) => set({ desktopPromoDismissed: v }),
-      proAhaTriggeredBy: null,
-      setProAhaTriggeredBy: (by) => set({ proAhaTriggeredBy: by }),
       toolCountHintDismissed: false,
       setToolCountHintDismissed: () => set({ toolCountHintDismissed: true }),
       loadedSettings: null,

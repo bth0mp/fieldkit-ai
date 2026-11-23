@@ -147,11 +147,7 @@ export const useChatScreen = () => {
       callHook(HOOKS.audioStop);
     });
     const appStateSub = AppState.addEventListener('change', (nextState) => {
-      if (nextState !== 'active') {
-        callHook(HOOKS.audioOnAppBackground);
-      } else {
-        callHook(HOOKS.audioOnAppForeground);
-      }
+      if (nextState !== 'active') callHook(HOOKS.audioOnAppBackground);
     });
     return () => { unsubBlur(); unsubRemove(); appStateSub.remove(); };
   }, [navigation]);

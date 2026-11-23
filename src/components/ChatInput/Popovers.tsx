@@ -1,14 +1,12 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, Modal, TouchableWithoutFeedback, Dimensions } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
-import IconMC from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../../theme';
 import { ImageModeState } from '../../types';
 import { useAppStore } from '../../stores';
 import { triggerHaptic } from '../../utils/haptics';
 import { FONTS } from '../../constants';
 import { getSlot, SLOTS } from '../../bootstrap/slotRegistry';
-import { hasProToolsScreen } from '../../hooks/useOpenProTools';
 
 const TOOL_WARNING_COLOR = '#F59E0B';
 
@@ -84,8 +82,6 @@ interface QuickSettingsPopoverProps {
   supportsToolCalling: boolean;
   enabledToolCount: number;
   onToolsPress?: () => void;
-  mcpToolCount?: number;
-  onMcpPress?: () => void;
 }
 
 function getImageModeBadge(mode: ImageModeState, colors: any) {
@@ -116,7 +112,6 @@ export const QuickSettingsPopover: React.FC<QuickSettingsPopoverProps> = ({
   visible, onClose, anchorY, anchorX,
   imageMode, onImageModeToggle, imageModelLoaded, supportsThinking,
   supportsToolCalling, enabledToolCount, onToolsPress,
-  mcpToolCount = 0, onMcpPress,
 }) => {
   const { colors } = useTheme();
   const { settings, updateSettings, toolCountHintDismissed } = useAppStore();
@@ -129,14 +124,11 @@ export const QuickSettingsPopover: React.FC<QuickSettingsPopoverProps> = ({
   // builds render nothing here.
   const AudioRow = getSlot(SLOTS.quickSettingsAudioRow);
 
-  // Tools and MCP warnings are independent — each turns amber at 3+
+  // The Tools badge turns amber at 3+
   const showToolsWarning = supportsToolCalling && enabledToolCount >= 3 && !toolCountHintDismissed;
-  const showMcpWarning = mcpToolCount >= 3;
 
   const toolIconColor = showToolsWarning ? TOOL_WARNING_COLOR : tools.iconColor;
   const toolBadgeBg = showToolsWarning ? TOOL_WARNING_COLOR : tools.badgeBg;
-  const mcpDefaultBg = mcpToolCount > 0 ? colors.primary : colors.textMuted;
-  const mcpBadgeBg = showMcpWarning ? TOOL_WARNING_COLOR : mcpDefaultBg;
 
   return (
     <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
@@ -199,26 +191,6 @@ export const QuickSettingsPopover: React.FC<QuickSettingsPopoverProps> = ({
                   <Text style={[popoverStyles.badgeText, { color: colors.background }]}>{tools.badgeLabel}</Text>
                 </View>
               </TouchableOpacity>
-
-              {hasProToolsScreen() && (
-                <TouchableOpacity
-                  testID="quick-pro-tools"
-                  style={popoverStyles.row}
-                  onPress={() => {
-                    triggerHaptic('impactLight');
-                    onClose();
-                    onMcpPress?.();
-                  }}
-                >
-                  <IconMC name="crown" size={16} color={showMcpWarning ? TOOL_WARNING_COLOR : colors.primary} />
-                  <Text style={[popoverStyles.rowLabel, { color: colors.text }]}>Pro Tools</Text>
-                  {mcpToolCount > 0 && (
-                    <View style={[popoverStyles.badge, { backgroundColor: mcpBadgeBg }]}>
-                      <Text style={[popoverStyles.badgeText, { color: colors.background }]}>{mcpToolCount}</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              )}
             </View>
           </TouchableWithoutFeedback>
         </View>

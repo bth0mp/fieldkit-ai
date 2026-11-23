@@ -19,7 +19,6 @@ import { QuickSettingsPopover, AttachPickerPopover } from './Popovers';
 import { useKeyboardAwarePopover } from './useKeyboardAwarePopover';
 import { useAppStore } from '../../stores';
 import { useUiModeStore } from '../../stores';
-import { getSlot, SLOTS } from '../../bootstrap/slotRegistry';
 
 interface ChatInputProps {
   onSend: (message: string, attachments?: MediaAttachment[], imageMode?: ImageModeState) => void;
@@ -38,8 +37,6 @@ interface ChatInputProps {
   onToolsPress?: () => void;
   enabledToolCount?: number;
   supportsToolCalling?: boolean;
-  mcpToolCount?: number;
-  onMcpPress?: () => void;
   supportsThinking?: boolean;
   onRepairVision?: () => void;
   /** Whether the active text model is a remote (server) model. Remote models
@@ -128,8 +125,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   enabledToolCount = 0,
   supportsToolCalling = false,
   supportsThinking = false,
-  mcpToolCount = 0,
-  onMcpPress,
   onRepairVision,
   isRemote = false,
   activeSpotlight = null,
@@ -143,7 +138,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [alertState, setAlertState] = useState<AlertState>(initialAlertState);
   const quickSettings = useKeyboardAwarePopover();
   const attachPicker = useKeyboardAwarePopover();
-  const voicePicker = useKeyboardAwarePopover();
   const inputRef = useRef<TextInput>(null);
   const attachmentsRef = useRef<MediaAttachment[]>([]);
   const hasText = message.length > 0;
@@ -187,14 +181,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     onAudioAttachment: voiceHandlers.onAudioAttachment,
     onAutoSend: voiceHandlers.onAutoSend,
   });
-
-  const { settings: appSettings, updateSettings: updateAppSettings } = useAppStore();
-  const thinkingEnabled = appSettings.thinkingEnabled;
-
-  const handleThinkingToggle = () => {
-    triggerHaptic('impactLight');
-    updateAppSettings({ thinkingEnabled: !thinkingEnabled });
-  };
 
   const canSend = (message.trim().length > 0 || attachments.length > 0) && !disabled;
 
@@ -269,58 +255,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
-  // ─── Audio mode: pro renders the mic-only layout via a slot ─────────────────
-  // Free builds have no audio slot, so interfaceMode never becomes 'audio' and
-  // this branch is skipped entirely.
-  const AudioInput = getSlot(SLOTS.chatInputAudioMode);
-  if (isAudioMode && AudioInput) {
-    return (
-      <AudioInput
-        styles={styles}
-        disabled={disabled}
-        onSend={onSend}
-        isGenerating={isGenerating}
-        imageMode={imageMode}
-        imageModelLoaded={imageModelLoaded}
-        supportsThinking={supportsThinking}
-        supportsToolCalling={supportsToolCalling}
-        enabledToolCount={enabledToolCount}
-        thinkingEnabled={thinkingEnabled}
-        attachments={attachments}
-        onRemoveAttachment={removeAttachment}
-        onClearAttachments={clearAttachments}
-        queueCount={queueCount}
-        queuedTexts={queuedTexts}
-        onClearQueue={onClearQueue}
-        isRecording={isRecording}
-        voiceAvailable={voiceAvailable}
-        isModelLoading={isModelLoading}
-        isTranscribing={isTranscribing}
-        partialResult={partialResult}
-        error={error}
-        onStartRecording={startRecording}
-        onStopRecording={stopRecording}
-        onCancelRecording={cancelRecording}
-        onStop={onStop}
-        onImageModeToggle={handleImageModeToggle}
-        onThinkingToggle={handleThinkingToggle}
-        onToolsPress={onToolsPress}
-        onMcpPress={onMcpPress}
-        mcpToolCount={mcpToolCount}
-        onVisionPress={handleVisionPress}
-        onPickDocument={handlePickDocument}
-        onAttachPress={handleAttachPress}
-        attachPicker={attachPicker}
-        voicePicker={voicePicker}
-        quickSettings={quickSettings}
-        supportsVision={supportsVision}
-        alertState={alertState}
-        setAlertState={setAlertState}
-      />
-    );
-  }
-
-  // Pro-only inline Chat↔Audio toggle (empty slot in free builds → null).
   const pillIconsExpandedWidth = computePillIconsWidth();
 
   const actionButton = canSend ? (
@@ -428,8 +362,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         supportsToolCalling={supportsToolCalling}
         enabledToolCount={enabledToolCount}
         onToolsPress={onToolsPress}
-        mcpToolCount={mcpToolCount}
-        onMcpPress={onMcpPress}
       />
       <CustomAlert
         visible={alertState.visible}

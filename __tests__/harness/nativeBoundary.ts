@@ -103,7 +103,7 @@ export interface LiteRTFake {
   scriptTurn(turn: LiteRTTurn): void;
   /**
    * Script a QUEUE of turns consumed one-per-generateRaw — for flows with more than one native round
-   * trip (e.g. the LiteRT tool-router does a separate generateToolSelection pass, THEN the main turn).
+   * trip (e.g. a tool call, THEN the answer that follows its result).
    */
   scriptTurns(turns: LiteRTTurn[]): void;
   /**

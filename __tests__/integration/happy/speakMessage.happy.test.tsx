@@ -5,8 +5,7 @@
  *
  * Real ChatScreen + real ChatMessage/ActionMenuSheet + real handleSpeak wiring (buildMessageData →
  * callHook('audio.speak', displayContent, id)). The Pro TTS engine plugs into core through the audio.* hook
- * seam — faked AT that seam (a capturing handler), the same way MCP plugs in via registerToolExtension in
- * tools.happy. This guards core's contract: the Speak gesture dispatches the right message's content, and the
+ * seam — faked AT that seam (a capturing handler). This guards core's contract: the Speak gesture dispatches the right message's content, and the
  * affordance obeys the canSpeak gate. (The engine's synthesis/playback itself is covered by the pro/audio
  * suites.)
  */

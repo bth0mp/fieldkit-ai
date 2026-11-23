@@ -7,7 +7,6 @@
  *  - buildLiteRTHistory content mapping/filter
  *  - LiteRT loop: tool-result send text, empty-turn guard, onToken/onReasoning, parse-fail retry
  *  - buildDateTimeContext precise branch (time-sensitive tool enabled)
- *  - selectEffectiveSchemas: native routing path (LiteRT) keeping/dropping ext tools
  */
 
 import {
@@ -55,7 +54,6 @@ jest.mock('../../../src/services/llm', () => ({
     supportsThinking: jest.fn(() => false),
     stopGeneration: jest.fn().mockResolvedValue(undefined),
     isModelLoaded: jest.fn(() => true),
-    generateToolSelection: jest.fn(),
   },
 }));
 
@@ -84,18 +82,6 @@ jest.mock('../../../src/services/tools', () => ({
   executeToolCall: (call: Record<string, unknown>) => mockExecuteToolCall(call),
 }));
 
-// tool extensions: default to none; individual tests can override.
-const mockGetToolExtensions = jest.fn(() => [] as any[]);
-jest.mock('../../../src/services/tools/extensions', () => ({
-  getToolExtensions: () => mockGetToolExtensions(),
-}));
-
-// selectRelevantTools: drives the native-routing branch in selectEffectiveSchemas.
-const mockSelectRelevantTools = jest.fn();
-jest.mock('../../../src/services/litertToolSelector', () => ({
-  selectRelevantTools: (...args: any[]) => mockSelectRelevantTools(...args),
-}));
-
 const mockedGenerateResponseWithTools = llmService.generateResponseWithTools as jest.Mock;
 const mockedLiteRT = liteRTService as jest.Mocked<typeof liteRTService>;
 
@@ -122,7 +108,6 @@ function resetMocks() {
   mockExecuteToolCall.mockResolvedValue({ toolCallId: 'tc-1', name: 'web_search', content: 'result', durationMs: 10 });
   mockedGenerateResponseWithTools.mockReset();
   mockGetToolsAsOpenAISchema.mockReturnValue([{ type: 'function', function: { name: 'web_search' } }]);
-  mockGetToolExtensions.mockReturnValue([]);
   mockedLiteRT.isModelLoaded.mockReturnValue(false);
   mockedLiteRT.prepareConversation.mockResolvedValue(undefined);
   mockedLiteRT.generateRaw.mockResolvedValue('LiteRT response');
@@ -402,100 +387,5 @@ describe('runToolLoop — precise date/time context for calendar tools', () => {
     const sysContent = sentMessages.find((m: Message) => m.role === 'system')!.content as string;
     expect(sysContent).toContain('current date is');
     expect(sysContent).not.toContain('current date and time is');
-  });
-});
-
-// ===========================================================================
-// selectEffectiveSchemas — native routing path (lines 639-651)
-// ===========================================================================
-describe('runToolLoop — selectEffectiveSchemas tool routing (LiteRT)', () => {
-  // > TOOL_SELECTION_THRESHOLD (5) total tools, ext tools present, LiteRT active -> routes.
-  const builtIn = [
-    { type: 'function', function: { name: 'web_search' } },
-    { type: 'function', function: { name: 'calculator' } },
-  ];
-  function extWithSchemas(names: string[]) {
-    return [{
-      canHandle: () => false,
-      execute: jest.fn(),
-      getSystemPromptHint: () => '',
-      enabledToolCount: () => names.length,
-      parseToolCalls: () => [],
-      stripFromVisibleText: (t: string) => t,
-      getOpenAISchemas: () => names.map(n => ({ type: 'function', function: { name: n } })),
-    }];
-  }
-
-  beforeEach(() => {
-    resetMocks();
-    mockAppState = {
-      downloadedModels: [{ id: 'litert-1', engine: 'litert' }],
-      activeModelId: 'litert-1',
-      settings: { temperature: 0.7, maxTokens: 512, topP: 0.9, liteRTTemperature: 0.7, liteRTTopP: 0.9 },
-    };
-    mockedLiteRT.isModelLoaded.mockReturnValue(true);
-    mockGetToolsAsOpenAISchema.mockReturnValue(builtIn);
-    mockedLiteRT.generateRaw.mockResolvedValue('answer');
-  });
-
-  it('keeps only the ext tools the router selected, plus built-ins (lines 642-648)', async () => {
-    mockGetToolExtensions.mockReturnValue(extWithSchemas(['mcp_a', 'mcp_b', 'mcp_c', 'mcp_d']));
-    mockSelectRelevantTools.mockResolvedValue(['mcp_b']);
-
-    const ctx = createContext({
-      enabledToolIds: ['web_search'],
-      messages: [makeMessage({ role: 'user', content: 'do a thing' })],
-    });
-    await runToolLoop(ctx);
-
-    expect(mockSelectRelevantTools).toHaveBeenCalled();
-    const toolsPassed = mockedLiteRT.prepareConversation.mock.calls[0][2]!.tools as any[];
-    const names = toolsPassed.map(t => t.function.name);
-    expect(names).toEqual(expect.arrayContaining(['web_search', 'calculator', 'mcp_b']));
-    expect(names).not.toContain('mcp_a');
-  });
-
-  it('keeps built-in tools only when the router names nothing usable (lines 643-645)', async () => {
-    mockGetToolExtensions.mockReturnValue(extWithSchemas(['mcp_a', 'mcp_b', 'mcp_c', 'mcp_d']));
-    mockSelectRelevantTools.mockResolvedValue([]);
-
-    const ctx = createContext({
-      enabledToolIds: ['web_search'],
-      messages: [makeMessage({ role: 'user', content: 'do a thing' })],
-    });
-    await runToolLoop(ctx);
-
-    const toolsPassed = mockedLiteRT.prepareConversation.mock.calls[0][2]!.tools as any[];
-    const names = toolsPassed.map(t => t.function.name);
-    expect(names).toEqual(['web_search', 'calculator']);
-  });
-
-  it('falls back to all tools when the router throws (lines 649-651)', async () => {
-    mockGetToolExtensions.mockReturnValue(extWithSchemas(['mcp_a', 'mcp_b', 'mcp_c', 'mcp_d']));
-    mockSelectRelevantTools.mockRejectedValue(new Error('router boom'));
-
-    const ctx = createContext({
-      enabledToolIds: ['web_search'],
-      messages: [makeMessage({ role: 'user', content: 'do a thing' })],
-    });
-    await runToolLoop(ctx);
-
-    const toolsPassed = mockedLiteRT.prepareConversation.mock.calls[0][2]!.tools as any[];
-    const names = toolsPassed.map(t => t.function.name);
-    expect(names).toEqual(expect.arrayContaining(['web_search', 'calculator', 'mcp_a', 'mcp_b', 'mcp_c', 'mcp_d']));
-  });
-
-  it('does not route when total tools are at or below the threshold', async () => {
-    // Only 1 ext tool -> total = 3 (<= 5) -> shouldRoute false, selectRelevantTools not called.
-    mockGetToolExtensions.mockReturnValue(extWithSchemas(['mcp_a']));
-    mockSelectRelevantTools.mockResolvedValue(['mcp_a']);
-
-    const ctx = createContext({
-      enabledToolIds: ['web_search'],
-      messages: [makeMessage({ role: 'user', content: 'do a thing' })],
-    });
-    await runToolLoop(ctx);
-
-    expect(mockSelectRelevantTools).not.toHaveBeenCalled();
   });
 });

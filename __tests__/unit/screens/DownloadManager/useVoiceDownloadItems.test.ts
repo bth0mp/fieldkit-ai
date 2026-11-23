@@ -52,7 +52,7 @@ jest.mock('../../../../src/services/modelDownloadService', () => ({
 const mockCallHook = jest.fn();
 jest.mock('../../../../src/bootstrap/hookRegistry', () => ({
   callHook: (...a: any[]) => mockCallHook(...a),
-  HOOKS: { downloadsListVoiceModels: 'downloads.listVoiceModels', downloadsDeleteVoiceModel: 'downloads.deleteVoiceModel' },
+  HOOKS: { downloadsDeleteVoiceModel: 'downloads.deleteVoiceModel' },
 }));
 
 import { useVoiceDownloadItems } from '../../../../src/screens/DownloadManagerScreen/useVoiceDownloadItems';

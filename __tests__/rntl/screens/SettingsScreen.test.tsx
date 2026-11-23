@@ -50,9 +50,6 @@ const mockSetOnboardingComplete = jest.fn();
 const mockSetThemeMode = jest.fn();
 const mockCompleteChecklistStep = jest.fn();
 const mockResetChecklist = jest.fn();
-// Mutated per-test to drive Pro banner visibility. `mock`-prefixed so jest.mock's
-// hoisted factory is allowed to reference it.
-const mockProState = { hasRegisteredPro: false, proBannerDismissed: false };
 jest.mock('../../../src/stores', () => ({
   useAppStore: jest.fn((selector?: any) => {
     const state = {
@@ -61,9 +58,6 @@ jest.mock('../../../src/stores', () => ({
       setThemeMode: mockSetThemeMode,
       completeChecklistStep: mockCompleteChecklistStep,
       resetChecklist: mockResetChecklist,
-      setProBannerDismissed: jest.fn(),
-      hasRegisteredPro: mockProState.hasRegisteredPro,
-      proBannerDismissed: mockProState.proBannerDismissed,
     };
     return selector ? selector(state) : state;
   }),
@@ -89,8 +83,6 @@ jest.mock('@react-navigation/native', () => ({
 describe('SettingsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockProState.hasRegisteredPro = false;
-    mockProState.proBannerDismissed = false;
   });
 
   it('shows no Pro upsell banner or PRO card', () => {

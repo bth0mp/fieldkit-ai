@@ -1,7 +1,7 @@
 /**
  * Boot-time model preloader.
  *
- * Warms the user's selected models in priority order — text → TTS → STT — so the
+ * Warms the user's selected models in priority order — text → STT — so the
  * common paths are hot with no cold-start wait. The IMAGE model is deliberately
  * NOT preloaded: it's the heaviest model (large diffusion working set) and is
  * mutually exclusive with the text model in residency, so warming it at boot
@@ -17,7 +17,6 @@ import { WHISPER_MODELS } from './whisperService';
 import { modelResidencyManager } from './modelResidency';
 import { generationService } from './generationService';
 import { imageGenerationService } from './imageGenerationService';
-import { callHook, HOOKS } from '../bootstrap/hookRegistry';
 
 let started = false;
 let aborted = false;
@@ -53,13 +52,6 @@ async function preloadText(): Promise<void> {
   await activeModelService.loadTextModel(id);
 }
 
-async function preloadTts(): Promise<void> {
-  // Pro implements the audio.preload hook (fits-gated + registers the engine);
-  // no-op in free builds.
-  const pending = callHook<Promise<void>>(HOOKS.audioPreload);
-  if (pending) await pending;
-}
-
 async function preloadStt(): Promise<void> {
   const whisper = useWhisperStore.getState();
   if (!whisper.downloadedModelId || whisper.isModelLoaded) return;
@@ -75,7 +67,6 @@ export async function preloadSelectedModels(): Promise<void> {
   // Image is intentionally excluded — it loads on demand (see file header).
   const steps: Array<[string, () => Promise<void>]> = [
     ['text', preloadText],
-    ['tts', preloadTts],
     ['stt', preloadStt],
   ];
   for (const [, step] of steps) {

@@ -3,14 +3,12 @@ import { View, Text, Switch, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
-import IconMC from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTheme, useThemedStyles } from '../../theme';
 import { FONTS, TYPOGRAPHY, SPACING } from '../../constants';
 import { AVAILABLE_TOOLS } from '../../services/tools';
 import { toolAvailability } from '../../services/tools/toolOffering';
 import { toolPermissions } from '../../services/tools/toolPermissions';
 import { useAppStore } from '../../stores';
-import { hasProToolsScreen, useOpenProTools } from '../../hooks/useOpenProTools';
 import type { ThemeColors, ThemeShadows } from '../../theme';
 
 const TOOL_WARNING_COLOR = '#F59E0B';
@@ -20,14 +18,12 @@ const DENIED_COPY: Record<string, string> = { calendar_read: 'Calendar access wa
 /**
  * Full-page tool picker (replaces the old bottom-sheet drawer). Lists the core-registry tools as toggles,
  * email and calendar tools included; a tool that needs an OS permission asks for it when switched on
- * (toolPermissions). A Pro Tools screen for MCP servers is optional: its row is pinned to the top of the
- * list only when one is registered (hasProToolsScreen, useOpenProTools).
+ * (toolPermissions).
  */
 export const ToolsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const openProTools = useOpenProTools();
 
   const enabledTools = useAppStore(st => st.settings.enabledTools) || [];
   const toolCountHintDismissed = useAppStore(st => st.toolCountHintDismissed);
@@ -61,25 +57,6 @@ export const ToolsScreen: React.FC = () => {
       </View>
 
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-        {/* Pro Tools sits on top of the listing, only when the Pro screen exists. */}
-        {hasProToolsScreen() && (
-          <TouchableOpacity
-            style={styles.proToolsButton}
-            onPress={openProTools}
-            activeOpacity={0.75}
-            testID="tools-pro-tools"
-          >
-            <View style={styles.proToolsIcon}>
-              <IconMC name="crown" size={20} color={colors.primary} />
-            </View>
-            <View style={styles.toolInfo}>
-              <Text style={styles.toolName}>Pro Tools</Text>
-              <Text style={styles.toolDescription}>Email, calendar and MCP servers</Text>
-            </View>
-            <Icon name="chevron-right" size={18} color={colors.textMuted} />
-          </TouchableOpacity>
-        )}
-
         {showHint && (
           <View style={[styles.hintBanner, { backgroundColor: colors.surface }]}>
             <Icon name="alert-circle" size={16} color={TOOL_WARNING_COLOR} style={styles.hintIcon} />
@@ -161,22 +138,6 @@ const createStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
   contentContainer: {
     paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.xl,
-  },
-  proToolsButton: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  proToolsIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: `${colors.primary}20`,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    marginRight: 12,
   },
   toolRow: {
     flexDirection: 'row' as const,

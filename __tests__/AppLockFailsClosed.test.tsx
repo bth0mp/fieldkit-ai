@@ -43,8 +43,6 @@ jest.mock('../src/stores', () => ({
 }));
 jest.mock('../src/services/downloadHydration', () => ({ hydrateDownloadStore: jest.fn(() => Promise.resolve()) }));
 jest.mock('../src/services/modelDownloadService/registerProviders', () => ({ registerCoreDownloadProviders: jest.fn() }));
-jest.mock('../src/services/proLicenseService', () => ({ checkProStatus: jest.fn(() => Promise.resolve(false)) }));
-jest.mock('../src/bootstrap/loadProFeatures', () => ({ loadProFeatures: jest.fn(() => Promise.resolve()) }));
 jest.mock('../src/hooks/useDownloads', () => ({ useDownloadListeners: jest.fn() }));
 jest.mock('../src/services/loadPolicySync', () => ({ startLoadPolicySync: jest.fn(() => jest.fn()) }));
 jest.mock('../src/utils/debugLogFile', () => ({ initDebugLogFile: jest.fn(), appendDebugLine: jest.fn() }));
@@ -94,5 +92,34 @@ describe('App with an unreadable Keychain', () => {
     }
     expect(useAuthStore.getState().isLocked).toBe(true);
     expect(useAuthStore.getState().failedAttempts).toBe(0);
+  });
+});
+
+describe('App start', () => {
+  it('makes no network call and reads no licence Keychain entry', async () => {
+    const { useAuthStore } = require('../src/stores/authStore');
+    const { ragService } = require('../src/services');
+    useAuthStore.setState({ isEnabled: false, isLocked: false, failedAttempts: 0, lockoutUntil: null });
+    (Keychain.getGenericPassword as jest.Mock).mockReset();
+    (Keychain.getGenericPassword as jest.Mock).mockResolvedValue(false);
+    const fetchSpy = jest.fn();
+    const originalFetch = global.fetch;
+    global.fetch = fetchSpy as unknown as typeof fetch;
+    const App = require('../App').default;
+
+    try {
+      render(<App />);
+      await waitFor(() => expect(ragService.ensureReady).toHaveBeenCalled());
+      await ReactTestRenderer.act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      expect(fetchSpy).not.toHaveBeenCalled();
+      const services = (Keychain.getGenericPassword as jest.Mock).mock.calls.map(([options]) => options?.service);
+      expect(services).not.toContain('off-grid-pro-license');
+      expect(services).not.toContain('off-grid-device-fingerprint');
+    } finally {
+      global.fetch = originalFetch;
+    }
   });
 });

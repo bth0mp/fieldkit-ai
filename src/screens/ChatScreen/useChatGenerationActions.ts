@@ -8,7 +8,6 @@ import {
   onnxImageGeneratorService, ImageGenerationState, buildToolSystemPromptHint,
   contextCompactionService, ragService, retrievalService,
 } from '../../services';
-import { getToolExtensions } from '../../services/tools/extensions';
 import { offeredToolIdsForTurn } from '../../services/tools/toolOffering';
 import { isPrivateDataRemoteError } from '../../services/privateDataGuard';
 import { invalidateActiveConversation, activeLocalTextCapabilities, wantsLeadingThinkToken, localModelAcceptsImages } from '../../services/engines';
@@ -303,9 +302,8 @@ async function generateWithCompactionRetry(
   enabledTools: string[],
   projectId?: string,
 ): Promise<boolean> {
-  const extCount = getToolExtensions().reduce((n, e) => n + e.enabledToolCount(), 0);
-  logger.log(`[GEN-SM] generateWithCompactionRetry conv=${opts.id} msgs=${opts.messages.length} tools=${enabledTools.length} ext=${extCount}`);
-  const gen = (msgs: Message[]) => (enabledTools.length > 0 || extCount > 0)
+  logger.log(`[GEN-SM] generateWithCompactionRetry conv=${opts.id} msgs=${opts.messages.length} tools=${enabledTools.length}`);
+  const gen = (msgs: Message[]) => (enabledTools.length > 0)
     ? generationService.generateWithTools(opts.id, msgs, { enabledToolIds: enabledTools, projectId })
     : generationService.generateResponse(opts.id, msgs);
   let turnInterrupted = false; // PER-TURN stop truth from the loop outcome (returned to the caller)
@@ -402,11 +400,7 @@ async function runTextTurn(deps: GenerationDeps, call: StartGenerationCall): Pro
   }
   const conversation = useChatStore.getState().conversations.find(c => c.id === targetConversationId);
   const { enabledTools, hintToolIds, rawPrompt, localToolSupport } = resolveToolsAndPrompt(deps, conversation, messageText);
-  let basePrompt = await injectRagContext(conversation?.projectId, messageText, rawPrompt);
-
-  // In voice/audio mode the pro audio feature augments the prompt for spoken
-  // output. No-op (returns undefined) in free builds.
-  basePrompt = callHook<string>(HOOKS.audioAugmentPrompt, basePrompt) ?? basePrompt;
+  const basePrompt = await injectRagContext(conversation?.projectId, messageText, rawPrompt);
 
   const isRemote = !!useRemoteServerStore.getState().activeRemoteTextModelId;
   const activeTools = enabledTools;
@@ -415,10 +409,7 @@ async function runTextTurn(deps: GenerationDeps, call: StartGenerationCall): Pro
   // the engine-registry answer — no engine === 'litert' branch here.
   const useTextHint = !isRemote && !localToolSupport && hintToolIds.length > 0;
 
-  // MCP/extension hints are injected once, centrally, by augmentSystemPromptForTools
-  // in the tool loop (covers every engine + tool path). Do NOT add them here too, or
-  // the hint lands in the system prompt twice. Only the built-in-tools text hint is
-  // added here, and only when the model lacks native Jinja tool calling.
+  // Only the built-in-tools text hint is added here, and only when the model lacks native Jinja tool calling.
   const systemPrompt = applyGemma4ThinkToken(
     useTextHint
       ? `${basePrompt}${buildToolSystemPromptHint(hintToolIds)}`
@@ -678,8 +669,6 @@ async function regenerateTurn(deps: GenerationDeps, call: RegenerateCall): Promi
   const activeTools = enabledTools;
   const basePrompt = await injectRagContext(conversation?.projectId, messageText, rawPrompt);
   const useTextHint = !isRemote && !localToolSupport && hintToolIds.length > 0;
-  // MCP/extension hints come solely from augmentSystemPromptForTools in the tool loop
-  // (see the send path above) — adding them here too would double-inject.
   const systemPrompt = applyGemma4ThinkToken(
     useTextHint
       ? `${basePrompt}${buildToolSystemPromptHint(hintToolIds)}`

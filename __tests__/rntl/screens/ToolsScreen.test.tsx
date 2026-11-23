@@ -3,7 +3,6 @@
  *
  * The tools picker is a full page (it replaced the old bottom-sheet drawer). Tests:
  * - Renders the page header and all free tool rows
- * - Pro Tools row is pinned to the top, only when the Pro Tools screen is registered
  * - Tool toggles flow through the core settings store
  * - Back button navigates back
  */
@@ -12,8 +11,6 @@ import React from 'react';
 import { render, fireEvent, within } from '@testing-library/react-native';
 import { ToolsScreen } from '../../../src/screens/ToolsScreen';
 import { AVAILABLE_TOOLS } from '../../../src/services/tools/registry';
-import { registerScreen, _clearScreensForTesting } from '../../../src/navigation/screenRegistry';
-import { PRO_TOOLS_SCREEN } from '../../../src/hooks/useIsProActive';
 
 const mockNavigate = jest.fn();
 const mockGoBack = jest.fn();
@@ -47,11 +44,6 @@ jest.mock('react-native-vector-icons/Feather', () => {
   const { Text } = require('react-native');
   return ({ name, ...props }: any) => <Text {...props}>{name}</Text>;
 });
-jest.mock('react-native-vector-icons/MaterialCommunityIcons', () => {
-  const { Text } = require('react-native');
-  return ({ name, ...props }: any) => <Text {...props}>{name}</Text>;
-});
-
 jest.mock('../../../src/theme', () => {
   const mockColors = {
     text: '#000', textMuted: '#999', textSecondary: '#666',
@@ -66,11 +58,7 @@ jest.mock('../../../src/theme', () => {
 describe('ToolsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    _clearScreensForTesting();
     mockEnabledTools = ['web_search', 'calculator'];
-  });
-  afterEach(() => {
-    _clearScreensForTesting();
   });
 
   it('renders the page header and every free tool row', () => {
@@ -94,19 +82,6 @@ describe('ToolsScreen', () => {
     for (const [id, example] of Object.entries(examples)) {
       expect(within(getByTestId(`tool-picker-row-${id}`)).getByText(example)).toBeTruthy();
     }
-  });
-
-  it('hides the Pro Tools row when no Pro Tools screen is registered', () => {
-    const { queryByTestId, queryByText } = render(<ToolsScreen />);
-    expect(queryByTestId('tools-pro-tools')).toBeNull();
-    expect(queryByText('Pro Tools')).toBeNull();
-  });
-
-  it('routes a pro user straight to the Pro Tools screen', () => {
-    registerScreen({ name: PRO_TOOLS_SCREEN, component: () => null });
-    const { getByTestId } = render(<ToolsScreen />);
-    fireEvent.press(getByTestId('tools-pro-tools'));
-    expect(mockNavigate).toHaveBeenCalledWith(PRO_TOOLS_SCREEN);
   });
 
   it('toggles a tool through the core settings store', () => {

@@ -1,12 +1,7 @@
 /**
- * Function-hook seam. Pro features register plain functions against named hooks
- * during activation; core calls them when present and falls back to a no-op /
- * default when absent. Use this for behaviour (not UI — see slotRegistry for UI):
- * reading the audio interface mode, triggering speech after generation, and
- * augmenting the prompt in voice mode.
- *
- * Free builds register nothing, so callHook returns undefined and core keeps
- * its default behaviour.
+ * Function-hook seam. Features register plain functions against named hooks at start-up (see
+ * src/features); core calls them when present and falls back to a no-op / default when absent.
+ * Use this for behaviour (not UI — see slotRegistry for UI): speaking a reply, stopping speech.
  */
 type HookFn = (...args: any[]) => any;
 
@@ -28,7 +23,7 @@ export function _clearHooksForTesting(): void {
   }
 }
 
-/** Known hook names, centralised so core and pro stay in sync. */
+/** Known hook names, centralised so core and the features stay in sync. */
 export const HOOKS = {
   /** () => boolean — whether a message can be spoken (TTS enabled + ready). */
   audioCanSpeak: 'audio.canSpeak',
@@ -45,16 +40,6 @@ export const HOOKS = {
   audioOnStreamingEnd: 'audio.onStreamingEnd',
   /** () => void — app went to background: pause speech if playing. */
   audioOnAppBackground: 'audio.onAppBackground',
-  /** () => void — app returned to foreground: resume paused speech. */
-  audioOnAppForeground: 'audio.onAppForeground',
-  /** (basePrompt: string) => string — augment the prompt when in voice mode. */
-  audioAugmentPrompt: 'audio.augmentPrompt',
-  /** () => Promise<Array<{ engineId: string; name: string; sizeBytes: number }>>
-   *  — downloaded TTS (voice) models, surfaced in the Download Manager. */
-  downloadsListVoiceModels: 'downloads.listVoiceModels',
   /** (engineId: string) => Promise<void> — delete a downloaded TTS voice model. */
   downloadsDeleteVoiceModel: 'downloads.deleteVoiceModel',
-  /** () => Promise<void> — warm the active TTS engine at boot if its model is
-   *  downloaded and fits the residency budget (no-op otherwise). */
-  audioPreload: 'audio.preload',
 } as const;
