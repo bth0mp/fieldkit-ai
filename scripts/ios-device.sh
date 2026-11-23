@@ -5,7 +5,7 @@
 # registers whatever device is currently connected and mints a profile that
 # carries the app's required entitlements (Extended Virtual Addressing +
 # Increased Memory Limit — the large-model app needs these). The old hard-coded
-# manual profile ("Off Grid iPhone 12") is device-specific and lacks those
+# manual profile is device-specific and lacks those
 # entitlements, so it fails on any other device; keep it only as an explicit
 # fallback via IOS_PROFILE for offline/endpoint-timeout situations.
 #
@@ -14,7 +14,7 @@
 #
 # Override per-machine with env vars if your device/profile/team differ:
 #   IOS_DEVICE_ID  — target a specific device UDID
-#   IOS_TEAM       — development team id
+#   IOS_TEAM       — development team id (required)
 #   IOS_PROFILE    — set to force MANUAL signing with a named profile (fallback)
 set -euo pipefail
 
@@ -57,10 +57,10 @@ if [ -z "$DEVICE_ID" ]; then
   echo "No connected iOS device found. Plug in and trust a device, or set IOS_DEVICE_ID." >&2
   exit 1
 fi
-TEAM="${IOS_TEAM:-84V6KCAC49}"
+TEAM="${IOS_TEAM:?set IOS_TEAM to your development team id}"
 # BUNDLE_ID is read from the built .app below, NOT hardcoded — the Debug config carries a
-# `.dev` suffix (ai.offgridmobile.dev) while Release is ai.offgridmobile, and hardcoding it
-# meant we installed the .dev build but launched the old ai.offgridmobile app.
+# `.dev` suffix (com.bth0mp.fieldkit.dev) while Release is com.bth0mp.fieldkit, and hardcoding it
+# meant we installed the .dev build but launched the Release app.
 
 cd "$(dirname "$0")/../ios"
 
@@ -75,7 +75,7 @@ cd "$(dirname "$0")/../ios"
 # profile with the required entitlements). Set IOS_PROFILE to force manual.
 if [ -n "${IOS_PROFILE:-}" ]; then
   echo "Building (manual signing, profile: $IOS_PROFILE) for device $DEVICE_ID ..."
-  xcodebuild -workspace OffgridMobile.xcworkspace -scheme OffgridMobile -configuration Debug \
+  xcodebuild -workspace Fieldkit.xcworkspace -scheme Fieldkit -configuration Debug \
     -destination "generic/platform=iOS" \
     -derivedDataPath build/device \
     CODE_SIGN_STYLE=Manual \
@@ -85,7 +85,7 @@ if [ -n "${IOS_PROFILE:-}" ]; then
     build
 else
   echo "Building (automatic signing) for device $DEVICE_ID ..."
-  xcodebuild -workspace OffgridMobile.xcworkspace -scheme OffgridMobile -configuration Debug \
+  xcodebuild -workspace Fieldkit.xcworkspace -scheme Fieldkit -configuration Debug \
     -destination "generic/platform=iOS" \
     -derivedDataPath build/device \
     -allowProvisioningUpdates \
@@ -94,12 +94,12 @@ else
     build
 fi
 
-APP="build/device/Build/Products/Debug-iphoneos/OffgridMobile.app"
+APP="build/device/Build/Products/Debug-iphoneos/Fieldkit.app"
 echo "Installing $APP ..."
 xcrun devicectl device install app --device "$DEVICE_ID" "$APP"
 
 # Launch the SAME bundle we just built/installed — read its real CFBundleIdentifier from the
-# built Info.plist (Debug = ai.offgridmobile.dev). Fall back to the .dev id if the read fails.
-BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist" 2>/dev/null || echo 'ai.offgridmobile.dev')"
+# built Info.plist (Debug = com.bth0mp.fieldkit.dev). Fall back to the .dev id if the read fails.
+BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist" 2>/dev/null || echo 'com.bth0mp.fieldkit.dev')"
 echo "Launching $BUNDLE_ID ..."
 xcrun devicectl device process launch --device "$DEVICE_ID" --terminate-existing "$BUNDLE_ID"

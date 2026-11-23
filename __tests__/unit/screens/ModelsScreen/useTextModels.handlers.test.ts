@@ -10,6 +10,7 @@
  */
 
 import { renderHook, act } from '@testing-library/react-native';
+import { LITERT_PARENT_ID } from '../../../../src/services/curatedLiteRTRegistry';
 import { useTextModels } from '../../../../src/screens/ModelsScreen/useTextModels';
 
 // ── Navigation ────────────────────────────────────────────────────────
@@ -249,14 +250,14 @@ describe('runSearch', () => {
 // ── handleSelectModel ────────────────────────────────────────────────
 
 describe('handleSelectModel', () => {
-  it('short-circuits HF fetch when model id is in the offgrid/ namespace and ships files', async () => {
+  it('short-circuits HF fetch when model id is is the curated LiteRT parent and ships files', async () => {
     const { huggingFaceService } = jest.requireMock('../../../../src/services');
     const getModelFilesSpy = jest.spyOn(huggingFaceService, 'getModelFiles');
     const { result } = renderHook(() => useTextModels(setAlertState));
 
     const curatedFile = { name: 'gemma-4-E2B-it.litertlm', size: 1000, quantization: 'mixed', downloadUrl: 'https://hf/x' };
     const curatedModel: any = {
-      id: 'offgrid/litert-recommended',
+      id: LITERT_PARENT_ID,
       name: 'Gemma 4 LiteRT',
       author: 'google',
       description: '',
@@ -273,7 +274,7 @@ describe('handleSelectModel', () => {
     expect(result.current.selectedModel).toBe(curatedModel);
   });
 
-  it('falls through to HF fetch for non-offgrid models even when factories pre-populate files', async () => {
+  it('falls through to HF fetch for other models even when factories pre-populate files', async () => {
     const { huggingFaceService } = jest.requireMock('../../../../src/services');
     const fetched = [{ name: 'q4.gguf', size: 2000, quantization: 'Q4_K_M', downloadUrl: 'https://hf/q4' }];
     huggingFaceService.getModelFiles.mockResolvedValueOnce(fetched);

@@ -10,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { modelManager } from '../../../src/services/modelManager';
 import { backgroundDownloadService } from '../../../src/services/backgroundDownloadService';
 import { huggingFaceService } from '../../../src/services/huggingface';
+import { LITERT_PARENT_ID } from '../../../src/services/curatedLiteRTRegistry';
 import { buildDownloadedModel } from '../../../src/services/modelManager/storage';
 import { createModelFile, createModelFileWithMmProj } from '../../utils/factories';
 
@@ -615,14 +616,14 @@ describe('ModelManager', () => {
       mockedBackgroundDownloadService.startDownload.mockResolvedValue({
         downloadId: 99,
         fileName: 'gemma-4-E2B-it.litertlm',
-        modelId: 'offgrid/litert-recommended',
+        modelId: LITERT_PARENT_ID,
         status: 'pending',
         bytesDownloaded: 0,
         totalBytes: curated.size,
         startedAt: Date.now(),
       } as any);
 
-      await modelManager.downloadModelBackground('offgrid/litert-recommended', curated);
+      await modelManager.downloadModelBackground(LITERT_PARENT_ID, curated);
 
       expect(mockedBackgroundDownloadService.startDownload).toHaveBeenCalledWith(
         expect.objectContaining({ url: customUrl }),
@@ -839,6 +840,29 @@ describe('ModelManager', () => {
       expect(discovered).toHaveLength(1);
       expect(discovered[0].fileName).toBe('untracked-Q4_K_M.gguf');
       expect(discovered[0].quantization).toBe('Q4_K_M');
+    });
+
+    it('never adopts a helper file stored beside its model, and leaves it on disk', async () => {
+      mockedRNFS.exists.mockResolvedValue(true);
+      const entry = (name: string) => ({
+        name,
+        path: `/models/${name}`,
+        size: 1500000000,
+        isFile: () => true,
+        isDirectory: () => false,
+      } as any);
+      mockedRNFS.readDir.mockResolvedValue([
+        entry('Qwen3.5-9B-Q4_K_M.gguf'),
+        entry('mtp-gemma-4-E4B-it-Q8_0.gguf'),
+        entry('Qwen3.5-9B-imatrix.gguf'),
+        entry('Qwen3.5-9B-draft-Q4_0.gguf'),
+      ]);
+      mockedAsyncStorage.getItem.mockResolvedValue('[]');
+
+      const discovered = await modelManager.scanForUntrackedTextModels();
+
+      expect(discovered.map(m => m.fileName)).toEqual(['Qwen3.5-9B-Q4_K_M.gguf']);
+      expect(mockedRNFS.unlink).not.toHaveBeenCalled();
     });
 
     it('skips mmproj files', async () => {
@@ -1196,6 +1220,13 @@ describe('ModelManager', () => {
       await expect(
         modelManager.importLocalModel({ sourceUri: '/path/to/model.bin', fileName: 'model.bin' })
       ).rejects.toThrow('Only .gguf and .litertlm files can be imported');
+    });
+
+    it('refuses to import a helper file, which cannot be loaded on its own', async () => {
+      await expect(
+        modelManager.importLocalModel({ sourceUri: '/path/to/head.gguf', fileName: 'mtp-Qwen3.5-9B-Q8_0.gguf' })
+      ).rejects.toThrow('This file only helps another model run. It cannot be loaded on its own.');
+      expect((mockedRNFS as any).copyFile).not.toHaveBeenCalled();
     });
 
     it('rejects when destination already exists', async () => {
@@ -2649,11 +2680,21 @@ describe('ModelManager', () => {
       expect(result).toHaveLength(0);
     });
 
-    it('re-unzips from valid zip when _zip_name present and zip valid', async () => {
+    // coreml-named dir → the mnn/qnn completeness gate (ensureImageExtractionComplete) is a no-op
+    // (coreml integrity is validated in coreMLModelUtils). Asserts the re-unzip→register RECOVERY
+    // mechanics; the mnn completeness gate on the re-unzip path is covered by
+    // reconcilePartialUnzipG7.test.ts (B15/G7).
+    it('re-unzips from valid zip when _zip_name present and zip valid (coreml — completeness-exempt)', async () => {
       setupInitialized();
+      // resetAllMocks (beforeEach) clears the module mock impl — re-establish it, like the coreml
+      // resolve test below.
+      (mockedResolveCoreML as jest.Mock).mockImplementation((dir: string) =>
+        Promise.resolve(`${dir}/model.mlpackage`),
+      );
       mockedAsyncStorage.getItem
-        .mockResolvedValueOnce('[]')
-        .mockResolvedValueOnce('[]');
+        .mockResolvedValueOnce('[]')   // reconciler read
+        .mockResolvedValueOnce('[]')   // addDownloadedImageModel read
+        .mockResolvedValueOnce(null);  // addDownloadedImageModel save
 
       mockedRNFS.exists
         .mockResolvedValueOnce(true)    // imageModelsDir scan
@@ -2663,13 +2704,13 @@ describe('ModelManager', () => {
 
       mockedRNFS.readDir
         .mockResolvedValueOnce([
-          { name: 'sd_v15_mnn', path: `${IMAGE_MODELS_DIR}/sd_v15_mnn`, size: 0, isFile: () => false, isDirectory: () => true },
+          { name: 'sd_v15_coreml', path: `${IMAGE_MODELS_DIR}/sd_v15_coreml`, size: 0, isFile: () => false, isDirectory: () => true },
         ] as any)
         .mockResolvedValueOnce([
-          { name: 'unet.mnn', path: `${IMAGE_MODELS_DIR}/sd_v15_mnn/unet.mnn`, size: 500000000, isFile: () => true, isDirectory: () => false },
+          { name: 'model.mlpackage', path: `${IMAGE_MODELS_DIR}/sd_v15_coreml/model.mlpackage`, size: 500000000, isFile: () => true, isDirectory: () => false },
         ] as any);
 
-      mockedRNFS.readFile = jest.fn().mockResolvedValueOnce('sd_v15_mnn.zip');
+      mockedRNFS.readFile = jest.fn().mockResolvedValueOnce('sd_v15_coreml.zip');
       mockedRNFS.stat = jest.fn().mockResolvedValue({ size: 400000000, isFile: () => true } as any);
       mockedRNFS.read = jest.fn().mockResolvedValue('PK\x03\x04');
       mockedRNFS.writeFile = jest.fn().mockResolvedValue(undefined as any);
@@ -2678,11 +2719,11 @@ describe('ModelManager', () => {
       const result = await modelManager.reconcileFinishedImageDownloads(new Set());
 
       expect(mockedUnzip).toHaveBeenCalledWith(
-        `${IMAGE_MODELS_DIR}/sd_v15_mnn.zip`,
-        `${IMAGE_MODELS_DIR}/sd_v15_mnn`,
+        `${IMAGE_MODELS_DIR}/sd_v15_coreml.zip`,
+        `${IMAGE_MODELS_DIR}/sd_v15_coreml`,
       );
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe('sd_v15_mnn');
+      expect(result[0].id).toBe('sd_v15_coreml');
     });
 
     it('deletes partial dir when _zip_name present but zip is missing', async () => {

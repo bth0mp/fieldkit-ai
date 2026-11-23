@@ -19,7 +19,7 @@ patched), `@react-native-documents/picker` 12, `fzstd` 0.1.1 (MIT), `node-html-p
 ## Global Constraints
 
 - No GPL, AGPL or LGPL code or dependencies; no code from libzim or libkiwix. The ZIM reader is written from scratch.
-- No Off Grid or Wednesday names and no Kiwix logo in the UI. Naming `.zim` and Kiwix as a file source is fine.
+- No names from the app this one started from, and no Kiwix logo in the UI. Naming `.zim` and Kiwix as a file source is fine.
 - UI: theme tokens only (`TYPOGRAPHY`, `COLORS` via `useTheme`, `SPACING`), font weight ≤ 400, Feather icons, no emoji.
 - Screens and hooks hold no business logic; services own state and side effects; stores are read-only projections.
 - Never read a whole `.zim` file; reads are byte ranges.
@@ -263,8 +263,8 @@ Run (PowerShell): `$env:ZIM_SAMPLE='C:\Users\bth0m\AppData\Local\Temp\claude\4c5
 **Files:**
 - Create: `src/services/kiwix/kiwixCategory.ts` (`categoryFor(meta: ZimMetadata): string`, the spec's rule table)
 - Create: `src/services/kiwix/kiwixStore.ts`, `src/services/kiwix/kiwixService.ts`, `src/services/kiwix/index.ts`
-- Create: `android/app/src/main/java/ai/offgridmobile/kiwix/FieldkitDocumentTreeModule.kt`, `FieldkitDocumentTreePackage.kt`
-- Modify: `android/app/src/main/java/ai/offgridmobile/MainApplication.kt` (register the package)
+- Create: `android/app/src/main/java/com/bth0mp/fieldkit/kiwix/FieldkitDocumentTreeModule.kt`, `FieldkitDocumentTreePackage.kt`
+- Modify: `android/app/src/main/java/com/bth0mp/fieldkit/MainApplication.kt` (register the package)
 - Modify: `jest.setup.ts` (picker mock: `pickDirectory`, `releaseLongTermAccess`)
 - Modify: `__tests__/harness/chatHarness.ts` (option `documents?: boolean`, passed through)
 - Modify: `__tests__/harness/nativeBoundary.ts` (option `documents: true`: `boundary.documents.seed(uri, bytes)`,
@@ -394,7 +394,7 @@ reference through the sheet and see it under "General reference (1)". Then delet
 
 - [ ] **Step 1:** `npx tsc --noEmit`, `npx eslint` on every changed file, `npm run depcruise`, `npm run knip`,
   `npx jest --findRelatedTests <all changed files>` (background) → all clean.
-- [ ] **Step 2:** Debug APK from Git Bash after `subst F: "D:\Claude Code\Off Grid AI\.claude\worktrees\gracious-kare-00c8d7"`:
+- [ ] **Step 2:** Debug APK from Git Bash after `subst F: "<repo folder>\.claude\worktrees\gracious-kare-00c8d7"`:
   `cd /f/android && ./gradlew assembleDebug -PreactNativeArchitectures=arm64-v8a` → BUILD SUCCESSFUL (proves the
   patch and the Kotlin module compile).
 - [ ] **Step 3:** Run `.husky/pre-push` by hand (hooks do not run in worktrees), push the branch, open a PR to

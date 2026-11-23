@@ -20,9 +20,14 @@ import {
   setActiveRemoteTextModelImpl,
   setActiveRemoteImageModelImpl,
   initializeProvidersImpl,
+  resolveApiKeyImpl,
+  moveStoredKeysToKeychainImpl,
 } from './remoteServerManagerUtils';
 
 class RemoteServerManager {
+  private keyMove: Promise<void> | null = null;
+  private stopWaitingForServers: (() => void) | null = null;
+
   /**
    * Add a new remote server
    */
@@ -42,9 +47,18 @@ class RemoteServerManager {
       return existing;
     }
 
-    const id = store.addServer(config);
-    if (config.apiKey) {
-      await this.storeApiKey(id, config.apiKey);
+    // The key goes to the Keychain only; the saved record never holds it.
+    const { apiKey, ...publicConfig } = config;
+    const id = store.addServer(publicConfig);
+    if (apiKey) {
+      try {
+        await this.storeApiKey(id, apiKey);
+      } catch (error) {
+        // No server without its key: a retry must not meet the record and be taken for a duplicate.
+        await this.removeApiKeyAnyway(id);
+        store.removeServer(id);
+        throw error;
+      }
     }
 
     const server = store.getServerById(id);
@@ -77,13 +91,14 @@ class RemoteServerManager {
 
     const { apiKey: _, ...storeUpdates } = updates;
     store.updateServer(id, storeUpdates);
+    // The key was just set or cleared in the Keychain: a copy an older version left in the record must go.
+    if (updates.apiKey !== undefined) store.forgetSavedApiKey(id);
 
     const provider = providerRegistry.getProvider(id);
     if (provider && 'updateConfig' in provider) {
-      const apiKey = await this.getApiKey(id);
       (provider as OpenAICompatibleProvider).updateConfig({
         endpoint: updates.endpoint || existingServer.endpoint,
-        apiKey: apiKey || undefined,
+        apiKey: await resolveApiKeyImpl(id),
       });
     }
 
@@ -95,7 +110,7 @@ class RemoteServerManager {
    */
   async removeServer(id: string): Promise<void> {
     providerRegistry.unregisterProvider(id);
-    await this.removeApiKey(id);
+    await this.removeApiKeyAnyway(id);
     useRemoteServerStore.getState().removeServer(id);
     logger.log('[RemoteServerManager] Removed server:', id);
   }
@@ -114,7 +129,7 @@ class RemoteServerManager {
   async getServerWithApiKey(id: string): Promise<(RemoteServer & { apiKey?: string }) | null> {
     const server = this.getServer(id);
     if (!server) return null;
-    const apiKey = await this.getApiKey(id);
+    const apiKey = await resolveApiKeyImpl(id);
     return { ...server, apiKey: apiKey || undefined };
   }
 
@@ -123,9 +138,9 @@ class RemoteServerManager {
    */
   async testConnection(
     id: string
-  ): Promise<{ success: boolean; error?: string; models?: RemoteModel[] }> {
+  ): Promise<ServerTestResult> {
     const store = useRemoteServerStore.getState();
-    return store.testConnection(id);
+    return store.testConnection(id, await resolveApiKeyImpl(id));
   }
 
   /** Test connection to a server by endpoint (before adding) */
@@ -144,7 +159,7 @@ class RemoteServerManager {
     const server = store.getServerById(id);
     if (!server) throw new Error(`Server not found: ${id}`);
 
-    return store.discoverModels(id);
+    return store.discoverModels(id, await resolveApiKeyImpl(id));
   }
 
   /**
@@ -189,7 +204,27 @@ class RemoteServerManager {
    * Restores active remote model selection if persisted.
    */
   async initializeProviders(): Promise<void> {
+    await this.moveStoredKeysToKeychain().catch(() => {});
     return initializeProvidersImpl(() => this.getServers());
+  }
+
+  /**
+   * Move keys an older version saved in the server records into the Keychain, once the store has read its
+   * saved servers. A read that failed is not "no servers": nothing moves, and the move runs when a
+   * later read of the saved servers works.
+   */
+  async moveStoredKeysToKeychain(): Promise<void> {
+    const persist = useRemoteServerStore.persist;
+    if (!persist.hasHydrated()) {
+      this.stopWaitingForServers ??= persist.onFinishHydration(() => {
+        this.stopWaitingForServers?.();
+        this.stopWaitingForServers = null;
+        this.moveStoredKeysToKeychain().catch(() => {});
+      });
+      return;
+    }
+    this.keyMove ??= moveStoredKeysToKeychainImpl().finally(() => { this.keyMove = null; });
+    return this.keyMove;
   }
 
   /**
@@ -197,7 +232,7 @@ class RemoteServerManager {
    */
   async clearAllServers(): Promise<void> {
     for (const server of this.getServers()) {
-      await this.removeApiKey(server.id);
+      await this.removeApiKeyAnyway(server.id);
     }
     providerRegistry.clear();
     useRemoteServerStore.getState().clearAllServers();
@@ -217,6 +252,17 @@ class RemoteServerManager {
 
   private async removeApiKey(serverId: string): Promise<void> {
     return removeApiKeyImpl(serverId);
+  }
+
+  /** Removing a whole server goes ahead when the Keychain refuses; the failure is logged by the Keychain helper. */
+  private async removeApiKeyAnyway(serverId: string): Promise<void> {
+    try {
+      await removeApiKeyImpl(serverId);
+    } catch {
+      // The server goes even though its key could not be cleared (the Keychain helper logged it): no record
+      // points at the leftover entry and it is never sent, and failing here would make a server
+      // undeletable while the Keychain is broken.
+    }
   }
 
 }

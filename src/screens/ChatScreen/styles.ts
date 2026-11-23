@@ -34,7 +34,6 @@ const createHeaderStyles = (colors: ThemeColors) => ({
   modelSelector: { flexDirection: 'row' as const, alignItems: 'center' as const, flexShrink: 1, overflow: 'hidden' as const },
   remoteIcon: { marginRight: 4 },
   modelSelectorArrow: { marginLeft: SPACING.xs },
-  modeToggleWrap: { marginLeft: 'auto' as const },
   headerImageBadge: {
     width: 18,
     height: 18,

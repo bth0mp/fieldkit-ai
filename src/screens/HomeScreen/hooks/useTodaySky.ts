@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
-import { useIsFocused } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { useHomePlaceStore } from '../../../features/home/homePlace';
 import { todaySky, type TodaySky } from '../../../features/home/todaySky';
 
@@ -22,15 +22,22 @@ const MIDNIGHT_SLACK_MS = 500;
  */
 export function useTodaySky(): TodayClock {
   const place = useHomePlaceStore((s) => s.place);
-  const isFocused = useIsFocused();
+  const navigation = useNavigation();
   const [tick, setTick] = useState(0);
   const refresh = useCallback(() => setTick((t) => t + 1), []);
 
-  const wasFocused = useRef(isFocused);
+  // The navigator's own events, not useIsFocused: that re-renders all of Home each time the tab is left
+  // and entered. Gaining focus the first time is not a re-read; only coming back after leaving is.
+  const leftHome = useRef(false);
   useEffect(() => {
-    if (isFocused && !wasFocused.current) refresh();
-    wasFocused.current = isFocused;
-  }, [isFocused, refresh]);
+    const onBlur = navigation.addListener('blur', () => { leftHome.current = true; });
+    const onFocus = navigation.addListener('focus', () => {
+      if (!leftHome.current) return;
+      leftHome.current = false;
+      refresh();
+    });
+    return () => { onBlur(); onFocus(); };
+  }, [navigation, refresh]);
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', (state) => { if (state === 'active') refresh(); });

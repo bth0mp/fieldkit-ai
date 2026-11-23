@@ -13,7 +13,6 @@ import { AttachStep } from 'react-native-spotlight-tour';
 import { AnimatedEntry } from '../../components/AnimatedEntry';
 import { createStyles } from './styles';
 import { useTheme } from '../../theme';
-import { getSlot, SLOTS } from '../../bootstrap/slotRegistry';
 
 type StylesType = ReturnType<typeof createStyles>;
 type ColorsType = ReturnType<typeof useTheme>['colors'];
@@ -110,9 +109,6 @@ export const ChatHeader: React.FC<{
               {activeProject ? activeProject.name : 'Default'}
             </Text>
           </TouchableOpacity>
-          {/* Pro-only: Chat/Voice mode dropdown, on the same line as Models ·
-              project, pushed to the right. Empty slot in free builds. */}
-          {(() => { const ModeToggle = getSlot(SLOTS.chatInputModeToggle); return ModeToggle ? <View style={styles.modeToggleWrap}><ModeToggle /></View> : null; })()}
         </View>
       </View>
       <View style={styles.headerActions}>

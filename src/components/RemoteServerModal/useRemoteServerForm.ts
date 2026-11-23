@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { remoteServerManager } from '../../services/remoteServerManager';
 import { useRemoteServerStore } from '../../stores';
 import { RemoteServer, RemoteModel } from '../../types';
@@ -15,7 +15,16 @@ interface FormOptions {
 export function useRemoteServerForm({ server, visible, onSave, onClose }: FormOptions) {
   const [name, setName] = useState('');
   const [endpoint, setEndpoint] = useState('');
-  const [apiKey, setApiKey] = useState('');
+  const [apiKey, setApiKeyValue] = useState('');
+  // Whether the person typed in the key field. The field starts from the Keychain, which may not answer.
+  const [apiKeyEdited, setApiKeyEdited] = useState(false);
+  // The same fact for the Keychain's late answer, which must not replace what the person typed meanwhile.
+  const apiKeyTyped = useRef(false);
+  const setApiKey = useCallback((value: string) => {
+    setApiKeyValue(value);
+    setApiKeyEdited(true);
+    apiKeyTyped.current = true;
+  }, []);
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isTesting, setIsTesting] = useState(false);
@@ -31,16 +40,19 @@ export function useRemoteServerForm({ server, visible, onSave, onClose }: FormOp
       setEndpoint(server.endpoint);
       setNotes(server.notes || '');
       // Load existing API key from keychain so user can see it's set
+      apiKeyTyped.current = false;
       remoteServerManager.getApiKey(server.id).then((key) => {
-        if (!cancelled) setApiKey(key || '');
-      }).catch(() => { if (!cancelled) setApiKey(''); });
+        if (!cancelled && !apiKeyTyped.current) setApiKeyValue(key || '');
+      }).catch(() => { if (!cancelled && !apiKeyTyped.current) setApiKeyValue(''); });
     } else {
       // Reset form for new server
       setName('');
       setEndpoint('');
-      setApiKey('');
+      setApiKeyValue('');
       setNotes('');
     }
+    setApiKeyEdited(false);
+    apiKeyTyped.current = false;
     setErrors({});
     setTestResult(null);
     setDiscoveredModels([]);
@@ -93,7 +105,10 @@ export function useRemoteServerForm({ server, visible, onSave, onClose }: FormOp
   const saveServer = useCallback(async () => {
     try {
       if (server) {
-        await remoteServerManager.updateServer(server.id, { name, endpoint, notes, apiKey });
+        // The key is sent only when the person changed it: a Keychain that did not answer must not clear it.
+        await remoteServerManager.updateServer(server.id, {
+          name, endpoint, notes, ...(apiKeyEdited ? { apiKey } : {}),
+        });
         if (discoveredModels.length > 0) {
           useRemoteServerStore.getState().setDiscoveredModels(server.id, discoveredModels);
         }
@@ -113,7 +128,7 @@ export function useRemoteServerForm({ server, visible, onSave, onClose }: FormOp
     } catch (error) {
       setAlertState(showAlert('Error', error instanceof Error ? error.message : 'Failed to save server'));
     }
-  }, [server, name, endpoint, apiKey, notes, discoveredModels, onSave, onClose]);
+  }, [server, name, endpoint, apiKey, apiKeyEdited, notes, discoveredModels, onSave, onClose]);
 
   const handleSave = useCallback(async () => {
     if (!validateForm()) return;

@@ -598,8 +598,8 @@ describe('remoteServerStore', () => {
       expect(useRemoteServerStore.getState().discoveredModels[serverId]).toHaveLength(1);
     });
 
-    it('trusts the gateway kind:"vision" for supportsVision even when name/probe detection would miss it (F7)', async () => {
-      // A gateway vision model whose id matches no name heuristic; probes return no
+    it('trusts a server-declared kind:"vision" for supportsVision even when name/probe detection would miss it (F7)', async () => {
+      // A vision model (tagged by the server) whose id matches no name heuristic; probes return no
       // capability. Without trusting kind, supportsVision would be false and the image
       // would be dropped client-side so the model behaved text-only.
       const mockFetch = jest.fn().mockResolvedValue({
@@ -607,8 +607,8 @@ describe('remoteServerStore', () => {
         json: async () => ({
           object: 'list',
           data: [
-            { id: 'gemma-4-e4b-it-Q8_0.gguf', kind: 'vision', owned_by: 'offgrid' },
-            { id: 'plain-chat.gguf', kind: 'chat', owned_by: 'offgrid' },
+            { id: 'gemma-4-e4b-it-Q8_0.gguf', kind: 'vision', owned_by: 'local' },
+            { id: 'plain-chat.gguf', kind: 'chat', owned_by: 'local' },
           ],
         }),
       });
@@ -617,7 +617,7 @@ describe('remoteServerStore', () => {
       let serverId = '';
       actStoreUpdate(() => {
         serverId = useRemoteServerStore.getState().addServer({
-          name: 'Gateway', endpoint: 'http://mac:7878', providerType: 'openai-compatible',
+          name: 'Server', endpoint: 'http://mac:8080', providerType: 'openai-compatible',
         });
       });
       let modelsPromise: any;
@@ -741,7 +741,9 @@ describe('remoteServerStore', () => {
         });
       });
 
-      await useRemoteServerStore.getState().discoverModels(serverId);
+      // The record never holds the key; the caller passes the one from the Keychain.
+      expect(useRemoteServerStore.getState().getServerById(serverId)).not.toHaveProperty('apiKey');
+      await useRemoteServerStore.getState().discoverModels(serverId, 'secret-key');
 
       expect(mockFetch).toHaveBeenCalled();
       const callArgs = mockFetch.mock.calls[0];

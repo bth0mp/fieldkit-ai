@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DownloadEntry } from '../stores/downloadStore';
 import { ModelKey } from '../utils/modelKey';
+import { renameEarlierModelIds } from './earlierIds';
 
 const INFLIGHT_DOWNLOADS_KEY = '@local_llm/inflight_downloads';
 
@@ -24,7 +25,7 @@ export async function loadInflightDownloads(): Promise<DownloadEntry[]> {
   try {
     const stored = await AsyncStorage.getItem(INFLIGHT_DOWNLOADS_KEY);
     if (!stored) return [];
-    const map = JSON.parse(stored) as Record<string, DownloadEntry>;
+    const map = JSON.parse(renameEarlierModelIds(stored)) as Record<string, DownloadEntry>;
     return Object.values(map);
   } catch {
     return [];

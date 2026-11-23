@@ -12,6 +12,7 @@ import logger from '../utils/logger';
 import {
   fetchModelCapabilities,
   isGenerativeModel,
+  RemoteAuthenticationError,
 } from './remoteModelCapabilities';
 import {
   detectVisionCapability,
@@ -22,11 +23,10 @@ import {
 const DISCOVERY_FETCH_TIMEOUT_MS = 5000;
 
 /**
- * The Off Grid AI Desktop gateway tags every /v1/models entry with a modality
- * `kind` (chat | vision | image | speech | transcription). Only chat/vision are
- * text models that belong in the text model lists — image, speech (TTS) and
- * transcription (STT) models must not be listed as text. Servers that don't send
- * `kind` (Ollama, LM Studio) fall back to the name-based generative filter.
+ * A server may tag every /v1/models entry with a modality `kind` (chat | vision |
+ * image | speech | transcription). Only chat/vision are text models that belong in
+ * the text model lists — image, speech (TTS) and transcription (STT) models must
+ * not be listed as text. Servers that don't send `kind` (Ollama, LM Studio) fall back to the name-based generative filter.
  */
 function isTextModel(model: { id?: string; name?: string; kind?: unknown }): boolean {
   const kind = typeof model.kind === 'string' ? model.kind : null;
@@ -37,7 +37,7 @@ function isTextModel(model: { id?: string; name?: string; kind?: unknown }): boo
 const MODEL_FILE_EXT = /\.(gguf|bin|safetensors|task|litertlm|pte)$/i;
 
 /**
- * Human-readable label for a remote model. Some gateways report the model id as a
+ * Human-readable label for a remote model. Some servers report the model id as a
  * full file path (e.g. "/Users/admin/models/Qwen3.5-9B-Q4_K_M.gguf"),
  * which is unreadable in the Models list. Show the basename without the extension while
  * keeping the raw id for loading.
@@ -163,6 +163,10 @@ export async function fetchModelsFromServer(server: RemoteServer): Promise<Remot
 
     clearTimeout(timeoutId);
 
+    // A refused key is an authentication failure, not "this server has no models".
+    if (response.status === 401 || response.status === 403) {
+      throw new RemoteAuthenticationError(response.status);
+    }
     if (response.ok) {
       const data = await response.json();
 
@@ -173,7 +177,7 @@ export async function fetchModelsFromServer(server: RemoteServer): Promise<Remot
         const generativeModels = data.data.filter((model: { id: string; kind?: unknown }) => isTextModel(model));
         const modelInfos = await Promise.all(
           generativeModels.map((model: { id: string }) =>
-            fetchModelCapabilities(url, model.id, nameDetect)
+            fetchModelCapabilities(url, model.id, nameDetect, server.apiKey)
           )
         );
         return generativeModels.map((model: { id: string; kind?: unknown; owned_by?: string; max_context_length?: number }, i: number) => ({
@@ -181,9 +185,9 @@ export async function fetchModelsFromServer(server: RemoteServer): Promise<Remot
           name: displayModelName(model.id),
           serverId: server.id,
           capabilities: {
-            // The gateway declares each model's kind authoritatively; trust kind:'vision'
+            // A server that sends `kind` declares each model's kind authoritatively; trust kind:'vision'
             // for vision support. The name/probe-based fallback (modelInfos) can't detect a
-            // gateway vision model whose id doesn't match the name heuristics, which dropped
+            // vision model whose id doesn't match the name heuristics, which dropped
             // the attached image client-side (the model then behaved text-only).
             supportsVision: model.kind === 'vision' || modelInfos[i].supportsVision,
             supportsToolCalling: modelInfos[i].supportsToolCalling ?? detectToolCallingCapability(model.id),
@@ -202,7 +206,7 @@ export async function fetchModelsFromServer(server: RemoteServer): Promise<Remot
         );
         const modelInfos = await Promise.all(
           generativeModels.map((model: { name: string }) =>
-            fetchModelCapabilities(url, model.name, nameDetect)
+            fetchModelCapabilities(url, model.name, nameDetect, server.apiKey)
           )
         );
         return generativeModels.map(
@@ -224,6 +228,7 @@ export async function fetchModelsFromServer(server: RemoteServer): Promise<Remot
       }
     }
   } catch (error) {
+    if (error instanceof RemoteAuthenticationError) throw error;
     logger.warn('[RemoteServer] Failed to fetch from /v1/models:', error);
   }
 
@@ -241,6 +246,9 @@ export async function fetchModelsFromServer(server: RemoteServer): Promise<Remot
 
     clearTimeout(timeoutId);
 
+    if (response.status === 401 || response.status === 403) {
+      throw new RemoteAuthenticationError(response.status);
+    }
     if (response.ok) {
       const data = await response.json();
 
@@ -251,7 +259,7 @@ export async function fetchModelsFromServer(server: RemoteServer): Promise<Remot
         );
         const modelInfos = await Promise.all(
           generativeModels.map((model: { name: string }) =>
-            fetchModelCapabilities(url, model.name, nameDetect)
+            fetchModelCapabilities(url, model.name, nameDetect, server.apiKey)
           )
         );
         return generativeModels.map(
@@ -273,6 +281,7 @@ export async function fetchModelsFromServer(server: RemoteServer): Promise<Remot
       }
     }
   } catch (error) {
+    if (error instanceof RemoteAuthenticationError) throw error;
     logger.warn('[RemoteServer] Failed to fetch from /api/tags:', error);
   }
 

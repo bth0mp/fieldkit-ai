@@ -5,6 +5,7 @@ import { AdvancedToggle } from '../AdvancedToggle';
 import { useThemedStyles } from '../../theme';
 import { useAppStore, selectIsLiteRT } from '../../stores';
 import { hardwareService } from '../../services';
+import { maxTokensCeiling, boundedMaxTokens } from '../../utils/contextBudget';
 import { createStyles } from './styles';
 import {
   CpuThreadsSlider,
@@ -27,6 +28,8 @@ interface SettingConfig {
   description?: string;
   warning?: (value: number) => string | null;
   warningColor?: string;
+  /** Maps the saved value to the one shown and used, when the saved one may be out of range. */
+  bound?: (value: number) => number;
 }
 
 const formatContext = (v: number) => v >= 1024 ? `${(v / 1024).toFixed(0)}K` : v.toString();
@@ -44,7 +47,7 @@ const DEFAULT_SETTINGS: Record<string, number> = {
 
 // ─── Config builders ──────────────────────────────────────────────────────────
 
-function buildLlamaConfig(modelMaxContext: number | null = null): SettingConfig[] {
+function buildLlamaConfig(modelMaxContext: number | null = null, contextLength = DEFAULT_SETTINGS.contextLength): SettingConfig[] {
   const llmMax = modelMaxContext ?? 32768;
   return [
     {
@@ -57,7 +60,8 @@ function buildLlamaConfig(modelMaxContext: number | null = null): SettingConfig[
     {
       key: 'maxTokens',
       label: 'Max Tokens',
-      min: 64, max: 8192, step: 64,
+      min: 64, max: maxTokensCeiling(contextLength), step: 64,
+      bound: (v) => boundedMaxTokens(v, contextLength),
       format: (v) => v >= 1024 ? `${(v / 1024).toFixed(1)}K` : v.toString(),
       description: 'Maximum length of generated response',
     },
@@ -122,7 +126,8 @@ function buildLiteRTConfig(modelMaxContext: number | null = null): SettingConfig
 const SettingSlider: React.FC<{ config: SettingConfig }> = ({ config }) => {
   const { settings, updateSettings } = useAppStore();
   const rawValue = (settings as Record<string, unknown>)[config.key];
-  const value = (rawValue ?? DEFAULT_SETTINGS[config.key]) as number;
+  const saved = (rawValue ?? DEFAULT_SETTINGS[config.key]) as number;
+  const value = config.bound ? config.bound(saved) : saved;
 
   return (
     <SliderSetting
@@ -184,7 +189,8 @@ const LlamaTextGenerationSection: React.FC = () => {
   const modelMaxContext = useAppStore((s) => s.modelMaxContext);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const config = buildLlamaConfig(modelMaxContext);
+  const contextLength = useAppStore((s) => s.settings?.contextLength) ?? DEFAULT_SETTINGS.contextLength;
+  const config = buildLlamaConfig(modelMaxContext, contextLength);
   const basicKeys = new Set(['temperature', 'maxTokens', 'contextLength']);
   const advancedKeys = new Set(['topP', 'repeatPenalty']);
 

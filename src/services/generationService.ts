@@ -10,7 +10,6 @@ import { providerRegistry } from './providers';
 import { assertRemoteAllowed } from './privateDataGuard';
 import logger from '../utils/logger';
 import { maybeScheduleSharePrompt } from '../utils/sharePrompt';
-import { checkProPromptForText } from './proPrompt';
 import {
   buildGenerationMetaImpl,
   buildToolLoopHandlersImpl,
@@ -162,7 +161,6 @@ class GenerationService {
     const s = useAppStore.getState();
     const count = s.incrementTextGenerationCount();
     maybeScheduleSharePrompt({ variant: 'text', count, hasEngaged: s.hasEngagedSharePrompt, delayMs });
-    checkProPromptForText(delayMs);
   }
 
   private buildToolLoopHandlers() { return buildToolLoopHandlersImpl(this); }

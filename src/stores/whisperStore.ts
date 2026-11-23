@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { persist } from 'zustand/middleware';
+import { createHydrationGatedStorage } from '../utils/hydrationGatedStorage';
 import { whisperService, WHISPER_MODELS } from '../services/whisperService';
 import { modelResidencyManager } from '../services/modelResidency';
 import logger from '../utils/logger';
@@ -67,6 +67,9 @@ function clearProgress(set: SetState, modelId: string): void {
     return { downloadProgressById: next };
   });
 }
+
+type PersistedWhisperState = Pick<WhisperState, 'downloadedModelId'>;
+const whisperStorage = createHydrationGatedStorage<PersistedWhisperState>();
 
 export const useWhisperStore = create<WhisperState>()(
   persist(
@@ -247,10 +250,13 @@ export const useWhisperStore = create<WhisperState>()(
     }),
     {
       name: 'local-llm-whisper-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: whisperStorage.storage,
+      onRehydrateStorage: whisperStorage.onRehydrateStorage(),
+      merge: whisperStorage.merge<WhisperState>(),
       partialize: (state) => ({
         downloadedModelId: state.downloadedModelId,
       }),
     }
   )
 );
+whisperStorage.attach(useWhisperStore);

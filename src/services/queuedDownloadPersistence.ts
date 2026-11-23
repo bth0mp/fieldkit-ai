@@ -14,8 +14,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { DownloadParams } from './backgroundDownloadTypes';
 import logger from '../utils/logger';
+import { EARLIER_QUEUED_DOWNLOADS_KEY, readMovedItem, removeMovedItem, renameEarlierModelIds } from './earlierIds';
 
-const QUEUED_DOWNLOADS_KEY = '@offgrid/queued_downloads';
+const QUEUED_DOWNLOADS_KEY = '@fieldkit/queued_downloads';
 
 /** The serializable projection of one queued start — JUST its DownloadParams (never the
  *  promise/resolve/reject, which are runtime-only and cannot survive a process restart). */
@@ -36,7 +37,7 @@ export function serializeQueue(queue: ReadonlyArray<{ params: DownloadParams }>)
 export async function saveQueuedDownloads(params: QueuedParams[]): Promise<void> {
   try {
     if (params.length === 0) {
-      await AsyncStorage.removeItem(QUEUED_DOWNLOADS_KEY);
+      await removeMovedItem(QUEUED_DOWNLOADS_KEY, EARLIER_QUEUED_DOWNLOADS_KEY);
     } else {
       await AsyncStorage.setItem(QUEUED_DOWNLOADS_KEY, JSON.stringify(params));
     }
@@ -48,9 +49,9 @@ export async function saveQueuedDownloads(params: QueuedParams[]): Promise<void>
 /** Thin adapter: read the persisted projection. Returns [] on absence or a corrupt payload. */
 export async function loadQueuedDownloads(): Promise<QueuedParams[]> {
   try {
-    const stored = await AsyncStorage.getItem(QUEUED_DOWNLOADS_KEY);
+    const stored = await readMovedItem(QUEUED_DOWNLOADS_KEY, EARLIER_QUEUED_DOWNLOADS_KEY);
     if (!stored) return [];
-    const parsed = JSON.parse(stored);
+    const parsed = JSON.parse(renameEarlierModelIds(stored));
     return Array.isArray(parsed) ? (parsed as QueuedParams[]) : [];
   } catch (e) {
     logger.log(`[DL-SM] load queued downloads failed err=${e instanceof Error ? e.message : String(e)}`);

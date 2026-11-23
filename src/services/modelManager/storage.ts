@@ -2,7 +2,8 @@ import RNFS from 'react-native-fs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DownloadedModel, LlamaDownloadedModel, LiteRTDownloadedModel, ModelFile, ModelCredibility, ONNXImageModel } from '../../types';
 import { LMSTUDIO_AUTHORS, OFFICIAL_MODEL_AUTHORS, VERIFIED_QUANTIZERS } from '../../constants';
-import { getCuratedLiteRTEntry } from '../curatedLiteRTRegistry';
+import { getCuratedLiteRTEntry, authorOfModelId, LITERT_PARENT_ID, LITERT_AUTHOR } from '../curatedLiteRTRegistry';
+import { renameEarlierModelIds } from '../earlierIds';
 import logger from '../../utils/logger';
 
 const MODELS_STORAGE_KEY = '@local_llm/downloaded_models';
@@ -64,18 +65,33 @@ export async function saveImageModelsList(models: ONNXImageModel[]): Promise<voi
   await AsyncStorage.setItem(IMAGE_MODELS_STORAGE_KEY, JSON.stringify(models));
 }
 
+/**
+ * Existence probe that never reads a filesystem error as "file absent". RNFS.exists can reject on a
+ * momentary hiccup (I/O error, container not yet mounted). Reading that as "gone" would prune the model
+ * from the saved list and persist the shorter list, so a fully downloaded model would vanish.
+ * `verifiable: false` means "could not tell"; callers keep the model then.
+ */
+async function probeExists(path: string): Promise<{ exists: boolean; verifiable: boolean }> {
+  try {
+    return { exists: await RNFS.exists(path), verifiable: true };
+  } catch (e) {
+    logger.warn(`[ModelManagerStorage] existence check could not be verified for ${path}, keeping the model`, e);
+    return { exists: false, verifiable: false };
+  }
+}
+
 async function tryResolveTextModelPath(
   model: DownloadedModel,
   modelsDir: string,
-): Promise<{ exists: boolean; updated: boolean }> {
+): Promise<{ exists: boolean; updated: boolean; verifiable: boolean }> {
   const resolved = resolveStoredPath(model.filePath, modelsDir);
-  if (!resolved || resolved === model.filePath) return { exists: false, updated: false };
-  const exists = await RNFS.exists(resolved);
+  if (!resolved || resolved === model.filePath) return { exists: false, updated: false, verifiable: true };
+  const { exists, verifiable } = await probeExists(resolved);
   if (exists) {
     model.filePath = resolved;
-    return { exists: true, updated: true };
+    return { exists: true, updated: true, verifiable };
   }
-  return { exists: false, updated: false };
+  return { exists: false, updated: false, verifiable };
 }
 
 async function tryResolveMmProjPath(
@@ -103,12 +119,12 @@ async function validateAndResolveModels(
   let pathsUpdated = false;
 
   const existenceChecks = await Promise.all(
-    models.map(m => RNFS.exists(m.filePath))
+    models.map(m => probeExists(m.filePath))
   );
 
   const modelsToResolve: Array<{ model: DownloadedModel; idx: number }> = [];
   for (let i = 0; i < models.length; i++) {
-    if (!existenceChecks[i]) {
+    if (!existenceChecks[i].exists) {
       modelsToResolve.push({ model: models[i], idx: i });
     }
   }
@@ -124,7 +140,7 @@ async function validateAndResolveModels(
 
   const modelsToCheckMmProj: Array<{ model: DownloadedModel; idx: number }> = [];
   for (let i = 0; i < models.length; i++) {
-    const mainExists = existenceChecks[i];
+    const mainExists = existenceChecks[i].exists;
     if (!mainExists) {
       const idx = modelsToResolve.findIndex(m => m.idx === i);
       if (idx >= 0 && resolutionResults[idx].exists) {
@@ -144,15 +160,19 @@ async function validateAndResolveModels(
   }
 
   for (let i = 0; i < models.length; i++) {
-    const mainExists = existenceChecks[i];
+    const { exists: mainExists, verifiable: mainVerifiable } = existenceChecks[i];
     let exists = mainExists;
+    // Provably gone only when every probe cleanly answered "absent". If one threw, we do not know.
+    let verifiable = mainVerifiable;
     if (!mainExists) {
       const idx = modelsToResolve.findIndex(m => m.idx === i);
       if (idx >= 0) {
         exists = resolutionResults[idx].exists;
+        verifiable = verifiable && resolutionResults[idx].verifiable;
       }
     }
-    if (exists) {
+    // Pruning, and saving the shorter list, is for files provably gone; an unverifiable one stays.
+    if (exists || !verifiable) {
       validModels.push(models[i]);
     }
   }
@@ -172,7 +192,12 @@ export async function loadDownloadedModels(modelsDir: string): Promise<Downloade
     // already-downloaded curated models whose row was written before liteRTVision
     // was being set correctly. Locally-imported .litertlm files aren't in the
     // registry and keep whatever flag they were saved with.
-    models = (JSON.parse(stored) as any[]).map((m): DownloadedModel => {
+    // A model an earlier version saved under its old curated id is read under the new one (and with the
+    // author the cards show); the next save writes it that way.
+    models = (JSON.parse(renameEarlierModelIds(stored)) as any[]).map((saved): DownloadedModel => {
+      const m = typeof saved?.id === 'string' && saved.id.startsWith(`${LITERT_PARENT_ID}/`) && saved.author !== LITERT_AUTHOR
+        ? { ...saved, author: LITERT_AUTHOR, credibility: determineCredibility(LITERT_AUTHOR) }
+        : saved;
       if (m.engine === 'litert') {
         const curated = getCuratedLiteRTEntry(m.fileName);
         const liteRTVision = curated?.liteRTVision ?? m.liteRTVision ?? false;
@@ -287,7 +312,7 @@ export interface BuildModelOpts {
 export async function buildDownloadedModel(opts: BuildModelOpts): Promise<DownloadedModel> {
   const { modelId, file, resolvedLocalPath, mmProjPath, expectedMmProjFileName } = opts;
   const stat = await RNFS.stat(resolvedLocalPath);
-  const author = modelId.split('/')[0] || 'Unknown';
+  const author = authorOfModelId(modelId) || 'Unknown';
   const isLiteRT = file.name.toLowerCase().endsWith('.litertlm');
   const mmProjFile = file.mmProjFile;
   let mmProjFileSize = mmProjPath ? mmProjFile?.size : undefined;

@@ -31,17 +31,18 @@ export const RemoteServersScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const theme = useTheme();
   const styles = useThemedStyles(createStyles);
-  const { servers, serverHealth, testConnection, activeServerId, setActiveServerId } = useRemoteServerStore();
+  const { servers, serverHealth, activeServerId, setActiveServerId } = useRemoteServerStore();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingServer, setEditingServer] = useState<typeof servers[0] | null>(null);
   const [testingId, setTestingId] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [alertState, setAlertState] = useState<AlertState>(initialAlertState);
 
-  // Auto-check all server statuses when screen opens
+  // Auto-check all server statuses when screen opens. The manager reads each server's key from the
+  // Keychain, so an authenticated server is checked with its key rather than reported offline.
   useEffect(() => {
     servers.forEach(server => {
-      testConnection(server.id).catch(() => { });
+      remoteServerManager.testConnection(server.id).catch(() => { });
     });
 
   }, []);
@@ -49,7 +50,7 @@ export const RemoteServersScreen: React.FC = () => {
   const handleTestServer = useCallback(async (serverId: string) => {
     setTestingId(serverId);
     try {
-      const result = await testConnection(serverId);
+      const result = await remoteServerManager.testConnection(serverId);
       if (result.success) {
         setAlertState(showAlert('Success', `Connected successfully (${result.latency}ms)`));
       } else {
@@ -60,7 +61,7 @@ export const RemoteServersScreen: React.FC = () => {
     } finally {
       setTestingId(null);
     }
-  }, [testConnection]);
+  }, []);
 
   const handleScanNetwork = useCallback(async () => {
     setIsScanning(true);

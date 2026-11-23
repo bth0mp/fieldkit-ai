@@ -16,7 +16,7 @@ export interface RemoteServer {
   name: string;
   /** Base endpoint URL (e.g., "http://192.168.1.50:11434") */
   endpoint: string;
-  /** API key for authentication (optional, stored securely) */
+  /** Only read from records an older version saved. The key lives in the Keychain and is never written here. */
   apiKey?: string;
   /** Provider type for message format handling */
   providerType: RemoteProviderType;

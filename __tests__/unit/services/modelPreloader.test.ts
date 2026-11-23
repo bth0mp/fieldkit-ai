@@ -1,6 +1,5 @@
 /**
- * modelPreloader tests — warms selected models in priority order (text → image
- * → TTS → STT), only loading what fits the budget without eviction.
+ * modelPreloader tests — warms selected models in priority order (text → STT), only loading what fits the budget without eviction.
  */
 let mockAppState: any;
 let mockWhisperState: any;
@@ -33,12 +32,6 @@ jest.mock('../../../src/services/modelResidency', () => ({
   modelResidencyManager: { canLoadWithoutEviction: (...a: any[]) => mockCanLoad(...a) },
 }));
 
-const mockCallHook = jest.fn((..._a: any[]) => Promise.resolve());
-jest.mock('../../../src/bootstrap/hookRegistry', () => ({
-  callHook: (...a: any[]) => mockCallHook(...a),
-  HOOKS: { audioPreload: 'audio.preload' },
-}));
-
 let mockTextGenerating = false;
 let mockImageGenerating = false;
 jest.mock('../../../src/services/generationService', () => ({
@@ -67,10 +60,9 @@ describe('preloadSelectedModels', () => {
     mockWhisperState = { downloadedModelId: 'w1', isModelLoaded: false, loadModel: jest.fn(() => Promise.resolve()) };
   });
 
-  it('warms text, TTS and STT in order — but never the image model', async () => {
+  it('warms text and STT in order — but never the image model', async () => {
     await preloadSelectedModels();
     expect(mockLoadText).toHaveBeenCalledWith('txt');
-    expect(mockCallHook).toHaveBeenCalledWith('audio.preload');
     expect(mockWhisperState.loadModel).toHaveBeenCalled();
     // Image is deliberately excluded from boot preload (loads on demand).
     expect(mockLoadImage).not.toHaveBeenCalled();

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator, type BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
-import { View, StyleSheet } from 'react-native';
+import { Easing, View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
@@ -53,7 +53,6 @@ import {
   RootStackParamList,
   MainTabParamList,
 } from './types';
-import { useRegisteredScreens } from './screenRegistry';
 import { NewChatTabButton } from './NewChatTabButton';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -114,6 +113,11 @@ const createTabBarStyles = (colors: ThemeColors, _shadows: ThemeShadows) => ({
   },
 });
 
+const TAB_FADE = {
+  animation: 'timing' as const,
+  config: { duration: 80, easing: Easing.out(Easing.quad) },
+};
+
 const mainTabsStyles = StyleSheet.create({
   container: { flex: 1 },
 });
@@ -132,6 +136,9 @@ const MainTabs: React.FC = () => {
         screenOptions={({ route }) => ({
           headerShown: false,
           animation: 'fade',
+          // The stock fade is 150 ms linear, on top of the screen's own render: tabs felt slow.
+          // A short ease-out fade still never pops, but the new tab is there almost at once.
+          transitionSpec: TAB_FADE,
           lazy: true,
           tabBarStyle: {
             backgroundColor: colors.surface,
@@ -205,9 +212,6 @@ export const AppNavigator: React.FC = () => {
   const hasCompletedOnboarding = useAppStore((s) => s.hasCompletedOnboarding);
   const downloadedModels = useAppStore((s) => s.downloadedModels);
   const steps = useMemo(() => createSpotlightSteps(), []);
-  // Reactive: screens registered at runtime (Pro activation re-runs loadProFeatures)
-  // mount as real routes live, so navigate('McpServers') works without an app restart.
-  const registeredScreens = useRegisteredScreens();
 
   // Determine initial route
   let initialRoute: keyof RootStackParamList = 'Onboarding';
@@ -281,9 +285,6 @@ export const AppNavigator: React.FC = () => {
           component={GalleryScreen}
           options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
         />
-        {registeredScreens.map(s => (
-          <RootStack.Screen key={s.name} name={s.name as any} component={s.component} />
-        ))}
       </RootStack.Navigator>
     </SpotlightTourProvider>
   );

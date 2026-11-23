@@ -17,6 +17,7 @@ import { useTheme, useThemedStyles } from '../../theme';
 import { createStyles } from './styles';
 import { useChatScreen } from './useChatScreen';
 import { MessageRenderer } from './MessageRenderer';
+import { scrollToContentEnd } from './scrollToContentEnd';
 import { NoModelScreen, ChatHeader } from './ChatScreenComponents';
 import { ChatModalSection } from './ChatModalSection';
 import { ChatMessageArea } from './ChatMessageArea';
@@ -107,14 +108,14 @@ export const ChatScreen: React.FC = () => {
 
   React.useEffect(() => {
     if (chat.activeConversation?.messages.length && isNearBottomRef.current) {
-      setTimeout(() => { flatListRef.current?.scrollToEnd({ animated: true }); }, 100);
+      setTimeout(() => { scrollToContentEnd(flatListRef.current, true); }, 100);
     }
   }, [chat.activeConversation?.messages.length]);
 
   React.useEffect(() => {
     const event = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const sub = Keyboard.addListener(event, () => {
-      flatListRef.current?.scrollToEnd({ animated: true });
+      scrollToContentEnd(flatListRef.current, true);
     });
     return () => sub.remove();
   }, []);
@@ -129,7 +130,7 @@ export const ChatScreen: React.FC = () => {
       chat.setShowScrollToBottom(false);
       // FlatList re-renders via extraData; onContentSizeChange fires and scrolls.
       // Backup: scroll after items have had time to re-measure.
-      setTimeout(() => { flatListRef.current?.scrollToEnd({ animated: false }); }, 300);
+      setTimeout(() => { scrollToContentEnd(flatListRef.current, false); }, 300);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interfaceMode]);

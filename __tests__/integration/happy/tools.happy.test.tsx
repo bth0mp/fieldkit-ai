@@ -31,31 +31,6 @@ describe('happy — a tool runs and its result renders (heavy entry point)', () 
     await h.rtl.waitFor(() => { expect(h.view!.queryByText(/The answer is 4\./)).not.toBeNull(); });
   });
 
-  it('MCP: a registered MCP tool executes and its result reaches the answer', async () => {
-    const h = await setupChatScreen({ engine: 'litert' });
-    /* eslint-disable @typescript-eslint/no-var-requires */
-    const { registerToolExtension, _clearExtensionsForTesting } = require('../../../src/services/tools/extensions');
-    /* eslint-enable @typescript-eslint/no-var-requires */
-    _clearExtensionsForTesting();
-    let executed = false;
-    registerToolExtension({
-      id: 'mcp',
-      getSystemPromptHint: () => '',
-      getOpenAISchemas: () => [{ type: 'function', function: { name: 'mcp_weather', description: 'weather', parameters: { type: 'object', properties: {} } } }],
-      parseToolCalls: () => [],
-      stripFromVisibleText: (t: string) => t,
-      canHandle: (name: string) => name === 'mcp_weather',
-      execute: async (call: { id: string; name: string }) => { executed = true; return { toolCallId: call.id, name: call.name, content: 'Sunny, 24C', durationMs: 1 }; },
-      enabledToolCount: () => 1,
-    });
-    h.render();
-
-    await h.send('what is the weather', { toolCalls: [{ name: 'mcp_weather', arguments: {} }], content: 'It is sunny and 24C.' });
-    await h.rtl.waitFor(() => { expect(h.view!.queryByText(/It is sunny and 24C\./)).not.toBeNull(); });
-    expect(executed).toBe(true); // the real extension executed
-    _clearExtensionsForTesting();
-  });
-
   it('T044: two parallel calculator calls render two tool-result bubbles, both correct', async () => {
     const h = await setupChatScreen({ engine: 'litert' });
     h.enableToolViaUI('calculator');

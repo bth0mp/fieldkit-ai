@@ -1,0 +1,160 @@
+import { createChunkedStorage, type ChunkStore } from '../../../src/utils/chunkedStorage';
+
+/** An in-memory AsyncStorage whose single-key read refuses rows over a limit, like Android's cursor window. */
+function memoryStore(readLimit = Infinity, initial: Record<string, string> = {}) {
+  const values = new Map(Object.entries(initial));
+  const faults = { setFailures: 0 };
+  const read = (key: string): string | null => {
+    const value = values.get(key) ?? null;
+    if (value !== null && value.length > readLimit) {
+      throw new Error('Row too big to fit into CursorWindow');
+    }
+    return value;
+  };
+  const store: ChunkStore = {
+    getItem: async key => read(key),
+    multiGet: async keys => keys.map(key => [key, read(key)] as const),
+    multiSet: async pairs => {
+      if (faults.setFailures > 0) {
+        faults.setFailures -= 1;
+        throw new Error('database or disk is full');
+      }
+      for (const [key, value] of pairs) values.set(key, value);
+    },
+    multiRemove: async keys => {
+      for (const key of keys) values.delete(key);
+    },
+  };
+  return { store, values, faults };
+}
+
+const LIMIT = 2 * 1024 * 1024;
+
+describe('chunked storage', () => {
+  it('reads back a chat history larger than one Android row', async () => {
+    const { store, values } = memoryStore(LIMIT);
+    const storage = createChunkedStorage(store);
+    const history = JSON.stringify({ messages: 'x'.repeat(5 * LIMIT) });
+
+    await storage.setItem('chat', history);
+
+    expect([...values.values()].every(value => value.length <= LIMIT)).toBe(true);
+    expect(await createChunkedStorage(store).getItem('chat')).toBe(history);
+  });
+
+  it('keeps surrogate pairs whole across parts', async () => {
+    const { store, values } = memoryStore();
+    const storage = createChunkedStorage(store);
+    const history = `${'a'.repeat(256 * 1024 - 1)}😀${'b'.repeat(10)}`;
+
+    await storage.setItem('chat', history);
+
+    for (const [key, value] of values) {
+      if (key === 'chat') continue;
+      const last = value.charCodeAt(value.length - 1);
+      expect(last >= 0xd800 && last <= 0xdbff).toBe(false);
+    }
+    expect(await storage.getItem('chat')).toBe(history);
+  });
+
+  it('removes parts a shorter value no longer uses', async () => {
+    const { store, values } = memoryStore();
+    const storage = createChunkedStorage(store);
+    await storage.setItem('chat', 'x'.repeat(3 * 256 * 1024));
+
+    await storage.setItem('chat', 'short');
+
+    // The unused parts are emptied in the same write, so no text of the old value stays behind.
+    expect(values.get('chat::chunk:0')).toBe('short');
+    expect(values.get('chat::chunk:1')).toBe('');
+    expect(values.get('chat::chunk:2')).toBe('');
+    expect(await createChunkedStorage(store).getItem('chat')).toBe('short');
+  });
+
+  it('still reads the whole old value after a shrinking save fails', async () => {
+    const { store, faults } = memoryStore();
+    const storage = createChunkedStorage(store);
+    const old = 'x'.repeat(3 * 256 * 1024);
+    await storage.setItem('chat', old);
+
+    faults.setFailures = 1;
+    await expect(storage.setItem('chat', 'short')).rejects.toThrow(/disk is full/);
+
+    expect(await createChunkedStorage(store).getItem('chat')).toBe(old);
+  });
+
+  it('leaves no text of old parts after a later save once a shrinking save failed', async () => {
+    const { store, values, faults } = memoryStore();
+    const storage = createChunkedStorage(store);
+    await storage.setItem('chat', 'x'.repeat(3 * 256 * 1024));
+
+    faults.setFailures = 1;
+    await expect(storage.setItem('chat', 'short')).rejects.toThrow();
+    await storage.setItem('chat', 'shorter');
+
+    for (const [key, value] of values) {
+      if (key.startsWith('chat::chunk:') && key !== 'chat::chunk:0') expect(value).toBe('');
+    }
+    expect(await createChunkedStorage(store).getItem('chat')).toBe('shorter');
+  });
+
+  it('ends with the last value when saves overlap, shrinking then growing and the reverse', async () => {
+    const { store } = memoryStore();
+    const storage = createChunkedStorage(store);
+    const big = 'b'.repeat(3 * 256 * 1024);
+    await storage.setItem('chat', big);
+
+    await Promise.all([storage.setItem('chat', 'small'), storage.setItem('chat', `${big}z`)]);
+    expect(await createChunkedStorage(store).getItem('chat')).toBe(`${big}z`);
+
+    await Promise.all([storage.setItem('chat', big), storage.setItem('chat', 'tiny')]);
+    expect(await createChunkedStorage(store).getItem('chat')).toBe('tiny');
+  });
+
+  it('recovers an older row that outgrew the read window, then saves it in parts', async () => {
+    const history = 'h'.repeat(LIMIT + 1);
+    const { store, values } = memoryStore(LIMIT, { chat: history });
+    const storage = createChunkedStorage(store, async key => values.get(key) ?? null);
+
+    expect(await storage.getItem('chat')).toBe(history);
+    await storage.setItem('chat', history);
+
+    expect(await createChunkedStorage(store).getItem('chat')).toBe(history);
+  });
+
+  it('fails the read rather than return part of a history', async () => {
+    const { store, values } = memoryStore();
+    await createChunkedStorage(store).setItem('chat', 'x'.repeat(2 * 256 * 1024));
+    values.delete('chat::chunk:1');
+
+    await expect(createChunkedStorage(store).getItem('chat')).rejects.toThrow(/missing/);
+  });
+
+  it('fails the read when a part inside the saved count is blank', async () => {
+    const { store, values } = memoryStore();
+    await createChunkedStorage(store).setItem('chat', 'x'.repeat(3 * 256 * 1024));
+    values.set('chat::chunk:1', '');
+
+    await expect(createChunkedStorage(store).getItem('chat')).rejects.toThrow(/missing/);
+  });
+
+  it('reads a value saved by an older build as it is, then writes it in parts', async () => {
+    const { store, values } = memoryStore(LIMIT, { chat: '{"state":{"a":1}}' });
+    const storage = createChunkedStorage(store);
+
+    expect(await storage.getItem('chat')).toBe('{"state":{"a":1}}');
+    await storage.setItem('chat', '{"state":{"a":2}}');
+
+    expect(values.get('chat')).toBe('fieldkit-chunked:v1:1');
+    expect(await createChunkedStorage(store).getItem('chat')).toBe('{"state":{"a":2}}');
+  });
+
+  it('keeps an emoji whole when it falls on a part boundary', async () => {
+    const { store } = memoryStore();
+    const value = `${'a'.repeat(256 * 1024 - 1)}😀b`;
+
+    await createChunkedStorage(store).setItem('chat', value);
+
+    expect(await createChunkedStorage(store).getItem('chat')).toBe(value);
+  });
+});

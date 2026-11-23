@@ -10,6 +10,7 @@
  * leaving it failed for the user to retry by hand. The gap is the `resumable` flag,
  * not a Platform.OS branch in callers.
  */
+import RNFS from 'react-native-fs';
 import { Platform } from 'react-native';
 import { modelManager } from '../../modelManager';
 import { activeModelService } from '../../activeModelService';
@@ -163,8 +164,15 @@ export const textProvider: DownloadProvider = {
       await activeModelService.unloadTextModel()
         .catch(err => logger.log(`[DL-SM] ${id} remove: unload failed err=${msg(err)}`));
     }
-    await modelManager.deleteModel(key)
-      .catch(err => logger.log(`[DL-SM] ${id} remove: delete failed err=${msg(err)}`));
+    // The file leaves next. If the disk refuses, the model stays the person's (still listed, still on
+    // disk) and the caller hears it, so the screen can say so and offer a retry.
+    const registered = (await modelManager.getDownloadedModels()).find(m => m.id === key);
+    try {
+      await modelManager.deleteModel(key);
+    } catch (err) {
+      logger.log(`[DL-SM] ${id} remove: delete failed err=${msg(err)}`);
+      if (registered && await RNFS.exists(registered.filePath)) throw err;
+    }
     useAppStore.getState().removeDownloadedModel(key);
   },
 

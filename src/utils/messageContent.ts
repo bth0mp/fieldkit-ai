@@ -1,6 +1,6 @@
 /**
  * The parsed shape of a model message: reasoning split from the visible response.
- * Owned HERE (the util that produces it via parseThinkingContent) so store/service/pro layers
+ * Owned HERE (the util that produces it via parseThinkingContent) so store and service layers
  * import it without a backwards dependency on the ChatMessage component; ChatMessage/types
  * re-exports it for the UI. (Was imported FROM the component — the wrong direction.)
  */
@@ -133,13 +133,13 @@ const GEMMA4_THINK_CLOSE = new RegExp(GEMMA4_THINK_CLOSE_SRC, 'gi');
 //     3. <|channel|>analysis    Qwen channel format
 //   KWARG switch - a template referencing `enable_thinking` honors the
 //     chat_template_kwargs toggle, so the model reasons on demand even without a
-//     literal <think> in the template (verified: Qwen3.5 on the Gateway).
+//     literal <think> in the template (verified: Qwen3.5 on a llama.cpp server).
 //
 // This does NOT own parseThinkingContent's positional parsing (that stays in
 // ChatMessage/utils.ts and matches the same OUTPUT delimiters to slice content). It
 // IS the single predicate for "does a chat_template indicate reasoning capability",
 // shared by BOTH local model load (llmHelpers.detectThinkingSupport) and remote
-// capability probing (remoteModelCapabilities) so on-device and gateway detection
+// capability probing (remoteModelCapabilities) so on-device and remote-server detection
 // cannot diverge - the OD7 divergence was this list omitting enable_thinking.
 const REASONING_TEMPLATE_MARKERS: RegExp[] = [
   /<think>/i,
@@ -255,7 +255,7 @@ export function prepareMessageForSpeech(content: string): string {
   return stripMarkdownForSpeech(stripControlTokens(content));
 }
 
-// ── Model-output parsing (moved from ChatMessage/utils so store/service/pro layers
+// ── Model-output parsing (moved from ChatMessage/utils so store and service layers
 //    can import the ONE parser without a backwards component dependency) ──────────
 /**
  * Parse content that may contain thinking/reasoning sections.

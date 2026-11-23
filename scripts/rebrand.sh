@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Rename the app: display name everywhere it is shown, plus the Android applicationId.
 # Usage: scripts/rebrand.sh "<App Name>" <application.id>
-# Leaves the Kotlin namespace (ai.offgridmobile) and keychain service names alone.
+# Leaves the Kotlin package (com.bth0mp.fieldkit) and the keychain service names alone.
 set -euo pipefail
 [ $# -eq 2 ] || { echo "usage: $0 \"<App Name>\" <application.id>" >&2; exit 2; }
 cd "$(dirname "$0")/.."

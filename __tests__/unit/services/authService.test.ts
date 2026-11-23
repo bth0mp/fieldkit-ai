@@ -17,8 +17,9 @@ jest.mock('react-native-keychain', () => ({
   },
 }));
 
-import { authService } from '../../../src/services/authService';
+import { authService, PassphraseCheckUnavailable, PassphraseSaveFailed } from '../../../src/services/authService';
 import * as Keychain from 'react-native-keychain';
+import { EARLIER_AUTH_SERVICE } from '../../../src/services/earlierIds';
 
 describe('AuthService', () => {
   beforeEach(() => {
@@ -40,7 +41,7 @@ describe('AuthService', () => {
         'passphrase_hash',
         expect.any(String),
         expect.objectContaining({
-          service: 'ai.offgridmobile.auth',
+          service: 'com.bth0mp.fieldkit.auth',
         }),
       );
     });
@@ -76,7 +77,7 @@ describe('AuthService', () => {
       (Keychain.getGenericPassword as jest.Mock).mockResolvedValue({
         username: 'passphrase_hash',
         password: storedHash,
-        service: 'ai.offgridmobile.auth',
+        service: 'com.bth0mp.fieldkit.auth',
       });
 
       const result = await authService.verifyPassphrase('correctPassphrase');
@@ -98,7 +99,7 @@ describe('AuthService', () => {
       (Keychain.getGenericPassword as jest.Mock).mockResolvedValue({
         username: 'passphrase_hash',
         password: storedHash,
-        service: 'ai.offgridmobile.auth',
+        service: 'com.bth0mp.fieldkit.auth',
       });
 
       const result = await authService.verifyPassphrase('wrongPassphrase');
@@ -114,14 +115,14 @@ describe('AuthService', () => {
       expect(result).toBe(false);
     });
 
-    it('returns false when keychain retrieval fails', async () => {
+    it('says it could not check, not "wrong", when keychain retrieval fails', async () => {
+      // A keychain that cannot be read is not a wrong passphrase: answering false charged the person an
+      // attempt toward the lockout for typing the right one.
       (Keychain.getGenericPassword as jest.Mock).mockRejectedValue(
         new Error('Keychain error'),
       );
 
-      const result = await authService.verifyPassphrase('anyPassphrase');
-
-      expect(result).toBe(false);
+      await expect(authService.verifyPassphrase('anyPassphrase')).rejects.toBeInstanceOf(PassphraseCheckUnavailable);
     });
   });
 
@@ -133,14 +134,14 @@ describe('AuthService', () => {
       (Keychain.getGenericPassword as jest.Mock).mockResolvedValue({
         username: 'passphrase_hash',
         password: 'somehash',
-        service: 'ai.offgridmobile.auth',
+        service: 'com.bth0mp.fieldkit.auth',
       });
 
       const result = await authService.hasPassphrase();
 
       expect(result).toBe(true);
       expect(Keychain.getGenericPassword).toHaveBeenCalledWith({
-        service: 'ai.offgridmobile.auth',
+        service: 'com.bth0mp.fieldkit.auth',
       });
     });
 
@@ -174,8 +175,20 @@ describe('AuthService', () => {
 
       expect(result).toBe(true);
       expect(Keychain.resetGenericPassword).toHaveBeenCalledWith({
-        service: 'ai.offgridmobile.auth',
+        service: 'com.bth0mp.fieldkit.auth',
       });
+    });
+
+    it('also clears the entry an earlier version saved, and reports a failure of either', async () => {
+      (Keychain.resetGenericPassword as jest.Mock).mockResolvedValue(true);
+      expect(await authService.removePassphrase()).toBe(true);
+      expect(Keychain.resetGenericPassword).toHaveBeenCalledWith({ service: EARLIER_AUTH_SERVICE });
+
+      (Keychain.resetGenericPassword as jest.Mock).mockClear();
+      (Keychain.resetGenericPassword as jest.Mock).mockImplementation(({ service }: { service: string }) =>
+        service === EARLIER_AUTH_SERVICE ? Promise.reject(new Error('locked')) : Promise.resolve(true));
+      expect(await authService.removePassphrase()).toBe(false);
+      expect(Keychain.resetGenericPassword).toHaveBeenCalledTimes(2);
     });
 
     it('returns false when keychain reset fails', async () => {
@@ -209,7 +222,7 @@ describe('AuthService', () => {
       (Keychain.getGenericPassword as jest.Mock).mockResolvedValue({
         username: 'passphrase_hash',
         password: storedHash,
-        service: 'ai.offgridmobile.auth',
+        service: 'com.bth0mp.fieldkit.auth',
       });
 
       const result = await authService.changePassphrase('oldPass', 'newPass');
@@ -217,6 +230,31 @@ describe('AuthService', () => {
       expect(result).toBe(true);
       // setGenericPassword called twice: once for initial set, once for change
       expect(Keychain.setGenericPassword).toHaveBeenCalledTimes(2);
+    });
+
+    it('throws and stores nothing when the keychain cannot be read', async () => {
+      (Keychain.getGenericPassword as jest.Mock).mockRejectedValue(new Error('Keychain error'));
+
+      await expect(authService.changePassphrase('oldPass', 'newPass')).rejects.toBeInstanceOf(PassphraseCheckUnavailable);
+      expect(Keychain.setGenericPassword).not.toHaveBeenCalled();
+    });
+
+    it('throws, not "incorrect", when the new passphrase cannot be saved, and the old one still verifies', async () => {
+      let stored = '';
+      (Keychain.setGenericPassword as jest.Mock).mockImplementation((_k: string, hash: string) => {
+        stored = hash;
+        return Promise.resolve(true);
+      });
+      (Keychain.getGenericPassword as jest.Mock).mockImplementation(() =>
+        Promise.resolve({ username: 'passphrase_hash', password: stored, service: 'com.bth0mp.fieldkit.auth' }),
+      );
+      await authService.setPassphrase('oldPass');
+
+      (Keychain.setGenericPassword as jest.Mock).mockRejectedValue(new Error('Keychain write error'));
+      await expect(authService.changePassphrase('oldPass', 'newPass')).rejects.toBeInstanceOf(PassphraseSaveFailed);
+
+      expect(await authService.verifyPassphrase('oldPass')).toBe(true);
+      expect(await authService.verifyPassphrase('newPass')).toBe(false);
     });
 
     it('returns false when old passphrase is incorrect', async () => {
@@ -233,7 +271,7 @@ describe('AuthService', () => {
       (Keychain.getGenericPassword as jest.Mock).mockResolvedValue({
         username: 'passphrase_hash',
         password: storedHash,
-        service: 'ai.offgridmobile.auth',
+        service: 'com.bth0mp.fieldkit.auth',
       });
 
       const result = await authService.changePassphrase(

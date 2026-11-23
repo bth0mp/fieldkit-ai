@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { LIST_CLIPPING_PROPS } from '../../constants/listClipping';
 import { View, Text, FlatList, ScrollView, TextInput, ActivityIndicator, RefreshControl, TouchableOpacity, InteractionManager, Platform } from 'react-native';
 import DeviceInfo from 'react-native-device-info';
 import Icon from 'react-native-vector-icons/Feather';
@@ -6,7 +7,7 @@ import { fileExceedsBudget } from '../../services/memoryBudget';
 import { AttachStep, useSpotlightTour } from 'react-native-spotlight-tour';
 import { Card, ModelCard } from '../../components';
 import { AnimatedEntry } from '../../components/AnimatedEntry';
-import { CustomAlert, hideAlert, showAlert, AlertState } from '../../components/CustomAlert';
+import { hideAlert, showAlert, AlertState } from '../../components/CustomAlert';
 import { consumePendingSpotlight, peekPendingSpotlight, setPendingSpotlight } from '../../components/onboarding/spotlightState';
 import { DOWNLOAD_MANAGER_STEP_INDEX } from '../../components/onboarding/spotlightConfig';
 import { useTheme, useThemedStyles } from '../../theme';
@@ -57,7 +58,7 @@ type Props = Pick<ModelsScreenViewModel,
   | 'filteredResults' | 'recommendedAsModelInfo' | 'trendingAsModelInfo'
   | 'ramGB' | 'deviceRecommendation'
   | 'downloadedModels'
-  | 'alertState' | 'setAlertState'
+  | 'setAlertState'
   | 'focusTrigger'
   | 'handleSearch' | 'handleRefresh'
   | 'handleSelectModel' | 'handleDownload' | 'handleRepairMmProj' | 'handleCancelDownload' | 'handleDeleteModel'
@@ -73,7 +74,7 @@ type Props = Pick<ModelsScreenViewModel,
 
 type DetailProps = Pick<Props,
   | 'modelFiles' | 'isLoadingFiles' | 'filterState' | 'ramGB'
-  | 'alertState' | 'setAlertState'
+  | 'setAlertState'
   | 'getDownloadedModel' | 'isModelDownloaded' | 'isRepairingVisionModel'
   | 'handleDownload' | 'handleRepairMmProj' | 'handleCancelDownload' | 'handleDeleteModel'
 > & { selectedModel: ModelInfo; onBack: () => void; onChosen: () => void; onError: (message: string) => void };
@@ -104,7 +105,7 @@ function buildFileDownloadHandler({ s, fileName, sizeBytes, ramGB, proceedDownlo
 
 const ModelDetailView: React.FC<DetailProps> = ({
   selectedModel, modelFiles, isLoadingFiles, filterState, ramGB,
-  alertState, setAlertState, onBack, onChosen, onError,
+  setAlertState, onBack, onChosen, onError,
   getDownloadedModel, isModelDownloaded, isRepairingVisionModel,
   handleDownload, handleRepairMmProj, handleCancelDownload, handleDeleteModel,
 }) => {
@@ -271,6 +272,7 @@ const ModelDetailView: React.FC<DetailProps> = ({
         <View style={styles.loadingContainer}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
         <FlatList
+          {...LIST_CLIPPING_PROPS}
           data={modelFiles
             .filter(f => f.size > 0 && !fileExceedsBudget(f.size, ramGB) && (filterState.quant === 'all' || f.name.includes(filterState.quant)))
             .sort((a, b) => {
@@ -287,7 +289,7 @@ const ModelDetailView: React.FC<DetailProps> = ({
           ListEmptyComponent={<Card style={styles.emptyCard}><Text style={styles.emptyText}>No compatible files found for this model.</Text></Card>}
         />
       )}
-      <CustomAlert {...alertState} onClose={() => setAlertState(hideAlert())} />
+      {/* The Models screen shows this view's alerts; a second CustomAlert here opened every alert twice. */}
     </View>
   );
 };
@@ -351,7 +353,7 @@ export const TextModelsTab: React.FC<Props> = (props) => {
     filterState, textFiltersVisible, setTextFiltersVisible,
     filteredResults, recommendedAsModelInfo, trendingAsModelInfo, ramGB, deviceRecommendation,
     downloadedModels,
-    alertState, setAlertState, focusTrigger,
+    setAlertState, focusTrigger,
     handleSearch, handleRefresh, handleSelectModel, handleDownload, handleRepairMmProj, handleCancelDownload, handleDeleteModel,
     clearFilters, toggleFilterDimension, toggleOrg,
     setTypeFilter, setSourceFilter, setSizeFilter, setQuantFilter, setSortOption,
@@ -381,7 +383,6 @@ export const TextModelsTab: React.FC<Props> = (props) => {
         isLoadingFiles={isLoadingFiles}
         filterState={filterState}
         ramGB={ramGB}
-        alertState={alertState}
         setAlertState={setAlertState}
         onBack={onBack}
         onChosen={onChosen}
@@ -452,6 +453,7 @@ export const TextModelsTab: React.FC<Props> = (props) => {
         </View>
       ) : (
         <FlatList
+          {...LIST_CLIPPING_PROPS}
           data={hasSearched ? filteredResults : [...(Platform.OS === 'android' ? [LITERT_RECOMMENDED_MODEL] : []), ...recommendedAsModelInfo]}
           renderItem={renderModelItem}
           keyExtractor={item => item.id}

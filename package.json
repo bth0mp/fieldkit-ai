@@ -1,5 +1,5 @@
 {
-  "name": "offgrid-mobile",
+  "name": "fieldkit-ai",
   "version": "0.5.0",
   "private": true,
   "scripts": {
@@ -16,7 +16,7 @@
     "test:e2e:all": "./scripts/run-tests.sh",
     "test:e2e:single": "maestro test",
     "test:android": "cd android && bash ./gradlew :app:testDebugUnitTest",
-    "test:ios": "cd ios && xcodebuild test -workspace OffgridMobile.xcworkspace -scheme OffgridMobile -destination 'platform=iOS Simulator,name=iPhone 16e' -only-testing:OffgridMobileTests | (xcpretty 2>/dev/null || cat)",
+    "test:ios": "cd ios && xcodebuild test -workspace Fieldkit.xcworkspace -scheme Fieldkit -destination 'platform=iOS Simulator,name=iPhone 16e' -only-testing:FieldkitTests | (xcpretty 2>/dev/null || cat)",
     "postinstall": "patch-package",
     "depcruise": "depcruise src --config .dependency-cruiser.js",
     "knip": "knip"
@@ -39,7 +39,6 @@
     "@testing-library/react-native": "^13.3.3",
     "@types/react-native-vector-icons": "^6.4.18",
     "fzstd": "0.1.1",
-    "js-sha256": "^0.11.0",
     "llama.rn": "^0.12.5",
     "node-html-parser": "^7.1.0",
     "patch-package": "^8.0.1",
@@ -52,10 +51,8 @@
     "react-native-executorch": "^0.8.1",
     "react-native-executorch-bare-resource-fetcher": "^0.8.0",
     "react-native-gesture-handler": "^2.30.0",
-    "react-native-get-random-values": "^1.11.0",
     "react-native-haptic-feedback": "^2.3.3",
     "react-native-image-picker": "^8.2.1",
-    "react-native-inappbrowser-reborn": "^3.7.1",
     "react-native-keyboard-controller": "^1.21.12",
     "react-native-keychain": "^10.0.0",
     "react-native-reanimated": "^4.2.1",

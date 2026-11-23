@@ -486,8 +486,8 @@ describe('ModelSettingsScreen', () => {
 
       const maxTokensSlider = sliders.find((s: any) => s.props.value === 1024);
       if (maxTokensSlider) {
-        fireEvent(maxTokensSlider, 'slidingComplete', 2048);
-        expect(useAppStore.getState().settings.maxTokens).toBe(2048);
+        fireEvent(maxTokensSlider, 'slidingComplete', 1280);
+        expect(useAppStore.getState().settings.maxTokens).toBe(1280);
       }
     });
 
@@ -752,10 +752,9 @@ describe('ModelSettingsScreen', () => {
     });
 
     it('shows K format when maxTokens >= 1024', () => {
-      useAppStore.getState().updateSettings({ maxTokens: 2048 });
+      useAppStore.getState().updateSettings({ maxTokens: 1536 });
       const { getAllByText } = renderWithSections('text');
-      // 2.0K appears for both maxTokens and contextLength (both 2048)
-      expect(getAllByText('2.0K').length).toBeGreaterThanOrEqual(1);
+      expect(getAllByText('1.5K').length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -764,7 +763,7 @@ describe('ModelSettingsScreen', () => {
   // ============================================================================
   describe('context length display formatting', () => {
     it('shows raw number when contextLength < 1024', () => {
-      useAppStore.getState().updateSettings({ contextLength: 512, nBatch: 256 });
+      useAppStore.getState().updateSettings({ contextLength: 512, maxTokens: 128, nBatch: 256 });
       const { getAllByText } = renderWithSections('text');
       expect(getAllByText('512').length).toBe(1);
     });
@@ -992,7 +991,7 @@ describe('Speech sections — Transcription (STT) + Text to Speech (TTS)', () =>
     expect(view.getByText('None selected — tap to choose')).toBeTruthy();
   });
 
-  it('does NOT show Text to Speech without the pro TTS slot (free build)', () => {
+  it('does NOT show Text to Speech when no TTS slot is registered', () => {
     const view = renderScreen();
     expect(view.queryByTestId('tts-accordion')).toBeNull();
   });

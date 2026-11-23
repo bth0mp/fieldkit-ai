@@ -168,7 +168,7 @@ describe('BATCH 9 — debugLogFile size-cap / rotation (real flush logic)', () =
   });
 
   it('getDebugLogPath points at the app Documents container', () => {
-    expect(mod.getDebugLogPath()).toBe('/mock/documents/offgrid-debug.log');
+    expect(mod.getDebugLogPath()).toBe('/mock/documents/fieldkit-debug.log');
   });
 
   it('initDebugLogFile is a no-op outside __DEV__', async () => {

@@ -12,7 +12,7 @@ import { deriveEngineCapabilities } from '../../../src/services/engines';
 const NO_LLAMA = { loaded: false, vision: false, audio: false, tools: false, thinking: false };
 
 describe('deriveEngineCapabilities — single source for active-model capabilities', () => {
-  describe('remote (gateway) model active', () => {
+  describe('remote-server model active', () => {
     it('takes vision/tools/thinking from the declared remote caps; audio not tracked', () => {
       const caps = deriveEngineCapabilities({
         isRemote: true,

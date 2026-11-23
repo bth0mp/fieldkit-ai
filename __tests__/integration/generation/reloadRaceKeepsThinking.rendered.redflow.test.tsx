@@ -1,6 +1,6 @@
 /**
  * RED-FLOW (UI integration, HEAVY entry point) — a send that lands DURING a settings reload must still
- * honor the model's thinking capability. Device ground truth (offgrid-debug.log 2026-07-13, gemma-4-E2B):
+ * honor the model's thinking capability. Device ground truth (gemma-4-E2B):
  *   18:50:26.905  GPU init succeeded            → llm.ts publishes this.context (isModelLoaded() = true)
  *   18:50:27.149  mmproj/multimodal phase starts (944.5 MB — seconds long on device)
  *   18:50:27.733  user sends "Hi"               → [GEN-SM] ensureModelReady → already loaded

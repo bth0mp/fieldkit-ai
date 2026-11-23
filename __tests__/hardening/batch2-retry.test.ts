@@ -6,7 +6,7 @@
  *   - modelResidency / hardware        (native memory diagnostics)
  *   - regenerateResponseFn             (kicks off the native LLM decode — spied, like the
  *                                       existing no-model test does)
- *   - hookRegistry.callHook            (audio-stop hook; pro side-effect boundary)
+ *   - hookRegistry.callHook            (audio-stop hook; side-effect boundary)
  *
  * The REAL, asserted behavior is the retry ORCHESTRATION in handleRetryMessageFn:
  *   16/17 — retry on a completed ASSISTANT message finds the preceding USER message,

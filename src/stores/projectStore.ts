@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { persist } from 'zustand/middleware';
+import { createHydrationGatedStorage } from '../utils/hydrationGatedStorage';
 import { Project } from '../types';
 import { generateId } from '../utils/generateId';
 import { ragService } from '../services/rag';
@@ -84,6 +84,8 @@ When editing, explain your changes. When brainstorming, offer multiple options.`
   },
 ];
 
+const projectStorage = createHydrationGatedStorage<ProjectState>();
+
 export const useProjectStore = create<ProjectState>()(
   persist(
     (set, get) => ({
@@ -151,7 +153,10 @@ export const useProjectStore = create<ProjectState>()(
     }),
     {
       name: 'local-llm-project-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: projectStorage.storage,
+      onRehydrateStorage: projectStorage.onRehydrateStorage(),
+      merge: projectStorage.merge<ProjectState>(),
     }
   )
 );
+projectStorage.attach(useProjectStore);

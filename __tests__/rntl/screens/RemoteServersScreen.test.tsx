@@ -116,6 +116,7 @@ function createMockServer(overrides: Partial<any> = {}) {
 describe('RemoteServersScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (remoteServerManager.testConnection as jest.Mock).mockResolvedValue({ success: true, latency: 10 });
     // Reset store state
     useRemoteServerStore.setState({
       servers: [],
@@ -142,7 +143,7 @@ describe('RemoteServersScreen', () => {
 
     it('offers no desktop app link from the empty state', () => {
       const { queryByText } = render(<RemoteServersScreen />);
-      expect(queryByText(/Off Grid/)).toBeNull();
+      expect(queryByText(/desktop app|download.*desktop/i)).toBeNull();
     });
 
     it('shows "Add Server" button in empty state', () => {
@@ -246,11 +247,11 @@ describe('RemoteServersScreen', () => {
   // ==========================================================================
   describe('test connection', () => {
     it('calls testConnection when Test button pressed', async () => {
-      const mockTestConnection = jest.fn().mockResolvedValue({ success: true, latency: 50 });
+      const mockTestConnection = remoteServerManager.testConnection as jest.Mock;
+      mockTestConnection.mockResolvedValue({ success: true, latency: 50 });
       const server = createMockServer();
       useRemoteServerStore.setState({
         servers: [server],
-        testConnection: mockTestConnection,
       });
 
       const { getByText } = render(<RemoteServersScreen />);
@@ -262,11 +263,11 @@ describe('RemoteServersScreen', () => {
     });
 
     it('shows success alert on successful test', async () => {
-      const mockTestConnection = jest.fn().mockResolvedValue({ success: true, latency: 100 });
+      const mockTestConnection = remoteServerManager.testConnection as jest.Mock;
+      mockTestConnection.mockResolvedValue({ success: true, latency: 100 });
       const server = createMockServer();
       useRemoteServerStore.setState({
         servers: [server],
-        testConnection: mockTestConnection,
       });
 
       const { getByText } = render(<RemoteServersScreen />);
@@ -278,14 +279,14 @@ describe('RemoteServersScreen', () => {
     });
 
     it('shows error alert on failed test', async () => {
-      const mockTestConnection = jest.fn().mockResolvedValue({
+      const mockTestConnection = remoteServerManager.testConnection as jest.Mock;
+      mockTestConnection.mockResolvedValue({
         success: false,
         error: 'Connection refused',
       });
       const server = createMockServer();
       useRemoteServerStore.setState({
         servers: [server],
-        testConnection: mockTestConnection,
       });
 
       const { getByText } = render(<RemoteServersScreen />);
@@ -297,11 +298,11 @@ describe('RemoteServersScreen', () => {
     });
 
     it('shows error alert on exception', async () => {
-      const mockTestConnection = jest.fn().mockRejectedValue(new Error('Network error'));
+      const mockTestConnection = remoteServerManager.testConnection as jest.Mock;
+      mockTestConnection.mockRejectedValue(new Error('Network error'));
       const server = createMockServer();
       useRemoteServerStore.setState({
         servers: [server],
-        testConnection: mockTestConnection,
       });
 
       const { getByText } = render(<RemoteServersScreen />);

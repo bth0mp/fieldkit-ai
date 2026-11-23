@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { LIST_CLIPPING_PROPS } from '../constants/listClipping';
 import { View, Text, TextInput, TouchableOpacity, SectionList, ActivityIndicator, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -202,6 +203,7 @@ export const GuideLibraryScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
       <SectionList
+        {...LIST_CLIPPING_PROPS}
         sections={sections}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.content}

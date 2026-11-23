@@ -26,7 +26,7 @@ export interface EngineCapabilities {
 export type RemoteCaps = { supportsVision?: boolean; supportsToolCalling?: boolean; supportsThinking?: boolean } | null;
 
 export interface CapabilityInputs {
-  /** A remote (gateway) model is active — its declared capabilities win. */
+  /** A remote-server model is active — its declared capabilities win. */
   isRemote: boolean;
   remoteCaps?: RemoteCaps;
   /** The active LOCAL model's engine ('litert' | 'llama' | ...) and LiteRT capability flags. */
@@ -259,7 +259,7 @@ export function remoteTextModelChosen(): boolean {
 }
 
 /**
- * Is a REMOTE (gateway / OpenAI-compatible) text model the ACTIVE text engine right now?
+ * Is a REMOTE (OpenAI-compatible server) text model the ACTIVE text engine right now?
  *
  * THE single source of truth for "route text to a remote provider" — generationService.isUsingRemoteProvider and
  * generateStandalone call it. A chosen remote model (remoteTextModelChosen) always answers. Otherwise, with only a
@@ -298,7 +298,7 @@ export async function generateStandalone(
   onToken?: (token: string) => void,
   opts?: { conversationId?: string },
 ): Promise<string> {
-  // Remote/gateway text model active with no local engine loaded: enhancement used to
+  // Remote-server text model active with no local engine loaded: enhancement used to
   // fall through to the (unloaded) local llama and throw, so it was silently skipped
   // (Q8). Route the one-shot through the active provider, streaming content so the UI
   // can show live progress (B30b). Thinking OFF — enhancement is a utility rewrite.

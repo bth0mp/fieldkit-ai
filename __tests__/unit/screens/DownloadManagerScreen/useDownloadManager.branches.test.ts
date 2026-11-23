@@ -186,14 +186,14 @@ describe('handleDeleteItem', () => {
     expect(mockMDS.remove).toHaveBeenCalledWith('image:m1');
   });
 
-  it('image: service.remove failure shows error alert', async () => {
+  it('image: service.remove failure says the files could not be removed', async () => {
     mockMDS.remove.mockRejectedValueOnce(new Error('del boom'));
     configureStores();
     appState.downloadedImageModels = [{ id: 'm1', name: 'Image M1', size: 2000, modelPath: '/p' }];
     const { result } = renderHook(() => useDownloadManager());
     act(() => { result.current.handleDeleteItem({ modelType: 'image', modelId: 'm1' } as any); });
     await act(async () => { await pressButton(result, 'Delete'); });
-    expect(shownAlertTitles).toContain('Error');
+    expect(shownAlertTitles).toContain('Model not removed');
   });
 
   it('text: no-op when model not in downloadedModels', () => {
@@ -212,14 +212,14 @@ describe('handleDeleteItem', () => {
     expect(mockMDS.remove).toHaveBeenCalledWith('text:t1');
   });
 
-  it('text: service.remove failure shows error alert', async () => {
+  it('text: service.remove failure says the files could not be removed', async () => {
     mockMDS.remove.mockRejectedValueOnce(new Error('del boom'));
     configureStores();
     appState.downloadedModels = [{ id: 't1', fileName: 'm.gguf', author: 'a', quantization: 'Q4', engine: 'llama' }];
     const { result } = renderHook(() => useDownloadManager());
     act(() => { result.current.handleDeleteItem({ modelType: 'text', modelId: 't1' } as any); });
     await act(async () => { await pressButton(result, 'Delete'); });
-    expect(shownAlertTitles).toContain('Error');
+    expect(shownAlertTitles).toContain('Model not removed');
   });
 });
 

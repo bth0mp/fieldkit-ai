@@ -78,7 +78,7 @@ async function addServer(name: string, host: string, models: string[]) {
   rtl.act(() => { nav.navigate('RemoteServers'); });
   rtl.fireEvent.press(await rtl.waitFor(() => ui.getByText(/^Add (Another )?Server$/), TIMEOUT));
   rtl.fireEvent.changeText(await rtl.waitFor(() => ui.getByPlaceholderText('e.g., Ollama on my laptop'), TIMEOUT), name);
-  rtl.fireEvent.changeText(ui.getByPlaceholderText('http://192.168.1.50:7878'), host);
+  rtl.fireEvent.changeText(ui.getByPlaceholderText('http://192.168.1.50:8080'), host);
   rtl.fireEvent.press(ui.getByText('Test Connection'));
   await rtl.waitFor(() => expect(ui.queryByText(/Connected \(/)).not.toBeNull(), TIMEOUT);
   const buttons = ui.getAllByText('Add Server');

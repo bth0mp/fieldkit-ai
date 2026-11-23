@@ -6,7 +6,7 @@
  * model are already configured ('hit continue, it skipped onboarding — good UX')." This locks that happy
  * path as a regression guard.
  *
- * Product-correct outcome (OGAM user's view): while on the ModelDownload onboarding step (the "remaining
+ * Product-correct outcome (the user's view): while on the ModelDownload onboarding step (the "remaining
  * onboarding"), if the user connects to a network server that has a model, tapping "Continue" on the
  * "Connected!" sheet drops them into the main app (the tab bar / Home) and does NOT leave them on — or
  * bounce them back to — the ModelDownload onboarding step.
@@ -78,7 +78,7 @@ async function addAndConnectServerViaUI(ui: ReturnType<typeof render>) {
 
   // Fill the real modal (targeted by placeholders, like the RemoteServersScreen flow).
   fireEvent.changeText(await waitFor(() => ui.getByPlaceholderText('e.g., Ollama on my laptop')), 'My Desktop');
-  fireEvent.changeText(ui.getByPlaceholderText('http://192.168.1.50:7878'), 'http://localhost:1234');
+  fireEvent.changeText(ui.getByPlaceholderText('http://192.168.1.50:8080'), 'http://localhost:1234');
 
   // Test Connection first — the real probe runs over the faked /v1/models. Save stays disabled until it
   // succeeds, so this is a required real step (mirrors the real add-server UX).

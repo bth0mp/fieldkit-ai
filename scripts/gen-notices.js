@@ -104,7 +104,7 @@ const native = NATIVE.map(n => {
 
 const upstreamLicense = readFileSync(join(ROOT, 'LICENSE'), 'utf8').replace(/\r\n/g, '\n').trim();
 const notices = {
-  base: { title: 'Off Grid AI (the open-source app this one is based on)', license: 'MIT', body: upstreamLicense },
+  base: { title: 'MIT-licensed code this app includes', license: 'MIT', body: upstreamLicense },
   native,
   guides: GUIDES,
   packages,

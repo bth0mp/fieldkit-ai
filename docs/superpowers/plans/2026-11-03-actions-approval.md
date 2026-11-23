@@ -233,12 +233,12 @@ git push origin main
 Requires the local toolchain (voice plan, Task 1).
 
 **Files:**
-- Create: `android/app/src/main/java/ai/offgridmobile/calendar/FieldkitCalendarModule.kt` and `FieldkitCalendarPackage.kt`
+- Create: `android/app/src/main/java/com/bth0mp/fieldkit/calendar/FieldkitCalendarModule.kt` and `FieldkitCalendarPackage.kt`
 - Modify: `MainApplication.kt` (`add(FieldkitCalendarPackage())`)
 - Modify: `AndroidManifest.xml`. Remove `WRITE_CALENDAR`, keep `READ_CALENDAR`, add `<uses-permission android:name="android.permission.WRITE_CALENDAR" tools:node="remove"/>` and declare the `tools` namespace.
 - Modify: `package.json` and `package-lock.json` (uninstall `react-native-calendar-events` from PowerShell), `knip.json` (drop its ignore entry), `src/generated/thirdPartyNotices.json` (regenerate)
 - Delete: `__tests__/integration/tools/proToolsSplit.test.ts` and `__tests__/unit/services/tools/EmailCalendarExtension.test.ts`. They are pro-era suites that always skip, and their non-virtual `jest.mock('react-native-calendar-events')` fails to load once the package is gone.
-- Test: `android/app/src/test/java/ai/offgridmobile/calendar/FieldkitCalendarModuleTest.kt`
+- Test: `android/app/src/test/java/com/bth0mp/fieldkit/calendar/FieldkitCalendarModuleTest.kt`
 
 **Interfaces:**
 - Produces (JS-visible, `getName() = "FieldkitCalendar"`, trailing `Promise`):
@@ -267,14 +267,14 @@ class FieldkitCalendarModuleTest {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run (Git Bash): `cd android && ./gradlew :app:testDebugUnitTest --tests "ai.offgridmobile.calendar.*"`
+Run (Git Bash): `cd android && ./gradlew :app:testDebugUnitTest --tests "com.bth0mp.fieldkit.calendar.*"`
 Expected: FAIL, unresolved reference.
 
 - [ ] **Step 3: Implement** the module, the registration and the manifest change, run the dependency removal and `git rm` the two suites, then regenerate notices. `ios/Podfile.lock` still lists `RNCalendarEvents`; it cannot be regenerated on Windows, so leave it as a known stale entry.
 
 - [ ] **Step 4: Run the gates**
 
-Run (Git Bash): `cd android && ./gradlew :app:testDebugUnitTest --tests "ai.offgridmobile.calendar.*" && ./gradlew compileDebugKotlin --quiet && ./gradlew :app:lintDebug --quiet && cd .. && npx jest __tests__/unit/services/tools && npm run knip`
+Run (Git Bash): `cd android && ./gradlew :app:testDebugUnitTest --tests "com.bth0mp.fieldkit.calendar.*" && ./gradlew compileDebugKotlin --quiet && ./gradlew :app:lintDebug --quiet && cd .. && npx jest __tests__/unit/services/tools && npm run knip`
 Expected: PASS. `git grep -l react-native-calendar-events -- __tests__ src` prints nothing, and `grep -c WRITE_CALENDAR android/app/src/main/AndroidManifest.xml` prints `1` (the remove marker).
 
 - [ ] **Step 5: Commit**

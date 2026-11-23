@@ -169,9 +169,9 @@ npx jest --forceExit
 
 ## Credits and licenses
 
-The code is MIT licensed; see [LICENSE](LICENSE). Fieldkit AI started from the MIT-licensed
-Off Grid AI v0.0.103, whose copyright notice is kept in `LICENSE` as that license requires.
-The `upstream` git remote points at it so fixes can be cherry-picked.
+The code is MIT licensed; see [LICENSE](LICENSE). The app includes MIT-licensed code from an earlier
+open-source project. Its copyright notice is kept in `LICENSE` and in the app's
+Open-source licenses screen.
 
 Some bundled parts carry their own terms:
 

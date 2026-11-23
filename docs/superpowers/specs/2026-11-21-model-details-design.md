@@ -145,7 +145,7 @@ download numbers show "Needs a connection" in their place.
   too big to run.
 - The Models screen gets slower to open, or the Text tab stops working with no
   connection.
-- Any Off Grid or Wednesday name, logo or link appears.
+- Any name, logo or link from the app this one started from appears.
 
 ## Constraints
 

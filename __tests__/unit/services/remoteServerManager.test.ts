@@ -123,10 +123,12 @@ describe('remoteServerManager', () => {
       const mockServer = { id: 'server-1', name: 'Test', endpoint: 'http://localhost:11434', createdAt: Date.now() };
       const mockGetServerById = jest.fn().mockReturnValue(mockServer);
       const mockUpdateServer = jest.fn();
+      const mockForgetSavedApiKey = jest.fn();
 
       (useRemoteServerStore.getState as jest.Mock).mockReturnValue({
         getServerById: mockGetServerById,
         updateServer: mockUpdateServer,
+        forgetSavedApiKey: mockForgetSavedApiKey,
       });
       (providerRegistry.getProvider as jest.Mock).mockReturnValue(null);
       (Keychain.setGenericPassword as jest.Mock).mockResolvedValue(true);
@@ -135,16 +137,19 @@ describe('remoteServerManager', () => {
 
       expect(Keychain.setGenericPassword).toHaveBeenCalled();
       expect(mockUpdateServer).toHaveBeenCalledWith('server-1', {});
+      expect(mockForgetSavedApiKey).toHaveBeenCalledWith('server-1');
     });
 
     it('should remove API key when set to empty string', async () => {
       const mockServer = { id: 'server-1', name: 'Test', endpoint: 'http://localhost:11434', createdAt: Date.now() };
       const mockGetServerById = jest.fn().mockReturnValue(mockServer);
       const mockUpdateServer = jest.fn();
+      const mockForgetSavedApiKey = jest.fn();
 
       (useRemoteServerStore.getState as jest.Mock).mockReturnValue({
         getServerById: mockGetServerById,
         updateServer: mockUpdateServer,
+        forgetSavedApiKey: mockForgetSavedApiKey,
       });
       (providerRegistry.getProvider as jest.Mock).mockReturnValue(null);
       (Keychain.resetGenericPassword as jest.Mock).mockResolvedValue(true);
@@ -152,6 +157,7 @@ describe('remoteServerManager', () => {
       await remoteServerManager.updateServer('server-1', { apiKey: '' });
 
       expect(Keychain.resetGenericPassword).toHaveBeenCalled();
+      expect(mockForgetSavedApiKey).toHaveBeenCalledWith('server-1');
     });
 
     it('should throw when server not found', async () => {

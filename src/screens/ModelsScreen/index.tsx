@@ -21,9 +21,8 @@ export const ModelsScreen: React.FC = () => {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const vm = useModelsScreen();
-  // Pro fills this slot with the real voice-models panel (engine + downloads).
-  // The Voice tab always renders; when the slot is empty (free / non-pro) we
-  // show an upsell so users can see what Pro adds.
+  // The voice feature fills this slot with the real voice-models panel (engine + downloads).
+  // The Voice tab always renders; when the slot is empty it shows nothing.
   const VoiceModelsPanel = useSlot(SLOTS.modelsScreenVoiceTab);
   const route = useRoute<RouteProp<RootStackParamList, 'Models'>>();
 
@@ -212,7 +211,6 @@ export const ModelsScreen: React.FC = () => {
           ramGB={vm.ramGB}
           deviceRecommendation={vm.deviceRecommendation}
           downloadedModels={vm.downloadedModels}
-          alertState={vm.alertState}
           setAlertState={vm.setAlertState}
           focusTrigger={vm.focusTrigger}
           handleSearch={vm.handleSearch}
@@ -276,13 +274,13 @@ export const ModelsScreen: React.FC = () => {
         />
       )}
 
-      {/* Voice Models Tab: pro panel when registered, otherwise nothing. */}
+      {/* Voice Models Tab: voice panel when registered, otherwise nothing. */}
       {vm.activeTab === 'voice' && (VoiceModelsPanel ? <VoiceModelsPanel /> : null)}
 
       {/* Transcription Models Tab (speech-to-text, core). */}
       {vm.activeTab === 'transcription' && <TranscriptionModelsTab />}
 
-      <CustomAlert {...vm.alertState} onClose={() => vm.setAlertState(hideAlert())} />
+      <CustomAlert key={vm.alertKey} {...vm.alertState} onClose={() => vm.setAlertState(hideAlert())} />
     </SafeAreaView>
   );
 };

@@ -2,6 +2,7 @@ import { HFModelSearchResult, ModelInfo, ModelFile, ModelCredibility } from '../
 import { PARAM_COUNT_REGEX } from '../constants/models';
 import { HF_API, QUANTIZATION_INFO, LMSTUDIO_AUTHORS, OFFICIAL_MODEL_AUTHORS, VERIFIED_QUANTIZERS } from '../constants';
 import { looksLikeVisionModel } from '../utils/visionModel';
+import { isHelperModelFile } from '../utils/modelFileKind';
 import { isMMProjFile, pickMmProjForDownload } from './mmproj';
 
 export type BrowseSort = 'trending' | 'downloads' | 'likes' | 'newest';
@@ -31,9 +32,10 @@ function fitsParams(m: ModelInfo, maxParamsB: number): boolean {
   return !match || Number.parseFloat(match[1]) <= maxParamsB;
 }
 
-// The detail screen lists only top-level model files, so a row with none leads nowhere. No siblings: keep it.
+// The detail screen lists only top-level model files (never a helper file), so a row with none leads nowhere.
+// No siblings: keep it.
 function hasTopLevelModelFile(r: HFModelSearchResult): boolean {
-  return !r.siblings || r.siblings.some(s => s.rfilename.endsWith('.gguf') && !s.rfilename.includes('/') && !isMMProjFile(s.rfilename));
+  return !r.siblings || r.siblings.some(s => s.rfilename.endsWith('.gguf') && !s.rfilename.includes('/') && !isMMProjFile(s.rfilename) && !isHelperModelFile(s.rfilename));
 }
 
 const expandParams = (fields: string[]) => fields.map(f => `expand[]=${f}`).join('&');
@@ -115,7 +117,7 @@ class HuggingFaceService {
       const response = await fetch(`${this.apiUrl}/models/${modelId}/tree/main`, { headers: { Accept: 'application/json' } });
       if (!response.ok) return this.getModelFilesFromSiblings(modelId);
       const files: Array<{ type: string; path: string; size?: number; lfs?: { size: number } }> = await response.json();
-      const allGguf = files.filter(f => f.type === 'file' && f.path.endsWith('.gguf'));
+      const allGguf = files.filter(f => f.type === 'file' && f.path.endsWith('.gguf') && !isHelperModelFile(f.path));
       const mmProjFiles = allGguf.filter(f => this.isMMProjFile(f.path));
       const modelFiles = allGguf.filter(f => !this.isMMProjFile(f.path));
       return modelFiles
@@ -135,7 +137,7 @@ class HuggingFaceService {
   private async getModelFilesFromSiblings(modelId: string): Promise<ModelFile[]> {
     const result = await this.fetchJson<HFModelSearchResult>(`${this.apiUrl}/models/${modelId}`);
     if (!result.siblings) return [];
-    const allGguf = result.siblings.filter(f => f.rfilename.endsWith('.gguf'));
+    const allGguf = result.siblings.filter(f => f.rfilename.endsWith('.gguf') && !isHelperModelFile(f.rfilename));
     const mmProjFiles = allGguf.filter(f => this.isMMProjFile(f.rfilename));
     const modelFiles = allGguf.filter(f => !this.isMMProjFile(f.rfilename));
     const mmProjForMatch = mmProjFiles.map(f => ({ path: f.rfilename, size: f.size, lfs: f.lfs }));
@@ -160,7 +162,7 @@ class HuggingFaceService {
 
   private transformModelResult = (result: HFModelSearchResult): ModelInfo => {
     const files = result.siblings
-      ?.filter(file => file.rfilename.endsWith('.gguf'))
+      ?.filter(file => file.rfilename.endsWith('.gguf') && !isHelperModelFile(file.rfilename))
       .map(file => this.transformFileInfo(result.id, file)) || [];
 
     const author = result.author || result.id.split('/')[0] || 'Unknown';

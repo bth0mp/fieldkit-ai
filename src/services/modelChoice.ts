@@ -71,8 +71,9 @@ export function chooseRemoteTextModel(serverId: string, modelId: string): Promis
     if (!providerRegistry.hasProvider(serverId)) { restore(); throw new Error('the server is not available'); }
     await activeModelService.unloadTextModel();
   }, async () => {
-    // The server may be off or out of reach: say so before anything is stopped or unloaded. Only asks (the keychain's key,
-    // the one the provider uses): no rediscovery, nothing stored, so a refusal leaves the row there to press again.
+    // The server may be off or out of reach: say so before anything is stopped or unloaded. Only asks (with the key the
+    // provider uses: the keychain's, or one an older version left in the record): no rediscovery, nothing stored,
+    // so a refusal leaves the row there to press again.
     const server = await remoteServerManager.getServerWithApiKey(serverId);
     if (!server) throw new Error('the server is not available');
     const result = await testEndpoint(server.endpoint, 10000, server.apiKey);

@@ -236,8 +236,10 @@ class ModelManager {
     }
   }
 
+  // A cancel removes the model file only. A projector that finished is whole, other quantizations of the model
+  // may use it, and the next download of the model reuses it; an unused one shows under Orphaned Files.
   private async cleanupCancelledTextArtifacts(ctx: Extract<BackgroundDownloadContext, { file: ModelFile }>): Promise<void> {
-    const cleanupTargets = [ctx.localPath, ctx.mmProjLocalPath].filter((path): path is string => !!path);
+    const cleanupTargets = [ctx.localPath];
 
     await Promise.all(cleanupTargets.map(async targetPath => {
       try {

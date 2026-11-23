@@ -31,7 +31,7 @@ type Props = {
   /** Fired once the sheet has fully closed — used to open the Models screen safely after. */
   onClosed?: () => void;
   labels: Record<ModelRowType, string>;
-  /** Rows whose active selection lives on a REMOTE server (gateway) — shown with a cloud marker,
+  /** Rows whose active selection lives on a REMOTE server — shown with a cloud marker,
    *  matching the chat header's remote indicator, so a remote model is never mistaken for local. */
   remote?: Partial<Record<ModelRowType, boolean>>;
   loadingState: LoadingState;

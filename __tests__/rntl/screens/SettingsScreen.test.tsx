@@ -12,6 +12,7 @@ import React from 'react';
 import { Linking } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { BRAND } from '../../../src/config/branding';
+import { OLD_PROJECT_NAME } from '../../utils/ownNamePattern';
 
 // Navigation is globally mocked in jest.setup.ts
 
@@ -50,9 +51,6 @@ const mockSetOnboardingComplete = jest.fn();
 const mockSetThemeMode = jest.fn();
 const mockCompleteChecklistStep = jest.fn();
 const mockResetChecklist = jest.fn();
-// Mutated per-test to drive Pro banner visibility. `mock`-prefixed so jest.mock's
-// hoisted factory is allowed to reference it.
-const mockProState = { hasRegisteredPro: false, proBannerDismissed: false };
 jest.mock('../../../src/stores', () => ({
   useAppStore: jest.fn((selector?: any) => {
     const state = {
@@ -61,9 +59,6 @@ jest.mock('../../../src/stores', () => ({
       setThemeMode: mockSetThemeMode,
       completeChecklistStep: mockCompleteChecklistStep,
       resetChecklist: mockResetChecklist,
-      setProBannerDismissed: jest.fn(),
-      hasRegisteredPro: mockProState.hasRegisteredPro,
-      proBannerDismissed: mockProState.proBannerDismissed,
     };
     return selector ? selector(state) : state;
   }),
@@ -89,14 +84,12 @@ jest.mock('@react-navigation/native', () => ({
 describe('SettingsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockProState.hasRegisteredPro = false;
-    mockProState.proBannerDismissed = false;
   });
 
   it('shows no Pro upsell banner or PRO card', () => {
     const { queryByText } = render(<SettingsScreen />);
     expect(queryByText(/democratized/i)).toBeNull();
-    expect(queryByText(/Off Grid AI PRO/)).toBeNull();
+    expect(queryByText(/PRO/)).toBeNull();
   });
 
   it('renders "Settings" title', () => {
@@ -184,7 +177,7 @@ describe('SettingsScreen', () => {
 
   it('shows no upstream community links', () => {
     const { queryByText, queryByTestId } = render(<SettingsScreen />);
-    expect(queryByText(/Stay in the loop|@alichherawalla|Slack|Off Grid/)).toBeNull();
+    expect(queryByText(new RegExp(`Stay in the loop|@alichherawalla|Slack|${OLD_PROJECT_NAME}`, 'i'))).toBeNull();
     expect(queryByTestId('follow-on-x')).toBeNull();
   });
 

@@ -2,7 +2,6 @@ import React from 'react';
 import { ChatMessage } from '../../components';
 import { prepareMessageForSpeech } from '../../utils/messageContent';
 import { Message } from '../../types';
-import { useUiModeStore } from '../../stores';
 import { getSlot, SLOTS } from '../../bootstrap/slotRegistry';
 import { ChatMessageItem } from './useChatScreen';
 
@@ -39,32 +38,11 @@ const MessageRendererInner: React.FC<MessageRendererProps> = (props) => {
     onImagePress,
   } = props;
 
-  const interfaceMode = useUiModeStore((s) => s.interfaceMode);
   const msg = item as Message;
   const animateEntry = animateLastN > 0 && index >= displayMessagesLength - animateLastN;
   const isStreamingThis = item.id === 'streaming';
 
-  // Audio mode: the pro audio feature owns the whole message presentation
-  // (user/assistant bubbles, thinking, streaming). Free builds never reach
-  // this branch (interfaceMode stays 'chat').
-  const AudioMessage = getSlot(SLOTS.messageAudioMode);
-  if (interfaceMode === 'audio' && AudioMessage) {
-    return (
-      <AudioMessage
-        msg={msg}
-        isStreamingThis={isStreamingThis}
-        shouldAnimate={animateEntry}
-        showGenerationDetails={showGenerationDetails}
-        onCopy={onCopy}
-        onRetry={onRetry}
-        onEdit={onEdit}
-        onGenerateImage={onGenerateImage}
-        onImagePress={onImagePress}
-      />
-    );
-  }
-
-  // Chat Mode: the speak button (pro slot) lives in the meta row.
+  // The speak button (when speech is registered) lives in the meta row.
   const Speak = getSlot(SLOTS.messageSpeakButton);
   const isPlainAssistant = msg.role === 'assistant' && !msg.isSystemInfo && !msg.toolCalls?.length;
   // No speaker on an in-progress reply (streaming, or the thinking/loading dots).

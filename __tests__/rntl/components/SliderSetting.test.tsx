@@ -116,7 +116,7 @@ describe('SliderSetting', () => {
     expect(onChange).toHaveBeenCalledWith(2);
   });
 
-  it('snaps an off-grid slider value to the nearest step on release', () => {
+  it('snaps a slider value between steps to the nearest step on release', () => {
     const onChange = jest.fn();
     const { getByTestId } = render(<SliderSetting {...baseProps} onChange={onChange} />);
     fireEvent(getByTestId('temp-slider'), 'slidingComplete', 0.72);

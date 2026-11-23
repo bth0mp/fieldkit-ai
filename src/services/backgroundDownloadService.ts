@@ -3,6 +3,7 @@ import { NativeModules, NativeEventEmitter, Platform, Alert } from 'react-native
 import { BackgroundDownloadInfo, BackgroundDownloadStatus } from '../types';
 import logger from '../utils/logger';
 import { serializeQueue, saveQueuedDownloads } from './queuedDownloadPersistence';
+import { renameEarlierModelIdsIn } from './earlierIds';
 import type {
   DownloadParams,
   DownloadProgressEvent, DownloadCompleteEvent, DownloadErrorEvent,
@@ -344,7 +345,8 @@ class BackgroundDownloadService {
     }
     const downloads = await DownloadManagerModule.getActiveDownloads();
     logger.log(`[WIRE-DOWNLOAD] ${JSON.stringify({ ev: 'getActiveDownloads', downloads })}`); // [WIRE] raw active/queued/parallel download rows (relaunch reconcile)
-    return downloads.map((d: any) => ({
+    // Rows saved by an earlier version carry its id for the curated LiteRT model: the rest of the app sees the new one.
+    return renameEarlierModelIdsIn(downloads).map((d: any) => ({
       downloadId: d.downloadId ?? d.id,
       fileName: d.fileName,
       modelId: d.modelId,

@@ -19,9 +19,6 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
 
-    <!-- For silent companion file downloads (e.g. mmproj for vision models) -->
-    <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
-
 <!-- To check and request battery optimization exemption for uninterrupted downloads -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
@@ -76,23 +73,7 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
-        <!-- MCP OAuth redirect: fieldkit://oauth/callback returns from the browser -->
-        <intent-filter>
-            <action android:name="android.intent.action.VIEW" />
-            <category android:name="android.intent.category.DEFAULT" />
-            <category android:name="android.intent.category.BROWSABLE" />
-            <data android:scheme="fieldkit" android:host="oauth" />
-        </intent-filter>
       </activity>
-
-<!-- Receiver for background download completion events -->
-      <receiver
-          android:name=".download.DownloadCompleteBroadcastReceiver"
-          android:exported="true">
-          <intent-filter>
-              <action android:name="android.intent.action.DOWNLOAD_COMPLETE" />
-          </intent-filter>
-      </receiver>
 
       <!-- WorkManager's foreground-service host needs the dataSync type declared, or
            setForeground() throws on Android 14+ (the model-download FGS, see WorkerDownload). -->
@@ -100,5 +81,20 @@
           android:name="androidx.work.impl.foreground.SystemForegroundService"
           android:foregroundServiceType="dataSync"
           tools:node="merge" />
+
+      <!-- WorkManager starts on demand from MainApplication.workManagerConfiguration (it carries the
+           factory that runs downloads queued under the old class name). The default initializer would
+           start it first with the default configuration. -->
+      <provider
+          android:name="androidx.startup.InitializationProvider"
+          android:authorities="${applicationId}.androidx-startup"
+          android:exported="false"
+          tools:node="merge">
+          <meta-data
+              android:name="androidx.work.WorkManagerInitializer"
+              android:value="androidx.startup"
+              tools:node="remove" />
+      </provider>
+
     </application>
 </manifest>

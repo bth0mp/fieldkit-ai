@@ -96,8 +96,16 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
       }
     } catch (error) {
+      // The passphrase could not be checked (e.g. the keychain could not be read). That is not a wrong
+      // passphrase, so no attempt counts toward the lockout. The passphrase stays typed: Try again re-runs
+      // handleUnlock from this render, so it must not be cleared on this error.
       logger.warn('[LockScreen] Passphrase verification failed:', error);
-      setAlertState(showAlert('Error', 'Failed to verify passphrase'));
+      setAlertState(
+        showAlert("Couldn't check your passphrase", 'Try again.', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Try again', onPress: () => { handleUnlock(); } },
+        ]),
+      );
     } finally {
       setIsVerifying(false);
     }

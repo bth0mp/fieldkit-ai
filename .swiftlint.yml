@@ -4,8 +4,8 @@ included:
 excluded:
   - ios/Pods
   - ios/build
-  - ios/OffgridMobile.xcodeproj
-  - ios/OffgridMobileTests
+  - ios/Fieldkit.xcodeproj
+  - ios/FieldkitTests
 
 disabled_rules:
   - trailing_whitespace   # handled by editor

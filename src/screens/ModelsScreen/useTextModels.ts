@@ -9,6 +9,7 @@ import { fileExceedsBudget } from '../../services/memoryBudget';
 import { useDownloadStore } from '../../stores/downloadStore';
 import { huggingFaceService, modelManager, hardwareService, activeModelService } from '../../services';
 import { startModelDownload } from '../../services/startModelDownload';
+import { LITERT_PARENT_ID } from '../../services/curatedLiteRTRegistry';
 import { ramFitScore } from '../../utils/recommendedModels';
 import { modelSupportsNpuGpu } from '../../utils/acceleration';
 import { ModelInfo, ModelFile, DownloadedModel } from '../../types';
@@ -272,11 +273,10 @@ export function useTextModels(setAlertState: (s: AlertState) => void) {
 
   const handleSelectModel = async (model: ModelInfo) => {
     setSelectedModel(model); setIsLoadingFiles(true);
-    // Curated entries under the offgrid/ namespace (e.g. the synthetic LiteRT
-    // parent) ship with their files baked into the ModelInfo — skip the
+    // The synthetic LiteRT parent ships with its files baked into the ModelInfo — skip the
     // HuggingFace fetch and use them as-is. Real HF models always go through
     // the fetch path even when factories/mocks pre-populate model.files.
-    if (model.id.startsWith('offgrid/') && model.files && model.files.length > 0) {
+    if (model.id === LITERT_PARENT_ID && model.files && model.files.length > 0) {
       setModelFiles(model.files);
       setIsLoadingFiles(false);
       return;

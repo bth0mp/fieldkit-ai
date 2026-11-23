@@ -16,7 +16,11 @@
  * Deleting `imageProvider.remove` would fail every assertion here.
  */
 jest.mock('../../src/services/modelManager', () => ({
-  modelManager: { deleteImageModel: jest.fn(async () => {}) },
+  modelManager: {
+    deleteImageModel: jest.fn(async () => {}),
+    getDownloadedImageModels: jest.fn(async () => [{ id: 'sdxl' }]),
+    getImageModelsDirectory: jest.fn(() => '/models'),
+  },
 }));
 jest.mock('../../src/services/activeModelService', () => ({
   activeModelService: { unloadImageModel: jest.fn(async () => {}) },
@@ -32,6 +36,7 @@ jest.mock('../../src/utils/logger', () => ({
   __esModule: true, default: { log: jest.fn(), warn: jest.fn(), error: jest.fn() },
 }));
 
+import RNFS from 'react-native-fs';
 import { imageProvider } from '../../src/services/modelDownloadService/providers/imageProvider';
 import { useDownloadStore } from '../../src/stores/downloadStore';
 import { useAppStore } from '../../src/stores';
@@ -49,6 +54,16 @@ beforeEach(() => {
   jest.clearAllMocks();
   useDownloadStore.setState({ downloads: {}, downloadIdIndex: {} } as any);
   useAppStore.setState({ downloadedImageModels: [], activeImageModelId: null } as any);
+});
+
+describe('imageProvider.remove — a model that was never registered', () => {
+  it('does not throw when there is nothing registered to delete, even if the folder exists', async () => {
+    (modelManager.getDownloadedImageModels as jest.Mock).mockResolvedValueOnce([]);
+    mockDelete.mockRejectedValueOnce(new Error('Image model not found'));
+    (RNFS.exists as jest.Mock).mockResolvedValueOnce(true);
+
+    await expect(imageProvider.remove('image:ghost')).resolves.toBeUndefined();
+  });
 });
 
 describe('imageProvider.remove — uninstall chain (case 37)', () => {

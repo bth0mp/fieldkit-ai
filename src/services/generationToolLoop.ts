@@ -13,13 +13,8 @@ import { approvalSummaryFor } from './tools/approvalSummary';
 import { preApprovalProblem } from './tools/callValidation';
 import { actionApprovalService } from './actions/actionApprovalService';
 import { modelInputImageUris, modelInputAudioUris } from './modelMedia';
-import { getToolExtensions } from './tools/extensions';
-import { Platform } from 'react-native';
-import { selectRelevantTools } from './litertToolSelector';
-import { isMcpEnabled } from './mcpContextBoost';
-import { selectToolsByEmbedding } from './toolEmbeddingRouter';
 import { providerRegistry } from './providers';
-import { activeTextCapabilities, getActiveEngineService, isRemoteTextModelActive } from './engines';
+import { activeTextCapabilities, isRemoteTextModelActive } from './engines';
 import { servingEngine } from './servingEngine';
 import { assertRemoteAllowed } from './privateDataGuard';
 import type { GenerationOptions, CompletionResult } from './providers/types';
@@ -27,12 +22,6 @@ import logger from '../utils/logger';
 import { XML_TOOL_CALL_FUNCTION_MARKER, XML_TOOL_CALL_PARAMETER_MARKER } from '../utils/messageContent';
 const MAX_TOOL_ITERATIONS = 3;
 const MAX_TOTAL_TOOL_CALLS = 5;
-// On-device: above this many tools, run a fast routing pass to pick the relevant ones
-// before generating (small models can't fit many schemas in context). Tunable.
-const TOOL_SELECTION_THRESHOLD = 5;
-// MCP enabled: how many MCP/ext tools the hybrid router keeps for the prompt.
-// Small enough to keep prefill fast, large enough to cover a multi-step request.
-const MCP_TOOL_ROUTE_TOPK = 12;
 // LiteRT runs the tool loop natively (automaticToolCalling), so the JS caps above don't
 // apply to it. Bound the native loop here instead: once a single response exceeds this many
 // tool calls we stop executing them and tell the model to answer, which prevents the KV cache
@@ -297,8 +286,6 @@ function toolNotOfferedResult(tc: ToolCall, startMs: number): ToolResult {
  * model-facing string (toolResultModelContent) explicitly states failure/empty.
  */
 async function executeToolCallSafely(tc: ToolCall, ctx: ToolLoopContext): Promise<ToolResult> {
-  const exts = getToolExtensions();
-  const ext = exts.find(e => e.canHandle(tc.name));
   const start = Date.now();
   try {
     // Private data never reaches a remote model: a private-data tool it calls (even by name, never offered) does
@@ -326,7 +313,7 @@ async function executeToolCallSafely(tc: ToolCall, ctx: ToolLoopContext): Promis
       if (decision === 'declined') return toolDeclinedResult(tc, start);
       if (!(ctx.isTurnLive?.() ?? !ctx.isAborted())) return toolDeclinedResult(tc, start);
     }
-    const raw = ext ? await ext.execute(tc) : await executeToolCall(tc);
+    const raw = await executeToolCall(tc);
     const result = normalizeToolResult(tc, raw);
     // From now on this chat holds private data: it stays off remote models, and its web tools need approval.
     if (result.status === 'ok' && handlesPrivateData(tc.name)) useChatStore.getState().markConversationPrivate(ctx.conversationId);
@@ -479,13 +466,6 @@ async function callLocalWithRetry(
     }
   }
   throw new Error(lastError?.message || String(lastError) || 'Unknown LLM error after tool execution');
-}
-
-/** Is the active text engine LiteRT? Delegates to the engines.ts owner (getActiveEngineService) so
- *  "which engine is active" is defined ONCE — never re-derived from the store here. Loaded-readiness is a
- *  separate concern the caller (checkProviderReadiness) already gates before the loop runs. */
-function isLiteRTActive(): boolean {
-  return getActiveEngineService() === liteRTService;
 }
 
 /** True when generation is served by a remote provider (no on-device native context). Delegates to the
@@ -672,7 +652,6 @@ function buildExactTimeNote(parts: ReturnType<typeof nowParts>): string {
 function augmentSystemPromptForTools(
   messages: Message[],
   enabledToolIds: string[] = [],
-  nativeToolCalling = false,
 ): Message[] {
   const sysIdx = messages.findIndex(m => m.role === 'system');
   if (sysIdx === -1) {
@@ -681,20 +660,12 @@ function augmentSystemPromptForTools(
   }
   const sys = messages[sysIdx];
   const existing = typeof sys.content === 'string' ? sys.content : '';
-  // Extension text hints (e.g. MCP's "call tools using <mcp_tool_call>{…}") only make
-  // sense when the model has NO native tool calling. With native tool calling the model
-  // is already given the tools structurally; adding the text hint makes it emit a hybrid
-  // format that neither llama.cpp nor our parsers recognise — breaking BOTH MCP and
-  // built-in tool calls. So skip the hint whenever native tool calling is available.
-  const extHints = nativeToolCalling
-    ? ''
-    : getToolExtensions().map(e => e.getSystemPromptHint()).filter(Boolean).join('');
   // Snapshot the current time ONCE so the system-prompt date and the exact-time note
   // can never disagree across a midnight/second rollover (both read the same snapshot).
   const parts = nowParts();
   // System prompt gets only the STABLE date (changes once a day) + tool guidance, so the
   // system+tools prefix stays cacheable turn-to-turn.
-  const updatedSys = { ...sys, content: existing + TOOL_BEHAVIOR_GUIDANCE + buildDateContext(parts) + extHints };
+  const updatedSys = { ...sys, content: existing + TOOL_BEHAVIOR_GUIDANCE + buildDateContext(parts) };
   const out = [...messages.slice(0, sysIdx), updatedSys, ...messages.slice(sysIdx + 1)];
 
   // For time-sensitive (calendar) tools, append the EXACT time to the latest user
@@ -713,7 +684,7 @@ function augmentSystemPromptForTools(
   }
   logger.log(
     `[ToolLoop] augmentSystemPrompt: enabledToolIds=[${enabledToolIds.join(',')}] ` +
-      `timeSensitive(precise)=${precise} nativeToolCalling=${nativeToolCalling} ` +
+      `timeSensitive(precise)=${precise} ` +
       `dateInSystem=true exactTimeOnLatestUser=${exactTimeAppended}`,
   );
   return out;
@@ -729,21 +700,15 @@ async function callLLMWithRetry(
 ): Promise<{ fullResponse: string; toolCalls: ToolCall[]; interrupted?: boolean }> {
   // Append tool-use behavioral guidance to the system prompt when tools are present.
   // Only covers the "when and how" — schemas are injected separately by each engine.
-  // Also append extension system-prompt hints so the model knows about MCP/pro tools.
   // We shallow-copy messages to avoid mutating the caller's array.
-  const exts = getToolExtensions();
-  const extCount = exts.reduce((n, e) => n + e.enabledToolCount(), 0);
   const engine = servingEngine({ forceRemote, conversationId });
-  // LiteRT (OpenApiTool), remote providers, and llama with a Jinja tool template all do
-  // native tool calling — the text hint must be suppressed for them (see augmentSystemPromptForTools).
-  const nativeToolCalling = engine !== 'llama' || llmService.supportsToolCalling();
   logger.log(
-    `[ToolLoop] preLLM: tools=${tools.length} extCount=${extCount} ` +
+    `[ToolLoop] preLLM: tools=${tools.length} ` +
       `enabledToolIds=[${(ctx?.enabledToolIds ?? []).join(',')}] ` +
-      `willAugment=${tools.length > 0 || extCount > 0} engine=${engine} nativeToolCalling=${nativeToolCalling}`,
+      `willAugment=${tools.length > 0} engine=${engine}`,
   );
-  const augmentedMessages = (tools.length > 0 || extCount > 0)
-    ? augmentSystemPromptForTools(messages, ctx?.enabledToolIds, nativeToolCalling)
+  const augmentedMessages = tools.length > 0
+    ? augmentSystemPromptForTools(messages, ctx?.enabledToolIds)
     : messages;
 
   if (engine === 'litert' && conversationId) {
@@ -767,8 +732,7 @@ function containsToolCallMarkup(text: string): boolean {
 }
 
 /** If no structured tool calls, try parsing tool-call markup (<tool_call>, <invoke>, namespaced
- *  wrappers, <function_call>) or Gemma's native format from text. Also collects tool calls from
- *  any registered extensions and strips their syntax from display text. */
+ *  wrappers, <function_call>) or Gemma's native format from text. */
 function resolveToolCalls(fullResponse: string, toolCalls: ToolCall[]) {
   let effectiveToolCalls: ToolCall[] = toolCalls.length > 0 ? [...toolCalls] : [];
   let displayResponse = fullResponse;
@@ -791,15 +755,6 @@ function resolveToolCalls(fullResponse: string, toolCalls: ToolCall[]) {
         displayResponse = parsed.cleanText;
       }
     }
-  }
-
-  // Parse extension tool calls and strip their syntax from the visible text
-  for (const ext of getToolExtensions()) {
-    const extCalls = ext.parseToolCalls(displayResponse);
-    if (extCalls.length > 0) {
-      effectiveToolCalls.push(...extCalls);
-    }
-    displayResponse = ext.stripFromVisibleText(displayResponse);
   }
 
   return { effectiveToolCalls, displayResponse };
@@ -850,59 +805,6 @@ async function forceFinalTextResponse(ctx: ToolLoopContext, state: ToolLoopState
 }
 
 /**
- * On-device two-pass tool routing. Built-in tools (few, tiny) are ALWAYS kept; the
- * routing pass only decides which of the many MCP/ext tools to include, so a small
- * model isn't handed every schema. The small model rarely emits the literal "none",
- * so the rule is simply: router names MCP tools → include those; names nothing
- * usable → keep built-in only (do NOT dump all MCP tools). A thrown error (genuine
- * failure) still falls back to everything so a real request is never stranded.
- *
- * LiteRT (Android) routes via its native session; llama routes ONLY on iOS (Metal
- * makes the extra prefill cheap — on Android llama it caused high TTFT). Remote
- * models keep the full set. Routing never enters chat/context.
- */
-async function selectEffectiveSchemas(ctx: ToolLoopContext, builtInSchemas: any[], extSchemas: any[]): Promise<any[]> {
-  const all = [...builtInSchemas, ...extSchemas];
-  const litertActive = isLiteRTActive();
-  const llamaIosNative = !litertActive && Platform.OS === 'ios' && llmService.supportsToolCalling();
-  const usingRemote = isUsingRemote();
-
-  // MCP enabled on-device: route the many MCP/ext tools down with the embedding model
-  // BEFORE generating, so the big model only prefills the relevant handful instead of
-  // every schema (the time-to-first-token killer). Works on Android llama too, since
-  // it runs on the tiny MiniLM context, not the main model. Built-in tools always stay.
-  if (!usingRemote && isMcpEnabled() && extSchemas.length > 0 && all.length > TOOL_SELECTION_THRESHOLD) {
-    try {
-      const selected = await selectToolsByEmbedding(getLastUserQuery(ctx.messages), extSchemas, MCP_TOOL_ROUTE_TOPK);
-      const filteredExt = extSchemas.filter(s => selected.includes(s.function.name));
-      return [...builtInSchemas, ...filteredExt];
-    } catch (e) {
-      logger.warn(`[ToolLoop] embedding tool routing failed; using all tools: ${String(e)}`);
-      return all;
-    }
-  }
-
-  const shouldRoute = !usingRemote && (litertActive || llamaIosNative) && extSchemas.length > 0 && all.length > TOOL_SELECTION_THRESHOLD;
-  if (!shouldRoute) return all;
-
-  // LiteRT routes on a throwaway native session (default); llama via a capped completion.
-  const generate = litertActive ? undefined : (s: string, u: string) => llmService.generateToolSelection(s, u);
-  try {
-    // Route over the MCP/ext tools only — built-in tools are always kept.
-    const selected = await selectRelevantTools(getLastUserQuery(ctx.messages), extSchemas, generate);
-    if (!selected || selected.length === 0) {
-      // No MCP tool named (router said "none" OR just didn't name one) → built-in only.
-      return builtInSchemas;
-    }
-    const filteredExt = extSchemas.filter(s => selected.includes(s.function.name));
-    return [...builtInSchemas, ...filteredExt];
-  } catch (e) {
-    logger.warn(`[ToolLoop] tool selection failed; using all tools: ${String(e)}`);
-    return all;
-  }
-}
-
-/**
  * Run the tool-calling loop: call LLM → execute tools → re-inject results → repeat.
  * Returns when the model produces a final response with no tool calls.
  */
@@ -925,10 +827,7 @@ export async function runToolLoop(ctx: ToolLoopContext): Promise<ToolLoopOutcome
   // tool that needs one, and the gate refuses any built-in tool not offered here.
   ctx.supportsToolApproval = servingEngineCapabilities(ctx).supportsToolApproval;
   ctx.enabledToolIds = offeredToolIdsForTurn({ enabledToolIds: ctx.enabledToolIds, conversationId: ctx.conversationId, forceRemote: ctx.forceRemote, supportsToolApproval: ctx.supportsToolApproval });
-  const builtInSchemas = getToolsAsOpenAISchema(ctx.enabledToolIds);
-  const extSchemas = getToolExtensions().flatMap(e => e.getOpenAISchemas?.() ?? []);
-
-  const effectiveSchemas = await selectEffectiveSchemas(ctx, builtInSchemas, extSchemas);
+  const effectiveSchemas = getToolsAsOpenAISchema(ctx.enabledToolIds);
   ctx.offeredToolNames = effectiveSchemas.map((s: any) => s?.function?.name).filter(Boolean);
   ctx.onToolsRouted?.(ctx.offeredToolNames);
 

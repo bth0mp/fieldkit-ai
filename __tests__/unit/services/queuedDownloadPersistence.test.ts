@@ -24,7 +24,7 @@ const params = (over: Partial<DownloadParams> = {}): DownloadParams => ({
   ...over,
 });
 
-const KEY = '@offgrid/queued_downloads';
+const KEY = '@fieldkit/queued_downloads';
 
 describe('serializeQueue (pure)', () => {
   it('projects a queue record to JUST its params (drops promise/resolve/reject)', () => {

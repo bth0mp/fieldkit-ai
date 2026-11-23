@@ -3,8 +3,8 @@
  * server list the onboarding screen actually shows.
  *
  * Device symptom (user, on device): on the onboarding "Set Up Your AI" screen the user taps
- * "Scan Network"; a sheet says servers were NOT found; they dismiss it; and THEN the Off Grid AI
- * Gateway (192.168.1.50) appears in the list. The "not found" alert is WRONG — the server is present
+ * "Scan Network"; a sheet says servers were NOT found; they dismiss it; and THEN the LM Studio
+ * server (192.168.1.50) appears in the list. The "not found" alert is WRONG — the server is present
  * (or gets discovered a moment later).
  *
  * Root cause: the screen runs TWO discoveries. `refreshServerHealth` (auto, on mount / when the server
@@ -15,17 +15,17 @@
  * EMPTY set WITHOUT actually checking — so the alert fires even though the auto-check is about to (and
  * does) render the reachable server. That is the alert-vs-list race the user saw.
  *
- * Product-correct outcome (OGAM user's view): the user must NEVER see "not found" while a server is —
+ * Product-correct outcome (the user's view): the user must NEVER see "not found" while a server is —
  * or is about to be — listed. The alert only fires on a genuinely empty network. When a server is
  * present (persisted / auto-discovered / just scanned), no alert; its row shows.
  *
  * Boundary fakes (device leaves ONLY — never our screen/store/service):
  *  - react-native-device-info: `isEmulator=false` + `getIpAddress` → a private IPv4, so the REAL
  *    `discoverLANServers` actually scans (rather than the emulator early-return).
- *  - global.fetch: the LAN/HTTP transport. `/v1/models` on the gateway answers a device-shaped
+ *  - global.fetch: the LAN/HTTP transport. `/v1/models` on the server answers a device-shaped
  *    OpenAI-compatible model list; every other host is a graceful reject (nothing there). To pin the
- *    device B8 timing deterministically, the gateway's second `/v1/models` hit (the manual scan's own
- *    health check) rejects as if OGAD were still warming up, so that check finds nothing reachable — yet
+ *    device B8 timing deterministically, the server's second `/v1/models` hit (the manual scan's own
+ *    health check) rejects as if the server were still warming up, so that check finds nothing reachable — yet
  *    the server IS discovered/added and the follow-up auto-check marks it reachable a moment later.
  * Everything above the boundary — the real ModelDownloadScreen, the real remoteServerStore +
  * remoteServerManager, the real refreshServerHealth / handleScanNetwork, the real networkDiscovery —
@@ -57,38 +57,38 @@ import { ModelDownloadScreen } from '../../../src/screens/ModelDownloadScreen';
 import { useRemoteServerStore } from '../../../src/stores/remoteServerStore';
 import { resetStores } from '../../utils/testHelpers';
 
-const GATEWAY_ENDPOINT = 'http://192.168.1.50:7878';
+const SERVER_ENDPOINT = 'http://192.168.1.50:1234';
 
 /** A minimal navigation stub — the screen only calls navigation.replace on Connect/Skip, neither of
  *  which this test exercises. It is NOT our code under test; the tested behaviour is the alert vs the row. */
 const navigation = { replace: jest.fn(), navigate: jest.fn(), goBack: jest.fn() } as any;
 
 /**
- * Fake the LAN/HTTP boundary — the gateway's /v1/models transport.
+ * Fake the LAN/HTTP boundary — the server's /v1/models transport.
  *
  * - `serverReachable=false`: nothing on the network answers → the genuinely-empty case.
- * - `flakyWarmup=true` (models the device B8 timing): the gateway is answered on the FIRST probe (the
+ * - `flakyWarmup=true` (models the device B8 timing): the server is answered on the FIRST probe (the
  *   discovery subnet sweep, which finds + adds the server), REJECTS on the SECOND (the manual scan's own
- *   health check runs while OGAD is still warming up — no model list yet, so testConnection deems it
+ *   health check runs while the server is still warming up — no model list yet, so testConnection deems it
  *   unreachable), then answers again from the THIRD on (the auto health-check fired by the just-added
  *   server settles a moment later and marks it reachable → its row renders). That reproduces exactly what
- *   the user saw: "it said no servers found, but added ogad to the list" — the alert (from the failed 2nd
+ *   the user saw: "it said no servers found, but added the server to the list" — the alert (from the failed 2nd
  *   check) and the row (from the later successful check) both, at once.
  */
 function installFetch(opts: { serverReachable: boolean; flakyWarmup?: boolean }): void {
   const { serverReachable, flakyWarmup } = opts;
-  const modelsBody = { object: 'list', data: [{ id: 'gateway-llama-3-8b', object: 'model', owned_by: 'local' }] };
-  let gatewayModelHits = 0;
+  const modelsBody = { object: 'list', data: [{ id: 'server-llama-3-8b', object: 'model', owned_by: 'local' }] };
+  let serverModelHits = 0;
 
   (global as unknown as { fetch: unknown }).fetch = jest.fn(async (input: string) => {
     const url = String(input);
-    const isGatewayModels = url.startsWith(GATEWAY_ENDPOINT) && url.includes('/v1/models');
-    if (serverReachable && isGatewayModels) {
-      gatewayModelHits += 1;
+    const isServerModels = url.startsWith(SERVER_ENDPOINT) && url.includes('/v1/models');
+    if (serverReachable && isServerModels) {
+      serverModelHits += 1;
       // 2nd hit rejects during warm-up so the manual scan's health check finds nothing reachable — the
       // exact device transient. Every other hit answers, so discovery finds it and the later auto-check
       // marks it reachable.
-      if (flakyWarmup && gatewayModelHits === 2) throw new Error('warming up');
+      if (flakyWarmup && serverModelHits === 2) throw new Error('warming up');
       return { ok: true, status: 200, json: async () => modelsBody };
     }
     // Everything else — the rest of the discovery subnet sweep, capability probes, unreachable hosts —
@@ -113,8 +113,8 @@ describe('Scan Network — alert matches the rendered list (device state-mismatc
     jest.clearAllMocks();
   });
 
-  it('does NOT show "No Servers Found" while the gateway is (or is about to be) listed', async () => {
-    // The gateway is reachable and the scan discovers it, but its health check flaps during warm-up (the
+  it('does NOT show "No Servers Found" while the server is (or is about to be) listed', async () => {
+    // The server is reachable and the scan discovers it, but its health check flaps during warm-up (the
     // device B8 timing) so the manual scan's own check finds nothing reachable — yet the server IS added
     // and the follow-up auto-check marks it reachable a moment later.
     installFetch({ serverReachable: true, flakyWarmup: true });
@@ -125,17 +125,17 @@ describe('Scan Network — alert matches the rendered list (device state-mismatc
     // empty store the mount auto-check settles immediately, so "Scan Network" is pressable.
     await waitFor(() => { expect(ui.queryByText('Scan Network')).not.toBeNull(); }, { timeout: 5000 });
 
-    // Real gesture: tap "Scan Network". The real discoverLANServers finds the gateway and adds it; the
+    // Real gesture: tap "Scan Network". The real discoverLANServers finds the server and adds it; the
     // scan's own health check flaps (finds nothing reachable this instant); the servers-changed auto-check
-    // then marks the gateway reachable so its row renders.
+    // then marks the server reachable so its row renders.
     await act(async () => {
       fireEvent.press(ui.getByText('Scan Network'));
       await new Promise((r) => setTimeout(r, 0));
     });
 
-    // Terminal artifact: the discovered gateway row is present (its name renders)...
+    // Terminal artifact: the discovered server row is present (its name renders)...
     await waitFor(() => {
-      expect(ui.queryByText(/AI Gateway/)).not.toBeNull();
+      expect(ui.queryByText(/LM Studio/)).not.toBeNull();
     }, { timeout: 5000 });
     // ...and the "not found" alert is NOT shown. The alert and the list AGREE.
     expect(ui.queryByText('No Servers Found')).toBeNull();
@@ -155,5 +155,14 @@ describe('Scan Network — alert matches the rendered list (device state-mismatc
       expect(ui.queryByText('No Servers Found')).not.toBeNull();
     }, { timeout: 5000 });
     expect(ui.queryByTestId(/^discovered-server-/)).toBeNull();
+
+    // The finished scan probed Ollama and LM Studio only: nothing went to the port of a product that is gone.
+    const probedPorts = new Set(
+      (global.fetch as jest.Mock).mock.calls
+        .map(([url]) => String(url))
+        .filter(url => url.startsWith('http://192.168'))
+        .map(url => new URL(url).port),
+    );
+    expect([...probedPorts].sort()).toEqual(['11434', '1234']);
   });
 });

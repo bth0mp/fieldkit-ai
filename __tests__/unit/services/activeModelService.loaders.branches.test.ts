@@ -234,7 +234,7 @@ describe('doLoadImageModel branches', () => {
 
   it('unloads the previously loaded image model when id differs', async () => {
     mockedImage.loadModel.mockResolvedValue(undefined as any);
-    mockedImage.unloadModel.mockResolvedValue(undefined as any);
+    mockedImage.unloadModel.mockResolvedValue(true);
     const ctx = imgCtx({ loadedImageModelId: 'other' });
     await doLoadImageModel(ctx);
     expect(mockedImage.unloadModel).toHaveBeenCalled();
@@ -245,10 +245,23 @@ describe('doLoadImageModel branches', () => {
 
   it('unloads when needsThreadReload even if same id', async () => {
     mockedImage.loadModel.mockResolvedValue(undefined as any);
-    mockedImage.unloadModel.mockResolvedValue(undefined as any);
+    mockedImage.unloadModel.mockResolvedValue(true);
     const ctx = imgCtx({ loadedImageModelId: 'img-1', needsThreadReload: true });
     await doLoadImageModel(ctx);
     expect(mockedImage.unloadModel).toHaveBeenCalled();
+  });
+
+  it('keeps the first image model and does not load the second when it will not unload', async () => {
+    mockedImage.unloadModel.mockResolvedValue(false);
+    const ctx = imgCtx({ loadedImageModelId: 'other' });
+
+    await expect(doLoadImageModel(ctx)).rejects.toThrow(/could not be unloaded/);
+
+    expect(mockedImage.loadModel).not.toHaveBeenCalled();
+    expect(ctx.onError).not.toHaveBeenCalled(); // the first stays recorded as loaded
+    expect(ctx.onLoaded).not.toHaveBeenCalled();
+    expect(ctx.store.setActiveImageModelId).not.toHaveBeenCalled();
+    expect(ctx.onFinally).toHaveBeenCalled();
   });
 
   it('does not unload when no model is loaded yet', async () => {

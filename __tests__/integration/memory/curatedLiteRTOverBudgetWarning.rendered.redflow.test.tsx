@@ -9,7 +9,7 @@
  * download button is disabled={!isCompatible}, and isCompatible duplicated the budget math and was
  * false for the over-budget card — so even if it rendered, the warning was unreachable.
  *
- * SPEC (OGAM user's view): on a device where E4B exceeds the safe RAM budget but STILL has a warning,
+ * SPEC (the user's view): on a device where E4B exceeds the safe RAM budget but STILL has a warning,
  * the E4B card IS offered — its download button is enabled and tapping it shows the
  * "may exceed your device's memory" sheet with a "Download anyway" escape hatch (the guard). A curated
  * model that is over budget AND has NO warning (E2B on this same 4GB device) stays hidden, because

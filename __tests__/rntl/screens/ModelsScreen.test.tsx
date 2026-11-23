@@ -438,7 +438,7 @@ describe('ModelsScreen', () => {
   });
 
   // ============================================================================
-  // Voice Models Tab (empty when pro is absent)
+  // Voice Models Tab (empty when no voice panel is registered)
   // ============================================================================
   describe('voice models tab', () => {
     it('always shows the Voice Models tab button', async () => {

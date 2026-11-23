@@ -1,5 +1,5 @@
 /**
- * displayModelName — the picker label for a remote model. Some gateways report
+ * displayModelName — the picker label for a remote model. Some servers report
  * the model id as a full file path; the picker must show a clean basename without
  * the extension, while the raw id is still used for loading.
  */
@@ -7,7 +7,7 @@ import { displayModelName } from '../../../src/stores/remoteServerHelpers';
 
 describe('displayModelName', () => {
   it('strips a full file path down to the basename without extension', () => {
-    expect(displayModelName('/Users/admin/.offgrid/models/Qwen3.5-9B-Q4_K_M.gguf'))
+    expect(displayModelName('/Users/admin/models/Qwen3.5-9B-Q4_K_M.gguf'))
       .toBe('Qwen3.5-9B-Q4_K_M');
   });
 

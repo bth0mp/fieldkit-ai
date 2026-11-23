@@ -12,7 +12,7 @@
  */
 
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, act } from '@testing-library/react-native';
 
 // Navigation is globally mocked in jest.setup.ts
 const mockGoBack = jest.fn();
@@ -35,7 +35,7 @@ jest.mock('@react-navigation/native', () => {
 });
 
 const mockSetEnabled = jest.fn();
-const mockRemovePassphrase = jest.fn(() => Promise.resolve());
+const mockRemovePassphrase = jest.fn(() => Promise.resolve(true));
 
 let mockAuthEnabled = false;
 
@@ -54,7 +54,7 @@ jest.mock('../../../src/stores', () => ({
 
 jest.mock('../../../src/services', () => ({
   authService: {
-    removePassphrase: mockRemovePassphrase,
+    removePassphrase: (...args: any[]) => (mockRemovePassphrase as any)(...args),
   },
 }));
 
@@ -270,6 +270,29 @@ describe('SecuritySettingsScreen', () => {
       expect(queryByTestId('alert-title')?.props.children).toBe('Disable Passphrase Lock');
       expect(getByText('Disable')).toBeTruthy();
       expect(getByText('Cancel')).toBeTruthy();
+    });
+
+    it('disables the lock once the passphrase is removed', async () => {
+      const { getAllByRole, getByTestId } = render(<SecuritySettingsScreen />);
+      fireEvent(getAllByRole('switch')[0], 'valueChange', false);
+      await act(async () => {
+        fireEvent.press(getByTestId('alert-button-Disable'));
+      });
+
+      expect(mockRemovePassphrase).toHaveBeenCalled();
+      expect(mockSetEnabled).toHaveBeenCalledWith(false);
+    });
+
+    it('keeps the lock on and says so when the keychain cannot be cleared', async () => {
+      mockRemovePassphrase.mockResolvedValueOnce(false);
+      const { getAllByRole, getByTestId } = render(<SecuritySettingsScreen />);
+      fireEvent(getAllByRole('switch')[0], 'valueChange', false);
+      await act(async () => {
+        fireEvent.press(getByTestId('alert-button-Disable'));
+      });
+
+      expect(mockSetEnabled).not.toHaveBeenCalled();
+      expect(getByTestId('alert-title').props.children).toBe("Couldn't turn the lock off");
     });
 
     it('does not disable auth when cancelled', () => {

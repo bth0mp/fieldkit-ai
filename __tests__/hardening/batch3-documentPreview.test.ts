@@ -72,7 +72,7 @@ describe('Batch3 · document preview content the screen consumes (real service)'
 
   // ── #16: JSON raw text is preserved verbatim for the monospace preview ──────
   it('preserves JSON raw text verbatim (no parsing/mangling) for the preview (#16)', async () => {
-    const json = '{\n  "name": "off-grid",\n  "n": 42\n}';
+    const json = '{\n  "name": "solar-kit",\n  "n": 42\n}';
     rnfs.exists.mockResolvedValue(true);
     rnfs.stat.mockResolvedValue({ size: json.length, isFile: () => true } as any);
     rnfs.readFile.mockResolvedValue(json);

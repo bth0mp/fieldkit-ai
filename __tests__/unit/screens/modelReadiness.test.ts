@@ -36,6 +36,16 @@ describe('reasonFromLoadError', () => {
     expect(reasonFromLoadError(new Error('insufficient memory'))).toBe('insufficient-memory');
     expect(reasonFromLoadError(new Error('process killed by jetsam'))).toBe('insufficient-memory');
     expect(reasonFromLoadError(new Error('ran out of memory'))).toBe('insufficient-memory');
+    expect(reasonFromLoadError(new Error('Insufficient memory'))).toBe('insufficient-memory');
+    expect(reasonFromLoadError(new Error('OOM while loading'))).toBe('insufficient-memory');
+    expect(reasonFromLoadError(new Error('Not enough RAM for this model'))).toBe('insufficient-memory');
+  });
+
+  it('does not call a remote account error a memory error', () => {
+    expect(reasonFromLoadError(new Error('Insufficient credits. Add more using https://openrouter.ai/settings/credits')))
+      .toBe('load-threw');
+    expect(reasonFromLoadError(new Error('insufficient_quota: you exceeded your current quota')))
+      .toBe('load-threw');
   });
 
   it('falls back to load-threw for anything else', () => {

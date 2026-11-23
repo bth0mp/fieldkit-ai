@@ -4,7 +4,8 @@ import { useNavigation } from '@react-navigation/native';
 import RNFS from 'react-native-fs';
 import { unzip } from 'react-native-zip-archive';
 import { pick, types, isErrorWithCode, errorCodes } from '@react-native-documents/picker';
-import { showAlert, AlertState, initialAlertState } from '../../components/CustomAlert';
+import { showAlert, AlertState } from '../../components/CustomAlert';
+import { useAlertQueue } from '../../hooks/useAlertQueue';
 import { useFocusTrigger } from '../../hooks/useFocusTrigger';
 import { useAppStore } from '../../stores';
 import { useDownloadStore, isActiveStatus, isFailedStatus } from '../../stores/downloadStore';
@@ -77,7 +78,7 @@ export function useModelsScreen() {
   const navigation = useNavigation<NavigationProp>();
   const focusTrigger = useFocusTrigger();
   const [activeTab, setActiveTabState] = useState<ModelTab>('text');
-  const [alertState, setAlertState] = useState<AlertState>(initialAlertState);
+  const { alertState, setAlertState, alertKey } = useAlertQueue();
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState<{ fraction: number; fileName: string } | null>(null);
 
@@ -229,6 +230,7 @@ export function useModelsScreen() {
     activeTab,
     setActiveTab,
     alertState,
+    alertKey,
     setAlertState,
     isImporting,
     importProgress,

@@ -4,7 +4,7 @@
 
 **Goal:** Fieldkit speaks assistant replies aloud with the phone's offline system voices: on demand from the action menu or a Speak button, and optionally sentence by sentence while a reply streams.
 
-**Architecture:** A first-party Kotlin module `FieldkitSpeech` wraps Android `TextToSpeech`. A `SpeechEngine` interface in `src/services/speech/` hides it, and `speechService` owns readiness, the state machine, the queue and the offline-voice filter. `speechStore` is a thin projection written only by the service. A feature bootstrap in `src/features/` registers the existing core voice hooks and slots at app start, independent of Off Grid's license-gated `loadProFeatures`.
+**Architecture:** A first-party Kotlin module `FieldkitSpeech` wraps Android `TextToSpeech`. A `SpeechEngine` interface in `src/services/speech/` hides it, and `speechService` owns readiness, the state machine, the queue and the offline-voice filter. `speechStore` is a thin projection written only by the service. A feature bootstrap in `src/features/` registers the existing core voice hooks and slots at app start, independent of the license-gated `loadProFeatures` of the app this one started from.
 
 **Tech Stack:** React Native 0.83.1, TypeScript, zustand 5, Kotlin 2.2 (legacy bridge module under `newArchEnabled=true`), Jest + RNTL rendered tests with `__tests__/harness/`, Robolectric 4.13.
 
@@ -12,10 +12,10 @@
 
 ## Global Constraints
 
-- No new npm dependencies; no GPL/AGPL/LGPL code at runtime. Nothing is copied from Off Grid's Pro module or its history.
+- No new npm dependencies; no GPL/AGPL/LGPL code at runtime. Nothing is copied from the proprietary Pro module, or its history, of the app this one started from.
 - Only voices with `networkRequired == false` and `notInstalled == false` are ever selected or spoken.
 - NativeModules key `FieldkitSpeech`. Events `FieldkitSpeech_start`, `FieldkitSpeech_done`, `FieldkitSpeech_stopped`, `FieldkitSpeech_error`. iOS parity: module absent means unavailable (no Swift).
-- UI: theme tokens only (`TYPOGRAPHY`, `SPACING` from `src/constants`, colors from `useTheme`), font weight <= 400, Feather icons, no emoji, no Off Grid/Wednesday text. ESLint: max-params 3 (use an options object), max-lines 500, complexity 20.
+- UI: theme tokens only (`TYPOGRAPHY`, `SPACING` from `src/constants`, colors from `useTheme`), font weight <= 400, Feather icons, no emoji, no names from the app this one started from. ESLint: max-params 3 (use an options object), max-lines 500, complexity 20.
 - Tests go in `__tests__/integration/voice/` (never paths containing `tts`, `/audio/`, `/engine/`, `/android/`). Device fakes and registries are read after `setupChatScreen` / `installNativeBoundary`, because both call `jest.resetModules()`.
 - Device rule: only the debug build `com.bth0mp.fieldkit.dev` is installed on the owner's phone. Never install a release APK, and never uninstall, clear or overwrite `com.bth0mp.fieldkit`. If an install fails with `INSTALL_FAILED_*`, STOP and ask the owner.
 - Before every commit: `npx tsc --noEmit`, `npx eslint <changed files>`, `npm run depcruise`, `npm run knip`, the task's tests, and `npx jest --findRelatedTests <changed src files>` (what the pre-push hook runs). Pushes go through the hook, never `--no-verify`.
@@ -61,13 +61,13 @@ Expected: `git status` does not list `local.properties` (it is gitignored).
 
 - [ ] **Step 6: Prove the pre-push Gradle gates on unchanged code**
 
-Run from Git Bash in the real path `D:/Claude Code/Off Grid AI`, using the hook's own commands: `cd android && ./gradlew compileDebugKotlin --quiet && ./gradlew :app:lintDebug --quiet && cd .. && npm run test:android`
+Run from Git Bash in the real path `<repo folder>`, using the hook's own commands: `cd android && ./gradlew compileDebugKotlin --quiet && ./gradlew :app:lintDebug --quiet && cd .. && npm run test:android`
 Expected: all three succeed, including the 5 existing Kotlin unit tests. Settings-time autolinking spawns `cmd /c npx`, which the tool sandbox has blocked before, so run with the sandbox disabled if it fails with `cmd.exe ENOENT`. If a gate fails on code this plan did not write, STOP and report to the owner; do not fix it inside a feature task.
 
 - [ ] **Step 7: Prove a debug build and USB install**
 
 Run (PowerShell):
-1. `subst F: "D:\Claude Code\Off Grid AI"`
+1. `subst F: "<repo folder>"`
 2. `cd F:\android; .\gradlew.bat assembleDebug -PreactNativeArchitectures=arm64-v8a`
 3. With the S24 Ultra connected and USB debugging on: `adb devices`, then `adb install -r F:\android\app\build\outputs\apk\debug\app-debug.apk`, then `adb reverse tcp:8081 tcp:8081`.
 4. Run `npm start` from `F:\` in a separate PowerShell window and leave it running.
@@ -80,10 +80,10 @@ Expected: "Fieldkit AI (Debug)" launches next to the owner's "Fieldkit AI" and l
 ### Task 2: `FieldkitSpeech` native module
 
 **Files:**
-- Create: `android/app/src/main/java/ai/offgridmobile/speech/FieldkitSpeechModule.kt`, `FieldkitSpeechPackage.kt`
-- Modify: `android/app/src/main/java/ai/offgridmobile/MainApplication.kt` (`add(FieldkitSpeechPackage())` inside `PackageList(this).packages.apply { }`)
+- Create: `android/app/src/main/java/com/bth0mp/fieldkit/speech/FieldkitSpeechModule.kt`, `FieldkitSpeechPackage.kt`
+- Modify: `android/app/src/main/java/com/bth0mp/fieldkit/MainApplication.kt` (`add(FieldkitSpeechPackage())` inside `PackageList(this).packages.apply { }`)
 - Modify: `android/app/src/main/AndroidManifest.xml` (add `<queries><intent><action android:name="android.intent.action.TTS_SERVICE"/></intent></queries>` after the last `<uses-permission>`, before `<application>`)
-- Test: `android/app/src/test/java/ai/offgridmobile/speech/FieldkitSpeechModuleTest.kt`
+- Test: `android/app/src/test/java/com/bth0mp/fieldkit/speech/FieldkitSpeechModuleTest.kt`
 
 **Interfaces:**
 - Produces (JS-visible, `getName() = "FieldkitSpeech"`; every method takes a trailing `Promise`):
@@ -127,20 +127,20 @@ class FieldkitSpeechModuleTest {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run (Git Bash): `cd android && ./gradlew :app:testDebugUnitTest --tests "ai.offgridmobile.speech.*"`
+Run (Git Bash): `cd android && ./gradlew :app:testDebugUnitTest --tests "com.bth0mp.fieldkit.speech.*"`
 Expected: FAIL, unresolved reference `FieldkitSpeechModule`.
 
 - [ ] **Step 3: Implement the module, the package, the registration and the `<queries>` entry** as specified above.
 
 - [ ] **Step 4: Run the gates**
 
-Run (Git Bash): `cd android && ./gradlew :app:testDebugUnitTest --tests "ai.offgridmobile.speech.*" && ./gradlew compileDebugKotlin --quiet && ./gradlew :app:lintDebug --quiet`
+Run (Git Bash): `cd android && ./gradlew :app:testDebugUnitTest --tests "com.bth0mp.fieldkit.speech.*" && ./gradlew compileDebugKotlin --quiet && ./gradlew :app:lintDebug --quiet`
 Expected: PASS, with no new lint issues against `lint-baseline.xml` (in particular, no `NewApi`).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add android/app/src/main/java/ai/offgridmobile/speech android/app/src/test/java/ai/offgridmobile/speech android/app/src/main/java/ai/offgridmobile/MainApplication.kt android/app/src/main/AndroidManifest.xml
+git add android/app/src/main/java/com/bth0mp/fieldkit/speech android/app/src/test/java/com/bth0mp/fieldkit/speech android/app/src/main/java/com/bth0mp/fieldkit/MainApplication.kt android/app/src/main/AndroidManifest.xml
 git commit -m "feat(android): FieldkitSpeech module over system TextToSpeech"
 ```
 

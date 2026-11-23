@@ -38,7 +38,7 @@
   - Each note keeps the card's URL in `source`, which is not shown to the user.
   - A model with no honest note gets none. Never write placeholder text.
 - Offline copy, exactly: "Needs a connection to search, sort or show download numbers."
-- No Off Grid or Wednesday names, logos or links in anything the user sees.
+- No names, logos or links from the app this one started from in anything the user sees.
 - Each green step is its own commit, with a per-concern message ending in `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Run git commands one per call; the worktree guard refuses compound git commands.
 - Checks before each commit:
   - `npx tsc --noEmit`;
@@ -263,7 +263,7 @@ it('updated ago', () => {
 - [ ] **Step 1: Write the failing test.**
   - Every `RECOMMENDED_MODELS` id, every `WHISPER_MODELS` id and every LiteRT `fileName` either has a note or appears in an exported `NO_NOTE: Record<string, string>` (id → reason).
   - Every note's `source` matches `^https://huggingface\.co/`. Every `PhoneTier.sources` entry starts with `https://`.
-  - `goodFor` and `notFor` are each 1-70 characters, have no emoji (`/\p{Extended_Pictographic}/u`), and contain no "Off Grid" or "Wednesday" (case-insensitive).
+  - `goodFor` and `notFor` are each 1-70 characters, have no emoji (`/\p{Extended_Pictographic}/u`), and contain no name of the app this one started from or of its company (case-insensitive).
   - `PHONE_TIERS.map(t => t.gb)` equals `[4, 6, 8, 12, 16]`. Each tier has at most 3 examples, and `examples.length === sources.length` (one spec page per phone, in the same order).
   - Each `IMAGE_NOTES[].sizeBytes` is greater than 0.
 

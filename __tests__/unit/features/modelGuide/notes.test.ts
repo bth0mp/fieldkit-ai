@@ -15,7 +15,7 @@ import {
 } from '../../../../src/features/modelGuide/notes';
 
 const EMOJI = /\p{Extended_Pictographic}/u;
-const BANNED = /off\s?grid|wednesday/i;
+const BANNED = /wednesday/i;
 
 function expectCovered(ids: string[], notes: Record<string, ModelNote>) {
   for (const id of ids) {

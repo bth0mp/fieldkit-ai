@@ -1,10 +1,13 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useStore } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { Message, Conversation, GenerationMeta } from '../types';
 import { stripStreamingControlTokens, parseModelOutput } from '../utils/messageContent';
 import { generateId } from '../utils/generateId';
 import { callHook, HOOKS } from '../bootstrap/hookRegistry';
+import { createHydrationGatedStorage } from '../utils/hydrationGatedStorage';
+import { createChunkedStorage, readOversizedRow } from '../utils/chunkedStorage';
+import { renamingStorage } from '../services/earlierIds';
 
 function nextUpdatedAt(previousUpdatedAt?: string): string {
   const now = Date.now();
@@ -100,6 +103,18 @@ interface ChatState {
   clearAllConversations: () => void;
   getConversationMessages: (conversationId: string) => Message[];
 }
+
+type PersistedChatState = Pick<ChatState, 'conversations' | 'activeConversationId'>;
+
+// The saved chats are one stored value. The gate keeps launch defaults from replacing it while it cannot
+// be read, the chunked layer keeps it readable on Android, and an unchanged list is not written again
+// (a streamed reply changes other fields of the store at token rate).
+const chatStorage = createHydrationGatedStorage<PersistedChatState>(
+  renamingStorage(createChunkedStorage(undefined, readOversizedRow)),
+  (previous, next) =>
+    previous.conversations === next.conversations &&
+    previous.activeConversationId === next.activeConversationId,
+);
 
 export const useChatStore = create<ChatState>()(
   persist(
@@ -270,9 +285,8 @@ export const useChatStore = create<ChatState>()(
           isStreaming: true,
           isThinking: false,
         }));
-        // Feed only the ANSWER to pro audio for real-time sentence-by-sentence
-        // TTS (never the reasoning) — no-op unless voice mode + engine ready;
-        // free builds register nothing.
+        // Feed only the ANSWER to the voice feature for real-time sentence-by-sentence
+        // TTS (never the reasoning) — no-op unless voice mode + engine ready.
         callHook(HOOKS.audioOnStreamingToken, speakableStreamingAnswer(get().streamingMessage, get().streamingReasoningContent));
       },
 
@@ -368,11 +382,22 @@ export const useChatStore = create<ChatState>()(
     }),
     {
       name: 'local-llm-chat-storage',
-      storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({
+      storage: chatStorage.storage,
+      onRehydrateStorage: chatStorage.onRehydrateStorage(),
+      // A read that lands after the user moved (slow or retried) keeps the chat they have open; a new
+      // chat stays null instead of switching to the saved one. Chats made meanwhile join the saved ones.
+      merge: chatStorage.merge<ChatState>(undefined, ['activeConversationId']),
+      partialize: (state): PersistedChatState => ({
         conversations: state.conversations,
         activeConversationId: state.activeConversationId,
       }),
     }
   )
 );
+chatStorage.attach(useChatStore);
+
+/** True while the saved chats cannot be read: new chats are not saved until they can be. */
+export const useChatsUnreadable = (): boolean => useStore(chatStorage.status, s => s.unreadable);
+
+/** Read the saved chats again now. */
+export const retryLoadingChats = (): Promise<void> => chatStorage.retryNow();

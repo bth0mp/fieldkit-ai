@@ -24,6 +24,7 @@ jest.mock('../../../src/components/AnimatedListItem', () => ({
 }));
 jest.mock('../../../package.json', () => ({ version: '1.0.0' }), { virtual: true });
 
+import { OLD_PROJECT_NAME } from '../../utils/ownNamePattern';
 import { AboutScreen } from '../../../src/screens/AboutScreen';
 import { OpenSourceLicensesScreen } from '../../../src/screens/OpenSourceLicensesScreen';
 
@@ -33,7 +34,7 @@ describe('AboutScreen', () => {
   it('shows the app name and no upstream branding', () => {
     const { getByText, queryByText } = render(<AboutScreen />);
     expect(getByText(BRAND.name)).toBeTruthy();
-    expect(queryByText(/Off Grid|Wednesday|Slack|@alichherawalla/)).toBeNull();
+    expect(queryByText(new RegExp(`${OLD_PROJECT_NAME}|Wednesday|Slack|@alichherawalla`, 'i'))).toBeNull();
   });
 
   it('opens this app\'s own repository from Source Code', () => {
@@ -51,9 +52,10 @@ describe('AboutScreen', () => {
 });
 
 describe('OpenSourceLicensesScreen', () => {
-  it('shows the original MIT notice when its entry is opened', () => {
+  it('shows the MIT notice when its entry is opened', () => {
     const { getByText } = render(<OpenSourceLicensesScreen />);
-    fireEvent.press(getByText(/Off Grid AI \(the open-source app this one is based on\)/));
+    fireEvent.press(getByText(/MIT-licensed code this app includes/));
+    expect(getByText(/Copyright \(c\) 2026 Mohammed Ali Chherawalla/)).toBeTruthy();
     expect(getByText(/Permission is hereby granted, free of charge/)).toBeTruthy();
   });
 

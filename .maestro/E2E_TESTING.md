@@ -137,7 +137,7 @@ Required test IDs:
 
 ### Basic Structure
 ```yaml
-appId: ai.offgridmobile
+appId: com.bth0mp.fieldkit
 name: "Test Name"
 tags:
   - p0

@@ -684,7 +684,7 @@ it('finds a checklist, a bundled guide and nothing, and opens what was tapped', 
 - [ ] **Step 3: Run the push hook by hand**
   Run: `bash .husky/pre-push`. Expected: exit 0.
 - [ ] **Step 4: Build and install the standalone debug APK**
-  Follow the memory note "Fieldkit standalone debug APK" (`build-standalone.sh` into an empty stage folder). For a worktree build, first copy in patch-package and the audio-api prebuilts, per "Fieldkit worktree hooks". Install from PowerShell with `adb install -r -d "android\app\build\outputs\apk\debug\app-debug.apk"`. Expected: logcat shows `Running "OffgridMobile"`.
+  Follow the memory note "Fieldkit standalone debug APK" (`build-standalone.sh` into an empty stage folder). For a worktree build, first copy in patch-package and the audio-api prebuilts, per "Fieldkit worktree hooks". Install from PowerShell with `adb install -r -d "android\app\build\outputs\apk\debug\app-debug.apk"`. Expected: logcat shows `Running "Fieldkit"`.
 - [ ] **Step 5: Confirm no location permission**
   Run: `apkanalyzer manifest permissions <apk>` (or `aapt dump permissions <apk>`). Expected: no `ACCESS_FINE_LOCATION` or `ACCESS_COARSE_LOCATION`. `ACCESS_NETWORK_STATE` is expected.
 - [ ] **Step 6: Hand the phone build to the owner**
