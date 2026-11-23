@@ -61,6 +61,11 @@ if [ -n "$PUSHED_JS" ]; then
   npm run knip
 fi
 
+# The app carries no name of the project it grew from. A doc, script, manifest or fixture can bring it back
+# without touching JS/TS, so this runs on every push.
+echo "▶ Own-name guard..."
+npx jest __tests__/unit/ownName.test.ts
+
 # The guide catalogue ships inside the app and is fetched by it, but a data-only push changes no JS/TS, so the
 # block above skips it. Check the shipped catalogue parses and passes the checker's rules whenever it changes.
 if [ -n "$PUSHED_CATALOG" ]; then

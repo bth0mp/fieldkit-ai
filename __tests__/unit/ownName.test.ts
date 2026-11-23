@@ -20,10 +20,19 @@ const ALLOWED_FILES = [
   'catalog/REJECTED.md',
 ];
 
+// Git exports these to hooks; left in place they would point `git` at the wrong repository.
+function cleanEnv(): NodeJS.ProcessEnv {
+  const env = { ...process.env };
+  delete env.GIT_DIR;
+  delete env.GIT_WORK_TREE;
+  delete env.GIT_INDEX_FILE;
+  return env;
+}
+
 function git(args: string[], okCodes: number[] = [0]): string {
-  const root = execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: __dirname, encoding: 'utf8' }).trim();
+  const root = execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: __dirname, encoding: 'utf8', env: cleanEnv() }).trim();
   try {
-    return execFileSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+    return execFileSync('git', args, { cwd: root, encoding: 'utf8', env: cleanEnv(), maxBuffer: 64 * 1024 * 1024 });
   } catch (error) {
     const status = (error as { status?: number }).status;
     // git grep exits 1 when nothing matches.
