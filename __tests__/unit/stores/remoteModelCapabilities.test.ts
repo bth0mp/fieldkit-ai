@@ -188,7 +188,7 @@ describe('fetchLmStudioModelInfo', () => {
 describe('fetchLlamaCppProps', () => {
   it('returns null on network error', async () => {
     mockFetchError(new Error('offline'));
-    expect(await fetchLlamaCppProps('http://localhost:7878')).toBeNull();
+    expect(await fetchLlamaCppProps('http://localhost:8080')).toBeNull();
   });
 
   it('returns null on non-ok (not a llama.cpp server)', async () => {
@@ -210,7 +210,7 @@ describe('fetchLlamaCppProps', () => {
         default_generation_settings: { n_ctx: 37888, params: { reasoning_format: 'none' } },
       }),
     } as any);
-    const info = await fetchLlamaCppProps('http://192.168.1.58:7878');
+    const info = await fetchLlamaCppProps('http://192.168.1.58:8080');
     expect(info).not.toBeNull();
     expect(info!.supportsVision).toBe(true);
     expect(info!.supportsToolCalling).toBe(true);
@@ -229,7 +229,7 @@ describe('fetchLlamaCppProps', () => {
         default_generation_settings: { n_ctx: 4096, params: { reasoning_format: 'none' } },
       }),
     } as any);
-    const info = await fetchLlamaCppProps('http://192.168.1.58:7878');
+    const info = await fetchLlamaCppProps('http://192.168.1.58:8080');
     expect(info!.acceptsThinkingKwarg).toBe(true);
     expect(info!.supportsThinking).toBe(true);
   });
@@ -247,7 +247,7 @@ describe('fetchLlamaCppProps', () => {
         default_generation_settings: { n_ctx: 37888, params: { reasoning_format: 'none' } },
       }),
     } as any);
-    const info = await fetchLlamaCppProps('http://192.168.1.58:7878');
+    const info = await fetchLlamaCppProps('http://192.168.1.58:8080');
     expect(info!.supportsThinking).toBe(true);
   });
 
@@ -260,7 +260,7 @@ describe('fetchLlamaCppProps', () => {
         default_generation_settings: { n_ctx: 4096, params: { reasoning_format: 'none' } },
       }),
     } as any);
-    const info = await fetchLlamaCppProps('http://192.168.1.58:7878');
+    const info = await fetchLlamaCppProps('http://192.168.1.58:8080');
     expect(info!.supportsThinking).toBe(true);
   });
 
@@ -268,11 +268,11 @@ describe('fetchLlamaCppProps', () => {
     const logger = require('../../../src/utils/logger').default;
     logger.warn.mockClear();
     mockFetchError(new Error('DNS failure'));
-    const info = await fetchLlamaCppProps('http://192.168.1.58:7878');
+    const info = await fetchLlamaCppProps('http://192.168.1.58:8080');
     expect(info).toBeNull();
     expect(logger.warn).toHaveBeenCalledWith(
       '[fetchLlamaCppProps] /props unavailable:',
-      'http://192.168.1.58:7878',
+      'http://192.168.1.58:8080',
       'DNS failure',
     );
   });
@@ -293,7 +293,7 @@ describe('fetchLlamaCppPropsCached', () => {
       } as any);
     });
 
-    const ep = 'http://192.168.1.58:7878';
+    const ep = 'http://192.168.1.58:8080';
     // Fire three concurrent calls (as N models on one server would).
     const [a, b, c] = await Promise.all([
       fetchLlamaCppPropsCached(ep),
@@ -316,7 +316,7 @@ describe('fetchLlamaCppPropsCached', () => {
         json: async () => ({ modalities: { vision: false }, chat_template_caps: {} }),
       } as any);
     });
-    const ep = 'http://192.168.1.60:7878';
+    const ep = 'http://192.168.1.60:8080';
     await fetchLlamaCppPropsCached(ep);
     await fetchLlamaCppPropsCached(ep); // after settle → new request
     expect(calls).toBe(2);
@@ -390,7 +390,7 @@ describe('fetchModelCapabilities', () => {
       return Promise.resolve({ ok: false } as any);
     });
 
-    const result = await fetchModelCapabilities('http://192.168.1.58:7878', '/Users/admin/models/Qwen3.5-9B-Q4_K_M.gguf', nameDetect);
+    const result = await fetchModelCapabilities('http://192.168.1.58:8080', '/Users/admin/models/Qwen3.5-9B-Q4_K_M.gguf', nameDetect);
     expect(result.supportsVision).toBe(true);
     expect(result.supportsToolCalling).toBe(true);
     expect(result.supportsThinking).toBe(false);
@@ -414,7 +414,7 @@ describe('fetchModelCapabilities', () => {
       return Promise.resolve({ ok: false } as any);
     });
 
-    const result = await fetchModelCapabilities('http://192.168.1.58:7878', 'llava-vision', nameDetect);
+    const result = await fetchModelCapabilities('http://192.168.1.58:8080', 'llava-vision', nameDetect);
     expect(result.supportsVision).toBe(false);
     expect(result.contextLength).toBe(8192);
   });
@@ -434,7 +434,7 @@ describe('fetchModelCapabilities', () => {
       return Promise.resolve({ ok: false } as any);
     });
 
-    const result = await fetchModelCapabilities('http://192.168.1.58:7878', 'some-model', nameDetect);
+    const result = await fetchModelCapabilities('http://192.168.1.58:8080', 'some-model', nameDetect);
     expect(result.supportsThinking).toBe(true);
   });
 });

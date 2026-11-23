@@ -78,7 +78,7 @@ async function addAndConnectServerViaUI(ui: ReturnType<typeof render>) {
 
   // Fill the real modal (targeted by placeholders, like the RemoteServersScreen flow).
   fireEvent.changeText(await waitFor(() => ui.getByPlaceholderText('e.g., Ollama on my laptop')), 'My Desktop');
-  fireEvent.changeText(ui.getByPlaceholderText('http://192.168.1.50:7878'), 'http://localhost:1234');
+  fireEvent.changeText(ui.getByPlaceholderText('http://192.168.1.50:8080'), 'http://localhost:1234');
 
   // Test Connection first — the real probe runs over the faked /v1/models. Save stays disabled until it
   // succeeds, so this is a required real step (mirrors the real add-server UX).

@@ -111,7 +111,7 @@ function createMockServer(overrides: Partial<any> = {}) {
   };
 }
 
-const VALID_ENDPOINT = 'http://192.168.1.50:7878'; // NOSONAR — matches the endpoint field placeholder
+const VALID_ENDPOINT = 'http://192.168.1.50:8080'; // NOSONAR — matches the endpoint field placeholder
 
 describe('RemoteServerModal', () => {
   const onClose = jest.fn();

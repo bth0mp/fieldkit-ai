@@ -617,7 +617,7 @@ describe('remoteServerStore', () => {
       let serverId = '';
       actStoreUpdate(() => {
         serverId = useRemoteServerStore.getState().addServer({
-          name: 'Server', endpoint: 'http://mac:7878', providerType: 'openai-compatible',
+          name: 'Server', endpoint: 'http://mac:8080', providerType: 'openai-compatible',
         });
       });
       let modelsPromise: any;

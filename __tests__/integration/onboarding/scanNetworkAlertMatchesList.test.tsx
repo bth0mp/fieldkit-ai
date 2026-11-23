@@ -155,5 +155,14 @@ describe('Scan Network — alert matches the rendered list (device state-mismatc
       expect(ui.queryByText('No Servers Found')).not.toBeNull();
     }, { timeout: 5000 });
     expect(ui.queryByTestId(/^discovered-server-/)).toBeNull();
+
+    // The finished scan probed Ollama and LM Studio only: nothing went to the port of a product that is gone.
+    const probedPorts = new Set(
+      (global.fetch as jest.Mock).mock.calls
+        .map(([url]) => String(url))
+        .filter(url => url.startsWith('http://192.168'))
+        .map(url => new URL(url).port),
+    );
+    expect([...probedPorts].sort()).toEqual(['11434', '1234']);
   });
 });
