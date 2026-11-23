@@ -317,7 +317,7 @@ class WorkerDownload(
             TAG,
             "streamToFile complete id=$downloadId file=${download.fileName} actualBytes=$bytesWritten dbExpectedBytes=${download.totalBytes} responseExpectedBytes=$totalBytes authoritativeExpectedBytes=$authoritativeExpectedBytes shaPresent=${!download.expectedSha256.isNullOrEmpty()}",
         )
-        // Curated entries (fieldkit/* namespace) opt out of strict size validation
+        // The curated LiteRT model (the JS side sets this only for LITERT_PARENT_ID) opts out of strict size validation
         // because their URLs are pinned to a commit hash — the URL itself is the
         // integrity guarantee, matching how the Google AI Edge Gallery app handles
         // its LiteRT models. A transient Content-Length / payload undershoot from
