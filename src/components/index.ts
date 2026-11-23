@@ -10,8 +10,6 @@ export { ModelSelectorModal } from './ModelSelectorModal';
 export { GenerationSettingsModal } from './GenerationSettingsModal';
 export { CustomAlert, showAlert, hideAlert, initialAlertState } from './CustomAlert';
 export type { AlertState } from './CustomAlert';
-/** @public Used by the optional Pro module. */
-export { CenteredAlert } from './CenteredAlert';
 export { ModelFailureCard } from './ModelFailureCard';
 export { ImageGenAdviceCard } from './ImageGenAdviceCard';
 export { ThinkingIndicator } from './ThinkingIndicator';

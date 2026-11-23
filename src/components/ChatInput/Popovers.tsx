@@ -24,8 +24,7 @@ const clampPopoverRight = (anchorX: number): number => {
 
 const SHADOW_COLOR = '#000';
 
-/** @public Used by the optional Pro module. */
-export const popoverStyles = StyleSheet.create({
+const popoverStyles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -120,8 +119,8 @@ export const QuickSettingsPopover: React.FC<QuickSettingsPopoverProps> = ({
 
   const imgBadge = getImageModeBadge(imageMode, colors);
   const tools = getToolsStyle(supportsToolCalling, enabledToolCount, colors);
-  // The "Voice" row is provided by the pro audio feature via a slot. Free
-  // builds render nothing here.
+  // The "Voice" row is provided by the voice feature via a slot; nothing
+  // renders here until it is registered.
   const AudioRow = getSlot(SLOTS.quickSettingsAudioRow);
 
   // The Tools badge turns amber at 3+

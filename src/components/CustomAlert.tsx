@@ -15,7 +15,6 @@ import { SPACING, TYPOGRAPHY } from '../constants';
 // existing `from '../components/CustomAlert'` importers are unchanged.
 import { AlertButton } from '../utils/alertState';
 
-export type { AlertButton };
 export type { AlertState } from '../utils/alertState';
 export { initialAlertState, showAlert, hideAlert } from '../utils/alertState';
 
