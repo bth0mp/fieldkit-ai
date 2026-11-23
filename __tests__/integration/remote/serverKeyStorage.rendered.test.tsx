@@ -128,7 +128,7 @@ describe('server keys live only in the Keychain', () => {
     const ui = render(<RemoteServersScreen />);
     fireEvent.press(ui.getByText('Add Server'));
     fireEvent.changeText(await waitFor(() => ui.getByPlaceholderText('e.g., Ollama on my laptop')), 'Desk');
-    fireEvent.changeText(ui.getByPlaceholderText('http://192.168.1.50:7878'), ENDPOINT);
+    fireEvent.changeText(ui.getByPlaceholderText('http://192.168.1.50:8080'), ENDPOINT);
     fireEvent.changeText(ui.getByPlaceholderText('sk-...'), 'sk-secret-1');
     fireEvent.press(ui.getByText('Test Connection'));
     await waitFor(() => expect(ui.queryByText(/Connected \(/)).not.toBeNull());
@@ -288,7 +288,7 @@ describe('server keys live only in the Keychain', () => {
     const ui = render(<RemoteServersScreen />);
     fireEvent.press(ui.getByText('Add Server'));
     fireEvent.changeText(await waitFor(() => ui.getByPlaceholderText('e.g., Ollama on my laptop')), 'Desk');
-    fireEvent.changeText(ui.getByPlaceholderText('http://192.168.1.50:7878'), ENDPOINT);
+    fireEvent.changeText(ui.getByPlaceholderText('http://192.168.1.50:8080'), ENDPOINT);
     fireEvent.changeText(ui.getByPlaceholderText('sk-...'), 'sk-secret-1');
     fireEvent.press(ui.getByText('Test Connection'));
     await waitFor(() => expect(ui.queryByText(/Connected \(/)).not.toBeNull());
