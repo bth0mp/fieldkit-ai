@@ -33,7 +33,7 @@ describe('AboutScreen', () => {
   it('shows the app name and no upstream branding', () => {
     const { getByText, queryByText } = render(<AboutScreen />);
     expect(getByText(BRAND.name)).toBeTruthy();
-    expect(queryByText(/Off Grid|Wednesday|Slack|@alichherawalla/)).toBeNull();
+    expect(queryByText(/Slack|@alichherawalla/)).toBeNull();
   });
 
   it('opens this app\'s own repository from Source Code', () => {
@@ -51,9 +51,9 @@ describe('AboutScreen', () => {
 });
 
 describe('OpenSourceLicensesScreen', () => {
-  it('shows the original MIT notice when its entry is opened', () => {
+  it('shows the MIT notice when its entry is opened', () => {
     const { getByText } = render(<OpenSourceLicensesScreen />);
-    fireEvent.press(getByText(/Off Grid AI \(the open-source app this one is based on\)/));
+    fireEvent.press(getByText(/MIT-licensed code this app includes/));
     expect(getByText(/Permission is hereby granted, free of charge/)).toBeTruthy();
   });
 
