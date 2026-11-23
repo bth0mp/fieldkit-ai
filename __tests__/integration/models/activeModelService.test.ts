@@ -941,7 +941,6 @@ describe('ActiveModelService Integration', () => {
     });
   });
 
-
   describe('checkMemoryForModel with image type', () => {
     it('checks memory for image model with correct overhead', async () => {
       const imageModel = createONNXImageModel({

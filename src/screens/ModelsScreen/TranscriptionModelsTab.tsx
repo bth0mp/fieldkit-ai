@@ -89,7 +89,7 @@ export const TranscriptionModelsTab: React.FC = () => {
   } = useWhisperStore();
 
   // In-flight STT state from the SINGLE owner (canonical download tracker + whisper-store
-  // fallback), shared with the In memory sheet so the two surfaces can never disagree.
+  // fallback), shared with WhisperPickerSheet (opened from Model settings) so the two surfaces can never disagree.
   // A failed entry reports active=false, so a stuck "downloading" bar can't linger while the
   // Download Manager shows "failed" — the model just becomes downloadable again. Disk probes
   // are deferred until nothing is downloading so an in-flight file isn't mistaken for absent.

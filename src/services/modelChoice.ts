@@ -16,8 +16,9 @@ let tail: Promise<void> = Promise.resolve();
 
 /**
  * Choices run one at a time. Each counts as a running turn, so nothing queued is sent until it ends. The next
- * choice starts when the work is done, while this one's claim is still held, so its end drains nothing.
- * `check` runs in the choice's turn, before it claims or stops anything: if it throws, nothing else happens.
+ * choice starts when the work is done, while this one's claim is still held, so its end drains nothing, unless the
+ * next choice has a `check`: that runs with no claim held, so the earlier choice's end drains the queue.
+ * `check` runs before the choice claims or stops anything: if it throws, nothing else happens.
  */
 function exclusively(work: () => Promise<void>, check?: () => Promise<void>): Promise<void> {
   const before = tail;
