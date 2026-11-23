@@ -55,6 +55,7 @@ describe('OpenSourceLicensesScreen', () => {
   it('shows the MIT notice when its entry is opened', () => {
     const { getByText } = render(<OpenSourceLicensesScreen />);
     fireEvent.press(getByText(/MIT-licensed code this app includes/));
+    expect(getByText(/Copyright \(c\) 2026 Mohammed Ali Chherawalla/)).toBeTruthy();
     expect(getByText(/Permission is hereby granted, free of charge/)).toBeTruthy();
   });
 
