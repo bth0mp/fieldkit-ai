@@ -23,6 +23,16 @@ const details = (id: string, downloads: number, likes: number) => ({
   id, downloads, likes, lastModified: new Date(Date.now() - 3 * 86400000).toISOString(),
 });
 
+// The card's visible text, top to bottom.
+const textsOf = (card: any): string[] => card.UNSAFE_getAllByType(require('react-native').Text)
+  .flatMap((n: any) => [n.props.children].flat().filter((c: unknown) => typeof c === 'string'));
+const expectOrder = (card: any, lines: Array<string | RegExp>) => {
+  const texts = textsOf(card);
+  const at = lines.map(l => texts.findIndex(t => (typeof l === 'string' ? t === l : l.test(t))));
+  expect(at.every(i => i >= 0)).toBe(true);
+  expect([...at].sort((a, b) => a - b)).toEqual(at);
+};
+
 let netInfoFake: { setConnected(next: boolean): void };
 afterEach(() => {
   netInfoFake?.setConnected(true);
@@ -65,6 +75,8 @@ describe('Numbers and notes from the original page (rendered)', () => {
       await rtl.waitFor(() => expect(cardOf(name).getByText('1.2M downloads this month')).toBeTruthy(), TIMEOUT);
       expect(cardOf(name).getByText('2.3K likes · updated 3 days ago')).toBeTruthy();
       expect(cardOf(name).getByText(`Good for: ${note}`)).toBeTruthy();
+      // The run answer, then Original, then the numbers, then Good for.
+      expectOrder(cardOf(name), [/^(Runs on this phone|Tight|Won't run)/, `Original: ${DREAM}`, '1.2M downloads this month', '2.3K likes · updated 3 days ago', `Good for: ${note}`]);
     }
     expect(hf.requests().filter(u => u.pathname === `/api/models/${DREAM}`)).toHaveLength(1);
 
@@ -90,6 +102,7 @@ describe('Numbers and notes from the original page (rendered)', () => {
     await rtl.waitFor(() => expect(card.getByText(`Original: ${TURBO}`)).toBeTruthy(), TIMEOUT);
     await rtl.waitFor(() => expect(card.getByText('4.5M downloads this month')).toBeTruthy(), TIMEOUT);
     expect(card.getByText('1.5K likes · updated 3 days ago')).toBeTruthy();
+    expectOrder(card, [/^(Runs on this phone|Tight|Won't run)/, `Original: ${TURBO}`, '4.5M downloads this month', '1.5K likes · updated 3 days ago']);
   });
 
   it('with no connection: no numbers, no undefined or NaN, the run answer and notes stay, and the notice shows', async () => {

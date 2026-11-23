@@ -16,7 +16,6 @@ import {
 } from './ModelCardContent';
 import { QUEUED_ICON } from '../utils/downloadStatusIcon';
 import { formatBytes } from '../utils/formatBytes';
-import { OriginLine } from './OriginLine';
 import type { RunAnswer } from '../services/runAnswer';
 
 interface ModelCardProps {
@@ -254,6 +253,8 @@ export const ModelCard: React.FC<ModelCardProps> = ({
               goodFor={goodFor}
               labels={labels}
               testID={testID}
+              runAnswer={runAnswer}
+              origin={origin}
               credibility={credibility}
               credibilityInfo={credibilityInfo}
               isTrending={isTrending}
@@ -284,9 +285,10 @@ export const ModelCard: React.FC<ModelCardProps> = ({
             isCompatible={isCompatible}
             incompatibleReason={incompatibleReason}
             runAnswer={runAnswer}
+            origin={origin}
+            detailLinesShownAbove={compact}
             testID={testID}
           />
-          <OriginLine origin={origin} testID={testID} />
 
           {!compact && model.downloads !== undefined && model.downloads > 0 && (
             <View style={styles.statsRow}>

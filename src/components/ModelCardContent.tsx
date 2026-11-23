@@ -8,9 +8,10 @@ import { createStyles } from './ModelCard.styles';
 import { huggingFaceService } from '../services/huggingface';
 import { ModelCredibility } from '../types';
 import { triggerHaptic } from '../utils/haptics';
-import { formatUpdatedAgo } from '../features/modelGuide/guide';
+import { CompactStatLines } from './CompactStatLines';
 import type { RunAnswer } from '../services/runAnswer';
 import { RunAnswerLine } from './RunAnswerLine';
+import { OriginLine } from './OriginLine';
 
 interface CredibilityInfo {
   color: string;
@@ -60,32 +61,16 @@ interface CompactModelCardContentProps {
   goodFor?: string;
   labels?: string[];
   testID?: string;
+  /** Shown first among the card's detail lines: whether the model runs on this phone. */
+  runAnswer?: RunAnswer;
+  /** Shown right after the run answer: the page a converted model came from, as owner/name. */
+  origin?: string;
   credibility?: ModelCredibility;
   credibilityInfo: CredibilityInfo | null;
   isTrending?: boolean;
   recommended?: RecommendedConfig;
   /** Model can run on the GPU/NPU (LiteRT or Q4_0/Q8_0 GGUF) → show the badge. */
   supportsAcceleration?: boolean;
-}
-
-function formatNumber(num: number): string {
-  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-  return num.toString();
-}
-
-// The number lines a card shows. Each part appears only when the model has it (a count of -1 or 0 means "not
-// fetched" or "none"), and no line is returned when it would be empty.
-function statsLine(m: { downloads?: number; downloadsAllTime?: number }): string | null {
-  if (!m.downloads || m.downloads <= 0) return null;
-  const allTime = m.downloadsAllTime && m.downloadsAllTime > 0 ? ` · ${formatNumber(m.downloadsAllTime)} all time` : '';
-  return `${formatNumber(m.downloads)} ${m.downloads === 1 ? 'download' : 'downloads'} this month${allTime}`;
-}
-
-function likesUpdatedLine(m: { likes?: number; lastModified?: string }): string | null {
-  const likes = m.likes && m.likes > 0 ? `${formatNumber(m.likes)} ${m.likes === 1 ? 'like' : 'likes'}` : null;
-  const parts = [likes, formatUpdatedAgo(m.lastModified, new Date())].filter((p): p is string => !!p);
-  return parts.length ? parts.join(' · ') : null;
 }
 
 type ModelType = 'text' | 'vision' | 'code';
@@ -114,32 +99,13 @@ function modelTypeTextStyle(
   return null;
 }
 
-const CompactStatLines: React.FC<{
-  model: Parameters<typeof statsLine>[0] & Parameters<typeof likesUpdatedLine>[0];
-  goodFor?: string;
-  labels?: string[];
-  testID?: string;
-}> = ({ model, goodFor, labels, testID }) => {
-  const styles = useThemedStyles(createStyles);
-  const stats = statsLine(model);
-  const likesUpdated = likesUpdatedLine(model);
-  const guideLine = goodFor ? `Good for: ${goodFor}` : labels?.join(' · ');
-  return (
-    <>
-      {!!stats && <Text style={styles.statsLine} testID={`${testID}-stats`}>{stats}</Text>}
-      {!!likesUpdated && <Text style={styles.statsLine} testID={`${testID}-likes`}>{likesUpdated}</Text>}
-      {!!guideLine && (
-        <Text style={styles.statsLine} testID={`${testID}-${goodFor ? 'good-for' : 'labels'}`}>{guideLine}</Text>
-      )}
-    </>
-  );
-};
-
 export const CompactModelCardContent: React.FC<CompactModelCardContentProps> = ({
   model,
   goodFor,
   labels,
   testID,
+  runAnswer,
+  origin,
   credibility,
   credibilityInfo,
   isTrending,
@@ -185,7 +151,7 @@ export const CompactModelCardContent: React.FC<CompactModelCardContentProps> = (
           {description}
         </Text>
       )}
-      <CompactStatLines model={model} goodFor={goodFor} labels={labels} testID={testID} />
+      <CompactStatLines model={model} goodFor={goodFor} labels={labels} runAnswer={runAnswer} origin={origin} testID={testID} />
       {recommended?.chips && recommended.chips.length > 0 ? (
         <View style={[styles.infoRow, styles.infoRowCompact]}>
           {recommended.chips.map(chip => (
@@ -326,6 +292,10 @@ interface ModelInfoBadgesProps {
   incompatibleReason: string | undefined;
   /** When given, replaces the "Too large" badge with the run answer line. */
   runAnswer?: RunAnswer;
+  /** The page the model came from, as owner/name, shown under the run answer. */
+  origin?: string;
+  /** The run answer and origin lines are shown higher on the card (the compact content), so none here. */
+  detailLinesShownAbove?: boolean;
   testID?: string;
 }
 
@@ -340,6 +310,8 @@ export const ModelInfoBadges: React.FC<ModelInfoBadgesProps> = ({
   isCompatible,
   incompatibleReason,
   runAnswer,
+  origin,
+  detailLinesShownAbove,
   testID,
 }) => {
   const styles = useThemedStyles(createStyles);
@@ -398,7 +370,12 @@ export const ModelInfoBadges: React.FC<ModelInfoBadgesProps> = ({
           </View>
         )}
       </View>
-      {runAnswer && <RunAnswerLine runAnswer={runAnswer} testID={testID} />}
+      {!detailLinesShownAbove && (
+        <>
+          {runAnswer && <RunAnswerLine runAnswer={runAnswer} testID={testID} />}
+          <OriginLine origin={origin} testID={testID} />
+        </>
+      )}
     </>
   );
 };
