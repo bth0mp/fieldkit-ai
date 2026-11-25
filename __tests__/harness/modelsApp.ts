@@ -1,13 +1,13 @@
 /**
  * Boots the real app on Home and opens the Models screen through the Phone card, with Hugging Face faked at
- * `global.fetch` (installed before render: the Text tab fetches its picks on mount) and the phone's RAM set.
+ * `global.fetch` (installed before render: the Text tab fetches its picks on mount) and the phone's RAM and platform
+ * seeded at the native boundary (half the RAM is free).
  * The two jest.mock lines (real navigation, no focus trigger) stay in each test file, because jest hoists them.
  */
 import { installNativeBoundary, requireRTL, GB } from './nativeBoundary';
 import { createDownloadedModel, createONNXImageModel } from '../utils/factories';
 import type { DownloadedModel, ONNXImageModel } from '../../src/types';
 import { installHfApiFake, type HfApiFake } from './hfApiFake';
-import { setDeviceMemory } from './deviceMemory';
 
 // The whole app boots in each of these tests: the first takes longer than Jest's 10 s default on a slow machine.
 jest.setTimeout(40000);
@@ -26,10 +26,11 @@ export interface ModelsAppOptions {
 
 /** Boots the real app on Home. `nav` is the container ref, for tests that push or read routes. */
 export async function bootHome(opts: ModelsAppOptions) {
-  const boundary = installNativeBoundary({ llama: true, fs: true });
+  // The RAM sensor and the platform are device leaves: the boundary seeds them, and the app's own hardwareService reads them.
+  const ram = { platform: opts.platform ?? 'android', totalBytes: Math.round(opts.totalGB * GB), availBytes: Math.round(opts.totalGB * GB / 2) };
+  const boundary = installNativeBoundary({ llama: true, fs: true, ram });
   const hf = installHfApiFake();
   opts.hf?.(hf);
-  setDeviceMemory({ platform: opts.platform ?? 'android', totalGB: opts.totalGB, availGB: opts.totalGB / 2 });
   const AsyncStorage = require('@react-native-async-storage/async-storage').default
     ?? require('@react-native-async-storage/async-storage');
   await AsyncStorage.clear();
