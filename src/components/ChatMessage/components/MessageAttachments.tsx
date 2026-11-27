@@ -1,3 +1,4 @@
+import { appLockService } from '../../../services/appLockService';
 import React from 'react';
 import {
   View,
@@ -135,6 +136,7 @@ export function MessageAttachments({
                 uri = `file://${uri}`;
               }
               logger.log('[ChatMessage] Opening document:', uri);
+              appLockService.openingSystemScreen();
               viewDocument({ uri, mimeType, grantPermissions: 'read' }).catch((err: any) => {
                 logger.warn('[ChatMessage] Failed to open document:', err?.message || err);
               });

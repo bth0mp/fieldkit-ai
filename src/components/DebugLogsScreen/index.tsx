@@ -3,6 +3,7 @@
  * Simple modal showing captured debug logs with copy and clear options
  */
 
+import { appLockService } from '../../services/appLockService';
 import React from 'react';
 import { LIST_CLIPPING_PROPS } from '../../constants/listClipping';
 import {
@@ -76,6 +77,7 @@ export const DebugLogsScreen: React.FC<DebugLogsScreenProps> = ({ visible, onClo
       .join('\n');
 
     try {
+      appLockService.openingSystemScreen();
       await Share.share({
         message: logsText,
         title: 'Debug Logs',

@@ -1,3 +1,4 @@
+import { appLockService } from '../../services/appLockService';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Platform, PermissionsAndroid, Share } from 'react-native';
 import RNFS from 'react-native-fs';
@@ -157,9 +158,11 @@ export const useGalleryActions = (conversationId: string | undefined) => {
   const handleSaveImage = useCallback(async (image: GeneratedImage) => {
     try {
       if (Platform.OS === 'ios') {
+        appLockService.openingSystemScreen();
         await Share.share({ url: `file://${image.imagePath}` });
         return;
       }
+      appLockService.openingSystemScreen();
       await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
         {

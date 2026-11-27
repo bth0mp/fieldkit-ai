@@ -1,3 +1,4 @@
+import { appLockService } from './appLockService';
 import { AudioRecorder, FileFormat, FileDirectory, BitDepth, IOSAudioQuality, FlacCompressionLevel } from 'react-native-audio-api';
 import { PermissionsAndroid, Platform } from 'react-native';
 import { audioSessionManager } from './audioSessionManager';
@@ -21,6 +22,7 @@ class AudioRecorderService {
   async requestPermissions(): Promise<boolean> {
     if (Platform.OS === 'android') {
       try {
+        appLockService.openingSystemScreen();
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
           {

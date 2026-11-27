@@ -1,3 +1,4 @@
+import { appLockService } from '../../services/appLockService';
 import { Dispatch, SetStateAction } from 'react';
 import { Platform, PermissionsAndroid } from 'react-native';
 import RNFS from 'react-native-fs';
@@ -12,6 +13,7 @@ export async function saveImageToGallery(
   if (!viewerImageUri) return;
   try {
     if (Platform.OS === 'android') {
+      appLockService.openingSystemScreen();
       await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
         {

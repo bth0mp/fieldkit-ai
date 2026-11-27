@@ -3,6 +3,7 @@
  * project, and looks things up in a project's files for the chat. Owns every reader; kiwixStore is the screen's
  * read-only copy. Files are read by byte range through react-native-fs (content:// uris), never whole.
  */
+import { appLockService } from '../appLockService';
 import { NativeModules } from 'react-native';
 import RNFS from 'react-native-fs';
 import { errorCodes, isErrorWithCode, pick, pickDirectory, releaseLongTermAccess, types } from '@react-native-documents/picker';
@@ -182,6 +183,7 @@ export const kiwixService = {
     await hydrated();
     let uri: string;
     try {
+      appLockService.openingSystemScreen();
       ({ uri } = await pickDirectory({ requestLongTermAccess: true }));
     } catch (e) {
       if (isCancel(e)) return;
@@ -197,6 +199,7 @@ export const kiwixService = {
     await hydrated();
     let picked;
     try {
+      appLockService.openingSystemScreen();
       picked = await pick({ mode: 'open', requestLongTermAccess: true, allowMultiSelection: true, type: [types.allFiles] });
     } catch (e) {
       if (isCancel(e)) return;

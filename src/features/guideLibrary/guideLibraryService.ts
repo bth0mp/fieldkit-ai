@@ -1,3 +1,4 @@
+import { appLockService } from '../../services/appLockService';
 import RNFS from 'react-native-fs';
 import { viewDocument } from '@react-native-documents/viewer';
 import logger from '../../utils/logger';
@@ -351,6 +352,7 @@ async function open(id: string): Promise<void> {
   if (phase === 'none' || phase === 'downloading') return;
   let error: string | undefined;
   try {
+    appLockService.openingSystemScreen();
     await viewDocument({ uri: `file://${guidePath(id)}`, mimeType: 'application/pdf', grantPermissions: 'read' });
   } catch (e) {
     logger.warn('[GuideLibrary] could not open', id, e);

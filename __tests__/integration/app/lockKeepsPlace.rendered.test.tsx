@@ -2,13 +2,15 @@
  * Locking keeps your place, and the app's own pickers don't lock it (rendered).
  *
  * The lock is drawn over the app instead of replacing it, so the open chat and its draft are still there after
- * unlocking.
+ * unlocking. A photo picker, camera, permission prompt, share sheet or document viewer the app opens is the app
+ * going to another screen, not the person leaving, so it does not lock; unless they stay away over 5 minutes.
  *
  * Real App, navigator, chat, composer, auth store, authService and LockScreen. Device leaves only: AsyncStorage,
- * the Keychain, AppState, the llama/LiteRT engines.
+ * the Keychain, AppState, the llama/LiteRT engines and the system image picker.
  */
 import { seedRow, wipeFlakyStorage } from '../../harness/flakyStorage';
 import { wipeKeychain } from '../../harness/keychainFake';
+import { resetImagePicker, whileImagePickerOpen } from '../../harness/imagePickerFake';
 import { installNativeBoundary, requireRTL } from '../../harness/nativeBoundary';
 
 jest.mock('@react-native-async-storage/async-storage', () =>
@@ -16,6 +18,7 @@ jest.mock('@react-native-async-storage/async-storage', () =>
 );
 jest.mock('@op-engineering/op-sqlite', () => require('../../harness/flakyStorage').flakyOpSqliteModule());
 jest.mock('react-native-keychain', () => require('../../harness/keychainFake').keychainModule());
+jest.mock('react-native-image-picker', () => require('../../harness/imagePickerFake').imagePickerModule());
 jest.mock('@react-navigation/native', () => jest.requireActual('@react-navigation/native'));
 jest.mock('react-native-bootsplash', () => ({ hide: jest.fn(async () => {}) }), { virtual: true });
 
@@ -73,10 +76,17 @@ async function openChat() {
   return t;
 }
 
+async function attachPhoto(t: Awaited<ReturnType<typeof openChat>>) {
+  t.rtl.fireEvent.press(await t.ui.findByTestId('attach-button', {}, TIMEOUT));
+  t.rtl.fireEvent.press(await t.ui.findByTestId('attach-photo', {}, TIMEOUT));
+  t.rtl.fireEvent.press(await t.ui.findByText('Photo Library', {}, TIMEOUT));
+}
+
 describe('locking keeps your place (rendered)', () => {
   beforeEach(() => {
     wipeFlakyStorage();
     wipeKeychain();
+    resetImagePicker();
   });
 
   afterEach(() => {
@@ -93,5 +103,33 @@ describe('locking keeps your place (rendered)', () => {
     await unlock(rtl, ui);
 
     expect(ui.getByTestId('chat-input').props.value).toBe('half-written');
+  });
+
+  it("picking a photo doesn't lock the app", async () => {
+    const t = await openChat();
+    whileImagePickerOpen(() => {
+      t.boundary.emitAppStateChange('background');
+      t.boundary.emitAppStateChange('active');
+    });
+    await attachPhoto(t);
+
+    await t.rtl.waitFor(() => expect(t.ui.getByTestId('attachments-container')).toBeTruthy(), TIMEOUT);
+    expect(t.ui.queryByPlaceholderText('Enter passphrase')).toBeNull();
+  });
+
+  it('a system screen left open over 5 minutes locks on return', async () => {
+    const t = await openChat();
+    const start = Date.now();
+    whileImagePickerOpen(() => {
+      t.boundary.emitAppStateChange('background');
+      jest.spyOn(Date, 'now').mockReturnValue(start + 6 * 60 * 1000);
+      t.boundary.emitAppStateChange('active');
+    });
+    await attachPhoto(t);
+
+    await t.rtl.waitFor(() => expect(t.ui.getByPlaceholderText('Enter passphrase')).toBeTruthy(), TIMEOUT);
+    jest.restoreAllMocks();
+    await unlock(t.rtl, t.ui);
+    expect(t.ui.getByTestId('chat-input')).toBeTruthy();
   });
 });

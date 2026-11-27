@@ -6,6 +6,7 @@
  *
  * Every failure is an Error whose message the model can act on (no trailing period: the tool result adds it).
  */
+import { appLockService } from '../appLockService';
 import { NativeModules, PermissionsAndroid } from 'react-native';
 import { parseIsoTime } from '../../utils/calendarTime';
 
@@ -70,6 +71,7 @@ export const calendarService = {
     const permission = PermissionsAndroid.PERMISSIONS.READ_CALENDAR;
     try {
       if (await PermissionsAndroid.check(permission)) return true;
+      appLockService.openingSystemScreen();
       const answer = await PermissionsAndroid.request(permission, {
         title: 'Calendar access',
         message: 'Lets the assistant read your calendar events on this phone. They are never sent anywhere.',

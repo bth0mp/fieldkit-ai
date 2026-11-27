@@ -1,3 +1,4 @@
+import { appLockService } from '../services/appLockService';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, TouchableOpacity, Switch, ActivityIndicator, ScrollView, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
@@ -47,6 +48,7 @@ export const KnowledgeBaseSection: React.FC<KBSectionProps> = ({ projectId, colo
     try {
       // iOS: 'import' → Apple copies the file before handing it to us, original untouched.
       // Android: 'open' → returns a content:// URI; keepLocalCopy() copies it to a real path.
+      appLockService.openingSystemScreen();
       const files = Platform.OS === 'android'
         ? await pick({ mode: 'open', allowMultiSelection: true })
         : await pick({ mode: 'import', allowMultiSelection: true });

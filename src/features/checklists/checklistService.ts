@@ -3,6 +3,7 @@
  * change; checklistStore is the screen's read-only copy. A change that can't be made throws an Error whose
  * message is written for the user.
  */
+import { appLockService } from '../../services/appLockService';
 import { Share } from 'react-native';
 import { generateId } from '../../utils/generateId';
 import logger from '../../utils/logger';
@@ -100,6 +101,7 @@ export const checklistService = {
     if (!list) return;
     const lines = list.items.map(item => `${item.done ? '[x]' : '[ ]'} ${item.text}`);
     try {
+      appLockService.openingSystemScreen();
       await Share.share({ title: list.name, message: [list.name, ...lines].join('\n') });
     } catch (error) {
       // The user closing the sheet is not an error on Android; anything that lands here is the sheet failing to open.

@@ -1,3 +1,4 @@
+import { appLockService } from './appLockService';
 import Voice, {
   SpeechResultsEvent,
   SpeechErrorEvent,
@@ -60,6 +61,7 @@ class VoiceService {
   async requestPermissions(): Promise<boolean> {
     if (Platform.OS === 'android') {
       try {
+        appLockService.openingSystemScreen();
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
           {

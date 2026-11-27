@@ -1,3 +1,4 @@
+import { appLockService } from '../services/appLockService';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { LIST_CLIPPING_PROPS } from '../constants/listClipping';
 import {
@@ -87,6 +88,7 @@ export const KnowledgeBaseScreen: React.FC = () => {
     try {
       // iOS: 'import' → Apple copies the file before handing it to us, original untouched.
       // Android: 'open' → returns a content:// URI; keepLocalCopy() copies it to a real path.
+      appLockService.openingSystemScreen();
       const files = Platform.OS === 'android'
         ? await pick({ mode: 'open', allowMultiSelection: true })
         : await pick({ mode: 'import', allowMultiSelection: true });

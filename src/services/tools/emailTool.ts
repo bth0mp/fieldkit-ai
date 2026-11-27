@@ -7,6 +7,7 @@
  * body copied to the clipboard; and when no mail app opens at all, the draft is copied and the share
  * sheet opens so the user can still send it from any app.
  */
+import { appLockService } from '../appLockService';
 import { Clipboard, Linking, Share } from 'react-native';
 import { buildMailtoUrl, draftFromArgs } from '../../utils/mailto';
 import logger from '../../utils/logger';
@@ -22,6 +23,7 @@ const NO_MAIL_APP_NO_SHARE = 'No mail app opened. The draft was copied to the cl
 async function shareInstead(draft: { subject: string; body: string }, copied: boolean): Promise<string> {
   if (!copied) Clipboard.setString(draft.body);
   try {
+    appLockService.openingSystemScreen();
     await Share.share({ title: draft.subject, message: draft.body });
     return NO_MAIL_APP;
   } catch (error) {

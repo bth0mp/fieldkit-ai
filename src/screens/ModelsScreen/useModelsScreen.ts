@@ -1,3 +1,4 @@
+import { appLockService } from '../../services/appLockService';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -132,6 +133,7 @@ export function useModelsScreen() {
     isPickingRef.current = true;
     setIsImporting(true);
     try {
+      appLockService.openingSystemScreen();
       const result = await pick({ type: [types.allFiles], allowMultiSelection: true });
 
       if (!result || result.length === 0) return;

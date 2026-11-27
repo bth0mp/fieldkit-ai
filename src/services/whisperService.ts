@@ -1,3 +1,4 @@
+import { appLockService } from './appLockService';
 import { initWhisper, WhisperContext, RealtimeTranscribeEvent } from 'whisper.rn';
 import { Platform, PermissionsAndroid } from 'react-native';
 import RNFS from 'react-native-fs';
@@ -242,6 +243,7 @@ class WhisperService {
   async requestPermissions(): Promise<boolean> {
     if (Platform.OS === 'android') {
       try {
+        appLockService.openingSystemScreen();
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
           {
