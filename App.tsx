@@ -360,6 +360,7 @@ function App() {
         <SystemBars style={isDark ? 'light' : 'dark'} />
         {/* Kept mounted behind the lock so the open chat and its draft stay; hidden from sight, touch and screen readers while locked. */}
         <View
+          collapsable={false}
           style={lockShowing ? styles.hiddenBehindLock : styles.flex}
           pointerEvents={lockShowing ? 'none' : 'auto'}
           importantForAccessibility={lockShowing ? 'no-hide-descendants' : 'auto'}
