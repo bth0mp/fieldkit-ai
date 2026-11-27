@@ -407,7 +407,7 @@ class ActiveModelService {
   async ejectAll(opts?: { keepRemote?: boolean }): Promise<{ count: number }> {
     const remote = useRemoteServerStore.getState();
     const hasRemote = !opts?.keepRemote && !!(remote.activeRemoteTextModelId || remote.activeRemoteImageModelId);
-    logger.log(`[MODEL-SM] ejectAll → start hasRemote=${hasRemote}`);
+    logger.log(`[MODEL-SM] ejectAll → start hasRemote=${hasRemote} keepRemote=${!!opts?.keepRemote}`);
     // Eject = EVICT from RAM, KEEP the selection. The user's chosen models stay
     // selected (the rows still show them) and reload on demand — ejecting frees
     // memory, it does not un-choose the model. (Clearing selection here is what
