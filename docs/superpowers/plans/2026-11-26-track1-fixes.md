@@ -18,7 +18,7 @@
 - Screens and hooks hold no business logic or authoritative state. Services own state machines, resources and side effects; stores are read-only projections for the UI.
 - UI uses theme tokens only (`TYPOGRAPHY`, `COLORS` via `useTheme`, `SPACING`); font weights at or below 400; Feather icons; no emoji in UI text.
 - No GPL, AGPL or LGPL dependencies. After adding a dependency run `node scripts/gen-notices.js` and commit the regenerated `src/generated/thirdPartyNotices.json`.
-- No Off Grid or Wednesday names in any new code, comment, commit message or doc (the pre-push own-name guard enforces this). Internal ids (keychain services, storage keys) stay as they are.
+- No earlier project names in any new code, comment, commit message or doc (the pre-push own-name guard enforces this). Internal ids (keychain services, storage keys) stay as they are.
 - Search `src/components/`, hooks and services for an existing piece before writing a new one.
 - Commit each green step separately, with a per-concern message ending in `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - Copy is plain and short, in sentence case.

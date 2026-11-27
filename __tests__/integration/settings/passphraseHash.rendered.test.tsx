@@ -10,6 +10,7 @@
 import { seedRow, wipeFlakyStorage } from '../../harness/flakyStorage';
 import { wipeKeychain } from '../../harness/keychainFake';
 import { installNativeBoundary, requireRTL } from '../../harness/nativeBoundary';
+import { EARLIER_AUTH_SERVICE } from '../../../src/services/earlierIds';
 
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('../../harness/flakyStorage').flakyAsyncStorageModule(),
@@ -23,7 +24,6 @@ jest.setTimeout(60000);
 
 const TIMEOUT = { timeout: 8000 };
 const AUTH_SERVICE = 'com.bth0mp.fieldkit.auth';
-const EARLIER_AUTH_SERVICE = 'ai.offgridmobile.auth';
 
 // Two passphrases the old hash could not tell apart ("Aa" and "BB" hash the same, so any run of them does).
 const RIGHT = 'AaAaAa';
