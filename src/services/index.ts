@@ -7,6 +7,7 @@ export { intentClassifier } from './intentClassifier';
 ;
 ;
 export { authService } from './authService';
+export { appLockService } from './appLockService';
 export { whisperService, WHISPER_MODELS } from './whisperService';
 // ttsService deprecated — logic absorbed into OuteTTSEngine (src/engine/tts/engines/outetts/).
 ;

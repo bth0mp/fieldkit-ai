@@ -4,15 +4,15 @@
  */
 
 import 'react-native-gesture-handler';
-import React, { useEffect, useState, useCallback } from 'react';
-import { ActivityIndicator, View, StyleSheet, LogBox } from 'react-native';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { ActivityIndicator, View, StyleSheet, LogBox, Modal } from 'react-native';
 import { SystemBars } from 'react-native-edge-to-edge';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { AppNavigator } from './src/navigation';
 import { useTheme } from './src/theme';
-import { hardwareService, modelManager, authService, ragService, remoteServerManager } from './src/services';
+import { hardwareService, modelManager, authService, appLockService, ragService, remoteServerManager } from './src/services';
 import logger from './src/utils/logger';
 import { useAppStore, useAuthStore, useRemoteServerStore, useWhisperStore } from './src/stores';
 import { useDebugLogsStore } from './src/stores/debugLogsStore';
@@ -68,6 +68,8 @@ const ensureRemoteServerStoreHydrated = async () => {
   }
 };
 
+const noop = () => {};
+
 function App() {
   useDownloadListeners();
   const [isInitializing, setIsInitializing] = useState(true);
@@ -109,12 +111,19 @@ function App() {
   // Handle app state changes for auto-lock
   useAppState({
     onBackground: useCallback(() => {
-      if (authEnabled) {
+      // A system screen the app opened itself (a picker, the camera, a permission prompt) doesn't lock it.
+      const mustLock = appLockService.leftForeground();
+      if (authEnabled && mustLock) {
         setLastBackgroundTime(Date.now());
         setLocked(true);
       }
     }, [authEnabled, setLastBackgroundTime, setLocked]),
     onForeground: useCallback(() => {
+      // Back from a system screen after a long time away: lock now.
+      if (appLockService.returnedToForeground() && authEnabled) {
+        setLastBackgroundTime(Date.now());
+        setLocked(true);
+      }
       // Rebuild the unified store before reattaching JS listeners so restored
       // progress events map onto current download entries instead of racing hydration.
       // NOTE: restoreQueuedDownloads() is intentionally NOT called here — on a foreground
@@ -131,8 +140,15 @@ function App() {
             logger.error('[App] Failed to restore text downloads on foreground:', error);
           });
         });
-    }, [reattachTextDownloadRecovery]),
+    }, [authEnabled, reattachTextDownloadRecovery, setLastBackgroundTime, setLocked]),
   });
+
+  // Once the navigator has rendered in this session it stays mounted, and the lock is drawn over it.
+  const lockShowing = authEnabled && isLocked;
+  const navigatorShown = useRef(false);
+  useEffect(() => {
+    if (!isInitializing && !lockShowing) navigatorShown.current = true;
+  }, [isInitializing, lockShowing]);
 
   const ensureAppStoreHydrated = useCallback(async () => {
     const persistApi = useAppStore.persist;
@@ -322,8 +338,8 @@ function App() {
     );
   }
 
-  // Show lock screen if auth is enabled and app is locked
-  if (authEnabled && isLocked) {
+  // Before the app has been shown in this session the lock screen stands alone, so nothing mounts behind it.
+  if (lockShowing && !navigatorShown.current) {
     return (
       <GestureHandlerRootView style={[styles.flex, { backgroundColor: colors.background }]} testID="app-locked">
         <SafeAreaProvider>
@@ -371,6 +387,23 @@ function App() {
         >
           <AppNavigator />
         </NavigationContainer>
+        {lockShowing && (
+          // Drawn over the navigator, above any dialog already open. Back does nothing, so it cannot close the lock.
+          <Modal
+            visible
+            animationType="none"
+            statusBarTranslucent
+            navigationBarTranslucent
+            onRequestClose={noop}
+          >
+            <GestureHandlerRootView style={[styles.flex, { backgroundColor: colors.background }]} testID="app-locked">
+              <SafeAreaProvider>
+                <SystemBars style={isDark ? 'light' : 'dark'} />
+                <LockScreen onUnlock={handleUnlock} />
+              </SafeAreaProvider>
+            </GestureHandlerRootView>
+          </Modal>
+        )}
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

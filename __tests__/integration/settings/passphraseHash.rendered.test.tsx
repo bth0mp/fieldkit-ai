@@ -112,13 +112,14 @@ describe('app lock passphrase hash (rendered)', () => {
     boundary.emitAppStateChange('active');
     await unlock(rtl, ui, COLLIDING);
     await rtl.waitFor(() => expect(ui.getByText('Incorrect Passphrase')).toBeTruthy(), TIMEOUT);
-    expect(ui.queryByTestId('home-screen')).toBeNull();
-    expect(ui.queryByTestId('settings-tab')).toBeNull();
+    // The lock is still over the app.
+    expect(ui.getByPlaceholderText('Enter passphrase')).toBeTruthy();
 
     rtl.fireEvent.press(ui.getByText('OK'));
     await unlock(rtl, ui, RIGHT);
-    await rtl.waitFor(() => expect(ui.getByTestId('settings-tab')).toBeTruthy(), TIMEOUT);
-    expect(ui.queryByPlaceholderText('Enter passphrase')).toBeNull();
+    // The lock lifts and the Security screen the person was on is still there.
+    await rtl.waitFor(() => expect(ui.queryByPlaceholderText('Enter passphrase')).toBeNull(), TIMEOUT);
+    expect(ui.getByText('Require passphrase to open app')).toBeTruthy();
   });
 
   it('a passphrase saved by an earlier version unlocks once and is moved to the new hash', async () => {
@@ -134,6 +135,6 @@ describe('app lock passphrase hash (rendered)', () => {
     boundary.emitAppStateChange('active');
     await unlock(rtl, ui, COLLIDING);
     await rtl.waitFor(() => expect(ui.getByText('Incorrect Passphrase')).toBeTruthy(), TIMEOUT);
-    expect(ui.queryByTestId('settings-tab')).toBeNull();
+    expect(ui.getByPlaceholderText('Enter passphrase')).toBeTruthy();
   });
 });
