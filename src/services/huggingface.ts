@@ -4,7 +4,7 @@ import { HF_API, QUANTIZATION_INFO, LMSTUDIO_AUTHORS, OFFICIAL_MODEL_AUTHORS, VE
 import { looksLikeVisionModel } from '../utils/visionModel';
 import { isHelperModelFile } from '../utils/modelFileKind';
 import { isMMProjFile, pickMmProjForDownload } from './mmproj';
-import { fetchResponseWithTimeout } from './httpClient';
+import { fetchWithTimeoutRead } from './httpClient';
 
 /** Every Hugging Face API request gives up after this long. */
 export const HF_REQUEST_TIMEOUT_MS = 20000;
@@ -49,9 +49,10 @@ class HuggingFaceService {
   private apiUrl = HF_API.apiUrl;
 
   private async fetchJson<T>(url: string): Promise<T> {
-    const response = await fetchResponseWithTimeout(url, { headers: { Accept: 'application/json' } }, HF_REQUEST_TIMEOUT_MS);
-    if (!response.ok) throw new Error(`API error: ${response.status}`);
-    return response.json() as Promise<T>;
+    return fetchWithTimeoutRead(url, { headers: { Accept: 'application/json' }, timeoutMs: HF_REQUEST_TIMEOUT_MS }, async response => {
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
+      return (await response.json()) as T;
+    });
   }
 
   async searchModels(
@@ -118,9 +119,9 @@ class HuggingFaceService {
 
   async getModelFiles(modelId: string): Promise<ModelFile[]> {
     try {
-      const response = await fetchResponseWithTimeout(`${this.apiUrl}/models/${modelId}/tree/main`, { headers: { Accept: 'application/json' } }, HF_REQUEST_TIMEOUT_MS);
-      if (!response.ok) return this.getModelFilesFromSiblings(modelId);
-      const files: Array<{ type: string; path: string; size?: number; lfs?: { size: number } }> = await response.json();
+      const files = await fetchWithTimeoutRead(`${this.apiUrl}/models/${modelId}/tree/main`, { headers: { Accept: 'application/json' }, timeoutMs: HF_REQUEST_TIMEOUT_MS },
+        async (response): Promise<Array<{ type: string; path: string; size?: number; lfs?: { size: number } }> | null> => (response.ok ? response.json() : null));
+      if (!files) return this.getModelFilesFromSiblings(modelId);
       const allGguf = files.filter(f => f.type === 'file' && f.path.endsWith('.gguf') && !isHelperModelFile(f.path));
       const mmProjFiles = allGguf.filter(f => this.isMMProjFile(f.path));
       const modelFiles = allGguf.filter(f => !this.isMMProjFile(f.path));

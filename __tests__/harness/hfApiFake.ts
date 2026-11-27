@@ -11,6 +11,8 @@
  *
  * After hang(), list requests never answer; like the real fetch they reject with an AbortError once their signal aborts.
  *
+ * After hangBody(), list requests answer their headers at once but the body never arrives.
+ *
  * After hold(), list answers wait until release(i) is called for the i-th held request, in any order.
  */
 type Row = Record<string, unknown>;
@@ -23,6 +25,7 @@ export interface HfApiFake {
   setTree(repo: string, entries: Row[]): void;
   setOffline(offline: boolean): void;
   hang(): void;
+  hangBody(): void;
   hold(): { count(): number; release(i: number, answer?: ListAnswer): void };
 }
 
@@ -36,6 +39,7 @@ export function installHfApiFake(): HfApiFake {
   const trees: Record<string, Row[]> = {};
   let offline = false;
   let hanging = false;
+  let hangingBody = false;
   let held: Array<{ resolve: (answer?: ListAnswer) => void }> | null = null;
   const answer = (a: ListAnswer): Response => {
     if (a instanceof Error) throw a;
@@ -55,6 +59,10 @@ export function installHfApiFake(): HfApiFake {
         if (init?.signal?.aborted) abort();
         else init?.signal?.addEventListener('abort', abort);
       });
+    }
+    if (path === '/api/models' && hangingBody) {
+      const never = () => new Promise<never>(() => {});
+      return { ok: true, status: 200, json: never, text: never } as unknown as Response;
     }
     if (path === '/api/models') {
       const natural = listFn(url);
@@ -83,6 +91,7 @@ export function installHfApiFake(): HfApiFake {
     setTree: (repo, entries) => { trees[repo] = entries; },
     setOffline: next => { offline = next; },
     hang: () => { hanging = true; },
+    hangBody: () => { hangingBody = true; },
     hold: () => {
       held = [];
       const queue = held;

@@ -17,9 +17,9 @@ afterEach(() => {
 });
 
 describe('Hugging Face request timeout (rendered)', () => {
-  it('New releases stops waiting after 20 seconds', async () => {
+  it.each([['never answers', 'hang'], ['answers its headers but never sends the body', 'hangBody']] as const)('New releases stops waiting after 20 seconds when a request %s', async (_name, how) => {
     const { rtl, ui, hf } = await openModelsFromHome({ totalGB: 10.82 });
-    hf.hang();
+    hf[how]();
     jest.useFakeTimers();
     rtl.fireEvent.press(ui.getByTestId('sort-option-newest'));
     expect(ui.getByText('Loading models...')).toBeTruthy();
