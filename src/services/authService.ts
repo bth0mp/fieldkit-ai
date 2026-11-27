@@ -13,6 +13,8 @@ const RECORD_PREFIX = 'pbkdf2-sha256$';
 const PBKDF2_ITERATIONS = 32768;
 const SALT_BYTES = 16;
 const KEY_BYTES = 32;
+// A saved count above this is treated as tampered, so a bad record cannot hang the JS thread.
+const MAX_ITERATIONS = 1048576;
 
 class AuthService {
   /** The full record to store: `pbkdf2-sha256$<iterations>$<salt hex>$<hash hex>`. */
@@ -22,8 +24,11 @@ class AuthService {
   }
 
   private newSalt(): Uint8Array {
-    // ponytail: a salt must be unique, not secret, and Hermes has no crypto.getRandomValues.
     const salt = new Uint8Array(SALT_BYTES);
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      return crypto.getRandomValues(salt);
+    }
+    // ponytail: a salt must be unique, not secret, so Math.random bytes will do where Hermes has no crypto.getRandomValues.
     for (let i = 0; i < SALT_BYTES; i++) salt[i] = Math.floor(Math.random() * 256);
     return salt;
   }
@@ -35,7 +40,7 @@ class AuthService {
       return null;
     }
     const iterations = Number(parts[1]);
-    if (!Number.isSafeInteger(iterations) || iterations < 1) return null;
+    if (!Number.isSafeInteger(iterations) || iterations < 1 || iterations > MAX_ITERATIONS) return null;
     return { iterations, salt: hexToBytes(parts[2]) };
   }
 

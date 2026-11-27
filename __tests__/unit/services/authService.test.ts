@@ -284,4 +284,82 @@ describe('AuthService', () => {
       expect(Keychain.setGenericPassword).toHaveBeenCalledTimes(1);
     });
   });
+
+  // ========================================================================
+  // saved records (device-boundary Keychain fake)
+  // ========================================================================
+  describe('saved records', () => {
+    const SERVICE = 'com.bth0mp.fieldkit.auth';
+    const PASS = 'right passphrase';
+    const fake = () => {
+      const { keychainModule, wipeKeychain } = require('../../harness/keychainFake');
+      wipeKeychain();
+      const module = keychainModule();
+      (Keychain.setGenericPassword as jest.Mock).mockImplementation(module.setGenericPassword);
+      (Keychain.getGenericPassword as jest.Mock).mockImplementation(module.getGenericPassword);
+      (Keychain.resetGenericPassword as jest.Mock).mockImplementation(module.resetGenericPassword);
+    };
+    const saved = async () => (await Keychain.getGenericPassword({ service: SERVICE })) as { password: string } | false;
+    const put = (password: string) => Keychain.setGenericPassword('passphrase_hash', password, { service: SERVICE });
+    const record = (iterations: number) => {
+      const { pbkdf2 } = require('@noble/hashes/pbkdf2');
+      const { sha256 } = require('@noble/hashes/sha2');
+      const { bytesToHex } = require('@noble/hashes/utils');
+      const salt = new Uint8Array(16).fill(7);
+      return `pbkdf2-sha256$${iterations}$${bytesToHex(salt)}$${bytesToHex(pbkdf2(sha256, PASS, salt, { c: iterations, dkLen: 32 }))}`;
+    };
+    /** What an earlier version saved for the passphrase. */
+    const oldHash = (passphrase: string) => {
+      let hash = 0;
+      for (let i = 0; i < passphrase.length; i++) {
+        hash = ((hash << 5) - hash) + (passphrase.codePointAt(i) ?? 0);
+        hash &= hash;
+      }
+      let extended = Math.abs(hash).toString(16);
+      for (let i = 0; i < 1000; i++) {
+        let temp = 0;
+        for (let j = 0; j < extended.length; j++) {
+          temp = ((temp << 5) - temp) + (extended.codePointAt(j) ?? 0);
+          temp &= temp;
+        }
+        extended = Math.abs(temp).toString(16) + extended.slice(0, 8);
+      }
+      return extended;
+    };
+
+    beforeEach(() => {
+      fake();
+    });
+
+    it.each([
+      ['a bad field count', 'pbkdf2-sha256$1024$0707'],
+      ['a non-hex salt', `pbkdf2-sha256$1024$zz07$${'a'.repeat(64)}`],
+      ['zero iterations', `pbkdf2-sha256$0$0707$${'a'.repeat(64)}`],
+      ['iterations above the ceiling', `pbkdf2-sha256$1048577$0707$${'a'.repeat(64)}`],
+    ])('does not unlock on a record with %s', async (_name, bad) => {
+      await put(bad);
+      await expect(authService.verifyPassphrase(PASS)).resolves.toBe(false);
+      expect((await saved() as { password: string }).password).toBe(bad);
+    });
+
+    it('unlocks on a saved passphrase from an earlier version even when the rewrite fails, and leaves it as it was', async () => {
+      await put(oldHash(PASS));
+      (Keychain.setGenericPassword as jest.Mock).mockRejectedValueOnce(new Error('keychain write failed'));
+
+      await expect(authService.verifyPassphrase(PASS)).resolves.toBe(true);
+      expect((await saved() as { password: string }).password).toBe(oldHash(PASS));
+    });
+
+    it('rewrites a record with fewer iterations than now, and still unlocks', async () => {
+      const old = record(1024);
+      await put(old);
+
+      await expect(authService.verifyPassphrase(PASS)).resolves.toBe(true);
+      const now = (await saved() as { password: string }).password;
+      expect(now).not.toBe(old);
+      expect(now.split('$')[1]).toBe('32768');
+      await expect(authService.verifyPassphrase(PASS)).resolves.toBe(true);
+      await expect(authService.verifyPassphrase('other passphrase')).resolves.toBe(false);
+    });
+  });
 });
