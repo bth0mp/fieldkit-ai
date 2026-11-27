@@ -25,7 +25,7 @@ describe('lock when its saved setting cannot be read (rendered)', () => {
     wipeKeychain();
   });
 
-  it("opens on the lock screen when the lock setting can't be read", async () => {
+  function seedApp() {
     const boundary = installNativeBoundary({ llama: true, fs: true });
     const GB = 1024 ** 3;
     const filePath = `${boundary.fs!.DocumentDirectoryPath}/models/ggml-small.gguf`;
@@ -37,24 +37,48 @@ describe('lock when its saved setting cannot be read (rendered)', () => {
       state: { hasCompletedOnboarding: true, checklistDismissed: true, shownSpotlights: { input: true, voiceHint: true, imageSettings: true } },
       version: 0,
     }));
-    // The lock was on when the person set it up; the saved setting can't be read now.
-    seedRow('local-llm-auth-storage', JSON.stringify({ state: { isEnabled: true, failedAttempts: 0, lockoutUntil: null }, version: 0 }));
-    failReadsOf('local-llm-auth-storage', 'database is locked');
+  }
 
+  async function mountLocked() {
     const React = require('react');
     const rtl = requireRTL();
     const { authService } = require('../../../src/services/authService');
     expect(await authService.setPassphrase('correct horse')).toBe(true);
     const App = require('../../../App').default;
     const ui = rtl.render(React.createElement(App));
-
     await rtl.waitFor(() => expect(ui.queryByTestId('app-loading')).toBeNull(), TIMEOUT);
     await rtl.waitFor(() => expect(ui.getByPlaceholderText('Enter passphrase')).toBeTruthy(), TIMEOUT);
     expect(ui.queryByTestId('home-screen')).toBeNull();
+    return { rtl, ui };
+  }
+
+  it("opens on the lock screen when the lock setting can't be read", async () => {
+    seedApp();
+    // The lock was on when the person set it up; the saved setting can't be read now.
+    seedRow('local-llm-auth-storage', JSON.stringify({ state: { isEnabled: true, failedAttempts: 0, lockoutUntil: null }, version: 0 }));
+    failReadsOf('local-llm-auth-storage', 'database is locked');
+
+    const { rtl, ui } = await mountLocked();
 
     rtl.fireEvent.changeText(ui.getByPlaceholderText('Enter passphrase'), 'correct horse');
     rtl.fireEvent.press(ui.getByText('Unlock'));
     await rtl.waitFor(() => expect(ui.getByTestId('home-screen')).toBeTruthy(), TIMEOUT);
     expect(ui.queryByPlaceholderText('Enter passphrase')).toBeNull();
+  });
+
+  it('still opens on the lock screen when the lock setting and the downloaded models both fail to read', async () => {
+    seedApp();
+    seedRow('local-llm-auth-storage', JSON.stringify({ state: { isEnabled: true, failedAttempts: 0, lockoutUntil: null }, version: 0 }));
+    failReadsOf('local-llm-auth-storage', 'database is locked');
+    failReadsOf('@local_llm/downloaded_models', 'database is locked');
+
+    await mountLocked();
+  });
+
+  it('opens on the lock screen when the saved setting reads as off but a passphrase is set', async () => {
+    seedApp();
+    seedRow('local-llm-auth-storage', JSON.stringify({ state: { isEnabled: false, failedAttempts: 0, lockoutUntil: null }, version: 0 }));
+
+    await mountLocked();
   });
 });

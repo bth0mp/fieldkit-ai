@@ -222,6 +222,14 @@ function App() {
       // in place whatever the rest of boot does. Idempotent and never throws.
       activateFieldkitFeatures();
 
+      // The lock check comes first, so nothing after it can throw its way past it into an unlocked app.
+      // A passphrase in the Keychain means the lock is on: turning the lock off removes it first. The saved
+      // setting can fail to read and sit at its default, and then locking is the safe side. If the saved
+      // setting lands later, the store's merge keeps this change over it (the session's change wins).
+      if (await authService.hasPassphrase()) {
+        useAuthStore.getState().setEnabled(true);
+      }
+
       // Ensure persisted download metadata is loaded before restore logic reads it.
       await ensureAppStoreHydrated();
 
@@ -269,14 +277,6 @@ function App() {
       remoteServerManager.initializeProviders().catch((err) => {
         logger.error('[App] Failed to initialize remote server providers:', err);
       });
-
-      // Check if passphrase is set and lock app if needed
-      const hasPassphrase = await authService.hasPassphrase();
-      // A passphrase in the Keychain means the lock is on: turning the lock off removes it first. The saved
-      // setting can fail to read and sit at its default, and then locking is the safe side.
-      if (hasPassphrase) {
-        useAuthStore.getState().setEnabled(true);
-      }
 
       // Initialize RAG database tables
       ragService.ensureReady().catch((err) => logger.error('Failed to initialize RAG service on startup', err));
