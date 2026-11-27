@@ -5,7 +5,7 @@ import { generationSession } from '../../services/generationSession';
 import { APP_CONFIG } from '../../constants';
 import {
   llmService, intentClassifier, generationService, imageGenerationService,
-  onnxImageGeneratorService, ImageGenerationState, buildToolSystemPromptHint,
+  ImageGenerationState, buildToolSystemPromptHint,
   contextCompactionService, ragService, retrievalService,
 } from '../../services';
 import { offeredToolIdsForTurn } from '../../services/tools/toolOffering';
@@ -22,6 +22,7 @@ import { kiwixService } from '../../services/kiwix/kiwixService';
 import { useChatStore, useProjectStore, useRemoteServerStore, useAppStore } from '../../stores';
 import { callHook, HOOKS } from '../../bootstrap/hookRegistry';
 import { Conversation, Message, MediaAttachment, Project, DownloadedModel, RemoteModel, CacheType } from '../../types';
+import { deleteChat } from '../../services/chatDeletion';
 import logger from '../../utils/logger';
 import { ModelReadyOutcome, ensureReadyOrAlert } from './modelReadiness';
 type SetState<T> = Dispatch<SetStateAction<T>>;
@@ -612,14 +613,12 @@ export async function handleStopFn(deps: Pick<GenerationDeps, 'isGeneratingImage
   if (deps.isGeneratingImage) imageGenerationService.cancelGeneration().catch(() => { });
 }
 export async function executeDeleteConversationFn(
-  deps: Pick<GenerationDeps, 'activeConversationId' | 'isStreaming' | 'clearStreamingMessage' | 'removeImagesByConversationId' | 'deleteConversation' | 'setActiveConversation' | 'navigation' | 'setAlertState'>,
+  deps: Pick<GenerationDeps, 'activeConversationId' | 'isStreaming' | 'clearStreamingMessage' | 'setActiveConversation' | 'navigation' | 'setAlertState'>,
 ): Promise<void> {
   if (!deps.activeConversationId) return;
   deps.setAlertState(hideAlert());
   if (deps.isStreaming) { await llmService.stopGeneration(); deps.clearStreamingMessage(); }
-  for (const id of deps.removeImagesByConversationId(deps.activeConversationId)) await onnxImageGeneratorService.deleteGeneratedImage(id);
-  contextCompactionService.clearSummary(deps.activeConversationId);
-  deps.deleteConversation(deps.activeConversationId);
+  await deleteChat(deps.activeConversationId);
   deps.setActiveConversation(null);
   deps.navigation.goBack();
 }

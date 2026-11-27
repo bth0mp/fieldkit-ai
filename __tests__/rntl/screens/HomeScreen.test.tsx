@@ -623,8 +623,8 @@ describe('HomeScreen', () => {
       fireEvent.press(getByTestId('delete-conversation-button'));
 
       await waitFor(() => {
-        expect(queryByText('Delete Conversation')).toBeTruthy();
-        expect(queryByText(`Delete "Delete This Chat"?`)).toBeTruthy();
+        expect(queryByText('Delete Chat')).toBeTruthy();
+        expect(queryByText('Delete "Delete This Chat"? This will also delete all images generated in this chat.')).toBeTruthy();
       });
 
       // Press Delete button in the alert
@@ -645,7 +645,7 @@ describe('HomeScreen', () => {
       fireEvent.press(getByTestId('delete-conversation-button'));
 
       await waitFor(() => {
-        expect(queryByText('Delete Conversation')).toBeTruthy();
+        expect(queryByText('Delete Chat')).toBeTruthy();
       });
 
       // Press Cancel

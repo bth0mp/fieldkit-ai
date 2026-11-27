@@ -17,6 +17,7 @@ import { useTheme, useThemedStyles } from '../theme';
 import type { ThemeColors, ThemeShadows } from '../theme';
 import { TYPOGRAPHY, SPACING } from '../constants';
 import { useChatStore, useProjectStore, useAppStore } from '../stores';
+import { deleteChat, deleteChatMessage } from '../services/chatDeletion';
 import { Conversation } from '../types';
 import { RootStackParamList } from '../navigation/types';
 
@@ -166,7 +167,7 @@ export const ProjectChatsScreen: React.FC = () => {
   const [alertState, setAlertState] = useState<AlertState>(initialAlertState);
 
   const { getProject } = useProjectStore();
-  const { conversations, deleteConversation, setActiveConversation, createConversation } = useChatStore();
+  const { conversations, setActiveConversation, createConversation } = useChatStore();
   const { downloadedModels, activeModelId } = useAppStore();
 
   const project = getProject(projectId);
@@ -200,13 +201,16 @@ export const ProjectChatsScreen: React.FC = () => {
   const handleDeleteChat = (conversation: Conversation) => {
     setAlertState(showAlert(
       'Delete Chat',
-      `Delete "${conversation.title}"?`,
+      deleteChatMessage(conversation.title),
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => deleteConversation(conversation.id),
+          onPress: () => {
+            setAlertState(hideAlert());
+            deleteChat(conversation.id).catch(() => {});
+          },
         },
       ]
     ));
@@ -216,6 +220,7 @@ export const ProjectChatsScreen: React.FC = () => {
     <TouchableOpacity
       style={styles.deleteAction}
       onPress={() => handleDeleteChat(conversation)}
+      testID="delete-conversation-button"
     >
       <Icon name="trash-2" size={16} color={colors.error} />
     </TouchableOpacity>

@@ -3,6 +3,7 @@ import { InteractionManager } from 'react-native';
 import { AlertState, initialAlertState, showAlert, hideAlert } from '../../../components';
 import { useAppStore, useChatStore, useRemoteServerStore } from '../../../stores';
 import { modelManager, hardwareService, activeModelService } from '../../../services';
+import { deleteChat, deleteChatMessage } from '../../../services/chatDeletion';
 import { Conversation, RemoteModel } from '../../../types';
 import { useLANDiscovery } from './useLANDiscovery';
 import { useActiveTextModel } from '../../../hooks/useActiveTextModel';
@@ -19,11 +20,10 @@ let hasRunLANDiscovery = false;
 function deleteConversationWithAlert(
   conversation: Conversation,
   setAlertState: (s: AlertState) => void,
-  deleteConversation: (id: string) => void,
 ) {
   setAlertState(showAlert(
-    'Delete Conversation',
-    `Delete "${conversation.title}"?`,
+    'Delete Chat',
+    deleteChatMessage(conversation.title),
     [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -31,7 +31,7 @@ function deleteConversationWithAlert(
         style: 'destructive',
         onPress: () => {
           setAlertState(hideAlert());
-          deleteConversation(conversation.id);
+          deleteChat(conversation.id).catch(() => {});
         },
       },
     ]
@@ -53,7 +53,7 @@ export const useHomeScreen = (navigation: HomeScreenNavigationProp) => {
     generatedImages,
   } = useAppStore();
 
-  const { conversations, setActiveConversation, deleteConversation } = useChatStore();
+  const { conversations, setActiveConversation } = useChatStore();
 
   // Remote server store for remote models
   const { servers: remoteServers, discoveredModels: remoteDiscoveredModels } = useRemoteServerStore();
@@ -98,7 +98,7 @@ export const useHomeScreen = (navigation: HomeScreenNavigationProp) => {
   };
 
   const handleDeleteConversation = (conversation: Conversation) =>
-    deleteConversationWithAlert(conversation, setAlertState, deleteConversation);
+    deleteConversationWithAlert(conversation, setAlertState);
 
   // The two most recently updated chats, newest first (the order the Chats tab lists them in).
   const recentConversations = [...conversations]

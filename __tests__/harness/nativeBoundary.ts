@@ -470,13 +470,20 @@ function makeLlamaFake(onRelease?: () => void, chatTemplate?: string): LlamaFake
 // imageGenerationService's size/guidance flooring surfaces in the rendered generation-meta.
 // ---------------------------------------------------------------------------
 
+/** Where the native module keeps rendered images (filesDir/generated_images). */
+const IMAGE_DIR = '/generated_images';
+
 export interface DiffusionFake {
   module: Record<string, jest.Mock>;
   /** Every generateImage nativeParams, for arg-level cross-checks if needed. */
   calls: { generateImage: Array<Record<string, unknown>> };
+  /** Put a rendered image on the phone's disk where the native module keeps it (needs { fs: true }). */
+  seedImage(id: string): string;
+  /** Whether the image's file is still on the disk. */
+  hasImage(id: string): Promise<boolean>;
 }
 
-function makeDiffusionFake(seedFile?: (path: string, sizeBytes: number) => void): DiffusionFake {
+function makeDiffusionFake(seedFile?: (path: string, sizeBytes: number) => void, fs?: { exists: (p: string) => Promise<boolean>; unlink: (p: string) => Promise<void> }): DiffusionFake {
   const calls: DiffusionFake['calls'] = { generateImage: [] };
   let seedCounter = 0;
   const module: Record<string, jest.Mock> = {
@@ -512,7 +519,18 @@ function makeDiffusionFake(seedFile?: (path: string, sizeBytes: number) => void)
     addListener: jest.fn(),
     removeListeners: jest.fn(),
   };
-  return { module, calls };
+  // With a disk, delete works as on the phone: the file goes, and an id with no file is rejected NOT_FOUND.
+  const imagePath = (id: string) => `${IMAGE_DIR}/${id}.png`;
+  if (fs && seedFile) {
+    module.deleteGeneratedImage.mockImplementation(async (id: string) => {
+      if (!(await fs.exists(imagePath(id)))) throw Object.assign(new Error(`Image not found: ${id}`), { code: 'NOT_FOUND' });
+      await fs.unlink(imagePath(id));
+      return true;
+    });
+  }
+  const seedImage = (id: string) => { seedFile?.(imagePath(id), 1024); return imagePath(id); };
+  const hasImage = async (id: string) => fs ? fs.exists(imagePath(id)) : false;
+  return { module, calls, seedImage, hasImage };
 }
 
 // ---------------------------------------------------------------------------
@@ -1135,7 +1153,7 @@ export function installNativeBoundary(opts: InstallOpts = {}): NativeBoundary {
   }
 
   // Diffusion writes its rendered PNG to the (memfs) disk when fs is present, like the native module.
-  const diffusion = makeDiffusionFake(fsFake?.seedFile);
+  const diffusion = makeDiffusionFake(fsFake?.seedFile, fsFake?.module as Parameters<typeof makeDiffusionFake>[1]);
 
   // Scriptable llama.rn: override the global stub so completion output is under test control.
   const llamaFake = opts.llama ? makeLlamaFake(freeModelMemory, opts.llamaChatTemplate) : undefined;

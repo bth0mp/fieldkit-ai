@@ -21,7 +21,7 @@ import type { ThemeColors, ThemeShadows } from '../theme';
 import { TYPOGRAPHY, SPACING } from '../constants';
 import { useChatStore, useProjectStore, useAppStore } from '../stores';
 import { useActiveTextModel } from '../hooks/useActiveTextModel';
-import { onnxImageGeneratorService } from '../services';
+import { deleteChat, deleteChatMessage } from '../services/chatDeletion';
 import { Conversation } from '../types';
 import { RootStackParamList, MainTabParamList } from '../navigation/types';
 type NavigationProp = CompositeNavigationProp<
@@ -35,12 +35,12 @@ export const ChatsListScreen: React.FC = () => {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const conversations = useChatStore(s => s.conversations);
-  const { deleteConversation, setActiveConversation } = useChatStore.getState();
+  const { setActiveConversation } = useChatStore.getState();
   const { getProject } = useProjectStore();
   const activeImageModelId = useAppStore(s => s.activeImageModelId);
   const onboardingChecklist = useAppStore(s => s.onboardingChecklist);
   const shownSpotlights = useAppStore(s => s.shownSpotlights);
-  const { removeImagesByConversationId, markSpotlightShown } = useAppStore.getState();
+  const { markSpotlightShown } = useAppStore.getState();
   const { modelId: activeTextModelId } = useActiveTextModel();
   const [alertState, setAlertState] = useState<AlertState>(initialAlertState);
   const { goTo } = useSpotlightTour();
@@ -75,7 +75,7 @@ export const ChatsListScreen: React.FC = () => {
   const handleDeleteChat = (conversation: Conversation) => {
     setAlertState(showAlert(
       'Delete Chat',
-      `Delete "${conversation.title}"? This will also delete all images generated in this chat.`,
+      deleteChatMessage(conversation.title),
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -83,11 +83,7 @@ export const ChatsListScreen: React.FC = () => {
           style: 'destructive',
           onPress: () => {
             setAlertState(hideAlert());
-            const imageIds = removeImagesByConversationId(conversation.id);
-            for (const imageId of imageIds) {
-              onnxImageGeneratorService.deleteGeneratedImage(imageId).catch(() => {});
-            }
-            deleteConversation(conversation.id);
+            deleteChat(conversation.id).catch(() => {});
           },
         },
       ]
