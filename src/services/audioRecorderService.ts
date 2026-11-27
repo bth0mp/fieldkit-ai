@@ -1,11 +1,17 @@
 import { AudioRecorder, FileFormat, FileDirectory, BitDepth, IOSAudioQuality, FlacCompressionLevel } from 'react-native-audio-api';
 import { PermissionsAndroid, Platform } from 'react-native';
+import RNFS from 'react-native-fs';
 import { audioSessionManager } from './audioSessionManager';
 import logger from '../utils/logger';
 import { appLockService } from './appLockService';
 
 /** Supported formats for llama.rn audio input */
 type AudioInputFormat = 'wav' | 'mp3';
+
+/** Folder under the app's files directory that the recorder writes to (RNFS.DocumentDirectoryPath is that directory on Android). */
+const RECORDINGS_SUBDIRECTORY = 'audio-input';
+
+const plainPath = (path: string): string => path.replace(/^file:\/\//, '');
 
 class AudioRecorderService {
   private recorder: AudioRecorder | null = null;
@@ -61,7 +67,7 @@ class AudioRecorderService {
     rec.enableFileOutput({
       format: FileFormat.Wav,
       directory: FileDirectory.Document,
-      subDirectory: 'audio-input',
+      subDirectory: RECORDINGS_SUBDIRECTORY,
       fileNamePrefix: `input_${Date.now()}`,
       channelCount: 1,
       preset: {
@@ -105,11 +111,23 @@ class AudioRecorderService {
 
   cancelRecording(): void {
     if (!this.isRecording || !this.recorder) return;
-    this.recorder.stop();
+    const result = this.recorder.stop();
     this.isRecording = false;
     this.recorder = null;
+    // What was captured is thrown away with it.
+    if (result?.status === 'success') this.discardRecording(result.path);
     // Best-effort session restore (fire-and-forget — keep this method sync).
     audioSessionManager.restorePlaybackAfterRecording().catch(() => {});
+  }
+
+  /** Delete a recording that did not become part of a message. Never throws; a missing file is fine. */
+  async discardRecording(path: string): Promise<void> {
+    try {
+      const file = plainPath(path);
+      if (await RNFS.exists(file)) await RNFS.unlink(file);
+    } catch (error) {
+      logger.warn('[AudioRecorder] Could not delete a recording', error);
+    }
   }
 
   isCurrentlyRecording(): boolean {

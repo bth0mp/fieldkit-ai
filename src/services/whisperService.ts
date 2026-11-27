@@ -328,11 +328,11 @@ class WhisperService {
     // Resolve the authoritative transcript for the finished utterance: prefer the realtime result;
     // when it's empty (B26), transcribe the recorded file. Pure decision, one place.
     const resolveFinalText = async (realtimeText: string): Promise<string> => {
-      if (cleanTranscription(realtimeText)) return realtimeText;
       if (!recordedFile) return realtimeText;
+      if (cleanTranscription(realtimeText)) { audioRecorderService.cancelRecording(); return realtimeText; } // the fallback file is not needed
       try {
         const { path } = await audioRecorderService.stopRecording();
-        const fileText = await this.transcribeFile(path);
+        const fileText = await this.transcribeFile(path).finally(() => audioRecorderService.discardRecording(path));
         logger.log(`[WhisperService] Realtime captured nothing — file transcript: "${fileText.slice(0, 50)}"`);
         return fileText;
       } catch (fileErr) {

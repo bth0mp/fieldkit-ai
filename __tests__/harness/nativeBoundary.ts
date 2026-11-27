@@ -1071,6 +1071,9 @@ export interface InstallOpts {
   download?: boolean;
   /** Replace the global whisper.rn stub with a driveable STT context (boundary.whisper). */
   whisper?: boolean;
+  /** Replace the react-native-audio-api recorder with one that writes its WAV into the fs fake, in the folder
+   *  the real recorder uses (<DocumentDirectoryPath>/<subDirectory>). Needs { fs: true }. */
+  recorder?: boolean;
   /** Install the FieldkitSpeech native module (boundary.speech). Omit it to model a device without one. */
   speech?: SpeechFakeOptions;
   /** Install the FieldkitCalendar native module and the READ_CALENDAR prompt (boundary.calendar). Omit it to
@@ -1162,6 +1165,20 @@ export function installNativeBoundary(opts: InstallOpts = {}): NativeBoundary {
   // Driveable whisper.rn: override the global stub so realtime/file transcription is under test control.
   const whisperFake = opts.whisper ? makeWhisperFake() : undefined;
   if (whisperFake) jest.doMock('whisper.rn', () => whisperFake.module);
+
+  if (opts.recorder && fsFake) {
+    // The global stub's recorder is a jest.fn: give it a recorder that writes a file, as the native one does.
+    jest.requireMock('react-native-audio-api').AudioRecorder.mockImplementation(() => {
+      let file: { subDirectory: string; fileNamePrefix: string } = { subDirectory: '', fileNamePrefix: '' };
+      let path = '';
+      return {
+        enableFileOutput: (o: typeof file) => { file = o; return { status: 'success', path: '' }; },
+        // The native recorder creates its file as soon as it starts.
+        start: () => { path = `${fsFake.DocumentDirectoryPath}/${file.subDirectory}/${file.fileNamePrefix}.wav`; fsFake.seedFile(path, 3200); return { status: 'success', path }; },
+        stop: () => ({ status: 'success', path, size: 3200, duration: 1 }),
+      };
+    });
+  }
 
   const speechFake = opts.speech ? makeSpeechFake(handle, opts.speech) : undefined;
 

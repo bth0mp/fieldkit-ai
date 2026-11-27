@@ -38,6 +38,8 @@ export interface ChatHarnessOptions {
   /** Make the (LiteRT) model audio-capable (liteRTAudio) — so supportsDirectAudio() is true and chat-mode
    *  hold-to-talk exercises the direct-audio recording path (not the whisper-realtime path). */
   audio?: boolean;
+  /** Record dictation into the fs fake, in the folder the real recorder uses (boundary.fs lists it). */
+  recorder?: boolean;
   /** Install the driveable whisper.rn STT fake (for chat-mode voice input flows). */
   whisper?: boolean;
   /** Install the FieldkitSpeech native fake (system text-to-speech). Omit to model a device without the module. */
@@ -76,7 +78,7 @@ export interface ChatHarnessOptions {
 export async function setupChatScreen(opts: ChatHarnessOptions) {
   const platform = opts.platform ?? 'android';
   const ram = opts.ram ?? { platform, totalBytes: 12 * GB, availBytes: 8 * GB };
-  const boundary = installNativeBoundary({ llama: opts.engine === 'llama', llamaChatTemplate: opts.chatTemplate, fs: true, fsInfo: opts.fsInfo, pdf: opts.pdf, ram, whisper: opts.whisper, download: opts.download, speech: opts.speech, calendar: opts.calendar, documents: opts.documents });
+  const boundary = installNativeBoundary({ llama: opts.engine === 'llama', llamaChatTemplate: opts.chatTemplate, fs: true, fsInfo: opts.fsInfo, pdf: opts.pdf, ram, whisper: opts.whisper, recorder: opts.recorder, download: opts.download, speech: opts.speech, calendar: opts.calendar, documents: opts.documents });
   if (opts.sqlite) require('./sqliteFake').doMockRealSqlite();
 
   // Global boundary polyfill: React 19's error reporter calls window.dispatchEvent; in the node test
