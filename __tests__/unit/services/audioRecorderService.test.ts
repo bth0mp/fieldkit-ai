@@ -193,7 +193,7 @@ describe('startRecording', () => {
       }),
     };
 
-    await expect(audioRecorderService.startRecording()).resolves.toBeUndefined();
+    await expect(audioRecorderService.startRecording()).resolves.toEqual(expect.any(Number));
     expect(mockStart).toHaveBeenCalledTimes(1);
   });
 
@@ -221,7 +221,7 @@ describe('startRecording', () => {
     Platform.OS = 'ios';
     mockStart.mockReturnValue(undefined);
 
-    await expect(audioRecorderService.startRecording()).resolves.toBeUndefined();
+    await expect(audioRecorderService.startRecording()).resolves.toEqual(expect.any(Number));
     expect(audioRecorderService.isCurrentlyRecording()).toBe(true);
   });
 });
@@ -281,6 +281,23 @@ describe('cancelRecording', () => {
 
     audioRecorderService.cancelRecording();
 
+    expect(mockStop).toHaveBeenCalledTimes(1);
+    expect(audioRecorderService.isCurrentlyRecording()).toBe(false);
+  });
+
+  it('leaves a newer recording alone when asked to cancel an older one', async () => {
+    Platform.OS = 'ios';
+    const first = await audioRecorderService.startRecording();
+    await audioRecorderService.stopRecording();
+    const second = await audioRecorderService.startRecording();
+    expect(second).toBeGreaterThan(first);
+    mockStop.mockClear();
+
+    audioRecorderService.cancelRecording(first);
+    expect(mockStop).not.toHaveBeenCalled();
+    expect(audioRecorderService.isCurrentlyRecording()).toBe(true);
+
+    audioRecorderService.cancelRecording(second);
     expect(mockStop).toHaveBeenCalledTimes(1);
     expect(audioRecorderService.isCurrentlyRecording()).toBe(false);
   });

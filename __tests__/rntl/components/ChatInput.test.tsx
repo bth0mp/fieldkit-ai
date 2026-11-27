@@ -1541,7 +1541,7 @@ describe('ChatInput', () => {
           mockUseWhisperTranscription.mockReturnValue(whisperHook(null));
           spies.push(jest.spyOn(activeModelService, 'supportsAudioInput').mockReturnValue(true));
           spies.push(jest.spyOn(audioRecorderService, 'supportsDirectAudioInput').mockReturnValue(true));
-          spies.push(jest.spyOn(audioRecorderService, 'startRecording').mockResolvedValue(undefined));
+          spies.push(jest.spyOn(audioRecorderService, 'startRecording').mockResolvedValue(1));
           spies.push(jest.spyOn(audioRecorderService, 'stopRecording').mockResolvedValue({ path: '/rec.wav', durationSeconds: 2 }));
           spies.push(jest.spyOn(whisperService, 'isModelLoaded').mockReturnValue(true));
           spies.push(jest.spyOn(whisperService, 'transcribeFile').mockImplementation(

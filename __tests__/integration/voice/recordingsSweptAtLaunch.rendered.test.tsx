@@ -24,6 +24,9 @@ const TIMEOUT = { timeout: 8000 };
 const FOLDER = '/docs/audio-input';
 const OLD = `${FOLDER}/input_1.wav`;
 const VOICE_NOTE = `${FOLDER}/input_2.wav`;
+// A voice note whose saved path names the folder differently than the listing does (/data/user/0 against /data/data).
+const MOVED_NOTE = `${FOLDER}/input_123.wav`;
+const NEW_RECORDING = `${FOLDER}/input_${Date.now() + 60000}.wav`;
 
 type Boundary = ReturnType<typeof installNativeBoundary>;
 
@@ -39,7 +42,10 @@ const savedChats = () => JSON.stringify({
       id: 'c1', title: 'Voice chat', modelId: 'm', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
       messages: [{
         id: 'c1-u', role: 'user', content: 'what is in my bag', timestamp: 1,
-        attachments: [{ id: 'a1', type: 'audio', uri: VOICE_NOTE, audioFormat: 'wav', audioDurationSeconds: 3 }],
+        attachments: [
+          { id: 'a1', type: 'audio', uri: VOICE_NOTE, audioFormat: 'wav', audioDurationSeconds: 3 },
+          { id: 'a2', type: 'audio', uri: 'file:///data/user/0/x/files/audio-input/input_123.wav?v=1', audioFormat: 'wav', audioDurationSeconds: 3 },
+        ],
       }],
     }],
     activeConversationId: null,
@@ -63,6 +69,8 @@ async function bootAppWithRecordings() {
   seedRow('local-llm-chat-storage', savedChats());
   boundary.fs!.seedFile(OLD, 3200);
   boundary.fs!.seedFile(VOICE_NOTE, 3200);
+  boundary.fs!.seedFile(MOVED_NOTE, 3200);
+  boundary.fs!.seedFile(NEW_RECORDING, 3200); // made after launch: a message may still be on its way
   return boundary;
 }
 describe('launch deletes leftover voice recordings (rendered)', () => {
@@ -71,7 +79,7 @@ describe('launch deletes leftover voice recordings (rendered)', () => {
     wipeKeychain();
   });
 
-  it('launch deletes old recordings but keeps voice notes', async () => {
+  it('launch deletes old recordings but keeps voice notes and new recordings', async () => {
     const boundary = await bootAppWithRecordings();
     const React = require('react');
     const rtl = requireRTL();
@@ -79,7 +87,7 @@ describe('launch deletes leftover voice recordings (rendered)', () => {
     const ui = rtl.render(React.createElement(App));
 
     await rtl.waitFor(() => expect(ui.getByTestId('home-screen')).toBeTruthy(), TIMEOUT);
-    await rtl.waitFor(async () => { expect(await filesIn(boundary)).toEqual([VOICE_NOTE]); }, TIMEOUT);
+    await rtl.waitFor(async () => { expect(await filesIn(boundary)).toEqual([MOVED_NOTE, VOICE_NOTE, NEW_RECORDING].sort()); }, TIMEOUT);
   });
 
   it("launch deletes nothing when the chats couldn't be read", async () => {
@@ -92,6 +100,6 @@ describe('launch deletes leftover voice recordings (rendered)', () => {
 
     await rtl.waitFor(() => expect(ui.getByTestId('home-screen')).toBeTruthy(), TIMEOUT);
     await new Promise(resolve => setTimeout(resolve, 1500));
-    expect(await filesIn(boundary)).toEqual([OLD, VOICE_NOTE]);
+    expect(await filesIn(boundary)).toEqual([OLD, MOVED_NOTE, VOICE_NOTE, NEW_RECORDING].sort());
   });
 });
