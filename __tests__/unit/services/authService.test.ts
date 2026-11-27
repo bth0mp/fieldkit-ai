@@ -335,7 +335,7 @@ describe('AuthService', () => {
       ['a bad field count', 'pbkdf2-sha256$1024$0707'],
       ['a non-hex salt', `pbkdf2-sha256$1024$zz07$${'a'.repeat(64)}`],
       ['zero iterations', `pbkdf2-sha256$0$0707$${'a'.repeat(64)}`],
-      ['iterations above the ceiling', `pbkdf2-sha256$1048577$0707$${'a'.repeat(64)}`],
+      ['iterations above the ceiling', `pbkdf2-sha256$65537$0707$${'a'.repeat(64)}`],
     ])('does not unlock on a record with %s', async (_name, bad) => {
       await put(bad);
       await expect(authService.verifyPassphrase(PASS)).resolves.toBe(false);
@@ -357,7 +357,7 @@ describe('AuthService', () => {
       await expect(authService.verifyPassphrase(PASS)).resolves.toBe(true);
       const now = (await saved() as { password: string }).password;
       expect(now).not.toBe(old);
-      expect(now.split('$')[1]).toBe('32768');
+      expect(now.split('$')[1]).toBe('2048');
       await expect(authService.verifyPassphrase(PASS)).resolves.toBe(true);
       await expect(authService.verifyPassphrase('other passphrase')).resolves.toBe(false);
     });

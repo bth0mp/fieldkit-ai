@@ -9,12 +9,16 @@ const SERVICE_NAME = 'com.bth0mp.fieldkit.auth';
 const PASSPHRASE_KEY = 'passphrase_hash';
 
 const RECORD_PREFIX = 'pbkdf2-sha256$';
-// About half a second on the target phone. A saved record carries its own count, so raising this rehashes at the next unlock.
-const PBKDF2_ITERATIONS = 32768;
+// A saved record carries its own count, so raising this rehashes at the next unlock.
+// ponytail: pure-JS PBKDF2 on Hermes costs about 0.15 ms an iteration (4.9 s for 32768 on an emulator release
+// build), and the JS thread is frozen meanwhile, so 2048 (about 0.3 s) is the ceiling. The lock gates the screen,
+// not the data (chats are stored unencrypted), so more iterations buy little. Move to native PBKDF2
+// (SecretKeyFactory / CommonCrypto) if the passphrase ever encrypts data.
+const PBKDF2_ITERATIONS = 2048;
 const SALT_BYTES = 16;
 const KEY_BYTES = 32;
 // A saved count above this is treated as tampered, so a bad record cannot hang the JS thread.
-const MAX_ITERATIONS = 1048576;
+const MAX_ITERATIONS = 65536;
 
 class AuthService {
   /** The full record to store: `pbkdf2-sha256$<iterations>$<salt hex>$<hash hex>`. */
