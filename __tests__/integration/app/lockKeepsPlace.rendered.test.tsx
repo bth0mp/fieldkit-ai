@@ -26,6 +26,8 @@ jest.setTimeout(60000);
 
 const TIMEOUT = { timeout: 8000 };
 const PASSPHRASE = 'correct horse';
+// The lock hides the app behind it from queries; a dialog is its own window, so look for it there too.
+const ANY = { includeHiddenElements: true };
 
 async function bootLockedApp() {
   const boundary = installNativeBoundary({ llama: true, fs: true });
@@ -109,6 +111,21 @@ describe('locking keeps your place (rendered)', () => {
     await unlock(rtl, ui);
 
     expect(ui.getByTestId('chat-input').props.value).toBe('half-written');
+  });
+
+  it('an open attach menu does not show over the lock screen', async () => {
+    const { boundary, rtl, ui } = await openChat();
+    rtl.fireEvent.press(await ui.findByTestId('attach-button', {}, TIMEOUT));
+    await ui.findByText('Photo', {}, TIMEOUT);
+
+    boundary.emitAppStateChange('background');
+    boundary.emitAppStateChange('active');
+    await rtl.waitFor(() => expect(ui.getByPlaceholderText('Enter passphrase')).toBeTruthy(), TIMEOUT);
+    expect(ui.queryByText('Photo', ANY)).toBeNull();
+    expect(ui.queryByText('Document', ANY)).toBeNull();
+
+    await unlock(rtl, ui);
+    expect(ui.getByTestId('chat-input')).toBeTruthy();
   });
 
   it("picking a photo doesn't lock the app", async () => {

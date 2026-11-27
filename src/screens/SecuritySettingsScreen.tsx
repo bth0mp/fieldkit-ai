@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
-  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Feather';
@@ -19,6 +18,7 @@ import { TYPOGRAPHY, SPACING } from '../constants';
 import { useAuthStore } from '../stores';
 import { authService } from '../services';
 import { PassphraseSetupScreen } from './PassphraseSetupScreen';
+import { LockAwareModal } from '../components/LockAwareModal';
 
 export const SecuritySettingsScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -115,7 +115,7 @@ export const SecuritySettingsScreen: React.FC = () => {
         </Card>
       </ScrollView>
 
-      <Modal
+      <LockAwareModal
         visible={showPassphraseSetup}
         animationType="slide"
         onRequestClose={() => setShowPassphraseSetup(false)}
@@ -125,7 +125,7 @@ export const SecuritySettingsScreen: React.FC = () => {
           onComplete={() => setShowPassphraseSetup(false)}
           onCancel={() => setShowPassphraseSetup(false)}
         />
-      </Modal>
+      </LockAwareModal>
       <CustomAlert
         visible={alertState.visible}
         title={alertState.title}

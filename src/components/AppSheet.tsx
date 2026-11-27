@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  Modal,
   Animated,
   Easing,
   PanResponder,
@@ -15,6 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, useThemedStyles } from '../theme';
 import { createStyles } from './AppSheet.styles';
+import { LockAwareModal } from './LockAwareModal';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -35,6 +35,8 @@ export interface AppSheetProps {
   showHeader?: boolean;
   showHandle?: boolean;
   elevation?: 'level3' | 'level4';
+  /** Shows over the lock screen (only the lock screen's own dialogs set this). */
+  overLock?: boolean;
   children: React.ReactNode;
 }
 
@@ -106,6 +108,7 @@ export const AppSheet: React.FC<AppSheetProps> = ({
   showHeader = true,
   showHandle = true,
   elevation = 'level3',
+  overLock = false,
   children,
 }) => {
   const { elevation: elevationTokens } = useTheme();
@@ -292,7 +295,8 @@ export const AppSheet: React.FC<AppSheetProps> = ({
   }
 
   return (
-    <Modal
+    <LockAwareModal
+      overLock={overLock}
       visible={modalVisible}
       transparent
       animationType="none"
@@ -369,6 +373,6 @@ export const AppSheet: React.FC<AppSheetProps> = ({
           )}
         </Animated.View>
       </View>
-    </Modal>
+    </LockAwareModal>
   );
 };

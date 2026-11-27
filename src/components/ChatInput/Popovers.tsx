@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, Text, StyleSheet, Modal, TouchableWithoutFeedback, Dimensions } from 'react-native';
+import { View, TouchableOpacity, Text, StyleSheet, TouchableWithoutFeedback, Dimensions } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import { useTheme } from '../../theme';
 import { ImageModeState } from '../../types';
@@ -7,6 +7,7 @@ import { useAppStore } from '../../stores';
 import { triggerHaptic } from '../../utils/haptics';
 import { FONTS } from '../../constants';
 import { getSlot, SLOTS } from '../../bootstrap/slotRegistry';
+import { LockAwareModal } from '../LockAwareModal';
 
 const TOOL_WARNING_COLOR = '#F59E0B';
 
@@ -130,7 +131,7 @@ export const QuickSettingsPopover: React.FC<QuickSettingsPopoverProps> = ({
   const toolBadgeBg = showToolsWarning ? TOOL_WARNING_COLOR : tools.badgeBg;
 
   return (
-    <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
+    <LockAwareModal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={popoverStyles.overlay}>
           <TouchableWithoutFeedback>
@@ -194,7 +195,7 @@ export const QuickSettingsPopover: React.FC<QuickSettingsPopoverProps> = ({
           </TouchableWithoutFeedback>
         </View>
       </TouchableWithoutFeedback>
-    </Modal>
+    </LockAwareModal>
   );
 };
 
@@ -219,7 +220,7 @@ export const AttachPickerPopover: React.FC<AttachPickerPopoverProps> = ({
   if (!visible) return null;
 
   return (
-    <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
+    <LockAwareModal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={popoverStyles.overlay}>
           <TouchableWithoutFeedback>
@@ -249,6 +250,6 @@ export const AttachPickerPopover: React.FC<AttachPickerPopoverProps> = ({
           </TouchableWithoutFeedback>
         </View>
       </TouchableWithoutFeedback>
-    </Modal>
+    </LockAwareModal>
   );
 };

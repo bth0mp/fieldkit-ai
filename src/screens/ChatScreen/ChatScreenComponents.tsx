@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Modal,
   Image,
   ActivityIndicator,
 } from 'react-native';
@@ -13,6 +12,7 @@ import { AttachStep } from 'react-native-spotlight-tour';
 import { AnimatedEntry } from '../../components/AnimatedEntry';
 import { createStyles } from './styles';
 import { useTheme } from '../../theme';
+import { LockAwareModal } from '../../components/LockAwareModal';
 
 type StylesType = ReturnType<typeof createStyles>;
 type ColorsType = ReturnType<typeof useTheme>['colors'];
@@ -233,7 +233,7 @@ export const ImageViewerModal: React.FC<{
   onClose: () => void;
   onSave: () => void;
 }> = ({ styles, colors, viewerImageUri, onClose, onSave }) => (
-  <Modal visible={!!viewerImageUri} transparent animationType="fade" onRequestClose={onClose}>
+  <LockAwareModal visible={!!viewerImageUri} transparent animationType="fade" onRequestClose={onClose}>
     <View style={styles.imageViewerContainer}>
       <TouchableOpacity style={styles.imageViewerBackdrop} activeOpacity={1} onPress={onClose} />
       {viewerImageUri && (
@@ -252,5 +252,5 @@ export const ImageViewerModal: React.FC<{
         </View>
       )}
     </View>
-  </Modal>
+  </LockAwareModal>
 );
