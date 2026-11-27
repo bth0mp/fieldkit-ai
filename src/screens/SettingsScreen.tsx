@@ -244,10 +244,10 @@ export const SettingsScreen: React.FC = () => {
             <View style={styles.privacyIconContainer}>
               <Icon name="shield" size={18} color={colors.textSecondary} />
             </View>
-            <Text style={styles.privacyTitle}>Privacy First</Text>
+            <Text style={styles.privacyTitle}>Privacy</Text>
             <Text style={styles.privacyText}>
-              All your data stays on this device. No conversations, prompts, or
-              personal information is ever sent to any server.
+              Your chats, files and recordings stay on this phone. Text leaves it only when you chat through a remote
+              server, or when the assistant searches the web or opens a web page for you.
             </Text>
           </Card>
         </AnimatedEntry>

@@ -161,11 +161,11 @@ describe('SettingsScreen', () => {
     // The three theme options are rendered - pressing one calls setThemeMode
   });
 
-  it('renders Privacy First section', () => {
+  it('renders Privacy section', () => {
     const { getByText } = render(<SettingsScreen />);
-    expect(getByText('Privacy First')).toBeTruthy();
+    expect(getByText('Privacy')).toBeTruthy();
     expect(
-      getByText(/All your data stays on this device/),
+      getByText(/Your chats, files and recordings stay on this phone/),
     ).toBeTruthy();
   });
 
