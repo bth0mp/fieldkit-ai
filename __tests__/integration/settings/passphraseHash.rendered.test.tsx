@@ -137,5 +137,13 @@ describe('app lock passphrase hash (rendered)', () => {
     await unlock(rtl, ui, COLLIDING);
     await rtl.waitFor(() => expect(ui.getByText('Incorrect Passphrase')).toBeTruthy(), TIMEOUT);
     expect(ui.getByPlaceholderText('Enter passphrase')).toBeTruthy();
+
+    // The rewritten record opens the lock with the right passphrase.
+    rtl.fireEvent.press(ui.getByText('OK'));
+    boundary.emitAppStateChange('background');
+    boundary.emitAppStateChange('active');
+    await unlock(rtl, ui, RIGHT);
+    await rtl.waitFor(() => expect(ui.queryByPlaceholderText('Enter passphrase')).toBeNull(), TIMEOUT);
+    expect(ui.getByTestId('settings-tab')).toBeTruthy();
   });
 });
