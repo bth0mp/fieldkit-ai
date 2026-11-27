@@ -130,6 +130,33 @@ class AudioRecorderService {
     }
   }
 
+  /**
+   * Delete every recording in the recordings folder that is not in `keep` (the paths saved messages refer
+   * to). Returns how many it deleted. Never throws; a file it cannot delete stays for the next launch.
+   */
+  async deleteUnusedRecordings(keep: Set<string>): Promise<number> {
+    let deleted = 0;
+    try {
+      const folder = `${RNFS.DocumentDirectoryPath}/${RECORDINGS_SUBDIRECTORY}`;
+      if (!(await RNFS.exists(folder))) return 0;
+      const kept = new Set([...keep].map(plainPath));
+      for (const entry of await RNFS.readDir(folder)) {
+        // A recording in progress is not leftover.
+        if (this.isRecording) break;
+        if (!entry.isFile() || kept.has(plainPath(entry.path))) continue;
+        try {
+          await RNFS.unlink(entry.path);
+          deleted += 1;
+        } catch (error) {
+          logger.warn('[AudioRecorder] Could not delete an old recording', error);
+        }
+      }
+    } catch (error) {
+      logger.warn('[AudioRecorder] Could not list old recordings', error);
+    }
+    return deleted;
+  }
+
   isCurrentlyRecording(): boolean {
     return this.isRecording;
   }
