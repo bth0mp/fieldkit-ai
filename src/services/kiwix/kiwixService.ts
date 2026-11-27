@@ -14,6 +14,7 @@ import logger from '../../utils/logger';
 import { categoryFor } from './kiwixCategory';
 import { type KiwixFile, useKiwixStore } from './kiwixStore';
 import { openZim, type ZimArchive, ZimError } from './zimReader';
+import { appLockService } from '../appLockService';
 
 interface TreeDocument { uri: string; name: string; size: number }
 interface DocumentTreeModule { listFiles(treeUri: string): Promise<TreeDocument[]> }
@@ -182,10 +183,13 @@ export const kiwixService = {
     await hydrated();
     let uri: string;
     try {
+      appLockService.openingSystemScreen();
       ({ uri } = await pickDirectory({ requestLongTermAccess: true }));
     } catch (e) {
       if (isCancel(e)) return;
       throw e;
+    } finally {
+      appLockService.systemScreenClosed();
     }
     if (!store.getState().folders.includes(uri)) store.setState(s => ({ folders: [...s.folders, uri] }));
     await checkFolders();
@@ -197,10 +201,13 @@ export const kiwixService = {
     await hydrated();
     let picked;
     try {
+      appLockService.openingSystemScreen();
       picked = await pick({ mode: 'open', requestLongTermAccess: true, allowMultiSelection: true, type: [types.allFiles] });
     } catch (e) {
       if (isCancel(e)) return;
       throw e;
+    } finally {
+      appLockService.systemScreenClosed();
     }
     await addDocuments(picked.map(p => ({ uri: p.uri, name: p.name ?? nameOf(p.uri), size: p.size ?? 0 })));
   }),

@@ -11,6 +11,7 @@ import { Clipboard, Linking, Share } from 'react-native';
 import { buildMailtoUrl, draftFromArgs } from '../../utils/mailto';
 import logger from '../../utils/logger';
 import type { ToolCall, ToolResult } from './types';
+import { appLockService } from '../appLockService';
 
 const OPENED = 'Opened a draft in the mail app. The user sends it from there.';
 const BODY_SHORTENED = ' The body was shortened to fit; the full text was copied to the clipboard.';
@@ -22,6 +23,7 @@ const NO_MAIL_APP_NO_SHARE = 'No mail app opened. The draft was copied to the cl
 async function shareInstead(draft: { subject: string; body: string }, copied: boolean): Promise<string> {
   if (!copied) Clipboard.setString(draft.body);
   try {
+    appLockService.openingSystemScreen();
     await Share.share({ title: draft.subject, message: draft.body });
     return NO_MAIL_APP;
   } catch (error) {

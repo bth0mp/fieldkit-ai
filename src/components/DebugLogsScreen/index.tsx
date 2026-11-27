@@ -13,12 +13,13 @@ import {
   Clipboard,
   Share,
   SafeAreaView,
-  Modal,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import { useTheme, useThemedStyles } from '../../theme';
 import { useDebugLogsStore } from '../../stores/debugLogsStore';
 import { createStyles } from './styles';
+import { appLockService } from '../../services/appLockService';
+import { LockAwareModal } from '../LockAwareModal';
 
 interface DebugLogsScreenProps {
   visible: boolean;
@@ -76,6 +77,7 @@ export const DebugLogsScreen: React.FC<DebugLogsScreenProps> = ({ visible, onClo
       .join('\n');
 
     try {
+      appLockService.openingSystemScreen();
       await Share.share({
         message: logsText,
         title: 'Debug Logs',
@@ -86,7 +88,7 @@ export const DebugLogsScreen: React.FC<DebugLogsScreenProps> = ({ visible, onClo
   };
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+    <LockAwareModal visible={visible} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
         {/* Header */}
         <View style={styles.header}>
@@ -143,6 +145,6 @@ export const DebugLogsScreen: React.FC<DebugLogsScreenProps> = ({ visible, onClo
           />
         )}
       </SafeAreaView>
-    </Modal>
+    </LockAwareModal>
   );
 };

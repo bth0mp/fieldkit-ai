@@ -82,7 +82,7 @@ describe('modelGuide sections', () => {
     expect(fits['Large v3 Turbo (many languages)']).toBe('4 GB and up');
     expect(fits['Medium (English only)']).toBe('6 GB and up');
     expect(fits['Medium (many languages)']).toBe('6 GB and up');
-    expect(fits['Large v3 (many languages)']).toBe('6 GB and up');
+    expect(fits['Large v3 (many languages)']).toBe('8 GB and up');
   });
 
   it('sizes LiteRT files by what the app charges to load them', () => {

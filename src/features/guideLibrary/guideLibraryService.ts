@@ -9,6 +9,7 @@ import { offersTeach, ownEntry, stateOf, toDownload, useGuideLibraryStore, type 
 import {
   deleteFromKnowledgeBase, GUIDE_LIBRARY_DIR, guidePath, reconcileDisk, removeQuietly, saveRecords,
 } from './guideLibraryDisk';
+import { appLockService } from '../../services/appLockService';
 
 export { GUIDE_LIBRARY_DIR } from './guideLibraryDisk';
 
@@ -351,6 +352,7 @@ async function open(id: string): Promise<void> {
   if (phase === 'none' || phase === 'downloading') return;
   let error: string | undefined;
   try {
+    appLockService.openingSystemScreen();
     await viewDocument({ uri: `file://${guidePath(id)}`, mimeType: 'application/pdf', grantPermissions: 'read' });
   } catch (e) {
     logger.warn('[GuideLibrary] could not open', id, e);

@@ -2,6 +2,7 @@ import { Share } from 'react-native';
 import type { Conversation, Message } from '../types';
 import { parseModelOutput } from '../utils/messageContent';
 import logger from '../utils/logger';
+import { appLockService } from './appLockService';
 
 /**
  * Sharing a conversation as plain text through the phone's share sheet.
@@ -35,6 +36,7 @@ export function canShareConversation(conversation: Conversation | null | undefin
 
 export async function shareConversation(conversation: Conversation): Promise<void> {
   try {
+    appLockService.openingSystemScreen();
     await Share.share({ title: conversation.title, message: conversationToText(conversation) });
   } catch (error) {
     // The user closing the sheet is not an error on Android; anything that lands here is the sheet failing to open.

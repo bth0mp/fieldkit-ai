@@ -15,6 +15,7 @@ import Icon from 'react-native-vector-icons/Feather';
 import { MediaAttachment } from '../../../types';
 import { viewDocument } from '@react-native-documents/viewer';
 import logger from '../../../utils/logger';
+import { appLockService } from '../../../services/appLockService';
 
 interface FadeInImageProps {
   uri: string;
@@ -135,6 +136,7 @@ export function MessageAttachments({
                 uri = `file://${uri}`;
               }
               logger.log('[ChatMessage] Opening document:', uri);
+              appLockService.openingSystemScreen();
               viewDocument({ uri, mimeType, grantPermissions: 'read' }).catch((err: any) => {
                 logger.warn('[ChatMessage] Failed to open document:', err?.message || err);
               });

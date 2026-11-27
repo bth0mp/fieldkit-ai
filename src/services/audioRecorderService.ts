@@ -1,14 +1,34 @@
 import { AudioRecorder, FileFormat, FileDirectory, BitDepth, IOSAudioQuality, FlacCompressionLevel } from 'react-native-audio-api';
 import { PermissionsAndroid, Platform } from 'react-native';
+import RNFS from 'react-native-fs';
 import { audioSessionManager } from './audioSessionManager';
 import logger from '../utils/logger';
+import { appLockService } from './appLockService';
 
 /** Supported formats for llama.rn audio input */
 type AudioInputFormat = 'wav' | 'mp3';
 
+/** Folder under the app's files directory that the recorder writes to (RNFS.DocumentDirectoryPath is that directory on Android). */
+const RECORDINGS_SUBDIRECTORY = 'audio-input';
+
+const plainPath = (path: string): string => path.replace(/^file:\/\//, '');
+
+/** A file's name alone: a saved path can differ from the listed one in its folder prefix (/data/user/0 or /data/data). */
+const baseName = (path: string): string => plainPath(path).split(/[?#]/)[0].split('/').pop() ?? '';
+
+/** When this process started. A recording named for a later time is one this session made. */
+const PROCESS_STARTED_AT = Date.now();
+
+/** The time in a recorder file name (input_<ms>...), or null for any other name. */
+const recordedAt = (name: string): number | null => {
+  const match = /^input_(\d+)/.exec(name);
+  return match ? Number(match[1]) : null;
+};
+
 class AudioRecorderService {
   private recorder: AudioRecorder | null = null;
   private isRecording = false;
+  private recordingSeq = 0;
 
   supportsDirectAudioInput(): boolean {
     return true;
@@ -21,6 +41,7 @@ class AudioRecorderService {
   async requestPermissions(): Promise<boolean> {
     if (Platform.OS === 'android') {
       try {
+        appLockService.openingSystemScreen();
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
           {
@@ -33,12 +54,15 @@ class AudioRecorderService {
         return granted === PermissionsAndroid.RESULTS.GRANTED;
       } catch {
         return false;
+      } finally {
+        appLockService.systemScreenClosed();
       }
     }
     return true; // iOS: triggered by AVAudioSession on first use
   }
 
-  async startRecording(): Promise<void> {
+  /** Starts a recording and returns its number, which grows with each one. */
+  async startRecording(): Promise<number> {
     if (this.isRecording) {
       await this.stopRecording().catch(() => {});
     }
@@ -57,7 +81,7 @@ class AudioRecorderService {
     rec.enableFileOutput({
       format: FileFormat.Wav,
       directory: FileDirectory.Document,
-      subDirectory: 'audio-input',
+      subDirectory: RECORDINGS_SUBDIRECTORY,
       fileNamePrefix: `input_${Date.now()}`,
       channelCount: 1,
       preset: {
@@ -70,6 +94,7 @@ class AudioRecorderService {
     });
     this.recorder = rec;
     this.isRecording = true;
+    const seq = ++this.recordingSeq;
     const startResult: any = rec.start();
     if (startResult && startResult.status && startResult.status !== 'success') {
       this.isRecording = false;
@@ -79,6 +104,7 @@ class AudioRecorderService {
       audioSessionManager.restorePlaybackAfterRecording().catch(() => {});
       throw new Error(`Recording failed to start: ${startResult.errorMessage ?? startResult.error ?? startResult.status}`);
     }
+    return seq;
   }
 
   async stopRecording(): Promise<{ path: string; durationSeconds: number }> {
@@ -99,13 +125,56 @@ class AudioRecorderService {
     return { path, durationSeconds };
   }
 
-  cancelRecording(): void {
+  /** Stops and deletes the current recording. With `seq`, only when that is still the current one. */
+  cancelRecording(seq?: number): void {
     if (!this.isRecording || !this.recorder) return;
-    this.recorder.stop();
+    if (seq !== undefined && seq !== this.recordingSeq) return;
+    const result = this.recorder.stop();
     this.isRecording = false;
     this.recorder = null;
+    // What was captured is thrown away with it.
+    if (result?.status === 'success') this.discardRecording(result.path);
     // Best-effort session restore (fire-and-forget — keep this method sync).
     audioSessionManager.restorePlaybackAfterRecording().catch(() => {});
+  }
+
+  /** Delete a recording that did not become part of a message. Never throws; a missing file is fine. */
+  async discardRecording(path: string): Promise<void> {
+    try {
+      const file = plainPath(path);
+      if (await RNFS.exists(file)) await RNFS.unlink(file);
+    } catch (error) {
+      logger.warn('[AudioRecorder] Could not delete a recording', error);
+    }
+  }
+
+  /**
+   * Delete every recording in the recordings folder that is not in `keep` (the paths saved messages refer
+   * to). Returns how many it deleted. Never throws; a file it cannot delete stays for the next launch.
+   */
+  async deleteUnusedRecordings(keep: Set<string>): Promise<number> {
+    let deleted = 0;
+    try {
+      const folder = `${RNFS.DocumentDirectoryPath}/${RECORDINGS_SUBDIRECTORY}`;
+      if (!(await RNFS.exists(folder))) return 0;
+      const kept = new Set([...keep].map(baseName));
+      for (const entry of await RNFS.readDir(folder)) {
+        // A recording in progress is not leftover.
+        if (this.isRecording) break;
+        // Only a recording from before this launch can be leftover: a newer one may still become a message.
+        const madeAt = recordedAt(baseName(entry.path));
+        if (!entry.isFile() || kept.has(baseName(entry.path)) || madeAt === null || madeAt >= PROCESS_STARTED_AT) continue;
+        try {
+          await RNFS.unlink(entry.path);
+          deleted += 1;
+        } catch (error) {
+          logger.warn('[AudioRecorder] Could not delete an old recording', error);
+        }
+      }
+    } catch (error) {
+      logger.warn('[AudioRecorder] Could not list old recordings', error);
+    }
+    return deleted;
   }
 
   isCurrentlyRecording(): boolean {

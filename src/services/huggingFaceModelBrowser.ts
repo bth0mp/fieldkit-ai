@@ -1,3 +1,6 @@
+import { fetchWithTimeoutRead } from './httpClient';
+import { HF_REQUEST_TIMEOUT_MS } from './huggingface';
+
 export interface HFImageModel {
   id: string;
   name: string;
@@ -70,11 +73,12 @@ function parseFileName(fileName: string, backend: 'mnn' | 'qnn'): Omit<HFImageMo
 }
 
 async function fetchRepoFiles(repo: string): Promise<HFTreeEntry[]> {
-  const response = await fetch(`https://huggingface.co/api/models/${repo}/tree/main`);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ${repo}: HTTP ${response.status}`);
-  }
-  return response.json();
+  return fetchWithTimeoutRead(`https://huggingface.co/api/models/${repo}/tree/main`, { timeoutMs: HF_REQUEST_TIMEOUT_MS }, async response => {
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${repo}: HTTP ${response.status}`);
+    }
+    return response.json();
+  });
 }
 
 export async function fetchAvailableModels(forceRefresh = false, opts?: { skipQnn?: boolean }): Promise<HFImageModel[]> {

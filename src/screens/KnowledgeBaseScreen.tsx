@@ -27,6 +27,7 @@ import { isPickerStuck } from '../utils/pickerErrorUtils';
 import { isLibraryProject } from '../features/library/libraryProjects';
 import { kiwixService } from '../services/kiwix/kiwixService';
 import { useKiwixStore } from '../services/kiwix/kiwixStore';
+import { appLockService } from '../services/appLockService';
 
 /** Kiwix files listed here; the rest are counted, and the Kiwix files screen lists them all. */
 const KIWIX_ROWS = 20;
@@ -87,6 +88,7 @@ export const KnowledgeBaseScreen: React.FC = () => {
     try {
       // iOS: 'import' → Apple copies the file before handing it to us, original untouched.
       // Android: 'open' → returns a content:// URI; keepLocalCopy() copies it to a real path.
+      appLockService.openingSystemScreen();
       const files = Platform.OS === 'android'
         ? await pick({ mode: 'open', allowMultiSelection: true })
         : await pick({ mode: 'import', allowMultiSelection: true });
@@ -129,6 +131,7 @@ export const KnowledgeBaseScreen: React.FC = () => {
       logger.error(`[KnowledgeBase] picker error — code: ${err?.code}, message: ${err?.message}`);
       Alert.alert('Error', err?.message || 'Failed to index documents');
     } finally {
+      appLockService.systemScreenClosed();
       isPickingRef.current = false;
       setIsPicking(false);
       setIndexingFile(null);

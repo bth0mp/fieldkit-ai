@@ -37,7 +37,12 @@ jest.mock('@react-navigation/native', () => {
 });
 
 const mockDeleteProject = jest.fn();
-const mockDeleteConversation = jest.fn();
+const mockDeleteChat = jest.fn((_id: string) => Promise.resolve());
+jest.mock('../../../src/services/chatDeletion', () => ({
+  ...jest.requireActual('../../../src/services/chatDeletion'),
+  deleteChat: (id: string) => mockDeleteChat(id),
+}));
+
 const mockSetActiveConversation = jest.fn();
 const mockCreateConversation = jest.fn(() => 'new-conv-1');
 
@@ -61,7 +66,6 @@ jest.mock('../../../src/stores', () => ({
   })),
   useChatStore: jest.fn(() => ({
     conversations: mockConversations,
-    deleteConversation: mockDeleteConversation,
     setActiveConversation: mockSetActiveConversation,
     createConversation: mockCreateConversation,
   })),
@@ -507,7 +511,7 @@ describe('ProjectDetailScreen', () => {
       fireEvent.press(getByText('trash-2'));
       fireEvent.press(getByTestId('alert-button-Delete'));
 
-      expect(mockDeleteConversation).toHaveBeenCalledWith('conv1');
+      expect(mockDeleteChat).toHaveBeenCalledWith('conv1');
     });
   });
 

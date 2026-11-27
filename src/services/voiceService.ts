@@ -6,6 +6,7 @@ import Voice, {
 } from '@react-native-voice/voice';
 import { Platform, PermissionsAndroid } from 'react-native';
 import logger from '../utils/logger';
+import { appLockService } from './appLockService';
 
 export type VoiceEventCallbacks = {
   onStart?: () => void;
@@ -60,6 +61,7 @@ class VoiceService {
   async requestPermissions(): Promise<boolean> {
     if (Platform.OS === 'android') {
       try {
+        appLockService.openingSystemScreen();
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
           {
@@ -73,6 +75,8 @@ class VoiceService {
       } catch (error) {
         logger.error('Failed to request microphone permission:', error);
         return false;
+      } finally {
+        appLockService.systemScreenClosed();
       }
     }
     // iOS handles permissions through Info.plist

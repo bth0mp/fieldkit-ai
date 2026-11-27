@@ -10,6 +10,7 @@ import { makeModelKey } from '../utils/modelKey';
 import { WHISPER_MODELS, cleanTranscription } from './whisperModels';
 import * as whisperModelFiles from './whisperModelFiles';
 import { settleDownloadRow } from './whisperDownloadRow';
+import { appLockService } from './appLockService';
 
 // Re-export the model catalog + transcription normalizer (moved to whisperModels.ts
 // to keep this file within the max-lines budget). Behavior-neutral: every existing
@@ -31,6 +32,7 @@ class WhisperService {
   private stopFn: (() => void) | null = null;
   /** Counts live sessions, so a finishing session only clears state it still owns. */
   private realtimeSession = 0;
+  private fallbackSeq: number | undefined; // the fallback recording's number (see audioRecorderService)
   private isReleasingContext: boolean = false;
   private contextReleasePromise: Promise<void> = Promise.resolve();
   private transcriptionFullyStopped: Promise<void> = Promise.resolve();
@@ -242,19 +244,19 @@ class WhisperService {
   async requestPermissions(): Promise<boolean> {
     if (Platform.OS === 'android') {
       try {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-          {
-            title: 'Microphone Permission',
-            message: 'This app needs access to your microphone for voice input.',
-            buttonPositive: 'OK',
-            buttonNegative: 'Cancel',
-          }
-        );
+        appLockService.openingSystemScreen();
+        const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.RECORD_AUDIO, {
+          title: 'Microphone Permission',
+          message: 'This app needs access to your microphone for voice input.',
+          buttonPositive: 'OK',
+          buttonNegative: 'Cancel',
+        });
         return granted === PermissionsAndroid.RESULTS.GRANTED;
       } catch (error) {
         logger.error('[Whisper] Failed to request permission:', error);
         return false;
+      } finally {
+        appLockService.systemScreenClosed();
       }
     }
     if (Platform.OS === 'ios') {
@@ -316,10 +318,9 @@ class WhisperService {
     // produced no usable transcript, we transcribe the recorded FILE and deliver THAT as the
     // authoritative result — one uniform "voice in → transcribed text out" pipeline for every mode.
     // Best-effort: if the recorder can't start (permission/hardware), realtime alone still runs.
-    let recordedFile = false;
+    let recordingSeq: number | undefined;
     try {
-      await audioRecorderService.startRecording();
-      recordedFile = true;
+      recordingSeq = this.fallbackSeq = await audioRecorderService.startRecording();
     } catch (recErr) {
       logger.error('[WhisperService] Fallback recorder failed to start (realtime only):', recErr);
     }
@@ -327,11 +328,11 @@ class WhisperService {
     // Resolve the authoritative transcript for the finished utterance: prefer the realtime result;
     // when it's empty (B26), transcribe the recorded file. Pure decision, one place.
     const resolveFinalText = async (realtimeText: string): Promise<string> => {
-      if (cleanTranscription(realtimeText)) return realtimeText;
-      if (!recordedFile) return realtimeText;
+      if (recordingSeq === undefined) return realtimeText;
+      if (cleanTranscription(realtimeText)) { audioRecorderService.cancelRecording(recordingSeq); return realtimeText; } // the fallback file is not needed
       try {
         const { path } = await audioRecorderService.stopRecording();
-        const fileText = await this.transcribeFile(path);
+        const fileText = await this.transcribeFile(path).finally(() => audioRecorderService.discardRecording(path));
         logger.log(`[WhisperService] Realtime captured nothing — file transcript: "${fileText.slice(0, 50)}"`);
         return fileText;
       } catch (fileErr) {
@@ -344,7 +345,7 @@ class WhisperService {
       // Guard: context could have been released during the async permission check
       if (!this.context) {
         this.isTranscribing = false;
-        if (recordedFile) audioRecorderService.cancelRecording();
+        if (recordingSeq !== undefined) audioRecorderService.cancelRecording(recordingSeq);
         resolveTranscriptionStopped();
         throw new Error('Whisper context was released before transcription could start');
       }
@@ -412,7 +413,7 @@ class WhisperService {
         });
       });
     } catch (error) {
-      if (recordedFile) audioRecorderService.cancelRecording();
+      if (recordingSeq !== undefined) audioRecorderService.cancelRecording(recordingSeq);
       logger.error('[WhisperService] transcribeRealtime error:', error);
       this.isTranscribing = false;
       this.stopFn = null;
@@ -464,7 +465,7 @@ class WhisperService {
     }
     // Discard the parallel fallback recording (B26/B28) if one is mid-flight — a cancelled/aborted
     // realtime session must not leave the file recorder capturing (B11-class leak).
-    if (audioRecorderService.isCurrentlyRecording()) audioRecorderService.cancelRecording();
+    if (this.fallbackSeq !== undefined) audioRecorderService.cancelRecording(this.fallbackSeq);
     this.isTranscribing = false;
     this.transcriptionFullyStopped = Promise.resolve();
   }

@@ -20,6 +20,7 @@ import { useTextModels } from './useTextModels';
 import { useImageModels } from './useImageModels';
 import { importGgufFiles, getErrorMessage } from './importHelpers';
 import { isPickerStuck } from '../../utils/pickerErrorUtils';
+import { appLockService } from '../../services/appLockService';
 
 type ZipImportDeps = {
   addDownloadedImageModel: (model: ONNXImageModel) => void;
@@ -132,6 +133,7 @@ export function useModelsScreen() {
     isPickingRef.current = true;
     setIsImporting(true);
     try {
+      appLockService.openingSystemScreen();
       const result = await pick({ type: [types.allFiles], allowMultiSelection: true });
 
       if (!result || result.length === 0) return;
@@ -182,6 +184,7 @@ export function useModelsScreen() {
       }
       setAlertState(showAlert('Import Failed', getErrorMessage(error)));
     } finally {
+      appLockService.systemScreenClosed();
       isPickingRef.current = false;
       setIsImporting(false);
       setImportProgress(null);

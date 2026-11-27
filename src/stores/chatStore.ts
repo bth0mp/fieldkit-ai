@@ -399,5 +399,11 @@ chatStorage.attach(useChatStore);
 /** True while the saved chats cannot be read: new chats are not saved until they can be. */
 export const useChatsUnreadable = (): boolean => useStore(chatStorage.status, s => s.unreadable);
 
+/** Resolves once the saved chats have been read successfully (never, while they cannot be read). */
+export const whenChatsLoaded = (): Promise<void> => new Promise(resolve => {
+  if (chatStorage.isHydrated()) { resolve(); return; }
+  const stopWaiting = useChatStore.persist.onFinishHydration(() => { stopWaiting(); resolve(); });
+});
+
 /** Read the saved chats again now. */
 export const retryLoadingChats = (): Promise<void> => chatStorage.retryNow();

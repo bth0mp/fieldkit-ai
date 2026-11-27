@@ -15,6 +15,7 @@ import { CustomAlert, showAlert, hideAlert, AlertState, initialAlertState } from
 import { useTheme, useThemedStyles } from '../theme';
 import { createStyles } from './ProjectDetailScreen.styles';
 import { useChatStore, useProjectStore, useAppStore } from '../stores';
+import { deleteChat, deleteChatMessage } from '../services/chatDeletion';
 import { Conversation } from '../types';
 import { RootStackParamList } from '../navigation/types';
 import { KnowledgeBaseSection } from './ProjectDetailKnowledgeBaseSection';
@@ -31,7 +32,7 @@ export const ProjectDetailScreen: React.FC = () => {
   const styles = useThemedStyles(createStyles);
 
   const { getProject, deleteProject } = useProjectStore();
-  const { conversations, deleteConversation, setActiveConversation, createConversation } = useChatStore();
+  const { conversations, setActiveConversation, createConversation } = useChatStore();
   const { downloadedModels, activeModelId } = useAppStore();
 
   const project = getProject(projectId);
@@ -83,13 +84,16 @@ export const ProjectDetailScreen: React.FC = () => {
   const handleDeleteChat = (conversation: Conversation) => {
     setAlertState(showAlert(
       'Delete Chat',
-      `Delete "${conversation.title}"?`,
+      deleteChatMessage(conversation.title),
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => deleteConversation(conversation.id),
+          onPress: () => {
+            setAlertState(hideAlert());
+            deleteChat(conversation.id).catch(() => {});
+          },
         },
       ]
     ));

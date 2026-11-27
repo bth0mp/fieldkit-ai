@@ -4,7 +4,6 @@ import {
   Text,
   Image,
   TouchableOpacity,
-  Modal,
   ScrollView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
@@ -12,6 +11,7 @@ import { useTheme, useThemedStyles } from '../../theme';
 import { GeneratedImage } from '../../types';
 import { createStyles } from './styles';
 import { formatDate } from './useGalleryActions';
+import { LockAwareModal } from '../../components/LockAwareModal';
 
 interface FullscreenViewerProps {
   image: GeneratedImage | null;
@@ -34,7 +34,7 @@ export const FullscreenViewer: React.FC<FullscreenViewerProps> = ({
   const styles = useThemedStyles(createStyles);
 
   return (
-    <Modal
+    <LockAwareModal
       visible={!!image}
       transparent
       animationType="fade"
@@ -120,6 +120,6 @@ export const FullscreenViewer: React.FC<FullscreenViewerProps> = ({
           </View>
         )}
       </View>
-    </Modal>
+    </LockAwareModal>
   );
 };

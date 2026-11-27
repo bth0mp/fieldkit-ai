@@ -9,6 +9,7 @@ import logger from '../../utils/logger';
 import { oneLine } from '../../utils/oneLine';
 import { type Checklist, savedChecklists, useChecklistStore } from './checklistStore';
 import { STARTER_LISTS } from './starterLists';
+import { appLockService } from '../../services/appLockService';
 
 // Everything is saved as one value, and Android reads back about 2 MB at most: 30 lists of 100 items of 100
 // characters stay under that even when every character is an emoji.
@@ -100,6 +101,7 @@ export const checklistService = {
     if (!list) return;
     const lines = list.items.map(item => `${item.done ? '[x]' : '[ ]'} ${item.text}`);
     try {
+      appLockService.openingSystemScreen();
       await Share.share({ title: list.name, message: [list.name, ...lines].join('\n') });
     } catch (error) {
       // The user closing the sheet is not an error on Android; anything that lands here is the sheet failing to open.

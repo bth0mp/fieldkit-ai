@@ -4,15 +4,15 @@
  */
 
 import 'react-native-gesture-handler';
-import React, { useEffect, useState, useCallback } from 'react';
-import { ActivityIndicator, View, StyleSheet, LogBox } from 'react-native';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { ActivityIndicator, View, StyleSheet, LogBox, Modal } from 'react-native';
 import { SystemBars } from 'react-native-edge-to-edge';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { AppNavigator } from './src/navigation';
 import { useTheme } from './src/theme';
-import { hardwareService, modelManager, authService, ragService, remoteServerManager } from './src/services';
+import { hardwareService, modelManager, authService, appLockService, ragService, remoteServerManager } from './src/services';
 import logger from './src/utils/logger';
 import { useAppStore, useAuthStore, useRemoteServerStore, useWhisperStore } from './src/stores';
 import { useDebugLogsStore } from './src/stores/debugLogsStore';
@@ -24,6 +24,7 @@ import { hydrateDownloadStore } from './src/services/downloadHydration';
 import { initActiveDownloadPersistence } from './src/services/activeDownloadPersistence';
 import { restoreQueuedDownloads } from './src/services/restoreQueuedDownloads';
 import { clearEarlierLeftovers } from './src/services/earlierIds';
+import { deleteLeftoverRecordings } from './src/services/recordingSweep';
 import { startLoadPolicySync } from './src/services/loadPolicySync';
 import { registerCoreDownloadProviders } from './src/services/modelDownloadService/registerProviders';
 import { useDownloadListeners } from './src/hooks/useDownloads';
@@ -68,6 +69,8 @@ const ensureRemoteServerStoreHydrated = async () => {
   }
 };
 
+const noop = () => {};
+
 function App() {
   useDownloadListeners();
   const [isInitializing, setIsInitializing] = useState(true);
@@ -109,12 +112,19 @@ function App() {
   // Handle app state changes for auto-lock
   useAppState({
     onBackground: useCallback(() => {
-      if (authEnabled) {
+      // A system screen the app opened itself (a picker, the camera, a permission prompt) doesn't lock it.
+      const mustLock = appLockService.leftForeground();
+      if (authEnabled && mustLock) {
         setLastBackgroundTime(Date.now());
         setLocked(true);
       }
     }, [authEnabled, setLastBackgroundTime, setLocked]),
     onForeground: useCallback(() => {
+      // Back from a system screen after a long time away: lock now.
+      if (appLockService.returnedToForeground() && authEnabled) {
+        setLastBackgroundTime(Date.now());
+        setLocked(true);
+      }
       // Rebuild the unified store before reattaching JS listeners so restored
       // progress events map onto current download entries instead of racing hydration.
       // NOTE: restoreQueuedDownloads() is intentionally NOT called here — on a foreground
@@ -131,8 +141,15 @@ function App() {
             logger.error('[App] Failed to restore text downloads on foreground:', error);
           });
         });
-    }, [reattachTextDownloadRecovery]),
+    }, [authEnabled, reattachTextDownloadRecovery, setLastBackgroundTime, setLocked]),
   });
+
+  // Once the navigator has rendered in this session it stays mounted, and the lock is drawn over it.
+  const lockShowing = authEnabled && isLocked;
+  const navigatorShown = useRef(false);
+  useEffect(() => {
+    if (!isInitializing && !lockShowing) navigatorShown.current = true;
+  }, [isInitializing, lockShowing]);
 
   const ensureAppStoreHydrated = useCallback(async () => {
     const persistApi = useAppStore.persist;
@@ -205,6 +222,14 @@ function App() {
       // in place whatever the rest of boot does. Idempotent and never throws.
       activateFieldkitFeatures();
 
+      // The lock check comes first, so nothing after it can throw its way past it into an unlocked app.
+      // A passphrase in the Keychain means the lock is on: turning the lock off removes it first. The saved
+      // setting can fail to read and sit at its default, and then locking is the safe side. If the saved
+      // setting lands later, the store's merge keeps this change over it (the session's change wins).
+      if (await authService.hasPassphrase()) {
+        useAuthStore.getState().setEnabled(true);
+      }
+
       // Ensure persisted download metadata is loaded before restore logic reads it.
       await ensureAppStoreHydrated();
 
@@ -253,12 +278,6 @@ function App() {
         logger.error('[App] Failed to initialize remote server providers:', err);
       });
 
-      // Check if passphrase is set and lock app if needed
-      const hasPassphrase = await authService.hasPassphrase();
-      if (hasPassphrase && authEnabled) {
-        setLocked(true);
-      }
-
       // Initialize RAG database tables
       ragService.ensureReady().catch((err) => logger.error('Failed to initialize RAG service on startup', err));
 
@@ -268,6 +287,9 @@ function App() {
       // What earlier versions left behind (a removed licence check's Keychain entries, old developer logs).
       // Best effort and once; it never delays the UI.
       clearEarlierLeftovers().catch(() => {});
+
+      // Recordings of earlier dictations that no saved message keeps. Waits for the chats to load; never delays the UI.
+      deleteLeftoverRecordings().catch(() => {});
 
       // Index the field guides shipped in the APK into their category projects, off the boot path, after an
       // older install's Field guides project has been split into those projects. Only the first launch (or one
@@ -291,13 +313,11 @@ function App() {
       setIsInitializing(false);
     }
   }, [
-    authEnabled,
     ensureAppStoreHydrated,
     recoverDownloadState,
     setDeviceInfo,
     setDownloadedImageModels,
     setDownloadedModels,
-    setLocked,
     setModelRecommendation,
   ]);
 
@@ -322,8 +342,8 @@ function App() {
     );
   }
 
-  // Show lock screen if auth is enabled and app is locked
-  if (authEnabled && isLocked) {
+  // Before the app has been shown in this session the lock screen stands alone, so nothing mounts behind it.
+  if (lockShowing && !navigatorShown.current) {
     return (
       <GestureHandlerRootView style={[styles.flex, { backgroundColor: colors.background }]} testID="app-locked">
         <SafeAreaProvider>
@@ -338,39 +358,64 @@ function App() {
     <GestureHandlerRootView style={styles.flex}>
       <SafeAreaProvider>
         <SystemBars style={isDark ? 'light' : 'dark'} />
-        <NavigationContainer
-          theme={{
-            dark: isDark,
-            colors: {
-              primary: colors.primary,
-              background: colors.background,
-              card: colors.surface,
-              text: colors.text,
-              border: colors.border,
-              notification: colors.primary,
-            },
-            fonts: {
-              regular: {
-                fontFamily: 'System',
-                fontWeight: '400',
-              },
-              medium: {
-                fontFamily: 'System',
-                fontWeight: '500',
-              },
-              bold: {
-                fontFamily: 'System',
-                fontWeight: '700',
-              },
-              heavy: {
-                fontFamily: 'System',
-                fontWeight: '900',
-              },
-            },
-          }}
+        {/* Kept mounted behind the lock so the open chat and its draft stay; hidden from sight, touch and screen readers while locked. */}
+        <View
+          collapsable={false}
+          style={lockShowing ? styles.hiddenBehindLock : styles.flex}
+          pointerEvents={lockShowing ? 'none' : 'auto'}
+          importantForAccessibility={lockShowing ? 'no-hide-descendants' : 'auto'}
         >
-          <AppNavigator />
-        </NavigationContainer>
+          <NavigationContainer
+            theme={{
+              dark: isDark,
+              colors: {
+                primary: colors.primary,
+                background: colors.background,
+                card: colors.surface,
+                text: colors.text,
+                border: colors.border,
+                notification: colors.primary,
+              },
+              fonts: {
+                regular: {
+                  fontFamily: 'System',
+                  fontWeight: '400',
+                },
+                medium: {
+                  fontFamily: 'System',
+                  fontWeight: '500',
+                },
+                bold: {
+                  fontFamily: 'System',
+                  fontWeight: '700',
+                },
+                heavy: {
+                  fontFamily: 'System',
+                  fontWeight: '900',
+                },
+              },
+            }}
+          >
+            <AppNavigator />
+          </NavigationContainer>
+        </View>
+        {lockShowing && (
+          // Drawn over the navigator, above any dialog already open. Back does nothing, so it cannot close the lock.
+          <Modal
+            visible
+            animationType="none"
+            statusBarTranslucent
+            navigationBarTranslucent
+            onRequestClose={noop}
+          >
+            <GestureHandlerRootView style={[styles.flex, { backgroundColor: colors.background }]} testID="app-locked">
+              <SafeAreaProvider>
+                <SystemBars style={isDark ? 'light' : 'dark'} />
+                <LockScreen onUnlock={handleUnlock} />
+              </SafeAreaProvider>
+            </GestureHandlerRootView>
+          </Modal>
+        )}
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
@@ -379,6 +424,10 @@ function App() {
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
+  },
+  hiddenBehindLock: {
+    flex: 1,
+    opacity: 0,
   },
   loadingContainer: {
     flex: 1,

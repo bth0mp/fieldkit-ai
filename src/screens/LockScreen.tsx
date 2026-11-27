@@ -180,6 +180,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
       </KeyboardAvoidingView>
 
       <CustomAlert
+        overLock
         visible={alertState.visible}
         title={alertState.title}
         message={alertState.message}

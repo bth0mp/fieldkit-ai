@@ -470,13 +470,20 @@ function makeLlamaFake(onRelease?: () => void, chatTemplate?: string): LlamaFake
 // imageGenerationService's size/guidance flooring surfaces in the rendered generation-meta.
 // ---------------------------------------------------------------------------
 
+/** Where the native module keeps rendered images (filesDir/generated_images). */
+const IMAGE_DIR = '/generated_images';
+
 export interface DiffusionFake {
   module: Record<string, jest.Mock>;
   /** Every generateImage nativeParams, for arg-level cross-checks if needed. */
   calls: { generateImage: Array<Record<string, unknown>> };
+  /** Put a rendered image on the phone's disk where the native module keeps it (needs { fs: true }). */
+  seedImage(id: string): string;
+  /** Whether the image's file is still on the disk. */
+  hasImage(id: string): Promise<boolean>;
 }
 
-function makeDiffusionFake(seedFile?: (path: string, sizeBytes: number) => void): DiffusionFake {
+function makeDiffusionFake(seedFile?: (path: string, sizeBytes: number) => void, fs?: { exists: (p: string) => Promise<boolean>; unlink: (p: string) => Promise<void> }): DiffusionFake {
   const calls: DiffusionFake['calls'] = { generateImage: [] };
   let seedCounter = 0;
   const module: Record<string, jest.Mock> = {
@@ -512,7 +519,18 @@ function makeDiffusionFake(seedFile?: (path: string, sizeBytes: number) => void)
     addListener: jest.fn(),
     removeListeners: jest.fn(),
   };
-  return { module, calls };
+  // With a disk, delete works as on the phone: the file goes, and an id with no file is rejected NOT_FOUND.
+  const imagePath = (id: string) => `${IMAGE_DIR}/${id}.png`;
+  if (fs && seedFile) {
+    module.deleteGeneratedImage.mockImplementation(async (id: string) => {
+      if (!(await fs.exists(imagePath(id)))) throw Object.assign(new Error(`Image not found: ${id}`), { code: 'NOT_FOUND' });
+      await fs.unlink(imagePath(id));
+      return true;
+    });
+  }
+  const seedImage = (id: string) => { seedFile?.(imagePath(id), 1024); return imagePath(id); };
+  const hasImage = async (id: string) => fs ? fs.exists(imagePath(id)) : false;
+  return { module, calls, seedImage, hasImage };
 }
 
 // ---------------------------------------------------------------------------
@@ -1053,6 +1071,9 @@ export interface InstallOpts {
   download?: boolean;
   /** Replace the global whisper.rn stub with a driveable STT context (boundary.whisper). */
   whisper?: boolean;
+  /** Replace the react-native-audio-api recorder with one that writes its WAV into the fs fake, in the folder
+   *  the real recorder uses (<DocumentDirectoryPath>/<subDirectory>). Needs { fs: true }. */
+  recorder?: boolean;
   /** Install the FieldkitSpeech native module (boundary.speech). Omit it to model a device without one. */
   speech?: SpeechFakeOptions;
   /** Install the FieldkitCalendar native module and the READ_CALENDAR prompt (boundary.calendar). Omit it to
@@ -1135,7 +1156,7 @@ export function installNativeBoundary(opts: InstallOpts = {}): NativeBoundary {
   }
 
   // Diffusion writes its rendered PNG to the (memfs) disk when fs is present, like the native module.
-  const diffusion = makeDiffusionFake(fsFake?.seedFile);
+  const diffusion = makeDiffusionFake(fsFake?.seedFile, fsFake?.module as Parameters<typeof makeDiffusionFake>[1]);
 
   // Scriptable llama.rn: override the global stub so completion output is under test control.
   const llamaFake = opts.llama ? makeLlamaFake(freeModelMemory, opts.llamaChatTemplate) : undefined;
@@ -1144,6 +1165,20 @@ export function installNativeBoundary(opts: InstallOpts = {}): NativeBoundary {
   // Driveable whisper.rn: override the global stub so realtime/file transcription is under test control.
   const whisperFake = opts.whisper ? makeWhisperFake() : undefined;
   if (whisperFake) jest.doMock('whisper.rn', () => whisperFake.module);
+
+  if (opts.recorder && fsFake) {
+    // The global stub's recorder is a jest.fn: give it a recorder that writes a file, as the native one does.
+    jest.requireMock('react-native-audio-api').AudioRecorder.mockImplementation(() => {
+      let file: { subDirectory: string; fileNamePrefix: string } = { subDirectory: '', fileNamePrefix: '' };
+      let path = '';
+      return {
+        enableFileOutput: (o: typeof file) => { file = o; return { status: 'success', path: '' }; },
+        // The native recorder creates its file as soon as it starts.
+        start: () => { path = `${fsFake.DocumentDirectoryPath}/${file.subDirectory}/${file.fileNamePrefix}.wav`; fsFake.seedFile(path, 3200); return { status: 'success', path }; },
+        stop: () => ({ status: 'success', path, size: 3200, duration: 1 }),
+      };
+    });
+  }
 
   const speechFake = opts.speech ? makeSpeechFake(handle, opts.speech) : undefined;
 

@@ -64,6 +64,39 @@ const DEFAULT_RETRIES = 0;
 const DEFAULT_RETRY_DELAY = 1000; // 1 second
 
 /**
+ * One fetch plus the reading of its body, which together give up after `timeoutMs` and reject with
+ * `Request timed out`. `read` gets the raw Response, so each caller keeps its own status handling and error
+ * text. A signal in `init` still cancels the request, with the fetch's own abort error.
+ */
+export async function fetchWithTimeoutRead<T>(
+  url: string,
+  { timeoutMs, ...init }: RequestInit & { timeoutMs: number },
+  read: (response: Response) => Promise<T>,
+): Promise<T> {
+  const controller = new AbortController();
+  let timedOut = false;
+  let onTimeout: () => void = () => {};
+  const expired = new Promise<never>((_resolve, reject) => {
+    onTimeout = () => reject(new Error('Request timed out'));
+  });
+  expired.catch(() => {});
+  const timer = setTimeout(() => { timedOut = true; controller.abort(); onTimeout(); }, timeoutMs);
+  const unlinkCallerAbort = onAbort(init.signal, () => controller.abort());
+  try {
+    return await Promise.race([
+      (async () => read(await fetch(url, { ...init, signal: controller.signal })))(),
+      expired,
+    ]);
+  } catch (error) {
+    if (timedOut) throw new Error('Request timed out');
+    throw error;
+  } finally {
+    clearTimeout(timer);
+    unlinkCallerAbort();
+  }
+}
+
+/**
  * Fetch with timeout and retry support
  */
 export async function fetchWithTimeout<T = unknown>(

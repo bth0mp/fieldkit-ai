@@ -144,6 +144,9 @@ const mockGetDocsByProject = ragService.getDocumentsByProject as jest.Mock;
 const mockFormatForPrompt = retrievalService.formatForPrompt as jest.Mock;
 
 
+const mockDeleteChat = jest.fn((_id: string) => Promise.resolve());
+jest.mock('../../../src/services/chatDeletion', () => ({ deleteChat: (id: string) => mockDeleteChat(id) }));
+
 const mockChatStoreGetState = jest.fn(() => ({ conversations: [] as any[], updateCompactionState: jest.fn() }));
 jest.mock('../../../src/stores/chatStore', () => ({
   useChatStore: { getState: () => mockChatStoreGetState() },
@@ -422,7 +425,7 @@ describe('executeDeleteConversationFn', () => {
   it('returns early when no activeConversationId', async () => {
     const deps = makeGenerationDeps({ activeConversationId: null });
     await executeDeleteConversationFn(deps);
-    expect(deps.deleteConversation).not.toHaveBeenCalled();
+    expect(mockDeleteChat).not.toHaveBeenCalled();
   });
 
   it('stops streaming before deleting when isStreaming=true', async () => {
@@ -430,18 +433,14 @@ describe('executeDeleteConversationFn', () => {
     await executeDeleteConversationFn(deps);
     expect(mockStopLlmGeneration).toHaveBeenCalled();
     expect(deps.clearStreamingMessage).toHaveBeenCalled();
-    expect(deps.deleteConversation).toHaveBeenCalledWith('conv-1');
+    expect(mockDeleteChat).toHaveBeenCalledWith('conv-1');
     expect(deps.navigation.goBack).toHaveBeenCalled();
   });
 
-  it('deletes generated images for the conversation', async () => {
+  it('deletes the chat, with its images, through the shared service', async () => {
     const deps = makeGenerationDeps();
-    deps.removeImagesByConversationId.mockReturnValue(['img-1', 'img-2']);
     await executeDeleteConversationFn(deps);
-    expect(mockDeleteGeneratedImage).toHaveBeenCalledTimes(2);
-    expect(mockDeleteGeneratedImage).toHaveBeenCalledWith('img-1');
-    expect(mockDeleteGeneratedImage).toHaveBeenCalledWith('img-2');
-    expect(deps.deleteConversation).toHaveBeenCalledWith('conv-1');
+    expect(mockDeleteChat).toHaveBeenCalledWith('conv-1');
     expect(deps.setActiveConversation).toHaveBeenCalledWith(null);
   });
 });

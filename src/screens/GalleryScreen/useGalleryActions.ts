@@ -7,6 +7,7 @@ import { imageGenerationService, onnxImageGeneratorService } from '../../service
 import type { ImageGenerationState } from '../../services';
 import { GeneratedImage } from '../../types';
 import { BRAND_FOLDER } from '../../config/branding';
+import { appLockService } from '../../services/appLockService';
 
 export const formatDate = (dateStr: string): string => {
   const ts = Number(dateStr);
@@ -157,19 +158,25 @@ export const useGalleryActions = (conversationId: string | undefined) => {
   const handleSaveImage = useCallback(async (image: GeneratedImage) => {
     try {
       if (Platform.OS === 'ios') {
+        appLockService.openingSystemScreen();
         await Share.share({ url: `file://${image.imagePath}` });
         return;
       }
-      await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-        {
-          title: 'Storage Permission',
-          message: 'App needs access to save images',
-          buttonNeutral: 'Ask Later',
-          buttonNegative: 'Cancel',
-          buttonPositive: 'OK',
-        }
-      );
+      appLockService.openingSystemScreen();
+      try {
+        await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+          {
+            title: 'Storage Permission',
+            message: 'App needs access to save images',
+            buttonNeutral: 'Ask Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          }
+        );
+      } finally {
+        appLockService.systemScreenClosed();
+      }
       const picturesDir = `${RNFS.ExternalStorageDirectoryPath}/Pictures/${BRAND_FOLDER}`;
       if (!(await RNFS.exists(picturesDir))) {
         await RNFS.mkdir(picturesDir);

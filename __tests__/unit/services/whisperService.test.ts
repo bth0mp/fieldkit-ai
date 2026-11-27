@@ -744,7 +744,7 @@ describe('WhisperService', () => {
       mockValidModelFile();
       await whisperService.loadModel('/path/model.bin');
       Object.defineProperty(Platform, 'OS', { get: () => 'ios' });
-      jest.spyOn(audioRecorderService, 'startRecording').mockResolvedValue();
+      jest.spyOn(audioRecorderService, 'startRecording').mockResolvedValue(1);
       jest.spyOn(audioRecorderService, 'stopRecording').mockResolvedValue({ path: '/recorded.wav', durationSeconds: 1 });
 
       const firstResult = jest.fn();

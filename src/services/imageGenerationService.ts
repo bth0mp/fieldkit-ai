@@ -113,7 +113,7 @@ class ImageGenerationService {
     const memoryPressure = reasonFromLoadError(error) === 'insufficient-memory';
     const onRetry = this._lastParams
       ? async () => {
-          if (memoryPressure) await activeModelService.ejectAll().catch(() => {});
+          if (memoryPressure) await activeModelService.ejectAll({ keepRemote: true }).catch(() => {});
           void this.generateImage(this._lastParams as GenerateImageParams);
         }
       : undefined;

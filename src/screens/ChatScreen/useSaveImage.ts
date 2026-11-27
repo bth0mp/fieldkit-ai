@@ -4,6 +4,7 @@ import RNFS from 'react-native-fs';
 import { AlertState, showAlert } from '../../components';
 import logger from '../../utils/logger';
 import { BRAND_FOLDER } from '../../config/branding';
+import { appLockService } from '../../services/appLockService';
 
 export async function saveImageToGallery(
   viewerImageUri: string | null,
@@ -12,16 +13,21 @@ export async function saveImageToGallery(
   if (!viewerImageUri) return;
   try {
     if (Platform.OS === 'android') {
-      await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-        {
-          title: 'Storage Permission',
-          message: 'App needs access to save images',
-          buttonNeutral: 'Ask Later',
-          buttonNegative: 'Cancel',
-          buttonPositive: 'OK',
-        },
-      );
+      appLockService.openingSystemScreen();
+      try {
+        await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+          {
+            title: 'Storage Permission',
+            message: 'App needs access to save images',
+            buttonNeutral: 'Ask Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          },
+        );
+      } finally {
+        appLockService.systemScreenClosed();
+      }
     }
     const sourcePath = viewerImageUri.replace('file://', '');
     const picturesDir = Platform.OS === 'android'

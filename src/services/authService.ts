@@ -1,14 +1,55 @@
 import * as Keychain from 'react-native-keychain';
+import { pbkdf2 } from '@noble/hashes/pbkdf2';
+import { sha256 } from '@noble/hashes/sha2';
+import { bytesToHex, hexToBytes } from '@noble/hashes/utils';
 import logger from '../utils/logger';
 import { EARLIER_AUTH_SERVICE, readKeychainEntry } from './earlierIds';
 
 const SERVICE_NAME = 'com.bth0mp.fieldkit.auth';
 const PASSPHRASE_KEY = 'passphrase_hash';
 
+const RECORD_PREFIX = 'pbkdf2-sha256$';
+// A saved record carries its own count, so raising this rehashes at the next unlock.
+// ponytail: pure-JS PBKDF2 on Hermes costs about 0.15 ms an iteration (4.9 s for 32768 on an emulator release
+// build), and the JS thread is frozen meanwhile, so 2048 (about 0.3 s) is the ceiling. The lock gates the screen,
+// not the data (chats are stored unencrypted), so more iterations buy little. Move to native PBKDF2
+// (SecretKeyFactory / CommonCrypto) if the passphrase ever encrypts data.
+const PBKDF2_ITERATIONS = 2048;
+const SALT_BYTES = 16;
+const KEY_BYTES = 32;
+// A saved count above this is treated as tampered, so a bad record cannot hang the JS thread.
+const MAX_ITERATIONS = 65536;
+
 class AuthService {
-  private hashPassphrase(passphrase: string): string {
-    // Simple hash - in production, consider using bcrypt via native module
-    // We use a deterministic hash since we're comparing hashes
+  /** The full record to store: `pbkdf2-sha256$<iterations>$<salt hex>$<hash hex>`. */
+  private hashPassphrase(passphrase: string, salt: Uint8Array, iterations: number): string {
+    const key = pbkdf2(sha256, passphrase, salt, { c: iterations, dkLen: KEY_BYTES });
+    return `${RECORD_PREFIX}${iterations}$${bytesToHex(salt)}$${bytesToHex(key)}`;
+  }
+
+  private newSalt(): Uint8Array {
+    const salt = new Uint8Array(SALT_BYTES);
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      return crypto.getRandomValues(salt);
+    }
+    // ponytail: a salt must be unique, not secret, so Math.random bytes will do where Hermes has no crypto.getRandomValues.
+    for (let i = 0; i < SALT_BYTES; i++) salt[i] = Math.floor(Math.random() * 256);
+    return salt;
+  }
+
+  /** The count and salt of a saved record, or null when it does not parse. */
+  private parseRecord(record: string): { iterations: number; salt: Uint8Array } | null {
+    const parts = record.split('$');
+    if (parts.length !== 4 || !/^\d+$/.test(parts[1]) || !/^([0-9a-f]{2})+$/.test(parts[2]) || !/^[0-9a-f]{64}$/.test(parts[3])) {
+      return null;
+    }
+    const iterations = Number(parts[1]);
+    if (!Number.isSafeInteger(iterations) || iterations < 1 || iterations > MAX_ITERATIONS) return null;
+    return { iterations, salt: hexToBytes(parts[2]) };
+  }
+
+  /** The hash earlier versions saved. Kept as it was, only to check those saved records once. */
+  private legacyHash(passphrase: string): string {
     let hash = 0;
     for (let i = 0; i < passphrase.length; i++) {
       const char = passphrase.codePointAt(i) ?? 0;
@@ -32,7 +73,7 @@ class AuthService {
 
   async setPassphrase(passphrase: string): Promise<boolean> {
     try {
-      const hash = this.hashPassphrase(passphrase);
+      const hash = this.hashPassphrase(passphrase, this.newSalt(), PBKDF2_ITERATIONS);
       await Keychain.setGenericPassword(PASSPHRASE_KEY, hash, {
         service: SERVICE_NAME,
         accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED,
@@ -65,7 +106,25 @@ class AuthService {
     if (!credentials) {
       return false;
     }
-    return this.hashPassphrase(passphrase) === credentials.password;
+    const saved = credentials.password;
+    if (!saved.startsWith(RECORD_PREFIX)) {
+      // Saved by an earlier version: one check with the old hash, then it is replaced.
+      if (this.legacyHash(passphrase) !== saved) return false;
+      await this.upgradeRecord(passphrase);
+      return true;
+    }
+    const parsed = this.parseRecord(saved);
+    if (!parsed) return false;
+    if (this.hashPassphrase(passphrase, parsed.salt, parsed.iterations) !== saved) return false;
+    if (parsed.iterations < PBKDF2_ITERATIONS) await this.upgradeRecord(passphrase);
+    return true;
+  }
+
+  /** Rewrite the saved record with the current hash. A failed rewrite is logged; the person is still let in. */
+  private async upgradeRecord(passphrase: string): Promise<void> {
+    if (!(await this.setPassphrase(passphrase))) {
+      logger.warn('Could not move the saved passphrase to the current hash; it stays as it was');
+    }
   }
 
   async hasPassphrase(): Promise<boolean> {

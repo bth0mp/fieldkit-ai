@@ -50,7 +50,12 @@ jest.mock('../../../src/components', () => ({
 // ============================================================================
 const mockCreateConversation = jest.fn(() => 'conv-new');
 const mockSetActiveConversation = jest.fn();
-const mockDeleteConversation = jest.fn();
+const mockDeleteChat = jest.fn((_id: string) => Promise.resolve());
+jest.mock('../../../src/services/chatDeletion', () => ({
+  ...jest.requireActual('../../../src/services/chatDeletion'),
+  deleteChat: (id: string) => mockDeleteChat(id),
+}));
+
 
 jest.mock('../../../src/stores', () => ({
   useAppStore: jest.fn((selector?: any) => {
@@ -74,7 +79,6 @@ jest.mock('../../../src/stores', () => ({
     conversations: [],
     createConversation: mockCreateConversation,
     setActiveConversation: mockSetActiveConversation,
-    deleteConversation: mockDeleteConversation,
   })),
   useRemoteServerStore: jest.fn((selector?: any) => {
     const state = {
@@ -117,7 +121,6 @@ describe('useHomeScreen', () => {
       conversations: [],
       createConversation: mockCreateConversation,
       setActiveConversation: mockSetActiveConversation,
-      deleteConversation: mockDeleteConversation,
     });
     (useAppStore as unknown as jest.Mock).mockImplementation((sel?: any) => {
       const st = {
@@ -159,7 +162,7 @@ describe('useHomeScreen', () => {
       const conversation = { id: 'conv-1', title: 'My Chat' } as any;
       act(() => { result.current.handleDeleteConversation(conversation); });
       expect(showAlert).toHaveBeenCalledWith(
-        'Delete Conversation',
+        'Delete Chat',
         expect.stringContaining('My Chat'),
         expect.any(Array),
       );
@@ -172,7 +175,7 @@ describe('useHomeScreen', () => {
       const buttons = (showAlert as jest.Mock).mock.calls[0][2];
       const deleteBtn = buttons.find((b: any) => b.text === 'Delete');
       act(() => { deleteBtn.onPress(); });
-      expect(mockDeleteConversation).toHaveBeenCalledWith('conv-1');
+      expect(mockDeleteChat).toHaveBeenCalledWith('conv-1');
       expect(hideAlert).toHaveBeenCalled();
     });
   });

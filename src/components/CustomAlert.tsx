@@ -27,6 +27,8 @@ export interface CustomAlertProps {
   loading?: boolean;
   closeLabel?: string;
   prominentMessage?: boolean;
+  /** Shows over the lock screen (only the lock screen's own dialogs set this). */
+  overLock?: boolean;
 }
 
 export const CustomAlert: React.FC<CustomAlertProps> = ({
@@ -38,6 +40,7 @@ export const CustomAlert: React.FC<CustomAlertProps> = ({
   loading = false,
   closeLabel = 'Done',
   prominentMessage = false,
+  overLock = false,
 }) => {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -54,6 +57,7 @@ export const CustomAlert: React.FC<CustomAlertProps> = ({
       enableDynamicSizing
       title={title}
       closeLabel={closeLabel}
+      overLock={overLock}
     >
       <View style={styles.content}>
         {loading ? (

@@ -8,6 +8,7 @@
  */
 import { NativeModules, PermissionsAndroid } from 'react-native';
 import { parseIsoTime } from '../../utils/calendarTime';
+import { appLockService } from '../appLockService';
 
 /** One occurrence of an event, with exactly the keys the native module returns. Times are epoch ms. */
 export interface CalendarEvent {
@@ -70,6 +71,7 @@ export const calendarService = {
     const permission = PermissionsAndroid.PERMISSIONS.READ_CALENDAR;
     try {
       if (await PermissionsAndroid.check(permission)) return true;
+      appLockService.openingSystemScreen();
       const answer = await PermissionsAndroid.request(permission, {
         title: 'Calendar access',
         message: 'Lets the assistant read your calendar events on this phone. They are never sent anywhere.',
@@ -78,6 +80,8 @@ export const calendarService = {
       return answer === PermissionsAndroid.RESULTS.GRANTED;
     } catch {
       return false;
+    } finally {
+      appLockService.systemScreenClosed();
     }
   },
 
@@ -105,6 +109,7 @@ export const calendarService = {
     const native = nativeModule();
     if (!native) throw new Error(NOT_PRESENT);
     try {
+      appLockService.openingSystemScreen();
       await native.openInsertForm(event);
     } catch (error) {
       throw calendarError(error, NATIVE_ERRORS.OPEN_FAILED);

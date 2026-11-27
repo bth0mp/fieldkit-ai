@@ -10,6 +10,7 @@ import { showAlert, AlertState } from '../components/CustomAlert';
 import { ragService } from '../services/rag';
 import type { RagDocument } from '../services/rag';
 import { isPickerStuck } from '../utils/pickerErrorUtils';
+import { appLockService } from '../services/appLockService';
 
 const formatFileSize = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`;
@@ -47,6 +48,7 @@ export const KnowledgeBaseSection: React.FC<KBSectionProps> = ({ projectId, colo
     try {
       // iOS: 'import' → Apple copies the file before handing it to us, original untouched.
       // Android: 'open' → returns a content:// URI; keepLocalCopy() copies it to a real path.
+      appLockService.openingSystemScreen();
       const files = Platform.OS === 'android'
         ? await pick({ mode: 'open', allowMultiSelection: true })
         : await pick({ mode: 'import', allowMultiSelection: true });
@@ -73,6 +75,7 @@ export const KnowledgeBaseSection: React.FC<KBSectionProps> = ({ projectId, colo
       }
       setAlertState(showAlert('Error', err.message || 'Failed to index document'));
     } finally {
+      appLockService.systemScreenClosed();
       isPickingRef.current = false;
       setIsPicking(false);
       setIndexingFile(null);

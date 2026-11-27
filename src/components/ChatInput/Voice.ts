@@ -154,9 +154,11 @@ export function useVoiceInput({ conversationId, onTranscript, onAudioAttachment,
           const outcome = resolveTranscription(whisperReady, transcript);
           if (recordedIn !== conversationIdRef.current) {
             logger.log('[Voice] transcript dropped - its chat is no longer open');
+            audioRecorderService.discardRecording(path);
           } else if (outcome.dispatch) {
             onAutoSendRef.current(outcome.text, { uri: path, format, durationSeconds });
           } else {
+            audioRecorderService.discardRecording(path);
             setDirectError(outcome.message);
             setTimeout(() => setDirectError(null), 3000);
           }
@@ -168,6 +170,8 @@ export function useVoiceInput({ conversationId, onTranscript, onAudioAttachment,
           // are unused here now (no attachment) — the temp recording file is transient.
           const { whisperReady, transcript } = await transcribeRecordedFile(path, '[Voice] chat-mode dictation transcription error:');
           const outcome = resolveTranscription(whisperReady, transcript);
+          // Only the text goes on: the recording is not kept.
+          audioRecorderService.discardRecording(path);
           if (recordedIn !== conversationIdRef.current) {
             logger.log('[Voice] transcript dropped - its chat is no longer open');
           } else if (outcome.dispatch) {
@@ -177,6 +181,8 @@ export function useVoiceInput({ conversationId, onTranscript, onAudioAttachment,
             setTimeout(() => setDirectError(null), 3000);
           }
         }
+      } else {
+        audioRecorderService.discardRecording(path);
       }
       recordingConversationIdRef.current = null;
     } catch (err) {
@@ -192,6 +198,7 @@ export function useVoiceInput({ conversationId, onTranscript, onAudioAttachment,
       setIsAudioModeRecording(false);
       if (recordingConversationIdRef.current && recordingConversationIdRef.current !== conversationId) {
         recordingConversationIdRef.current = null;
+        audioRecorderService.discardRecording(path);
         return;
       }
       const recordedIn = conversationIdRef.current;
@@ -210,6 +217,7 @@ export function useVoiceInput({ conversationId, onTranscript, onAudioAttachment,
       const outcome = resolveTranscription(whisperReady, transcript);
       if (recordedIn !== conversationIdRef.current) {
         logger.log('[Voice] transcript dropped - its chat is no longer open');
+        audioRecorderService.discardRecording(path);
       } else if (outcome.dispatch) {
         if (onAutoSendRef.current) {
           onAutoSendRef.current(outcome.text, { uri: path, format: 'wav', durationSeconds });
@@ -218,6 +226,7 @@ export function useVoiceInput({ conversationId, onTranscript, onAudioAttachment,
           onTranscriptRef.current(outcome.text);
         }
       } else {
+        audioRecorderService.discardRecording(path);
         setDirectError(outcome.message);
         setTimeout(() => setDirectError(null), 3000);
       }

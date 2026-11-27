@@ -28,7 +28,12 @@ let mockConversations: any[] = [];
 let mockDownloadedModels: any[] = [{ id: 'model1', name: 'Model' }];
 let mockActiveModelId: string | null = 'model1';
 
-const mockDeleteConversation = jest.fn();
+const mockDeleteChat = jest.fn((_id: string) => Promise.resolve());
+jest.mock('../../../src/services/chatDeletion', () => ({
+  ...jest.requireActual('../../../src/services/chatDeletion'),
+  deleteChat: (id: string) => mockDeleteChat(id),
+}));
+
 const mockSetActiveConversation = jest.fn();
 const mockCreateConversation = jest.fn(() => 'new-conv-id');
 
@@ -38,7 +43,6 @@ jest.mock('../../../src/stores', () => ({
   })),
   useChatStore: jest.fn(() => ({
     conversations: mockConversations,
-    deleteConversation: mockDeleteConversation,
     setActiveConversation: mockSetActiveConversation,
     createConversation: mockCreateConversation,
   })),
@@ -272,7 +276,7 @@ describe('ProjectChatsScreen', () => {
 
       const deleteBtn = getByTestId('alert-button-Delete');
       fireEvent.press(deleteBtn);
-      expect(mockDeleteConversation).toHaveBeenCalled();
+      expect(mockDeleteChat).toHaveBeenCalled();
     });
 
     it('formats date as Yesterday', () => {

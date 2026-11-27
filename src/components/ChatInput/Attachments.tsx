@@ -13,6 +13,7 @@ import { audioSessionManager } from '../../services/audioSessionManager';
 import { AlertState, showAlert, hideAlert } from '../CustomAlert';
 import { createStyles } from './styles';
 import { isPickerStuck } from '../../utils/pickerErrorUtils';
+import { appLockService } from '../../services/appLockService';
 
 // ─── useAttachments hook ──────────────────────────────────────────────────────
 
@@ -45,11 +46,13 @@ export function useAttachments(setAlertState: (state: AlertState) => void) {
       // collides with the native picker and hangs the app (device 2026-07-15). No-op on
       // Android and when no session is active.
       await audioSessionManager.deactivate();
+      appLockService.openingSystemScreen();
       const result = await launchImageLibrary({ mediaType: 'photo', quality: 0.8, maxWidth: 1024, maxHeight: 1024 });
       if (result.assets && result.assets.length > 0) addAttachments(result.assets);
     } catch (_pickError) {
       // no-op: image picker already reports failure to the user via native UI
     } finally {
+      appLockService.systemScreenClosed();
       // Re-assert the playback session: if the user CANCELS the picker we deactivated for, voice
       // mode would otherwise stay muted until the next audio action (Gitar). iOS-only no-op on Android.
       audioSessionManager.ensurePlayback().catch(() => {});
@@ -61,11 +64,13 @@ export function useAttachments(setAlertState: (state: AlertState) => void) {
       // Release the iOS audio session first (see pickFromLibrary): the camera grabs audio
       // hardware and collides with an active voice-mode session. No-op on Android.
       await audioSessionManager.deactivate();
+      appLockService.openingSystemScreen();
       const result = await launchCamera({ mediaType: 'photo', quality: 0.8, maxWidth: 1024, maxHeight: 1024 });
       if (result.assets && result.assets.length > 0) addAttachments(result.assets);
     } catch (_cameraError) {
       // no-op: camera picker already reports failure to the user via native UI
     } finally {
+      appLockService.systemScreenClosed();
       // Re-assert the playback session on cancel/return so voice mode isn't left muted (Gitar).
       audioSessionManager.ensurePlayback().catch(() => {});
     }
@@ -96,6 +101,7 @@ export function useAttachments(setAlertState: (state: AlertState) => void) {
     if (isPickingRef.current) return;
     isPickingRef.current = true;
     try {
+      appLockService.openingSystemScreen();
       const result = await pick({ type: [types.allFiles], allowMultiSelection: false });
       const file = result[0];
       if (!file) return;
@@ -122,6 +128,7 @@ export function useAttachments(setAlertState: (state: AlertState) => void) {
       }
       setAlertState(showAlert('Error', pickError.message || 'Failed to read document', [{ text: 'OK' }]));
     } finally {
+      appLockService.systemScreenClosed();
       isPickingRef.current = false;
     }
   };
