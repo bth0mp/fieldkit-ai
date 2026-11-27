@@ -64,6 +64,24 @@ const DEFAULT_RETRIES = 0;
 const DEFAULT_RETRY_DELAY = 1000; // 1 second
 
 /**
+ * One fetch that gives up after `timeoutMs` and rejects with `Request timed out`. Returns the raw Response,
+ * so each caller keeps its own status handling and error text.
+ */
+export async function fetchResponseWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (timedOut) throw new Error('Request timed out');
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
  * Fetch with timeout and retry support
  */
 export async function fetchWithTimeout<T = unknown>(

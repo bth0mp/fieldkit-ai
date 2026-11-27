@@ -4,6 +4,10 @@ import { HF_API, QUANTIZATION_INFO, LMSTUDIO_AUTHORS, OFFICIAL_MODEL_AUTHORS, VE
 import { looksLikeVisionModel } from '../utils/visionModel';
 import { isHelperModelFile } from '../utils/modelFileKind';
 import { isMMProjFile, pickMmProjForDownload } from './mmproj';
+import { fetchResponseWithTimeout } from './httpClient';
+
+/** Every Hugging Face API request gives up after this long. */
+export const HF_REQUEST_TIMEOUT_MS = 20000;
 
 export type BrowseSort = 'trending' | 'downloads' | 'likes' | 'newest';
 
@@ -45,7 +49,7 @@ class HuggingFaceService {
   private apiUrl = HF_API.apiUrl;
 
   private async fetchJson<T>(url: string): Promise<T> {
-    const response = await fetch(url, { headers: { Accept: 'application/json' } });
+    const response = await fetchResponseWithTimeout(url, { headers: { Accept: 'application/json' } }, HF_REQUEST_TIMEOUT_MS);
     if (!response.ok) throw new Error(`API error: ${response.status}`);
     return response.json() as Promise<T>;
   }
@@ -114,7 +118,7 @@ class HuggingFaceService {
 
   async getModelFiles(modelId: string): Promise<ModelFile[]> {
     try {
-      const response = await fetch(`${this.apiUrl}/models/${modelId}/tree/main`, { headers: { Accept: 'application/json' } });
+      const response = await fetchResponseWithTimeout(`${this.apiUrl}/models/${modelId}/tree/main`, { headers: { Accept: 'application/json' } }, HF_REQUEST_TIMEOUT_MS);
       if (!response.ok) return this.getModelFilesFromSiblings(modelId);
       const files: Array<{ type: string; path: string; size?: number; lfs?: { size: number } }> = await response.json();
       const allGguf = files.filter(f => f.type === 'file' && f.path.endsWith('.gguf') && !isHelperModelFile(f.path));

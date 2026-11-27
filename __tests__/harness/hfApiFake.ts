@@ -9,6 +9,8 @@
  *
  * After setOffline(true) every request rejects with TypeError('Network request failed'), as with no connection.
  *
+ * After hang(), list requests never answer; like the real fetch they reject with an AbortError once their signal aborts.
+ *
  * After hold(), list answers wait until release(i) is called for the i-th held request, in any order.
  */
 type Row = Record<string, unknown>;
@@ -20,6 +22,7 @@ export interface HfApiFake {
   setDetails(d: Record<string, Row>): void;
   setTree(repo: string, entries: Row[]): void;
   setOffline(offline: boolean): void;
+  hang(): void;
   hold(): { count(): number; release(i: number, answer?: ListAnswer): void };
 }
 
@@ -32,19 +35,27 @@ export function installHfApiFake(): HfApiFake {
   let details: Record<string, Row> = {};
   const trees: Record<string, Row[]> = {};
   let offline = false;
+  let hanging = false;
   let held: Array<{ resolve: (answer?: ListAnswer) => void }> | null = null;
   const answer = (a: ListAnswer): Response => {
     if (a instanceof Error) throw a;
     return json(a);
   };
 
-  (global as { fetch: unknown }).fetch = jest.fn(async (input: unknown) => {
+  (global as { fetch: unknown }).fetch = jest.fn(async (input: unknown, init?: RequestInit) => {
     const url = new URL(String(input));
     seen.push(url);
     if (offline) throw new TypeError('Network request failed');
     const path = url.pathname;
     const tree = /^\/api\/models\/(.+)\/tree\/main$/.exec(path);
     if (tree) return json(trees[decodeURIComponent(tree[1])] ?? []);
+    if (path === '/api/models' && hanging) {
+      return new Promise<Response>((_resolve, reject) => {
+        const abort = () => reject(Object.assign(new Error('Aborted'), { name: 'AbortError' }));
+        if (init?.signal?.aborted) abort();
+        else init?.signal?.addEventListener('abort', abort);
+      });
+    }
     if (path === '/api/models') {
       const natural = listFn(url);
       if (!held) return answer(natural);
@@ -71,6 +82,7 @@ export function installHfApiFake(): HfApiFake {
     setDetails: d => { details = d; },
     setTree: (repo, entries) => { trees[repo] = entries; },
     setOffline: next => { offline = next; },
+    hang: () => { hanging = true; },
     hold: () => {
       held = [];
       const queue = held;
