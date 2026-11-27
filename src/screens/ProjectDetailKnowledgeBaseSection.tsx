@@ -1,4 +1,3 @@
-import { appLockService } from '../services/appLockService';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, TouchableOpacity, Switch, ActivityIndicator, ScrollView, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
@@ -11,6 +10,7 @@ import { showAlert, AlertState } from '../components/CustomAlert';
 import { ragService } from '../services/rag';
 import type { RagDocument } from '../services/rag';
 import { isPickerStuck } from '../utils/pickerErrorUtils';
+import { appLockService } from '../services/appLockService';
 
 const formatFileSize = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`;
@@ -75,6 +75,7 @@ export const KnowledgeBaseSection: React.FC<KBSectionProps> = ({ projectId, colo
       }
       setAlertState(showAlert('Error', err.message || 'Failed to index document'));
     } finally {
+      appLockService.systemScreenClosed();
       isPickingRef.current = false;
       setIsPicking(false);
       setIndexingFile(null);

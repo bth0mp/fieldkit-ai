@@ -9,8 +9,8 @@
 
 /** A background event within this long of a mark is the marked system screen opening. */
 const SYSTEM_SCREEN_START_MS = 3000;
-/** Away longer than this behind a system screen, and the app locks on return. */
-const SYSTEM_SCREEN_MAX_AWAY_MS = 5 * 60 * 1000;
+/** Away longer than this (a minute) behind a system screen, and the app locks on return. */
+const SYSTEM_SCREEN_MAX_AWAY_MS = 60 * 1000;
 
 class AppLockService {
   private markedAt: number | null = null;
@@ -19,6 +19,16 @@ class AppLockService {
   /** Marks that the app is about to open a system screen. Call it right before the call that opens one. */
   openingSystemScreen(): void {
     this.markedAt = Date.now();
+  }
+
+  /**
+   * The picker or permission request the app opened has answered, so a background event from here on is the person
+   * leaving. Clears the start mark only: the time the app left stays, so returning after a long time still locks.
+   * Call it after an awaited picker or permission request, never after Share.share, viewDocument or a form the
+   * system opens in another app (those answer before the app leaves).
+   */
+  systemScreenClosed(): void {
+    this.markedAt = null;
   }
 
   /** True when the app must lock now. False only for a marked system screen; it then remembers when it left. */

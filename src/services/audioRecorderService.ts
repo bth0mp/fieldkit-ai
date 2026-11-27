@@ -1,8 +1,8 @@
-import { appLockService } from './appLockService';
 import { AudioRecorder, FileFormat, FileDirectory, BitDepth, IOSAudioQuality, FlacCompressionLevel } from 'react-native-audio-api';
 import { PermissionsAndroid, Platform } from 'react-native';
 import { audioSessionManager } from './audioSessionManager';
 import logger from '../utils/logger';
+import { appLockService } from './appLockService';
 
 /** Supported formats for llama.rn audio input */
 type AudioInputFormat = 'wav' | 'mp3';
@@ -35,6 +35,8 @@ class AudioRecorderService {
         return granted === PermissionsAndroid.RESULTS.GRANTED;
       } catch {
         return false;
+      } finally {
+        appLockService.systemScreenClosed();
       }
     }
     return true; // iOS: triggered by AVAudioSession on first use

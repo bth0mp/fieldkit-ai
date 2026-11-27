@@ -1,4 +1,3 @@
-import { appLockService } from '../../../services/appLockService';
 import React from 'react';
 import {
   View,
@@ -16,6 +15,7 @@ import Icon from 'react-native-vector-icons/Feather';
 import { MediaAttachment } from '../../../types';
 import { viewDocument } from '@react-native-documents/viewer';
 import logger from '../../../utils/logger';
+import { appLockService } from '../../../services/appLockService';
 
 interface FadeInImageProps {
   uri: string;

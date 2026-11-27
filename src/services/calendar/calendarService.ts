@@ -6,9 +6,9 @@
  *
  * Every failure is an Error whose message the model can act on (no trailing period: the tool result adds it).
  */
-import { appLockService } from '../appLockService';
 import { NativeModules, PermissionsAndroid } from 'react-native';
 import { parseIsoTime } from '../../utils/calendarTime';
+import { appLockService } from '../appLockService';
 
 /** One occurrence of an event, with exactly the keys the native module returns. Times are epoch ms. */
 export interface CalendarEvent {
@@ -80,6 +80,8 @@ export const calendarService = {
       return answer === PermissionsAndroid.RESULTS.GRANTED;
     } catch {
       return false;
+    } finally {
+      appLockService.systemScreenClosed();
     }
   },
 
@@ -107,6 +109,7 @@ export const calendarService = {
     const native = nativeModule();
     if (!native) throw new Error(NOT_PRESENT);
     try {
+      appLockService.openingSystemScreen();
       await native.openInsertForm(event);
     } catch (error) {
       throw calendarError(error, NATIVE_ERRORS.OPEN_FAILED);

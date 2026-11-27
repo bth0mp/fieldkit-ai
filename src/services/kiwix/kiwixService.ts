@@ -3,7 +3,6 @@
  * project, and looks things up in a project's files for the chat. Owns every reader; kiwixStore is the screen's
  * read-only copy. Files are read by byte range through react-native-fs (content:// uris), never whole.
  */
-import { appLockService } from '../appLockService';
 import { NativeModules } from 'react-native';
 import RNFS from 'react-native-fs';
 import { errorCodes, isErrorWithCode, pick, pickDirectory, releaseLongTermAccess, types } from '@react-native-documents/picker';
@@ -15,6 +14,7 @@ import logger from '../../utils/logger';
 import { categoryFor } from './kiwixCategory';
 import { type KiwixFile, useKiwixStore } from './kiwixStore';
 import { openZim, type ZimArchive, ZimError } from './zimReader';
+import { appLockService } from '../appLockService';
 
 interface TreeDocument { uri: string; name: string; size: number }
 interface DocumentTreeModule { listFiles(treeUri: string): Promise<TreeDocument[]> }
@@ -188,6 +188,8 @@ export const kiwixService = {
     } catch (e) {
       if (isCancel(e)) return;
       throw e;
+    } finally {
+      appLockService.systemScreenClosed();
     }
     if (!store.getState().folders.includes(uri)) store.setState(s => ({ folders: [...s.folders, uri] }));
     await checkFolders();
@@ -204,6 +206,8 @@ export const kiwixService = {
     } catch (e) {
       if (isCancel(e)) return;
       throw e;
+    } finally {
+      appLockService.systemScreenClosed();
     }
     await addDocuments(picked.map(p => ({ uri: p.uri, name: p.name ?? nameOf(p.uri), size: p.size ?? 0 })));
   }),

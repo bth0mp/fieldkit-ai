@@ -3,13 +3,13 @@
  * change; checklistStore is the screen's read-only copy. A change that can't be made throws an Error whose
  * message is written for the user.
  */
-import { appLockService } from '../../services/appLockService';
 import { Share } from 'react-native';
 import { generateId } from '../../utils/generateId';
 import logger from '../../utils/logger';
 import { oneLine } from '../../utils/oneLine';
 import { type Checklist, savedChecklists, useChecklistStore } from './checklistStore';
 import { STARTER_LISTS } from './starterLists';
+import { appLockService } from '../../services/appLockService';
 
 // Everything is saved as one value, and Android reads back about 2 MB at most: 30 lists of 100 items of 100
 // characters stay under that even when every character is an emoji.

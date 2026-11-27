@@ -354,39 +354,46 @@ function App() {
     <GestureHandlerRootView style={styles.flex}>
       <SafeAreaProvider>
         <SystemBars style={isDark ? 'light' : 'dark'} />
-        <NavigationContainer
-          theme={{
-            dark: isDark,
-            colors: {
-              primary: colors.primary,
-              background: colors.background,
-              card: colors.surface,
-              text: colors.text,
-              border: colors.border,
-              notification: colors.primary,
-            },
-            fonts: {
-              regular: {
-                fontFamily: 'System',
-                fontWeight: '400',
-              },
-              medium: {
-                fontFamily: 'System',
-                fontWeight: '500',
-              },
-              bold: {
-                fontFamily: 'System',
-                fontWeight: '700',
-              },
-              heavy: {
-                fontFamily: 'System',
-                fontWeight: '900',
-              },
-            },
-          }}
+        {/* Kept mounted behind the lock so the open chat and its draft stay; hidden from sight, touch and screen readers while locked. */}
+        <View
+          style={lockShowing ? styles.hiddenBehindLock : styles.flex}
+          pointerEvents={lockShowing ? 'none' : 'auto'}
+          importantForAccessibility={lockShowing ? 'no-hide-descendants' : 'auto'}
         >
-          <AppNavigator />
-        </NavigationContainer>
+          <NavigationContainer
+            theme={{
+              dark: isDark,
+              colors: {
+                primary: colors.primary,
+                background: colors.background,
+                card: colors.surface,
+                text: colors.text,
+                border: colors.border,
+                notification: colors.primary,
+              },
+              fonts: {
+                regular: {
+                  fontFamily: 'System',
+                  fontWeight: '400',
+                },
+                medium: {
+                  fontFamily: 'System',
+                  fontWeight: '500',
+                },
+                bold: {
+                  fontFamily: 'System',
+                  fontWeight: '700',
+                },
+                heavy: {
+                  fontFamily: 'System',
+                  fontWeight: '900',
+                },
+              },
+            }}
+          >
+            <AppNavigator />
+          </NavigationContainer>
+        </View>
         {lockShowing && (
           // Drawn over the navigator, above any dialog already open. Back does nothing, so it cannot close the lock.
           <Modal
@@ -412,6 +419,10 @@ function App() {
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
+  },
+  hiddenBehindLock: {
+    flex: 1,
+    opacity: 0,
   },
   loadingContainer: {
     flex: 1,

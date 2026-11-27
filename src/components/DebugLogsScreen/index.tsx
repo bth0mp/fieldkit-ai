@@ -3,7 +3,6 @@
  * Simple modal showing captured debug logs with copy and clear options
  */
 
-import { appLockService } from '../../services/appLockService';
 import React from 'react';
 import { LIST_CLIPPING_PROPS } from '../../constants/listClipping';
 import {
@@ -20,6 +19,7 @@ import Icon from 'react-native-vector-icons/Feather';
 import { useTheme, useThemedStyles } from '../../theme';
 import { useDebugLogsStore } from '../../stores/debugLogsStore';
 import { createStyles } from './styles';
+import { appLockService } from '../../services/appLockService';
 
 interface DebugLogsScreenProps {
   visible: boolean;

@@ -7,11 +7,11 @@
  * body copied to the clipboard; and when no mail app opens at all, the draft is copied and the share
  * sheet opens so the user can still send it from any app.
  */
-import { appLockService } from '../appLockService';
 import { Clipboard, Linking, Share } from 'react-native';
 import { buildMailtoUrl, draftFromArgs } from '../../utils/mailto';
 import logger from '../../utils/logger';
 import type { ToolCall, ToolResult } from './types';
+import { appLockService } from '../appLockService';
 
 const OPENED = 'Opened a draft in the mail app. The user sends it from there.';
 const BODY_SHORTENED = ' The body was shortened to fit; the full text was copied to the clipboard.';

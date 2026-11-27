@@ -1,4 +1,3 @@
-import { appLockService } from '../../services/appLockService';
 import React, { useState, useRef } from 'react';
 
 let _attachmentIdSeq = 0;
@@ -14,6 +13,7 @@ import { audioSessionManager } from '../../services/audioSessionManager';
 import { AlertState, showAlert, hideAlert } from '../CustomAlert';
 import { createStyles } from './styles';
 import { isPickerStuck } from '../../utils/pickerErrorUtils';
+import { appLockService } from '../../services/appLockService';
 
 // ─── useAttachments hook ──────────────────────────────────────────────────────
 
@@ -52,6 +52,7 @@ export function useAttachments(setAlertState: (state: AlertState) => void) {
     } catch (_pickError) {
       // no-op: image picker already reports failure to the user via native UI
     } finally {
+      appLockService.systemScreenClosed();
       // Re-assert the playback session: if the user CANCELS the picker we deactivated for, voice
       // mode would otherwise stay muted until the next audio action (Gitar). iOS-only no-op on Android.
       audioSessionManager.ensurePlayback().catch(() => {});
@@ -69,6 +70,7 @@ export function useAttachments(setAlertState: (state: AlertState) => void) {
     } catch (_cameraError) {
       // no-op: camera picker already reports failure to the user via native UI
     } finally {
+      appLockService.systemScreenClosed();
       // Re-assert the playback session on cancel/return so voice mode isn't left muted (Gitar).
       audioSessionManager.ensurePlayback().catch(() => {});
     }
@@ -126,6 +128,7 @@ export function useAttachments(setAlertState: (state: AlertState) => void) {
       }
       setAlertState(showAlert('Error', pickError.message || 'Failed to read document', [{ text: 'OK' }]));
     } finally {
+      appLockService.systemScreenClosed();
       isPickingRef.current = false;
     }
   };

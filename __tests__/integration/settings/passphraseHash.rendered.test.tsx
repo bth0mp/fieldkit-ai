@@ -112,8 +112,9 @@ describe('app lock passphrase hash (rendered)', () => {
     boundary.emitAppStateChange('active');
     await unlock(rtl, ui, COLLIDING);
     await rtl.waitFor(() => expect(ui.getByText('Incorrect Passphrase')).toBeTruthy(), TIMEOUT);
-    // The lock is still over the app.
+    // The lock is still over the app, and nothing of the app shows through it.
     expect(ui.getByPlaceholderText('Enter passphrase')).toBeTruthy();
+    expect(ui.queryByTestId('settings-tab')).toBeNull();
 
     rtl.fireEvent.press(ui.getByText('OK'));
     await unlock(rtl, ui, RIGHT);

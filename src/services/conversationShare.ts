@@ -1,8 +1,8 @@
-import { appLockService } from './appLockService';
 import { Share } from 'react-native';
 import type { Conversation, Message } from '../types';
 import { parseModelOutput } from '../utils/messageContent';
 import logger from '../utils/logger';
+import { appLockService } from './appLockService';
 
 /**
  * Sharing a conversation as plain text through the phone's share sheet.

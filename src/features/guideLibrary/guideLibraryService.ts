@@ -1,4 +1,3 @@
-import { appLockService } from '../../services/appLockService';
 import RNFS from 'react-native-fs';
 import { viewDocument } from '@react-native-documents/viewer';
 import logger from '../../utils/logger';
@@ -10,6 +9,7 @@ import { offersTeach, ownEntry, stateOf, toDownload, useGuideLibraryStore, type 
 import {
   deleteFromKnowledgeBase, GUIDE_LIBRARY_DIR, guidePath, reconcileDisk, removeQuietly, saveRecords,
 } from './guideLibraryDisk';
+import { appLockService } from '../../services/appLockService';
 
 export { GUIDE_LIBRARY_DIR } from './guideLibraryDisk';
 

@@ -1,4 +1,3 @@
-import { appLockService } from '../services/appLockService';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { LIST_CLIPPING_PROPS } from '../constants/listClipping';
 import {
@@ -28,6 +27,7 @@ import { isPickerStuck } from '../utils/pickerErrorUtils';
 import { isLibraryProject } from '../features/library/libraryProjects';
 import { kiwixService } from '../services/kiwix/kiwixService';
 import { useKiwixStore } from '../services/kiwix/kiwixStore';
+import { appLockService } from '../services/appLockService';
 
 /** Kiwix files listed here; the rest are counted, and the Kiwix files screen lists them all. */
 const KIWIX_ROWS = 20;
@@ -131,6 +131,7 @@ export const KnowledgeBaseScreen: React.FC = () => {
       logger.error(`[KnowledgeBase] picker error — code: ${err?.code}, message: ${err?.message}`);
       Alert.alert('Error', err?.message || 'Failed to index documents');
     } finally {
+      appLockService.systemScreenClosed();
       isPickingRef.current = false;
       setIsPicking(false);
       setIndexingFile(null);

@@ -1,4 +1,3 @@
-import { appLockService } from './appLockService';
 import { initWhisper, WhisperContext, RealtimeTranscribeEvent } from 'whisper.rn';
 import { Platform, PermissionsAndroid } from 'react-native';
 import RNFS from 'react-native-fs';
@@ -11,6 +10,7 @@ import { makeModelKey } from '../utils/modelKey';
 import { WHISPER_MODELS, cleanTranscription } from './whisperModels';
 import * as whisperModelFiles from './whisperModelFiles';
 import { settleDownloadRow } from './whisperDownloadRow';
+import { appLockService } from './appLockService';
 
 // Re-export the model catalog + transcription normalizer (moved to whisperModels.ts
 // to keep this file within the max-lines budget). Behavior-neutral: every existing
@@ -244,19 +244,18 @@ class WhisperService {
     if (Platform.OS === 'android') {
       try {
         appLockService.openingSystemScreen();
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-          {
-            title: 'Microphone Permission',
-            message: 'This app needs access to your microphone for voice input.',
-            buttonPositive: 'OK',
-            buttonNegative: 'Cancel',
-          }
-        );
+        const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.RECORD_AUDIO, {
+          title: 'Microphone Permission',
+          message: 'This app needs access to your microphone for voice input.',
+          buttonPositive: 'OK',
+          buttonNegative: 'Cancel',
+        });
         return granted === PermissionsAndroid.RESULTS.GRANTED;
       } catch (error) {
         logger.error('[Whisper] Failed to request permission:', error);
         return false;
+      } finally {
+        appLockService.systemScreenClosed();
       }
     }
     if (Platform.OS === 'ios') {

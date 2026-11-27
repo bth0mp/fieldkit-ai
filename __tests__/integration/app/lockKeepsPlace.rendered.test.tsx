@@ -3,7 +3,7 @@
  *
  * The lock is drawn over the app instead of replacing it, so the open chat and its draft are still there after
  * unlocking. A photo picker, camera, permission prompt, share sheet or document viewer the app opens is the app
- * going to another screen, not the person leaving, so it does not lock; unless they stay away over 5 minutes.
+ * going to another screen, not the person leaving, so it does not lock; unless they stay away over a minute.
  *
  * Real App, navigator, chat, composer, auth store, authService and LockScreen. Device leaves only: AsyncStorage,
  * the Keychain, AppState, the llama/LiteRT engines and the system image picker.
@@ -70,6 +70,9 @@ async function unlock(rtl: Rtl, ui: Ui) {
 /** Unlocks at launch and opens a new chat with the composer showing. */
 async function openChat() {
   const t = await bootLockedApp();
+  // Before the first unlock the lock stands alone: nothing of the app is on screen.
+  expect(t.ui.queryByTestId('home-screen')).toBeNull();
+  expect(t.ui.queryByTestId('chats-tab')).toBeNull();
   await unlock(t.rtl, t.ui);
   t.rtl.fireEvent.press(await t.ui.findByTestId('new-chat-button', {}, TIMEOUT));
   await t.ui.findByTestId('chat-input', {}, TIMEOUT);
@@ -100,6 +103,9 @@ describe('locking keeps your place (rendered)', () => {
     boundary.emitAppStateChange('background');
     boundary.emitAppStateChange('active');
     await rtl.waitFor(() => expect(ui.getByPlaceholderText('Enter passphrase')).toBeTruthy(), TIMEOUT);
+    // The chat is still mounted but not visible to the user while the lock shows.
+    expect(ui.queryByTestId('chat-input')).toBeNull();
+    expect(ui.queryByTestId('chats-tab')).toBeNull();
     await unlock(rtl, ui);
 
     expect(ui.getByTestId('chat-input').props.value).toBe('half-written');
@@ -117,12 +123,12 @@ describe('locking keeps your place (rendered)', () => {
     expect(t.ui.queryByPlaceholderText('Enter passphrase')).toBeNull();
   });
 
-  it('a system screen left open over 5 minutes locks on return', async () => {
+  it('a system screen left open over a minute locks on return', async () => {
     const t = await openChat();
     const start = Date.now();
     whileImagePickerOpen(() => {
       t.boundary.emitAppStateChange('background');
-      jest.spyOn(Date, 'now').mockReturnValue(start + 6 * 60 * 1000);
+      jest.spyOn(Date, 'now').mockReturnValue(start + 2 * 60 * 1000);
       t.boundary.emitAppStateChange('active');
     });
     await attachPhoto(t);
@@ -131,5 +137,20 @@ describe('locking keeps your place (rendered)', () => {
     jest.restoreAllMocks();
     await unlock(t.rtl, t.ui);
     expect(t.ui.getByTestId('chat-input')).toBeTruthy();
+  });
+
+  it('a background more than 3 seconds after opening a picker locks at once', async () => {
+    const t = await openChat();
+    // The picker answers without the app ever leaving (a cancel, or nothing to show).
+    whileImagePickerOpen(() => {});
+    await attachPhoto(t);
+    await t.rtl.waitFor(() => expect(t.ui.getByTestId('attachments-container')).toBeTruthy(), TIMEOUT);
+
+    const start = Date.now();
+    jest.spyOn(Date, 'now').mockReturnValue(start + 4000);
+    t.boundary.emitAppStateChange('background');
+    t.boundary.emitAppStateChange('active');
+
+    await t.rtl.waitFor(() => expect(t.ui.getByPlaceholderText('Enter passphrase')).toBeTruthy(), TIMEOUT);
   });
 });
