@@ -255,8 +255,10 @@ function App() {
 
       // Check if passphrase is set and lock app if needed
       const hasPassphrase = await authService.hasPassphrase();
-      if (hasPassphrase && authEnabled) {
-        setLocked(true);
+      // A passphrase in the Keychain means the lock is on: turning the lock off removes it first. The saved
+      // setting can fail to read and sit at its default, and then locking is the safe side.
+      if (hasPassphrase) {
+        useAuthStore.getState().setEnabled(true);
       }
 
       // Initialize RAG database tables
@@ -291,13 +293,11 @@ function App() {
       setIsInitializing(false);
     }
   }, [
-    authEnabled,
     ensureAppStoreHydrated,
     recoverDownloadState,
     setDeviceInfo,
     setDownloadedImageModels,
     setDownloadedModels,
-    setLocked,
     setModelRecommendation,
   ]);
 
