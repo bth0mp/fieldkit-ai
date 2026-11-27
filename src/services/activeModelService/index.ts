@@ -401,11 +401,12 @@ class ActiveModelService {
    * THE single owning side-effect for "Eject All" — every screen dispatches this
    * instead of re-implementing the unload sequence (which is how one screen wired it
    * and another stubbed it). Returns how many models were unloaded. Logged for the
-   * [MODEL-SM] trace.
+   * [MODEL-SM] trace. `keepRemote` leaves the remote model connected: it holds no phone
+   * memory, so a memory-freeing caller has no reason to drop it.
    */
-  async ejectAll(): Promise<{ count: number }> {
+  async ejectAll(opts?: { keepRemote?: boolean }): Promise<{ count: number }> {
     const remote = useRemoteServerStore.getState();
-    const hasRemote = !!(remote.activeRemoteTextModelId || remote.activeRemoteImageModelId);
+    const hasRemote = !opts?.keepRemote && !!(remote.activeRemoteTextModelId || remote.activeRemoteImageModelId);
     logger.log(`[MODEL-SM] ejectAll → start hasRemote=${hasRemote}`);
     // Eject = EVICT from RAM, KEEP the selection. The user's chosen models stay
     // selected (the rows still show them) and reload on demand — ejecting frees
